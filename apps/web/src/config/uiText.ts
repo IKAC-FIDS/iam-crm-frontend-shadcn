@@ -18,6 +18,19 @@ export const uiText = {
     notAvailable: "-",
     fallbackUserInitial: "U",
     retry: "تلاش دوباره",
+    confirm: "تأیید",
+    cancel: "انصراف",
+    processing: "در حال انجام...",
+    table: {
+      searchPlaceholder: "جستجو...",
+      clearFilters: "پاک کردن فیلترها",
+    },
+    pagination: {
+      page: "صفحه",
+      of: "از",
+      previous: "قبلی",
+      next: "بعدی",
+    },
   },
 
   navigation: {
