@@ -2,6 +2,50 @@ export const uiText = {
   app: {
     name: "NESHANE CRM",
     tagline: "فضای کاری امن و یکپارچه",
+    workspaceSubtitle: "فضای کاری مدیریت ارتباط با مشتری",
+  },
+
+  common: {
+    home: "خانه",
+    logout: "خروج",
+    loggingOut: "در حال خروج...",
+    logoutFromAccount: "خروج از حساب",
+    notifications: "اعلان‌ها",
+    accountSecurity: "امنیت حساب",
+    profile: "پروفایل",
+    openCloseMainMenu: "باز و بسته کردن منوی اصلی",
+    underDevelopment: "در حال توسعه",
+  },
+
+  navigation: {
+    groups: {
+      sales: "عملیات فروش",
+      management: "مدیریت",
+      account: "حساب",
+    },
+
+    dashboard: "داشبورد",
+    companies: "شرکت‌ها",
+    opportunities: "فرصت‌ها",
+    pipeline: "پایپ‌لاین",
+    tasks: "کارها",
+    meetings: "جلسات",
+    followUps: "پیگیری‌ها",
+    notifications: "اعلان‌ها",
+    people: "افراد",
+    activities: "فعالیت‌ها",
+    reports: "گزارش‌ها",
+
+    users: "کاربران",
+    teams: "تیم‌ها",
+    exchangeRates: "نرخ دلار",
+    rolesAndPermissions: "نقش‌ها و مجوزها",
+    libraries: "کتابخانه‌ها",
+    pipelineSettings: "تنظیمات پایپ‌لاین",
+    auditLogs: "رویدادهای ممیزی",
+
+    accountSecurity: "امنیت حساب",
+    usageAndQuota: "مصرف و سهمیه",
   },
 
   auth: {
@@ -25,6 +69,11 @@ export const uiText = {
       accessNotice:
         "دسترسی به سامانه مطابق سطح مجوز سازمانی شما کنترل می‌شود.",
 
+      passwordVisibility: {
+        show: "نمایش رمز عبور",
+        hide: "مخفی کردن رمز عبور",
+      },
+
       validation: {
         invalidEmail: "ایمیل واردشده معتبر نیست",
         shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد",
@@ -36,7 +85,6 @@ export const uiText = {
 
       hero: {
         badge: "تجربه جدید مدیریت فروش سازمانی",
-
         headline: "مدیریت ارتباط با مشتری، یکپارچه و هوشمند",
 
         highlights: [
@@ -45,11 +93,47 @@ export const uiText = {
           "زیرساخت آماده برای ورود بدون گذرواژه",
         ],
       },
+    },
+  },
 
-    passwordVisibility: {
-    show: "نمایش رمز عبور",
-    hide: "مخفی کردن رمز عبور",
+  dashboard: {
+    welcomeBadge: "فضای کاری مدیریت فروش",
+
+    welcomeTitlePrefix: "خوش آمدید،",
+
+    welcomeDescription:
+      "داشبورد مدیریتی شما آماده است. اطلاعات، فرصت‌ها و فعالیت‌های مرتبط با سطح دسترسی شما از این فضا در دسترس خواهد بود.",
+
+    actions: {
+      opportunities: "مشاهده فرصت‌ها",
+      activities: "مشاهده فعالیت‌ها",
     },
+
+    cards: {
+      userName: "نام کاربر",
+      organizationRole: "نقش سازمانی",
+      permissionCount: "تعداد مجوزها",
+      sessionStatus: "وضعیت نشست",
+      sessionActive: "فعال",
     },
+
+    account: {
+      title: "اطلاعات حساب جاری",
+      description: "اطلاعات احراز هویت و سطح دسترسی نشست فعلی",
+
+      fields: {
+        name: "نام",
+        email: "ایمیل",
+        role: "نقش",
+        permissionCount: "تعداد مجوزها",
+      },
+    },
+  },
+
+  placeholders: {
+    badge: "در حال توسعه",
+
+    description:
+      "پوسته این بخش آماده شده است. قابلیت‌های عملیاتی و اتصال به API در مراحل بعدی به این صفحه اضافه خواهد شد.",
   },
 } as const

@@ -1,7 +1,71 @@
 :root {
-  --primary:#0053B2; --primary-foreground:#FFFFFF; --background:#EFF5FA; --foreground:#0F172A;
-  --card:#FCFCFF; --card-foreground:#0F172A; --popover:#FCFCFF; --popover-foreground:#0F172A;
-  --secondary:#E4EAF3; --secondary-foreground:#0F172A; --muted:#E4EAF3; --muted-foreground:#64748B;
-  --accent:#D6E3FF; --accent-foreground:#001B3D; --destructive:#BA1A1A; --border:#E4EAF3; --input:#E4EAF3; --ring:#0053B2;
-  --primary-hover:#004A9F; --primary-active:#003F88;
+  --primary: #0053B2;
+  --primary-foreground: #FFFFFF;
+
+  --background: #EFF5FA;
+  --foreground: #0F172A;
+
+  --card: #FCFCFF;
+  --card-foreground: #0F172A;
+
+  --popover: #FCFCFF;
+  --popover-foreground: #0F172A;
+
+  --secondary: #E4EAF3;
+  --secondary-foreground: #0F172A;
+
+  --muted: #E4EAF3;
+  --muted-foreground: #64748B;
+
+  --accent: #D6E3FF;
+  --accent-foreground: #001B3D;
+
+  --destructive: #BA1A1A;
+
+  --border: #E4EAF3;
+  --input: #E4EAF3;
+  --ring: #0053B2;
+
+  --primary-hover: #004A9F;
+  --primary-active: #003F88;
+
+  --surface: #FCFCFF;
+  --surface-soft: #F7FAFD;
+  --surface-muted: #EFF5FA;
+
+  --outline: #C2CAD6;
+
+  --success: #048A3B;
+  --success-light: #E6F9EE;
+
+  --warning: #F59E0B;
+  --warning-light: #FFF4E0;
+
+  --info: #1371D3;
+  --info-light: #D0E5FB;
+
+  --app-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --app-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --app-shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(214, 227, 255, 0.38),
+      transparent 28rem
+    ),
+    var(--background);
+
+  color: var(--foreground);
+}
+
+::selection {
+  background: #D6E3FF;
+  color: #001B3D;
 }
