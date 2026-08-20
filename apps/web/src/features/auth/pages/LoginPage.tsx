@@ -19,19 +19,17 @@ import { Label } from "@workspace/ui/components/label"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuth } from "../hooks/useAuth"
+import { uiText } from "@/config/uiText"
+
+const loginText = uiText.auth.login
 
 const loginSchema = z.object({
-  email: z.string().email("ایمیل واردشده معتبر نیست"),
-  password: z.string().min(6, "رمز عبور باید حداقل ۶ کاراکتر باشد"),
+  email: z.string().email(loginText.validation.invalidEmail),
+  password: z.string().min(6, loginText.validation.shortPassword),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
 
-const highlights = [
-  "مدیریت متمرکز ارتباط با مشتری",
-  "کنترل دسترسی مبتنی بر نقش و مجوز",
-  "زیرساخت آماده برای ورود بدون گذرواژه",
-]
 
 export function LoginPage() {
   const { login, isLoading } = useAuth()
@@ -51,7 +49,7 @@ export function LoginPage() {
       setError(null)
       await login(data)
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "ورود به سامانه انجام نشد"))
+      setError(getApiErrorMessage(err, loginText.errors.loginFailed))
     }
   }
 
@@ -64,9 +62,9 @@ export function LoginPage() {
           </div>
 
           <div>
-            <div className="font-bold text-[#0F172A]">NESHANE CRM</div>
+            <div className="font-bold text-[#0F172A]">{uiText.app.name}</div>
             <div className="text-xs text-[#64748B]">
-              فضای کاری امن و یکپارچه
+              {uiText.app.tagline}
             </div>
           </div>
         </div>
@@ -79,11 +77,11 @@ export function LoginPage() {
               </div>
 
               <h1 className="text-3xl font-bold tracking-tight text-[#0F172A]">
-                خوش آمدید
+                {loginText.title}
               </h1>
 
               <p className="mt-2 text-sm leading-7 text-[#64748B]">
-                برای ورود به سامانه، اطلاعات حساب کاربری خود را وارد کنید.
+                {loginText.description}
               </p>
             </div>
 
@@ -103,7 +101,7 @@ export function LoginPage() {
             >
               <div className="grid gap-2">
                 <Label htmlFor="email" className="text-[#0F172A]">
-                  ایمیل سازمانی
+                  {loginText.emailLabel}
                 </Label>
 
                 <div className="relative">
@@ -131,14 +129,14 @@ export function LoginPage() {
               <div className="grid gap-2">
                 <div className="flex items-center justify-between gap-3">
                   <Label htmlFor="password" className="text-[#0F172A]">
-                    رمز عبور
+                    {loginText.passwordLabel}
                   </Label>
 
                   <button
                     type="button"
                     className="text-xs font-medium text-[#55677F] transition hover:text-[#0053B2]"
                   >
-                    رمز عبور را فراموش کرده‌اید؟
+                    {loginText.forgotPassword}
                   </button>
                 </div>
 
@@ -162,8 +160,8 @@ export function LoginPage() {
                     className="absolute end-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#64748B] transition hover:bg-[#EFF5FA] hover:text-[#0F172A]"
                     aria-label={
                       showPassword
-                        ? "مخفی کردن رمز عبور"
-                        : "نمایش رمز عبور"
+                        ? loginText.passwordVisibility.hide
+                        : loginText.passwordVisibility.show
                     }
                   >
                     {showPassword ? (
@@ -188,21 +186,21 @@ export function LoginPage() {
                 disabled={isLoading}
               >
                 <span>
-                  {isLoading ? "در حال ورود..." : "ورود به سامانه"}
+                  {isLoading ? loginText.submitting : loginText.submit}
                 </span>
 
                 {!isLoading ? <ArrowLeft className="size-4" /> : null}
               </Button>
 
               <div className="rounded-xl border border-[#E4EAF3] bg-[#EFF5FA]/70 px-4 py-3 text-center text-xs leading-5 text-[#64748B]">
-                ورود با Passkey و حساب سازمانی در مرحله بعدی فعال خواهد شد.
+                {loginText.passkeyNotice}
               </div>
             </form>
           </div>
         </div>
 
         <p className="text-center text-xs text-[#64748B]">
-          دسترسی به سامانه مطابق سطح مجوز سازمانی شما کنترل می‌شود.
+          {loginText.accessNotice}
         </p>
       </section>
 
@@ -226,25 +224,19 @@ export function LoginPage() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs text-white/80 backdrop-blur">
               <Sparkles className="size-3.5" />
-              تجربه جدید مدیریت فروش
+              {loginText.hero.badge}
             </div>
 
             <div className="mt-12 max-w-xl">
-              <h2 className="text-4xl font-bold leading-[1.4] xl:text-5xl">
-                ارتباط با مشتری،
-                <br />
-                منسجم‌تر و هوشمندتر
+              <h2 className="text-4xl font-bold leading-[1.35] xl:whitespace-nowrap xl:text-5xl">
+                {loginText.hero.headline}
               </h2>
 
-              <p className="mt-6 max-w-lg text-sm leading-8 text-white/70 xl:text-base">
-                محیطی یکپارچه برای مدیریت فرصت‌ها، مشتریان، فعالیت‌ها و
-                تصمیم‌های فروش با کنترل دسترسی سازمانی.
-              </p>
             </div>
           </div>
 
           <div className="grid gap-3">
-            {highlights.map((item) => (
+            {loginText.hero.highlights.map((item) => (
               <div
                 key={item}
                 className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-4 backdrop-blur"
