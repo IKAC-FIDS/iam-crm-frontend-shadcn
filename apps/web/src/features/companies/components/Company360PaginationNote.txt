@@ -1,0 +1,23 @@
+Commit 2
+
+Company 360 API integration foundation
+
+Added:
+- useCompany360Overview hook
+- Company360SummaryCards component
+
+API:
+GET /api/companies/:id/overview
+
+Important:
+This commit only integrates summary data.
+No unpaginated lists are added.
+
+Next commit:
+- Tasks
+- Meetings
+- Activities
+- Branches
+- Social Channels
+- Legal Documents
+with pagination support.
