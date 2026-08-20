@@ -1,5 +1,5 @@
-import { ChevronDown, ChevronUp, Plus } from "lucide-react"
-import { useState, type ReactNode } from "react"
+import { ArrowLeft, Plus } from "lucide-react"
+import type { ReactNode } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -11,9 +11,8 @@ type Company360ActionSectionProps = {
   icon?: ReactNode
   children: ReactNode
   onCreate?: () => void
+  onViewAll?: () => void
   createAriaLabel?: string
-  defaultExpanded?: boolean
-  compact?: boolean
 }
 
 export function Company360ActionSection({
@@ -23,13 +22,9 @@ export function Company360ActionSection({
   icon,
   children,
   onCreate,
+  onViewAll,
   createAriaLabel,
-  defaultExpanded = false,
-  compact = false,
 }: Company360ActionSectionProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded)
-  const viewAllLabel = uiText.dashboard.recentActivities.viewAll
-
   return (
     <section className="group relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)] transition-shadow duration-200 hover:shadow-md">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />
@@ -49,7 +44,6 @@ export function Company360ActionSection({
                 {count.toLocaleString("fa-IR")}
               </span>
             </div>
-
             {description ? (
               <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">
                 {description}
@@ -71,49 +65,24 @@ export function Company360ActionSection({
         ) : null}
       </header>
 
-      <div
-        className={[
-          "mx-2 overflow-y-auto overscroll-contain px-3 pb-2 pe-2 [scrollbar-gutter:stable] sm:mx-3",
-          "transition-[max-height] duration-300 ease-out",
-          expanded
-            ? "max-h-[640px]"
-            : compact
-              ? "max-h-[280px]"
-              : "max-h-[360px]",
-        ].join(" ")}
-      >
+      <div className="mx-2 max-h-[238px] min-h-0 overflow-y-auto overscroll-contain px-3 pb-2 pe-2 [scrollbar-gutter:stable] sm:mx-3">
         {children}
       </div>
 
-      <footer className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--app-divider)] bg-[var(--app-background)]/40 px-5 py-3 sm:px-6">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="rounded-xl text-xs text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)] hover:text-[var(--app-primary-interactive)]"
-          onClick={() => setExpanded((value) => !value)}
-        >
-          {expanded ? (
-            <ChevronUp className="size-3.5" />
-          ) : (
-            <ChevronDown className="size-3.5" />
-          )}
-          {viewAllLabel}
-        </Button>
-
-        {onCreate ? (
+      {onViewAll ? (
+        <footer className="mt-3 border-t border-[var(--app-divider)] bg-[var(--app-background)]/40 px-5 py-3 sm:px-6">
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="rounded-xl border-[var(--app-primary)]/20 bg-[var(--app-surface)] text-xs text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)]"
-            onClick={onCreate}
-            aria-label={createAriaLabel || title}
+            className="w-full justify-between rounded-xl text-xs text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)] hover:text-[var(--app-primary-interactive)]"
+            onClick={onViewAll}
           >
-            <Plus className="size-3.5" />
+            {uiText.dashboard.recentActivities.viewAll}
+            <ArrowLeft className="size-3.5" />
           </Button>
-        ) : null}
-      </footer>
+        </footer>
+      ) : null}
     </section>
   )
 }

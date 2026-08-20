@@ -10,6 +10,8 @@ import {
   Pencil,
   Phone,
   Share2,
+  Star,
+  UserRoundCog,
   UsersRound,
 } from "lucide-react"
 import { useState, type ReactNode } from "react"
@@ -28,9 +30,11 @@ import { Company360ActionSection } from "../components/Company360ActionSection"
 import { CompanyAvatar } from "../components/CompanyAvatar"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
+import { CompanyManagementDialog } from "../components/CompanyManagementDialog"
 import { CompanyMetricCard } from "../components/CompanyMetricCard"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { CompanyTimeline } from "../components/CompanyTimeline"
+import { PersonQuickViewDialog } from "../components/PersonQuickViewDialog"
 import { useCompany } from "../hooks/useCompanies"
 import { useCompany360Overview } from "../hooks/useCompany360"
 import {
@@ -38,6 +42,8 @@ import {
   useCompanyBranches,
   useCompanyLegalDocuments,
   useCompanyMeetings,
+  useCompanyOpportunities,
+  useCompanyPeople,
   useCompanySocialChannels,
   useCompanyTasks,
 } from "../hooks/useCompany360Sections"
@@ -48,8 +54,6 @@ import {
   formatCompanyDate,
   formatCompanyDateTime,
   formatCompanyNumber,
-  opportunityTitle,
-  personName,
 } from "../utils/companyFormatters"
 
 const SECTION_PAGE_SIZE = 12
@@ -69,8 +73,13 @@ export function CompanyDetailPage() {
   const navigate = useNavigate()
   const { companyId = "" } = useParams<{ companyId: string }>()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
-  const [editOpen, setEditOpen] = useState(false)
 
+  const [editOpen, setEditOpen] = useState(false)
+  const [managementOpen, setManagementOpen] = useState(false)
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+
+  const canViewPeople = permissions.includes("person:view")
+  const canViewOpportunities = permissions.includes("opportunity:view")
   const canViewTasks = permissions.includes("task:view")
   const canViewMeetings = permissions.includes("meeting:view")
   const canViewActivities = permissions.includes("activity:view")
@@ -79,6 +88,18 @@ export function CompanyDetailPage() {
   const overviewQuery = useCompany360Overview(companyId)
   const updateMutation = useUpdateCompany(companyId)
 
+  const peopleQuery = useCompanyPeople(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewPeople,
+  )
+  const opportunitiesQuery = useCompanyOpportunities(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewOpportunities,
+  )
   const tasksQuery = useCompanyTasks(
     companyId,
     1,
@@ -120,24 +141,23 @@ export function CompanyDetailPage() {
 
   const company = query.data
   const displayName = companyDisplayName(company.legalName, company.brandName)
-  const opportunities = company.opportunities ?? []
-  const people = company.people ?? []
   const embeddedActivities = company.activities ?? []
 
-  const activeOpportunities = opportunities.filter(
+  const opportunityRows = opportunitiesQuery.data?.data ?? []
+  const activeOpportunities = opportunityRows.filter(
     (item) => !item.stage?.isTerminal,
   )
+
+  const pipelineValue = activeOpportunities.reduce((sum, item) => {
+    const value = Number(item.estimatedValue ?? item.amount ?? 0)
+    return Number.isFinite(value) ? sum + value : sum
+  }, 0)
 
   const lastActivity =
     embeddedActivities[0]?.occurredAt ||
     embeddedActivities[0]?.activityDate ||
     embeddedActivities[0]?.createdAt ||
     null
-
-  const pipelineValue = activeOpportunities.reduce((sum, item) => {
-    const value = Number(item.amount ?? item.estimatedValue ?? 0)
-    return Number.isFinite(value) ? sum + value : sum
-  }, 0)
 
   const websiteHref = company.website
     ? /^https?:\/\//i.test(company.website)
@@ -147,10 +167,19 @@ export function CompanyDetailPage() {
 
   const overview = overviewQuery.data?.summary
   const openOpportunityCount =
-    overview?.openOpportunityCount ?? activeOpportunities.length
-  const peopleCount = overview?.peopleCount ?? people.length
-  const activeTaskCount = overview?.activeTaskCount ?? 0
-  const upcomingMeetingCount = overview?.upcomingMeetingCount ?? 0
+    overview?.openOpportunityCount ??
+    opportunitiesQuery.data?.meta.total ??
+    activeOpportunities.length
+  const peopleCount =
+    overview?.peopleCount ?? peopleQuery.data?.meta.total ?? 0
+  const activeTaskCount =
+    overview?.activeTaskCount ?? tasksQuery.data?.meta.total ?? 0
+  const upcomingMeetingCount =
+    overview?.upcomingMeetingCount ?? meetingsQuery.data?.meta.total ?? 0
+
+  function goToModule(path: string) {
+    navigate(`${path}?companyId=${encodeURIComponent(companyId)}`)
+  }
 
   function openQuickCreate(target: QuickCreateTarget) {
     const routeByTarget: Record<QuickCreateTarget, string> = {
@@ -163,13 +192,11 @@ export function CompanyDetailPage() {
       branch: `/companies/${companyId}`,
       "social-channel": `/companies/${companyId}`,
     }
-
     const params = new URLSearchParams({
       companyId,
       action: "create",
       entity: target,
     })
-
     navigate(`${routeByTarget[target]}?${params.toString()}`)
   }
 
@@ -177,7 +204,6 @@ export function CompanyDetailPage() {
     <div className="grid gap-5">
       <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
         <div className="pointer-events-none absolute -start-16 -top-20 size-52 rounded-full bg-[var(--app-primary-soft)]/75 blur-3xl" />
-        <div className="pointer-events-none absolute -end-20 top-2 size-44 rounded-full bg-[var(--app-info-light)]/70 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />
 
         <div className="relative px-5 py-5 sm:px-6">
@@ -196,13 +222,6 @@ export function CompanyDetailPage() {
                   )}
                   <CompanyPriorityBadge priority={company.priority} />
                 </div>
-
-                {company.brandName && company.brandName !== company.legalName ? (
-                  <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                    {company.legalName}
-                  </p>
-                ) : null}
-
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-[var(--app-text-secondary)]">
                   <span className="inline-flex items-center gap-1.5">
                     <Building2 className="size-3.5" />
@@ -223,20 +242,39 @@ export function CompanyDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {permissions.includes("company:update") && !company.archivedAt ? (
+              {permissions.includes("company:update") ? (
                 <Button
                   type="button"
-                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
+                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
                   onClick={() => setEditOpen(true)}
                 >
                   <Pencil className="size-4" />
                   {text.edit}
                 </Button>
               ) : null}
+
+              {permissions.some((permission) =>
+                [
+                  "company:change-owner",
+                  "company:archive",
+                  "company:restore",
+                ].includes(permission),
+              ) ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => setManagementOpen(true)}
+                >
+                  <UserRoundCog className="size-4" />
+                  {text.fields.owner}
+                </Button>
+              ) : null}
+
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl bg-[var(--app-surface)]/80 backdrop-blur"
+                className="rounded-xl"
                 onClick={() => navigate("/companies")}
               >
                 <ArrowRight className="size-4" />
@@ -290,7 +328,6 @@ export function CompanyDetailPage() {
                 {text.sections.overviewDescription}
               </p>
             </div>
-
             <CompanyInfoGrid
               items={[
                 { label: text.fields.legalName, value: company.legalName },
@@ -308,10 +345,6 @@ export function CompanyDetailPage() {
                 {
                   label: text.fields.owner,
                   value: company.owner?.fullName || text.unassigned,
-                },
-                {
-                  label: text.fields.team,
-                  value: company.owner?.team || text.notSpecified,
                 },
                 {
                   label: text.fields.city,
@@ -396,10 +429,6 @@ export function CompanyDetailPage() {
                   value: formatCompanyNumber(company.registeredCapital),
                 },
                 {
-                  label: text.fields.createdAt,
-                  value: formatCompanyDateTime(company.createdAt),
-                },
-                {
                   label: text.fields.updatedAt,
                   value: formatCompanyDateTime(company.updatedAt),
                 },
@@ -407,54 +436,52 @@ export function CompanyDetailPage() {
             />
           </SurfaceCard>
 
-          <Company360ActionSection
-            title={text.sections.opportunities}
-            description={text.sections.opportunitiesDescription}
-            count={opportunities.length}
-            icon={<CircleDollarSign className="size-5" />}
-            onCreate={
-              permissions.includes("opportunity:create")
-                ? () => openQuickCreate("opportunity")
-                : undefined
-            }
-          >
-            {opportunities.length ? (
-              <div className="grid gap-2.5">
-                {opportunities.map((item) => (
-                  <EntityRow
-                    key={item.id}
-                    icon={<Building2 className="size-4" />}
-                    title={opportunityTitle(item)}
-                    subtitle={
-                      item.stage?.label ||
-                      item.stage?.name ||
-                      item.stage?.code ||
-                      text.notSpecified
-                    }
-                    meta={formatCompanyNumber(
-                      item.amount ?? item.estimatedValue ?? null,
-                    )}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={Building2}
-                title={text.empty.opportunitiesTitle}
-                description={text.empty.opportunitiesDescription}
-              />
-            )}
-          </Company360ActionSection>
+          {canViewOpportunities ? (
+            <Company360ActionSection
+              title={text.sections.opportunities}
+              description={text.sections.opportunitiesDescription}
+              count={opportunitiesQuery.data?.meta.total ?? 0}
+              icon={<CircleDollarSign className="size-5" />}
+              onViewAll={() => goToModule("/opportunities")}
+              onCreate={
+                permissions.includes("opportunity:create")
+                  ? () => openQuickCreate("opportunity")
+                  : undefined
+              }
+            >
+              {opportunitiesQuery.isLoading ? (
+                <SectionLoading />
+              ) : opportunityRows.length ? (
+                <div className="grid gap-2.5">
+                  {opportunityRows.map((item) => (
+                    <EntityRow
+                      key={item.id}
+                      icon={<Building2 className="size-4" />}
+                      title={item.title}
+                      subtitle={[
+                        item.stage?.label || item.stage?.code,
+                        item.owner?.fullName,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      meta={formatCompanyNumber(
+                        item.estimatedValue ?? item.amount ?? null,
+                      )}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty />
+              )}
+            </Company360ActionSection>
+          ) : null}
 
           {canViewActivities ? (
             <Company360ActionSection
               title={uiText.navigation.activities}
-              count={
-                activitiesQuery.data?.meta.total ??
-                overview?.activityCount ??
-                embeddedActivities.length
-              }
+              count={activitiesQuery.data?.meta.total ?? 0}
               icon={<CalendarClock className="size-5" />}
+              onViewAll={() => goToModule("/activities")}
               onCreate={
                 permissions.includes("activity:create")
                   ? () => openQuickCreate("activity")
@@ -473,12 +500,9 @@ export function CompanyDetailPage() {
 
           <Company360ActionSection
             title={text.ecosystem.legalDocuments}
-            count={
-              documentsQuery.data?.meta.total ??
-              overview?.legalDocumentCount ??
-              0
-            }
+            count={documentsQuery.data?.meta.total ?? 0}
             icon={<FileText className="size-5" />}
+            onViewAll={() => goToModule(`/companies/${companyId}`)}
             onCreate={
               permissions.includes("company:update")
                 ? () => openQuickCreate("legal-document")
@@ -494,7 +518,7 @@ export function CompanyDetailPage() {
                     key={document.id}
                     icon={<FileText className="size-4" />}
                     title={document.title || document.type || text.notSpecified}
-                    subtitle={document.type || text.notSpecified}
+                    subtitle={document.type || undefined}
                     meta={formatCompanyDate(
                       document.documentDate || document.createdAt,
                     )}
@@ -508,57 +532,58 @@ export function CompanyDetailPage() {
         </div>
 
         <div className="grid content-start gap-5">
-          <Company360ActionSection
-            title={text.sections.people}
-            description={text.sections.peopleDescription}
-            count={peopleCount}
-            compact
-            icon={<UsersRound className="size-5" />}
-            onCreate={
-              permissions.includes("person:create")
-                ? () => openQuickCreate("person")
-                : undefined
-            }
-          >
-            {people.length ? (
-              <div className="grid gap-2.5">
-                {people.map((person) => (
-                  <div
-                    key={person.id}
-                    className="flex items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 transition-colors hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)]"
-                  >
-                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
-                      {personName(person).slice(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-[var(--app-heading)]">
-                        {personName(person)}
+          {canViewPeople ? (
+            <Company360ActionSection
+              title={text.sections.people}
+              description={text.sections.peopleDescription}
+              count={peopleQuery.data?.meta.total ?? 0}
+              icon={<UsersRound className="size-5" />}
+              onViewAll={() => goToModule("/people")}
+              onCreate={
+                permissions.includes("person:create")
+                  ? () => openQuickCreate("person")
+                  : undefined
+              }
+            >
+              {peopleQuery.isLoading ? (
+                <SectionLoading />
+              ) : peopleQuery.data?.data.length ? (
+                <div className="grid gap-2.5">
+                  {peopleQuery.data.data.map((person) => (
+                    <button
+                      key={person.id}
+                      type="button"
+                      onClick={() => setSelectedPersonId(person.id)}
+                      className="flex min-h-[58px] w-full items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 text-start transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)] hover:shadow-sm"
+                    >
+                      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
+                        {person.fullName.slice(0, 1)}
+                      </div>
+                      <p className="min-w-0 flex-1 truncate text-xs font-bold text-[var(--app-heading)]">
+                        {person.fullName}
                       </p>
-                      <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
-                        {person.jobTitle ||
-                          person.title ||
-                          person.department ||
-                          text.notSpecified}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={UsersRound}
-                title={text.empty.peopleTitle}
-                description={text.empty.peopleDescription}
-              />
-            )}
-          </Company360ActionSection>
+                      {person.isPrimaryContact ? (
+                        <Star className="size-3.5 shrink-0 text-[var(--app-primary)]" />
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={UsersRound}
+                  title={text.empty.peopleTitle}
+                  description={text.empty.peopleDescription}
+                />
+              )}
+            </Company360ActionSection>
+          ) : null}
 
           {canViewTasks ? (
             <Company360ActionSection
               title={uiText.navigation.tasks}
-              count={tasksQuery.data?.meta.total ?? activeTaskCount}
-              compact
+              count={tasksQuery.data?.meta.total ?? 0}
               icon={<ListTodo className="size-5" />}
+              onViewAll={() => goToModule("/tasks")}
               onCreate={
                 permissions.includes("task:create")
                   ? () => openQuickCreate("task")
@@ -574,11 +599,13 @@ export function CompanyDetailPage() {
                       key={task.id}
                       icon={<ListTodo className="size-4" />}
                       title={task.title}
-                      subtitle={
-                        task.assignedTo?.fullName ||
-                        task.status ||
-                        text.notSpecified
-                      }
+                      subtitle={[
+                        task.assignedTo?.fullName,
+                        task.status,
+                        task.priority,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       meta={formatCompanyDateTime(task.dueAt)}
                     />
                   ))}
@@ -592,9 +619,9 @@ export function CompanyDetailPage() {
           {canViewMeetings ? (
             <Company360ActionSection
               title={uiText.navigation.meetings}
-              count={meetingsQuery.data?.meta.total ?? upcomingMeetingCount}
-              compact
+              count={meetingsQuery.data?.meta.total ?? 0}
               icon={<CalendarClock className="size-5" />}
+              onViewAll={() => goToModule("/meetings")}
               onCreate={
                 permissions.includes("meeting:create")
                   ? () => openQuickCreate("meeting")
@@ -610,11 +637,15 @@ export function CompanyDetailPage() {
                       key={meeting.id}
                       icon={<CalendarClock className="size-4" />}
                       title={meeting.title}
-                      subtitle={
-                        meeting.organizer?.fullName ||
-                        meeting.mode ||
-                        text.notSpecified
-                      }
+                      subtitle={[
+                        meeting.mode,
+                        meeting.location,
+                        meeting.attendees?.length
+                          ? formatCompanyNumber(meeting.attendees.length)
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       meta={formatCompanyDateTime(meeting.startAt)}
                     />
                   ))}
@@ -627,9 +658,9 @@ export function CompanyDetailPage() {
 
           <Company360ActionSection
             title={text.ecosystem.branches}
-            count={branchesQuery.data?.meta.total ?? overview?.branchCount ?? 0}
-            compact
+            count={branchesQuery.data?.meta.total ?? 0}
             icon={<MapPin className="size-5" />}
+            onViewAll={() => goToModule(`/companies/${companyId}`)}
             onCreate={
               permissions.includes("branch:manage")
                 ? () => openQuickCreate("branch")
@@ -645,7 +676,7 @@ export function CompanyDetailPage() {
                     key={branch.id}
                     icon={<MapPin className="size-4" />}
                     title={branch.name || branch.city || text.notSpecified}
-                    subtitle={branch.address || branch.city || text.notSpecified}
+                    subtitle={branch.address || branch.city || undefined}
                     meta={branch.phone || undefined}
                   />
                 ))}
@@ -657,11 +688,9 @@ export function CompanyDetailPage() {
 
           <Company360ActionSection
             title={text.ecosystem.social}
-            count={
-              socialQuery.data?.meta.total ?? overview?.socialChannelCount ?? 0
-            }
-            compact
+            count={socialQuery.data?.meta.total ?? 0}
             icon={<Share2 className="size-5" />}
+            onViewAll={() => goToModule(`/companies/${companyId}`)}
             onCreate={
               permissions.includes("social-channel:manage")
                 ? () => openQuickCreate("social-channel")
@@ -677,7 +706,7 @@ export function CompanyDetailPage() {
                     key={channel.id}
                     icon={<Share2 className="size-4" />}
                     title={channel.platform || text.notSpecified}
-                    subtitle={channel.handle || text.notSpecified}
+                    subtitle={channel.handle || undefined}
                   />
                 ))}
               </div>
@@ -687,6 +716,14 @@ export function CompanyDetailPage() {
           </Company360ActionSection>
         </div>
       </div>
+
+      <PersonQuickViewDialog
+        personId={selectedPersonId}
+        open={Boolean(selectedPersonId)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedPersonId(null)
+        }}
+      />
 
       <CompanyFormDialog
         open={editOpen}
@@ -699,6 +736,13 @@ export function CompanyDetailPage() {
           await updateMutation.mutateAsync(payload)
           setEditOpen(false)
         }}
+      />
+
+      <CompanyManagementDialog
+        company={company}
+        permissions={permissions}
+        open={managementOpen}
+        onOpenChange={setManagementOpen}
       />
     </div>
   )
@@ -716,7 +760,7 @@ function EntityRow({
   meta?: string
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--app-surface)] hover:shadow-sm">
+    <div className="flex min-h-[58px] items-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--app-surface)] hover:shadow-sm">
       <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
         {icon}
       </div>
@@ -733,7 +777,7 @@ function EntityRow({
       {meta ? (
         <span
           dir="auto"
-          className="max-w-32 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]"
+          className="max-w-36 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]"
         >
           {meta}
         </span>
@@ -753,9 +797,10 @@ function SectionEmpty() {
 function SectionLoading() {
   return (
     <div className="grid gap-2.5">
-      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
-      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
-      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-7 animate-pulse rounded-2xl bg-[var(--app-background)]" />
     </div>
   )
 }
