@@ -23,9 +23,11 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { PersianDatePicker } from "@/components/shared/date"
+import { CurrencyInput, NumberInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { toApiDate } from "@/lib/date/jalali"
 
 import {
   COMPANY_ACTIVITY_STATUSES,
@@ -411,10 +413,15 @@ export function CompanyFormDialog({
                       label={text.fields.employeeCount}
                       error={errors.employeeCount?.message}
                     >
-                      <Input
-                        {...register("employeeCount")}
-                        inputMode="numeric"
-                        className="h-11 rounded-xl"
+                      <Controller
+                        control={control}
+                        name="employeeCount"
+                        render={({ field }) => (
+                          <NumberInput
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          />
+                        )}
                       />
                     </Field>
 
@@ -422,10 +429,16 @@ export function CompanyFormDialog({
                       label={text.fields.registeredCapital}
                       error={errors.registeredCapital?.message}
                     >
-                      <Input
-                        {...register("registeredCapital")}
-                        inputMode="decimal"
-                        className="h-11 rounded-xl"
+                      <Controller
+                        control={control}
+                        name="registeredCapital"
+                        render={({ field }) => (
+                          <CurrencyInput
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            decimalScale={2}
+                          />
+                        )}
                       />
                     </Field>
                   </FormSectionBlock>
@@ -557,13 +570,6 @@ function FormJourneyItem({
 function clean(value?: string) {
   const result = value?.trim()
   return result || undefined
-}
-
-function toApiDate(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
 }
 
 const selectClass =

@@ -445,7 +445,37 @@ export const uiText = {
     pickDate: "انتخاب تاریخ",
     pickDateTime: "انتخاب تاریخ و ساعت",
     pickDateRange: "انتخاب بازه تاریخ",
+    rangeFrom: "از تاریخ",
+    rangeTo: "تا تاریخ",
     rangeSeparator: "تا",
+    timeLabel: "ساعت",
+    calendar: {
+      previousMonth: "ماه قبل",
+      nextMonth: "ماه بعد",
+      today: "امروز",
+      clear: "پاک کردن",
+      weekdays: ["ش", "ی", "د", "س", "چ", "پ", "ج"],
+      months: [
+        "فروردین",
+        "اردیبهشت",
+        "خرداد",
+        "تیر",
+        "مرداد",
+        "شهریور",
+        "مهر",
+        "آبان",
+        "آذر",
+        "دی",
+        "بهمن",
+        "اسفند",
+      ],
+    },
+  },
+
+  inputs: {
+    currency: {
+      defaultUnit: "ریال",
+    },
   },
 
   errors: {
