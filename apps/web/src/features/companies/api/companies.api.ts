@@ -13,12 +13,10 @@ interface PaginatedCompaniesEnvelope {
   success?: boolean
   data: Company[]
   meta: PaginatedCompanies["meta"]
-  requestId?: string | null
-  timestamp?: string
 }
 
 export async function getCompanies(query: CompaniesQuery) {
-  const response = await api.get<PaginatedCompaniesEnvelope | PaginatedCompanies>(
+  const response = await api.get<PaginatedCompaniesEnvelope>(
     "/companies",
     {
       params: {
@@ -28,7 +26,7 @@ export async function getCompanies(query: CompaniesQuery) {
         priority: query.priority || undefined,
         ownershipScope:
           query.ownershipScope && query.ownershipScope !== "ALL"
-            ? query.ownershipScope
+            ? query.ownershipScope.toLowerCase()
             : undefined,
         includeArchived: query.includeArchived ? "true" : undefined,
         archivedOnly: query.archivedOnly ? "true" : undefined,
@@ -36,28 +34,16 @@ export async function getCompanies(query: CompaniesQuery) {
     },
   )
 
-  const payload = response.data
-
-  if (
-    payload &&
-    typeof payload === "object" &&
-    Array.isArray(payload.data) &&
-    payload.meta
-  ) {
-    return {
-      data: payload.data,
-      meta: payload.meta,
-    } satisfies PaginatedCompanies
-  }
-
-  return unwrapApiResponse<PaginatedCompanies>(payload)
+  return {
+    data: response.data.data,
+    meta: response.data.meta,
+  } satisfies PaginatedCompanies
 }
 
 export async function getCompany(companyId: string) {
   const response = await api.get(`/companies/${companyId}`)
   return unwrapApiResponse<Company>(response.data)
 }
-
 
 export async function createCompany(payload: CreateCompanyPayload) {
   const response = await api.post("/companies", payload)
