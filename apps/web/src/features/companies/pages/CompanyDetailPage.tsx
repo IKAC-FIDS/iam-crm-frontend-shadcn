@@ -24,7 +24,7 @@ import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
-import { Company360PaginatedSection } from "../components/Company360PaginatedSection"
+import { Company360ActionSection } from "../components/Company360ActionSection"
 import { CompanyAvatar } from "../components/CompanyAvatar"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
@@ -52,7 +52,17 @@ import {
   personName,
 } from "../utils/companyFormatters"
 
-const SECTION_PAGE_SIZE = 5
+const SECTION_PAGE_SIZE = 12
+
+type QuickCreateTarget =
+  | "opportunity"
+  | "person"
+  | "task"
+  | "meeting"
+  | "activity"
+  | "legal-document"
+  | "branch"
+  | "social-channel"
 
 export function CompanyDetailPage() {
   const text = uiText.companies.detail
@@ -60,13 +70,6 @@ export function CompanyDetailPage() {
   const { companyId = "" } = useParams<{ companyId: string }>()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
   const [editOpen, setEditOpen] = useState(false)
-
-  const [taskPage, setTaskPage] = useState(1)
-  const [meetingPage, setMeetingPage] = useState(1)
-  const [activityPage, setActivityPage] = useState(1)
-  const [branchPage, setBranchPage] = useState(1)
-  const [socialPage, setSocialPage] = useState(1)
-  const [documentPage, setDocumentPage] = useState(1)
 
   const canViewTasks = permissions.includes("task:view")
   const canViewMeetings = permissions.includes("meeting:view")
@@ -78,35 +81,27 @@ export function CompanyDetailPage() {
 
   const tasksQuery = useCompanyTasks(
     companyId,
-    taskPage,
+    1,
     SECTION_PAGE_SIZE,
     canViewTasks,
   )
   const meetingsQuery = useCompanyMeetings(
     companyId,
-    meetingPage,
+    1,
     SECTION_PAGE_SIZE,
     canViewMeetings,
   )
   const activitiesQuery = useCompanyActivities(
     companyId,
-    activityPage,
+    1,
     SECTION_PAGE_SIZE,
     canViewActivities,
   )
-  const branchesQuery = useCompanyBranches(
-    companyId,
-    branchPage,
-    SECTION_PAGE_SIZE,
-  )
-  const socialQuery = useCompanySocialChannels(
-    companyId,
-    socialPage,
-    SECTION_PAGE_SIZE,
-  )
+  const branchesQuery = useCompanyBranches(companyId, 1, SECTION_PAGE_SIZE)
+  const socialQuery = useCompanySocialChannels(companyId, 1, SECTION_PAGE_SIZE)
   const documentsQuery = useCompanyLegalDocuments(
     companyId,
-    documentPage,
+    1,
     SECTION_PAGE_SIZE,
   )
 
@@ -157,11 +152,35 @@ export function CompanyDetailPage() {
   const activeTaskCount = overview?.activeTaskCount ?? 0
   const upcomingMeetingCount = overview?.upcomingMeetingCount ?? 0
 
+  function openQuickCreate(target: QuickCreateTarget) {
+    const routeByTarget: Record<QuickCreateTarget, string> = {
+      opportunity: "/opportunities",
+      person: "/people",
+      task: "/tasks",
+      meeting: "/meetings",
+      activity: "/activities",
+      "legal-document": `/companies/${companyId}`,
+      branch: `/companies/${companyId}`,
+      "social-channel": `/companies/${companyId}`,
+    }
+
+    const params = new URLSearchParams({
+      companyId,
+      action: "create",
+      entity: target,
+    })
+
+    navigate(`${routeByTarget[target]}?${params.toString()}`)
+  }
+
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-        <div className="relative overflow-hidden px-5 py-5 sm:px-6">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[var(--app-primary)]" />
+      <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
+        <div className="pointer-events-none absolute -start-16 -top-20 size-52 rounded-full bg-[var(--app-primary-soft)]/75 blur-3xl" />
+        <div className="pointer-events-none absolute -end-20 top-2 size-44 rounded-full bg-[var(--app-info-light)]/70 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />
+
+        <div className="relative px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div className="flex min-w-0 items-start gap-4">
               <CompanyAvatar name={displayName} />
@@ -207,7 +226,7 @@ export function CompanyDetailPage() {
               {permissions.includes("company:update") && !company.archivedAt ? (
                 <Button
                   type="button"
-                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
                   onClick={() => setEditOpen(true)}
                 >
                   <Pencil className="size-4" />
@@ -217,7 +236,7 @@ export function CompanyDetailPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-xl"
+                className="rounded-xl bg-[var(--app-surface)]/80 backdrop-blur"
                 onClick={() => navigate("/companies")}
               >
                 <ArrowRight className="size-4" />
@@ -262,8 +281,8 @@ export function CompanyDetailPage() {
         />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <div className="grid gap-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
+        <div className="grid content-start gap-5">
           <SurfaceCard className="p-5 sm:p-6">
             <div className="mb-5">
               <h2 className="ui-section-title">{text.sections.overview}</h2>
@@ -342,279 +361,6 @@ export function CompanyDetailPage() {
 
           <SurfaceCard className="p-5 sm:p-6">
             <div className="mb-5">
-              <h2 className="ui-section-title">{text.sections.opportunities}</h2>
-              <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                {text.sections.opportunitiesDescription}
-              </p>
-            </div>
-
-            {opportunities.length ? (
-              <div className="grid gap-2.5">
-                {opportunities.slice(0, 6).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-[var(--app-heading)]">
-                        {opportunityTitle(item)}
-                      </p>
-                      <p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
-                        {item.stage?.label ||
-                          item.stage?.name ||
-                          item.stage?.code ||
-                          text.notSpecified}
-                      </p>
-                    </div>
-                    <div className="text-start sm:text-end">
-                      <p className="text-sm font-bold text-[var(--app-heading)]">
-                        {formatCompanyNumber(
-                          item.amount ?? item.estimatedValue ?? null,
-                        )}
-                      </p>
-                      <p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
-                        {item.owner?.fullName || text.unassigned}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={Building2}
-                title={text.empty.opportunitiesTitle}
-                description={text.empty.opportunitiesDescription}
-              />
-            )}
-          </SurfaceCard>
-
-          {canViewTasks ? (
-            <Company360PaginatedSection
-              title={uiText.navigation.tasks}
-              total={tasksQuery.data?.meta.total}
-              page={tasksQuery.data?.meta.page ?? taskPage}
-              totalPages={tasksQuery.data?.meta.totalPages}
-              isLoading={tasksQuery.isLoading}
-              isError={tasksQuery.isError}
-              onPrevious={() => setTaskPage((value) => Math.max(1, value - 1))}
-              onNext={() => setTaskPage((value) => value + 1)}
-            >
-              <div className="grid gap-2.5">
-                {tasksQuery.data?.data.length ? (
-                  tasksQuery.data.data.map((task) => (
-                    <EntityRow
-                      key={task.id}
-                      icon={<ListTodo className="size-4" />}
-                      title={task.title}
-                      subtitle={
-                        task.assignedTo?.fullName ||
-                        task.status ||
-                        text.notSpecified
-                      }
-                      meta={formatCompanyDateTime(task.dueAt)}
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty />
-                )}
-              </div>
-            </Company360PaginatedSection>
-          ) : null}
-
-          {canViewMeetings ? (
-            <Company360PaginatedSection
-              title={uiText.navigation.meetings}
-              total={meetingsQuery.data?.meta.total}
-              page={meetingsQuery.data?.meta.page ?? meetingPage}
-              totalPages={meetingsQuery.data?.meta.totalPages}
-              isLoading={meetingsQuery.isLoading}
-              isError={meetingsQuery.isError}
-              onPrevious={() =>
-                setMeetingPage((value) => Math.max(1, value - 1))
-              }
-              onNext={() => setMeetingPage((value) => value + 1)}
-            >
-              <div className="grid gap-2.5">
-                {meetingsQuery.data?.data.length ? (
-                  meetingsQuery.data.data.map((meeting) => (
-                    <EntityRow
-                      key={meeting.id}
-                      icon={<CalendarClock className="size-4" />}
-                      title={meeting.title}
-                      subtitle={
-                        meeting.organizer?.fullName ||
-                        meeting.mode ||
-                        text.notSpecified
-                      }
-                      meta={formatCompanyDateTime(meeting.startAt)}
-                    />
-                  ))
-                ) : (
-                  <SectionEmpty />
-                )}
-              </div>
-            </Company360PaginatedSection>
-          ) : null}
-
-          {canViewActivities ? (
-            <Company360PaginatedSection
-              title={uiText.navigation.activities}
-              total={activitiesQuery.data?.meta.total}
-              page={activitiesQuery.data?.meta.page ?? activityPage}
-              totalPages={activitiesQuery.data?.meta.totalPages}
-              isLoading={activitiesQuery.isLoading}
-              isError={activitiesQuery.isError}
-              onPrevious={() =>
-                setActivityPage((value) => Math.max(1, value - 1))
-              }
-              onNext={() => setActivityPage((value) => value + 1)}
-            >
-              {activitiesQuery.data?.data.length ? (
-                <CompanyTimeline activities={activitiesQuery.data.data} />
-              ) : (
-                <SectionEmpty />
-              )}
-            </Company360PaginatedSection>
-          ) : null}
-
-          <Company360PaginatedSection
-            title={text.ecosystem.legalDocuments}
-            total={documentsQuery.data?.meta.total}
-            page={documentsQuery.data?.meta.page ?? documentPage}
-            totalPages={documentsQuery.data?.meta.totalPages}
-            isLoading={documentsQuery.isLoading}
-            isError={documentsQuery.isError}
-            onPrevious={() =>
-              setDocumentPage((value) => Math.max(1, value - 1))
-            }
-            onNext={() => setDocumentPage((value) => value + 1)}
-          >
-            <div className="grid gap-2.5">
-              {documentsQuery.data?.data.length ? (
-                documentsQuery.data.data.map((document) => (
-                  <EntityRow
-                    key={document.id}
-                    icon={<FileText className="size-4" />}
-                    title={document.title || document.type || text.notSpecified}
-                    subtitle={document.type || text.notSpecified}
-                    meta={formatCompanyDate(
-                      document.documentDate || document.createdAt,
-                    )}
-                  />
-                ))
-              ) : (
-                <SectionEmpty />
-              )}
-            </div>
-          </Company360PaginatedSection>
-        </div>
-
-        <div className="grid content-start gap-5">
-          <SurfaceCard className="p-5 sm:p-6">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="ui-section-title">{text.sections.people}</h2>
-                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                  {text.sections.peopleDescription}
-                </p>
-              </div>
-              <span className="text-xs font-bold text-[var(--app-primary)]">
-                {formatCompanyNumber(peopleCount)}
-              </span>
-            </div>
-
-            {people.length ? (
-              <div className="grid gap-2.5">
-                {people.slice(0, 6).map((person) => (
-                  <div
-                    key={person.id}
-                    className="flex items-center gap-3 rounded-2xl bg-[var(--app-background)]/55 p-3"
-                  >
-                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
-                      {personName(person).slice(0, 1)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-bold text-[var(--app-heading)]">
-                        {personName(person)}
-                      </p>
-                      <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
-                        {person.jobTitle ||
-                          person.title ||
-                          person.department ||
-                          text.notSpecified}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                icon={UsersRound}
-                title={text.empty.peopleTitle}
-                description={text.empty.peopleDescription}
-              />
-            )}
-          </SurfaceCard>
-
-          <Company360PaginatedSection
-            title={text.ecosystem.branches}
-            total={branchesQuery.data?.meta.total}
-            page={branchesQuery.data?.meta.page ?? branchPage}
-            totalPages={branchesQuery.data?.meta.totalPages}
-            isLoading={branchesQuery.isLoading}
-            isError={branchesQuery.isError}
-            onPrevious={() =>
-              setBranchPage((value) => Math.max(1, value - 1))
-            }
-            onNext={() => setBranchPage((value) => value + 1)}
-          >
-            <div className="grid gap-2.5">
-              {branchesQuery.data?.data.length ? (
-                branchesQuery.data.data.map((branch) => (
-                  <EntityRow
-                    key={branch.id}
-                    icon={<MapPin className="size-4" />}
-                    title={branch.name || branch.city || text.notSpecified}
-                    subtitle={branch.address || branch.city || text.notSpecified}
-                    meta={branch.phone || undefined}
-                  />
-                ))
-              ) : (
-                <SectionEmpty />
-              )}
-            </div>
-          </Company360PaginatedSection>
-
-          <Company360PaginatedSection
-            title={text.ecosystem.social}
-            total={socialQuery.data?.meta.total}
-            page={socialQuery.data?.meta.page ?? socialPage}
-            totalPages={socialQuery.data?.meta.totalPages}
-            isLoading={socialQuery.isLoading}
-            isError={socialQuery.isError}
-            onPrevious={() =>
-              setSocialPage((value) => Math.max(1, value - 1))
-            }
-            onNext={() => setSocialPage((value) => value + 1)}
-          >
-            <div className="grid gap-2.5">
-              {socialQuery.data?.data.length ? (
-                socialQuery.data.data.map((channel) => (
-                  <EntityRow
-                    key={channel.id}
-                    icon={<Share2 className="size-4" />}
-                    title={channel.platform || text.notSpecified}
-                    subtitle={channel.handle || text.notSpecified}
-                  />
-                ))
-              ) : (
-                <SectionEmpty />
-              )}
-            </div>
-          </Company360PaginatedSection>
-
-          <SurfaceCard className="p-5 sm:p-6">
-            <div className="mb-5">
               <h2 className="ui-section-title">{text.sections.legal}</h2>
             </div>
             <CompanyInfoGrid
@@ -660,6 +406,285 @@ export function CompanyDetailPage() {
               ]}
             />
           </SurfaceCard>
+
+          <Company360ActionSection
+            title={text.sections.opportunities}
+            description={text.sections.opportunitiesDescription}
+            count={opportunities.length}
+            icon={<CircleDollarSign className="size-5" />}
+            onCreate={
+              permissions.includes("opportunity:create")
+                ? () => openQuickCreate("opportunity")
+                : undefined
+            }
+          >
+            {opportunities.length ? (
+              <div className="grid gap-2.5">
+                {opportunities.map((item) => (
+                  <EntityRow
+                    key={item.id}
+                    icon={<Building2 className="size-4" />}
+                    title={opportunityTitle(item)}
+                    subtitle={
+                      item.stage?.label ||
+                      item.stage?.name ||
+                      item.stage?.code ||
+                      text.notSpecified
+                    }
+                    meta={formatCompanyNumber(
+                      item.amount ?? item.estimatedValue ?? null,
+                    )}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Building2}
+                title={text.empty.opportunitiesTitle}
+                description={text.empty.opportunitiesDescription}
+              />
+            )}
+          </Company360ActionSection>
+
+          {canViewActivities ? (
+            <Company360ActionSection
+              title={uiText.navigation.activities}
+              count={
+                activitiesQuery.data?.meta.total ??
+                overview?.activityCount ??
+                embeddedActivities.length
+              }
+              icon={<CalendarClock className="size-5" />}
+              onCreate={
+                permissions.includes("activity:create")
+                  ? () => openQuickCreate("activity")
+                  : undefined
+              }
+            >
+              {activitiesQuery.isLoading ? (
+                <SectionLoading />
+              ) : activitiesQuery.data?.data.length ? (
+                <CompanyTimeline activities={activitiesQuery.data.data} />
+              ) : (
+                <SectionEmpty />
+              )}
+            </Company360ActionSection>
+          ) : null}
+
+          <Company360ActionSection
+            title={text.ecosystem.legalDocuments}
+            count={
+              documentsQuery.data?.meta.total ??
+              overview?.legalDocumentCount ??
+              0
+            }
+            icon={<FileText className="size-5" />}
+            onCreate={
+              permissions.includes("company:update")
+                ? () => openQuickCreate("legal-document")
+                : undefined
+            }
+          >
+            {documentsQuery.isLoading ? (
+              <SectionLoading />
+            ) : documentsQuery.data?.data.length ? (
+              <div className="grid gap-2.5">
+                {documentsQuery.data.data.map((document) => (
+                  <EntityRow
+                    key={document.id}
+                    icon={<FileText className="size-4" />}
+                    title={document.title || document.type || text.notSpecified}
+                    subtitle={document.type || text.notSpecified}
+                    meta={formatCompanyDate(
+                      document.documentDate || document.createdAt,
+                    )}
+                  />
+                ))}
+              </div>
+            ) : (
+              <SectionEmpty />
+            )}
+          </Company360ActionSection>
+        </div>
+
+        <div className="grid content-start gap-5">
+          <Company360ActionSection
+            title={text.sections.people}
+            description={text.sections.peopleDescription}
+            count={peopleCount}
+            compact
+            icon={<UsersRound className="size-5" />}
+            onCreate={
+              permissions.includes("person:create")
+                ? () => openQuickCreate("person")
+                : undefined
+            }
+          >
+            {people.length ? (
+              <div className="grid gap-2.5">
+                {people.map((person) => (
+                  <div
+                    key={person.id}
+                    className="flex items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 transition-colors hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)]"
+                  >
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
+                      {personName(person).slice(0, 1)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-[var(--app-heading)]">
+                        {personName(person)}
+                      </p>
+                      <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
+                        {person.jobTitle ||
+                          person.title ||
+                          person.department ||
+                          text.notSpecified}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={UsersRound}
+                title={text.empty.peopleTitle}
+                description={text.empty.peopleDescription}
+              />
+            )}
+          </Company360ActionSection>
+
+          {canViewTasks ? (
+            <Company360ActionSection
+              title={uiText.navigation.tasks}
+              count={tasksQuery.data?.meta.total ?? activeTaskCount}
+              compact
+              icon={<ListTodo className="size-5" />}
+              onCreate={
+                permissions.includes("task:create")
+                  ? () => openQuickCreate("task")
+                  : undefined
+              }
+            >
+              {tasksQuery.isLoading ? (
+                <SectionLoading />
+              ) : tasksQuery.data?.data.length ? (
+                <div className="grid gap-2.5">
+                  {tasksQuery.data.data.map((task) => (
+                    <EntityRow
+                      key={task.id}
+                      icon={<ListTodo className="size-4" />}
+                      title={task.title}
+                      subtitle={
+                        task.assignedTo?.fullName ||
+                        task.status ||
+                        text.notSpecified
+                      }
+                      meta={formatCompanyDateTime(task.dueAt)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty />
+              )}
+            </Company360ActionSection>
+          ) : null}
+
+          {canViewMeetings ? (
+            <Company360ActionSection
+              title={uiText.navigation.meetings}
+              count={meetingsQuery.data?.meta.total ?? upcomingMeetingCount}
+              compact
+              icon={<CalendarClock className="size-5" />}
+              onCreate={
+                permissions.includes("meeting:create")
+                  ? () => openQuickCreate("meeting")
+                  : undefined
+              }
+            >
+              {meetingsQuery.isLoading ? (
+                <SectionLoading />
+              ) : meetingsQuery.data?.data.length ? (
+                <div className="grid gap-2.5">
+                  {meetingsQuery.data.data.map((meeting) => (
+                    <EntityRow
+                      key={meeting.id}
+                      icon={<CalendarClock className="size-4" />}
+                      title={meeting.title}
+                      subtitle={
+                        meeting.organizer?.fullName ||
+                        meeting.mode ||
+                        text.notSpecified
+                      }
+                      meta={formatCompanyDateTime(meeting.startAt)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty />
+              )}
+            </Company360ActionSection>
+          ) : null}
+
+          <Company360ActionSection
+            title={text.ecosystem.branches}
+            count={branchesQuery.data?.meta.total ?? overview?.branchCount ?? 0}
+            compact
+            icon={<MapPin className="size-5" />}
+            onCreate={
+              permissions.includes("branch:manage")
+                ? () => openQuickCreate("branch")
+                : undefined
+            }
+          >
+            {branchesQuery.isLoading ? (
+              <SectionLoading />
+            ) : branchesQuery.data?.data.length ? (
+              <div className="grid gap-2.5">
+                {branchesQuery.data.data.map((branch) => (
+                  <EntityRow
+                    key={branch.id}
+                    icon={<MapPin className="size-4" />}
+                    title={branch.name || branch.city || text.notSpecified}
+                    subtitle={branch.address || branch.city || text.notSpecified}
+                    meta={branch.phone || undefined}
+                  />
+                ))}
+              </div>
+            ) : (
+              <SectionEmpty />
+            )}
+          </Company360ActionSection>
+
+          <Company360ActionSection
+            title={text.ecosystem.social}
+            count={
+              socialQuery.data?.meta.total ?? overview?.socialChannelCount ?? 0
+            }
+            compact
+            icon={<Share2 className="size-5" />}
+            onCreate={
+              permissions.includes("social-channel:manage")
+                ? () => openQuickCreate("social-channel")
+                : undefined
+            }
+          >
+            {socialQuery.isLoading ? (
+              <SectionLoading />
+            ) : socialQuery.data?.data.length ? (
+              <div className="grid gap-2.5">
+                {socialQuery.data.data.map((channel) => (
+                  <EntityRow
+                    key={channel.id}
+                    icon={<Share2 className="size-4" />}
+                    title={channel.platform || text.notSpecified}
+                    subtitle={channel.handle || text.notSpecified}
+                  />
+                ))}
+              </div>
+            ) : (
+              <SectionEmpty />
+            )}
+          </Company360ActionSection>
         </div>
       </div>
 
@@ -691,7 +716,7 @@ function EntityRow({
   meta?: string
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3.5">
+    <div className="flex items-center gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--app-surface)] hover:shadow-sm">
       <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
         {icon}
       </div>
@@ -708,7 +733,7 @@ function EntityRow({
       {meta ? (
         <span
           dir="auto"
-          className="shrink-0 text-[10px] text-[var(--app-text-secondary)]"
+          className="max-w-32 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]"
         >
           {meta}
         </span>
@@ -722,5 +747,15 @@ function SectionEmpty() {
     <p className="rounded-2xl bg-[var(--app-background)]/55 p-4 text-center text-xs text-[var(--app-text-secondary)]">
       {uiText.companies.detail.notSpecified}
     </p>
+  )
+}
+
+function SectionLoading() {
+  return (
+    <div className="grid gap-2.5">
+      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
+      <div className="h-14 animate-pulse rounded-2xl bg-[var(--app-background)]" />
+    </div>
   )
 }
