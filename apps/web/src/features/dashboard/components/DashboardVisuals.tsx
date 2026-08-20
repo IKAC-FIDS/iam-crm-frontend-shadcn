@@ -58,71 +58,103 @@ export function DashboardKpiCard({
 }
 
 type TrendMode = "count" | "value"
-const WIDTH = 900
-const HEIGHT = 280
-const PX = 28
-const PT = 24
-const PB = 38
+
+const WIDTH = 940
+const HEIGHT = 310
+const PLOT_LEFT = 76
+const PLOT_RIGHT = 24
+const PLOT_TOP = 28
+const PLOT_BOTTOM = 48
+const GRID_LINES = 4
+
+function niceMax(value: number) {
+  if (value <= 0) return 1
+  const magnitude = 10 ** Math.floor(Math.log10(value))
+  const normalized = value / magnitude
+  const rounded = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
+  return rounded * magnitude
+}
 
 function buildPath(values: number[], maxValue: number) {
-  const chartWidth = WIDTH - PX * 2
-  const chartHeight = HEIGHT - PT - PB
+  const chartWidth = WIDTH - PLOT_LEFT - PLOT_RIGHT
+  const chartHeight = HEIGHT - PLOT_TOP - PLOT_BOTTOM
   const step = values.length > 1 ? chartWidth / (values.length - 1) : 0
 
   return values
     .map((value, index) => {
-      const x = PX + index * step
-      const y = PT + chartHeight - (value / maxValue) * chartHeight
+      const x = PLOT_LEFT + index * step
+      const y = PLOT_TOP + chartHeight - (value / maxValue) * chartHeight
       return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`
     })
     .join(" ")
 }
 
+function getPoint(index: number, value: number, count: number, maxValue: number) {
+  const chartWidth = WIDTH - PLOT_LEFT - PLOT_RIGHT
+  const chartHeight = HEIGHT - PLOT_TOP - PLOT_BOTTOM
+  const step = count > 1 ? chartWidth / (count - 1) : 0
+
+  return {
+    x: PLOT_LEFT + index * step,
+    y: PLOT_TOP + chartHeight - (value / maxValue) * chartHeight,
+  }
+}
+
 export function OpportunityTrendChart({
   data,
+  activeCount,
+  activeValueIrr,
 }: {
   data: DashboardSummary["opportunityTrend12m"]
+  activeCount: number
+  activeValueIrr: number | string
 }) {
   const text = uiText.dashboard.trend
   const [mode, setMode] = useState<TrendMode>("count")
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const points = useMemo(
     () =>
       data.map((item) => ({
         label: formatPersianMonth(item.periodStart),
-        created:
-          mode === "count"
-            ? item.createdCount
-            : toFiniteNumber(item.createdValueIrr),
-        won:
-          mode === "count" ? item.wonCount : toFiniteNumber(item.wonValueIrr),
-        lost:
-          mode === "count" ? item.lostCount : toFiniteNumber(item.lostValueIrr),
+        created: mode === "count" ? item.createdCount : toFiniteNumber(item.createdValueIrr),
+        won: mode === "count" ? item.wonCount : toFiniteNumber(item.wonValueIrr),
+        lost: mode === "count" ? item.lostCount : toFiniteNumber(item.lostValueIrr),
       })),
     [data, mode],
   )
 
-  const maxValue = Math.max(
-    1,
-    ...points.flatMap((item) => [item.created, item.won, item.lost]),
+  const maxValue = niceMax(
+    Math.max(1, ...points.flatMap((item) => [item.created, item.won, item.lost])),
   )
+  const latestMonth = points.at(-1)?.label ?? text.currentPeriodFallback
+  const hovered = hoveredIndex === null ? null : points[hoveredIndex]
 
-  const formatValue = (value: number) =>
+  const activeSummary =
     mode === "count"
-      ? formatCount(value)
+      ? {
+          title: `${text.activeSummary.countPrefix} ${latestMonth} ${text.activeSummary.monthSuffix}`,
+          value: `${formatCount(activeCount)} ${uiText.dashboard.units.opportunity}`,
+        }
+      : {
+          title: `${text.activeSummary.valuePrefix} ${latestMonth} ${text.activeSummary.monthSuffix}`,
+          value: `${formatCompactNumber(activeValueIrr)} ${uiText.dashboard.units.rial}`,
+        }
+
+  const formatSeriesValue = (value: number) =>
+    mode === "count"
+      ? `${formatCount(value)} ${uiText.dashboard.units.opportunity}`
       : `${formatCompactNumber(value)} ${uiText.dashboard.units.rial}`
+
+  const formatAxisValue = (value: number) =>
+    mode === "count" ? formatCount(Math.round(value)) : formatCompactNumber(value)
 
   return (
     <section className="relative overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
       <div className="pointer-events-none absolute -start-20 -top-20 size-64 rounded-full bg-[var(--app-primary)]/5 blur-3xl" />
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="ui-section-title">{text.title}</h3>
-          <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
-            {text.description}
-          </p>
-        </div>
+        <h3 className="ui-section-title">{text.title}</h3>
 
         <div className="flex w-fit rounded-xl bg-[var(--app-background)] p-1">
           {(["count", "value"] as const).map((item) => (
@@ -144,95 +176,151 @@ export function OpportunityTrendChart({
       </div>
 
       <div className="relative mt-5 overflow-hidden rounded-[20px] border border-[var(--app-divider)]/80 bg-[linear-gradient(180deg,var(--app-background),var(--app-surface))] p-3">
-        <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 rounded-xl bg-[var(--app-surface)]/85 px-3 py-2 text-[11px] shadow-sm">
-          <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
-            <i className="size-2 rounded-full bg-[var(--app-primary)]" />
-            {text.series.created}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
-            <i className="size-2 rounded-full bg-[var(--success)]" />
-            {text.series.won}
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
-            <i className="size-2 rounded-full bg-[var(--destructive)]" />
-            {text.series.lost}
-          </span>
-          {points.length ? (
-            <span className="ms-auto text-[var(--app-text-secondary)]">
-              {points.at(-1)?.label}: {formatValue(points.at(-1)?.created ?? 0)}
+        <div className="mb-3 grid gap-2 rounded-xl bg-[var(--app-surface)]/88 px-3 py-2.5 shadow-sm lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
+              <i className="size-2 rounded-full bg-[var(--app-primary)]" />
+              {text.series.created}
             </span>
-          ) : null}
+            <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
+              <i className="size-2 rounded-full bg-[var(--success)]" />
+              {text.series.won}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
+              <i className="size-2 rounded-full bg-[var(--destructive)]" />
+              {text.series.lost}
+            </span>
+          </div>
+
+          <div className="text-start lg:text-end">
+            <span className="block text-[10px] text-[var(--app-text-secondary)]">
+              {activeSummary.title}
+            </span>
+            <strong className="mt-0.5 block text-xs text-[var(--app-heading)]">
+              {activeSummary.value}
+            </strong>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
+          {hovered ? (
+            <div className="pointer-events-none absolute end-4 top-3 z-10 min-w-48 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-3 text-xs shadow-[var(--app-shadow-popover)] backdrop-blur">
+              <strong className="text-[var(--app-heading)]">{hovered.label}</strong>
+              <div className="mt-2 grid gap-1.5 text-[11px] text-[var(--app-text-secondary)]">
+                <div className="flex items-center justify-between gap-5">
+                  <span>{text.series.created}</span>
+                  <strong className="text-[var(--app-heading)]">{formatSeriesValue(hovered.created)}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-5">
+                  <span>{text.series.won}</span>
+                  <strong className="text-[var(--app-heading)]">{formatSeriesValue(hovered.won)}</strong>
+                </div>
+                <div className="flex items-center justify-between gap-5">
+                  <span>{text.series.lost}</span>
+                  <strong className="text-[var(--app-heading)]">{formatSeriesValue(hovered.lost)}</strong>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <svg
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-            className="min-w-[720px] w-full"
+            className="min-w-[760px] w-full"
             role="img"
             aria-label={text.ariaLabel}
+            onMouseLeave={() => setHoveredIndex(null)}
           >
-            {[0.25, 0.5, 0.75, 1].map((ratio) => {
-              const y = PT + (HEIGHT - PT - PB) * ratio
+            {Array.from({ length: GRID_LINES + 1 }).map((_, index) => {
+              const ratio = index / GRID_LINES
+              const y = PLOT_TOP + (HEIGHT - PLOT_TOP - PLOT_BOTTOM) * ratio
+              const axisValue = maxValue * (1 - ratio)
+
               return (
-                <line
-                  key={ratio}
-                  x1={PX}
-                  x2={WIDTH - PX}
-                  y1={y}
-                  y2={y}
-                  stroke="var(--app-divider)"
-                  strokeWidth="1"
-                />
+                <g key={index}>
+                  <line
+                    x1={PLOT_LEFT}
+                    x2={WIDTH - PLOT_RIGHT}
+                    y1={y}
+                    y2={y}
+                    stroke="var(--app-divider)"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={PLOT_LEFT - 12}
+                    y={y + 4}
+                    textAnchor="end"
+                    fontSize="10"
+                    fill="var(--app-text-secondary)"
+                  >
+                    {formatAxisValue(axisValue)}
+                  </text>
+                </g>
               )
             })}
 
-            <path
-              d={buildPath(points.map((item) => item.created), maxValue)}
-              fill="none"
-              stroke="var(--app-primary)"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            <path
-              d={buildPath(points.map((item) => item.won), maxValue)}
-              fill="none"
-              stroke="var(--success)"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            <path
-              d={buildPath(points.map((item) => item.lost), maxValue)}
-              fill="none"
-              stroke="var(--destructive)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeDasharray="7 6"
-            />
+            <text x="10" y="16" fontSize="10" fill="var(--app-text-secondary)">
+              {mode === "count" ? text.axis.count : text.axis.value}
+            </text>
+
+            <path d={buildPath(points.map((item) => item.created), maxValue)} fill="none" stroke="var(--app-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={buildPath(points.map((item) => item.won), maxValue)} fill="none" stroke="var(--success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={buildPath(points.map((item) => item.lost), maxValue)} fill="none" stroke="var(--destructive)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="7 6" />
 
             {points.map((point, index) => {
-              const x =
-                PX +
-                index *
-                  ((WIDTH - PX * 2) / Math.max(1, points.length - 1))
+              const created = getPoint(index, point.created, points.length, maxValue)
+              const won = getPoint(index, point.won, points.length, maxValue)
+              const lost = getPoint(index, point.lost, points.length, maxValue)
+              const chartWidth = WIDTH - PLOT_LEFT - PLOT_RIGHT
+              const hitWidth = Math.max(40, chartWidth / Math.max(points.length, 1))
+
               return (
-                <text
+                <g
                   key={`${point.label}-${index}`}
-                  x={x}
-                  y={HEIGHT - 12}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="var(--app-text-secondary)"
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onFocus={() => setHoveredIndex(index)}
+                  tabIndex={0}
+                  className="cursor-pointer outline-none"
                 >
-                  {point.label}
-                </text>
+                  <rect x={created.x - hitWidth / 2} y={PLOT_TOP} width={hitWidth} height={HEIGHT - PLOT_TOP - PLOT_BOTTOM} fill="transparent" />
+
+                  {[created, won, lost].map((item, pointIndex) => (
+                    <circle
+                      key={pointIndex}
+                      cx={item.x}
+                      cy={item.y}
+                      r={hoveredIndex === index ? 5 : 3.5}
+                      fill={pointIndex === 0 ? "var(--app-primary)" : pointIndex === 1 ? "var(--success)" : "var(--destructive)"}
+                      stroke="var(--app-surface)"
+                      strokeWidth="2"
+                    />
+                  ))}
+
+                  <text
+                    x={created.x}
+                    y={HEIGHT - 14}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill={hoveredIndex === index ? "var(--app-heading)" : "var(--app-text-secondary)"}
+                  >
+                    {point.label}
+                  </text>
+                </g>
               )
             })}
           </svg>
         </div>
+
+        {mode === "value" ? (
+          <div className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
+            {text.axis.valueHint}
+          </div>
+        ) : null}
       </div>
     </section>
   )
 }
+
+type DonutSegmentKey = "active" | "won" | "lost"
 
 export function OpportunityStatusDonut({
   portfolio,
@@ -240,22 +328,43 @@ export function OpportunityStatusDonut({
   portfolio: DashboardSummary["portfolio"]
 }) {
   const text = uiText.dashboard.status
-  const active = toFiniteNumber(portfolio.active.percentage)
-  const won = toFiniteNumber(portfolio.won.percentage)
-  const lost = Math.max(0, 100 - active - won)
+  const [hoveredSegment, setHoveredSegment] = useState<DonutSegmentKey | null>(null)
 
-  const gradient = `conic-gradient(
-    var(--app-primary) 0% ${active}%,
-    var(--success) ${active}% ${active + won}%,
-    var(--destructive) ${active + won}% ${active + won + lost}%,
-    var(--secondary) ${active + won + lost}% 100%
-  )`
+  const segments = [
+    {
+      key: "active" as const,
+      label: text.active,
+      count: portfolio.active.count,
+      percentage: toFiniteNumber(portfolio.active.percentage),
+      stroke: "var(--app-primary)",
+      dot: "bg-[var(--app-primary)]",
+    },
+    {
+      key: "won" as const,
+      label: text.won,
+      count: portfolio.won.count,
+      percentage: toFiniteNumber(portfolio.won.percentage),
+      stroke: "var(--success)",
+      dot: "bg-[var(--success)]",
+    },
+    {
+      key: "lost" as const,
+      label: text.lost,
+      count: portfolio.lost.count,
+      percentage: toFiniteNumber(portfolio.lost.percentage),
+      stroke: "var(--destructive)",
+      dot: "bg-[var(--destructive)]",
+    },
+  ]
 
-  const rows = [
-    [text.active, portfolio.active.count, portfolio.active.percentage, "bg-[var(--app-primary)]"],
-    [text.won, portfolio.won.count, portfolio.won.percentage, "bg-[var(--success)]"],
-    [text.lost, portfolio.lost.count, portfolio.lost.percentage, "bg-[var(--destructive)]"],
-  ] as const
+  let offset = 0
+  const renderedSegments = segments.map((segment) => {
+    const current = { ...segment, offset }
+    offset += segment.percentage
+    return current
+  })
+
+  const hovered = segments.find((item) => item.key === hoveredSegment)
 
   return (
     <section className="relative overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
@@ -264,12 +373,51 @@ export function OpportunityStatusDonut({
         {text.description}
       </p>
 
-      <div className="mt-6 grid place-items-center">
-        <div
-          className="grid size-48 place-items-center rounded-full"
-          style={{ background: gradient }}
-        >
-          <div className="grid size-32 place-items-center rounded-full border border-[var(--app-divider)] bg-[var(--app-surface)] text-center shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
+      <div className="relative mt-6 grid place-items-center">
+        {hovered ? (
+          <div className="pointer-events-none absolute top-0 z-10 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 px-4 py-3 text-center shadow-[var(--app-shadow-popover)] backdrop-blur">
+            <strong className="block text-xs text-[var(--app-heading)]">{hovered.label}</strong>
+            <span className="mt-1 block text-[11px] text-[var(--app-text-secondary)]">
+              {text.legend.countLabel}: {formatCount(hovered.count)} {uiText.dashboard.units.opportunity}
+            </span>
+            <span className="mt-1 block text-[11px] text-[var(--app-text-secondary)]">
+              {text.legend.shareLabel}: {formatPercent(hovered.percentage)}
+            </span>
+          </div>
+        ) : null}
+
+        <div className="relative size-52">
+          <svg
+            viewBox="0 0 120 120"
+            className="size-full -rotate-90"
+            role="img"
+            aria-label={text.ariaLabel}
+            onMouseLeave={() => setHoveredSegment(null)}
+          >
+            <circle cx="60" cy="60" r="42" fill="none" stroke="var(--secondary)" strokeWidth="18" pathLength="100" />
+
+            {renderedSegments.map((segment) => (
+              <circle
+                key={segment.key}
+                cx="60"
+                cy="60"
+                r="42"
+                fill="none"
+                stroke={segment.stroke}
+                strokeWidth={hoveredSegment === segment.key ? 20 : 18}
+                pathLength="100"
+                strokeDasharray={`${Math.max(segment.percentage, 0.001)} ${100 - Math.max(segment.percentage, 0.001)}`}
+                strokeDashoffset={-segment.offset}
+                strokeLinecap="butt"
+                className="cursor-pointer transition-all duration-200 outline-none"
+                onMouseEnter={() => setHoveredSegment(segment.key)}
+                onFocus={() => setHoveredSegment(segment.key)}
+                tabIndex={0}
+              />
+            ))}
+          </svg>
+
+          <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
             <div>
               <strong className="block text-3xl font-bold text-[var(--app-heading)]">
                 {formatCount(portfolio.total.count)}
@@ -282,25 +430,32 @@ export function OpportunityStatusDonut({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-2">
-        {rows.map(([label, count, percentage, dot]) => (
-          <div
-            key={label}
-            className="flex items-center justify-between rounded-xl bg-[var(--app-background)]/70 px-3 py-2.5"
+      <div className="mt-6 grid gap-2.5">
+        {segments.map((segment) => (
+          <button
+            key={segment.key}
+            type="button"
+            className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-4 rounded-xl bg-[var(--app-background)]/70 px-3 py-3 text-start transition hover:bg-[var(--app-background)]"
+            onMouseEnter={() => setHoveredSegment(segment.key)}
+            onMouseLeave={() => setHoveredSegment(null)}
+            onFocus={() => setHoveredSegment(segment.key)}
+            onBlur={() => setHoveredSegment(null)}
           >
-            <div className="flex items-center gap-2.5">
-              <span className={`size-2.5 rounded-full ${dot}`} />
-              <span className="text-xs font-medium text-[var(--app-heading)]">
-                {label}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <strong>{formatCount(count)}</strong>
-              <span className="text-[var(--app-text-secondary)]">
-                {formatPercent(percentage)}
-              </span>
-            </div>
-          </div>
+            <span className="flex items-center gap-2.5">
+              <span className={`size-2.5 rounded-full ${segment.dot}`} />
+              <strong className="text-xs text-[var(--app-heading)]">{segment.label}</strong>
+            </span>
+
+            <span className="text-end">
+              <span className="block text-[10px] text-[var(--app-text-secondary)]">{text.legend.countLabel}</span>
+              <strong className="mt-0.5 block text-xs text-[var(--app-heading)]">{formatCount(segment.count)}</strong>
+            </span>
+
+            <span className="text-end">
+              <span className="block text-[10px] text-[var(--app-text-secondary)]">{text.legend.shareLabel}</span>
+              <strong className="mt-0.5 block text-xs text-[var(--app-heading)]">{formatPercent(segment.percentage)}</strong>
+            </span>
+          </button>
         ))}
       </div>
     </section>

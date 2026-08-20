@@ -136,8 +136,6 @@ export const uiText = {
 
     trend: {
       title: "ریتم ۱۲ ماهه فرصت‌ها",
-      description:
-        "حرکت فرصت‌های ایجادشده، موفق و از دست‌رفته بر اساس ماه‌های واقعی تقویم جلالی",
       modes: {
         count: "تعداد",
         value: "ارزش",
@@ -147,6 +145,17 @@ export const uiText = {
         won: "موفق",
         lost: "از دست‌رفته",
       },
+      axis: {
+        count: "تعداد فرصت",
+        value: "ارزش",
+        valueHint: "مقادیر محور عمودی در حالت ارزش به‌صورت خلاصه نمایش داده می‌شوند.",
+      },
+      activeSummary: {
+        countPrefix: "تعداد فرصت‌های فعال تا",
+        valuePrefix: "ارزش فرصت‌های فعال تا",
+        monthSuffix: "ماه",
+      },
+      currentPeriodFallback: "ماه جاری",
       ariaLabel: "نمودار روند دوازده‌ماهه فرصت‌ها",
     },
 
@@ -158,6 +167,11 @@ export const uiText = {
       active: "فعال",
       won: "موفق",
       lost: "از دست‌رفته",
+      ariaLabel: "نمودار ترکیب سبد فرصت‌ها",
+      legend: {
+        countLabel: "تعداد فرصت",
+        shareLabel: "سهم از کل",
+      },
     },
 
     attention: {
