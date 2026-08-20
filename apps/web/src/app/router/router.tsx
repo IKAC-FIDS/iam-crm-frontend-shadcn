@@ -7,7 +7,7 @@ import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
 import { AccountProfilePage } from "@/features/account/pages/AccountProfilePage"
 import { LoginPage } from "@/features/auth/pages/LoginPage"
-import { DashboardPlaceholderPage } from "@/features/dashboard/pages/DashboardPlaceholderPage"
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 
 import { PermissionRoute } from "./PermissionRoute"
@@ -42,7 +42,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: "/dashboard",
-            element: <DashboardPlaceholderPage />,
+            element: <DashboardPage />,
           },
           {
             path: "/account/profile",
