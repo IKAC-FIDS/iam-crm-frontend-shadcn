@@ -5,6 +5,8 @@ import type {
   CompaniesQuery,
   Company,
   PaginatedCompanies,
+  CreateCompanyPayload,
+  UpdateCompanyPayload,
 } from "../types/company.types"
 
 interface PaginatedCompaniesEnvelope {
@@ -53,5 +55,19 @@ export async function getCompanies(query: CompaniesQuery) {
 
 export async function getCompany(companyId: string) {
   const response = await api.get(`/companies/${companyId}`)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+
+export async function createCompany(payload: CreateCompanyPayload) {
+  const response = await api.post("/companies", payload)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function updateCompany(
+  companyId: string,
+  payload: UpdateCompanyPayload,
+) {
+  const response = await api.patch(`/companies/${companyId}`, payload)
   return unwrapApiResponse<Company>(response.data)
 }

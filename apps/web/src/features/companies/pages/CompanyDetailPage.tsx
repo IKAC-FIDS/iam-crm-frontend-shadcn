@@ -4,10 +4,12 @@ import {
   CalendarClock,
   CircleDollarSign,
   ExternalLink,
+  Pencil,
   MapPin,
   Phone,
   UsersRound,
 } from "lucide-react"
+import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -17,13 +19,16 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { Button } from "@workspace/ui/components/button"
 import { uiText } from "@/config/uiText"
+import { useAuthStore } from "@/store/authStore"
 
 import { CompanyAvatar } from "../components/CompanyAvatar"
+import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
 import { CompanyMetricCard } from "../components/CompanyMetricCard"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { CompanyTimeline } from "../components/CompanyTimeline"
 import { useCompany } from "../hooks/useCompanies"
+import { useUpdateCompany } from "../hooks/useCompanyMutations"
 import {
   activityStatusLabel,
   companyDisplayName,
@@ -38,7 +43,10 @@ export function CompanyDetailPage() {
   const text = uiText.companies.detail
   const navigate = useNavigate()
   const { companyId = "" } = useParams<{ companyId: string }>()
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const [editOpen, setEditOpen] = useState(false)
   const query = useCompany(companyId)
+  const updateMutation = useUpdateCompany(companyId)
 
   if (query.isLoading) return <LoadingState />
 
@@ -125,6 +133,16 @@ export function CompanyDetailPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {permissions.includes("company:update") && !company.archivedAt ? (
+                <Button
+                  type="button"
+                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                  onClick={() => setEditOpen(true)}
+                >
+                  <Pencil className="size-4" />
+                  {text.edit}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -428,6 +446,19 @@ export function CompanyDetailPage() {
           </SurfaceCard>
         </div>
       </div>
+
+      <CompanyFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        mode="edit"
+        company={company}
+        isPending={updateMutation.isPending}
+        submitError={updateMutation.error}
+        onSubmit={async (payload) => {
+          await updateMutation.mutateAsync(payload)
+          setEditOpen(false)
+        }}
+      />
     </div>
   )
 }

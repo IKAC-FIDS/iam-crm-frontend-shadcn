@@ -241,6 +241,7 @@ export const uiText = {
 
     detail: {
       back: "بازگشت به شرکت‌ها",
+      edit: "ویرایش شرکت",
       active: "فعال",
       archived: "بایگانی‌شده",
       unassigned: "بدون مالک",
@@ -312,6 +313,103 @@ export const uiText = {
         legalDocuments: "اسناد حقوقی",
         callCard: "کال کارت",
       },
+    },
+
+    form: {
+      createTitle: "ثبت شرکت جدید",
+      createDescription:
+        "اطلاعات پایه، بازار و مشخصات ثبتی شرکت را در یک فرم یکپارچه ثبت کنید.",
+      editTitle: "ویرایش اطلاعات شرکت",
+      editDescription:
+        "اطلاعات حساب سازمانی را با حفظ ساختار فعلی و بدون خروج از صفحه بروزرسانی کنید.",
+      createSubmit: "ثبت شرکت",
+      editSubmit: "ذخیره تغییرات",
+      close: "بستن فرم",
+      sideBadge: "پروفایل سازمانی",
+      previewFallback: "شرکت جدید",
+      sideDescription:
+        "اطلاعات این فرم هسته پروفایل ۳۶۰ درجه شرکت را می‌سازد و در فرآیندهای فروش استفاده می‌شود.",
+      qualityTitle: "ثبت داده با کیفیت",
+      qualityDescription:
+        "نام حقوقی دقیق و اطلاعات تماس معتبر، جستجو و گزارش‌گیری CRM را قابل‌اعتمادتر می‌کند.",
+      journey: {
+        identity: "هویت شرکت",
+        identityHint: "نام، نوع مالکیت و وضعیت فعالیت",
+        market: "بازار و ارتباط",
+        marketHint: "صنعت، اولویت، منبع و اطلاعات تماس",
+        legal: "اطلاعات ثبتی",
+        legalHint: "شناسه‌ها، تاریخ تأسیس و اندازه سازمان",
+      },
+      sections: {
+        identity: "هویت و وضعیت سازمان",
+        identityDescription:
+          "اطلاعاتی که شرکت را در سطح سازمانی و عملیاتی تعریف می‌کند.",
+        market: "پروفایل بازار و ارتباط",
+        marketDescription:
+          "اطلاعات موردنیاز تیم فروش برای شناخت و برقراری ارتباط با حساب.",
+        legal: "اطلاعات ثبتی و اندازه شرکت",
+        legalDescription:
+          "مشخصات حقوقی و داده‌های سازمانی برای شناخت دقیق‌تر مشتری.",
+      },
+      fields: {
+        legalName: "نام حقوقی",
+        brandName: "نام تجاری",
+        industry: "صنعت",
+        ownership: "نوع مالکیت",
+        priority: "اولویت حساب",
+        source: "منبع ورود",
+        city: "شهر / استان",
+        phone: "تلفن مرکزی",
+        website: "وب‌سایت",
+        activityStatus: "وضعیت فعالیت",
+        registrationNumber: "شماره ثبت",
+        nationalId: "شناسه ملی",
+        economicCode: "کد اقتصادی",
+        establishmentDate: "تاریخ تأسیس",
+        employeeCount: "تعداد پرسنل",
+        registeredCapital: "سرمایه ثبتی",
+      },
+      placeholders: {
+        legalName: "مثلاً شرکت ره‌آورد سامانه‌های امن",
+        brandName: "نام تجاری یا نام شناخته‌شده",
+        industry: "مثلاً فناوری اطلاعات",
+        source: "مثلاً معرفی، رویداد یا وب‌سایت",
+        city: "مثلاً تهران",
+        phone: "+982112345678",
+        website: "https://example.com",
+        establishmentDate: "انتخاب تاریخ تأسیس",
+      },
+      validation: {
+        legalNameRequired: "نام حقوقی الزامی است",
+        invalidPhone: "شماره تماس معتبر نیست",
+        invalidCapital: "سرمایه ثبتی باید عدد معتبر باشد",
+        invalidEmployeeCount: "تعداد پرسنل باید عدد صحیح باشد",
+      },
+      selectPlaceholder: "انتخاب کنید",
+      priorities: {
+        LOW: "کم",
+        MEDIUM: "متوسط",
+        HIGH: "زیاد",
+        STRATEGIC: "استراتژیک",
+      },
+      ownerships: {
+        PRIVATE: "خصوصی",
+        STATE: "دولتی",
+        SEMI_STATE: "نیمه‌دولتی",
+        PUBLIC_LISTED: "بورسی",
+        BANK: "بانک",
+        HOLDING: "هلدینگ",
+      },
+      activityStatuses: {
+        ACTIVE: "فعال",
+        INACTIVE: "غیرفعال",
+        MERGED: "ادغام‌شده",
+        UNKNOWN: "نامشخص",
+      },
+      unsavedHint: "تغییرات ثبت‌نشده دارید.",
+      savedStateHint: "فرم آماده ثبت اطلاعات است.",
+      submitError:
+        "ثبت اطلاعات شرکت انجام نشد. اطلاعات واردشده را بررسی و دوباره تلاش کنید.",
     },
   },
 

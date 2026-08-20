@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Building2, Eye, UsersRound } from "lucide-react"
+import { Building2, Eye, Plus, UsersRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { DataTableShell, type DataTableColumn } from "@/components/shared/DataTableShell"
@@ -12,10 +12,13 @@ import { PaginationControls } from "@/components/shared/PaginationControls"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@workspace/ui/components/button"
 import { uiText } from "@/config/uiText"
+import { useAuthStore } from "@/store/authStore"
 
 import { CompanyAvatar } from "../components/CompanyAvatar"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
+import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { useCompanies } from "../hooks/useCompanies"
+import { useCreateCompany } from "../hooks/useCompanyMutations"
 import type {
   Company,
   CompanyPriority,
@@ -31,7 +34,11 @@ const pageSize = 20
 export function CompaniesPage() {
   const text = uiText.companies.list
   const navigate = useNavigate()
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const canCreate = permissions.includes("company:create")
+  const createMutation = useCreateCompany()
   const [page, setPage] = useState(1)
+  const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [priority, setPriority] = useState<CompanyPriority | "">("")
   const [ownershipScope, setOwnershipScope] = useState<OwnershipScope>("ALL")
@@ -152,6 +159,18 @@ export function CompaniesPage() {
       <PageHeader
         title={text.title}
         description={text.description}
+        actions={
+          canCreate ? (
+            <Button
+              type="button"
+              className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+              onClick={() => setCreateOpen(true)}
+            >
+              <Plus className="size-4" />
+              {text.create}
+            </Button>
+          ) : null
+        }
       />
 
       <DataTableToolbar
@@ -244,6 +263,19 @@ export function CompaniesPage() {
           />
         </>
       )}
+
+      <CompanyFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        mode="create"
+        isPending={createMutation.isPending}
+        submitError={createMutation.error}
+        onSubmit={async (payload) => {
+          const company = await createMutation.mutateAsync(payload)
+          setCreateOpen(false)
+          navigate(`/companies/${company.id}`)
+        }}
+      />
     </div>
   )
 }

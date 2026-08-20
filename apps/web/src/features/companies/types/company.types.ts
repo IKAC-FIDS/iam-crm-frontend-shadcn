@@ -1,9 +1,18 @@
 export const COMPANY_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as const
 export const COMPANY_ACTIVITY_STATUSES = ["ACTIVE", "INACTIVE", "MERGED", "UNKNOWN"] as const
+export const COMPANY_OWNERSHIPS = [
+  "PRIVATE",
+  "STATE",
+  "SEMI_STATE",
+  "PUBLIC_LISTED",
+  "BANK",
+  "HOLDING",
+] as const
 export const OWNERSHIP_SCOPES = ["ALL", "MINE", "TEAM", "UNASSIGNED"] as const
 
 export type CompanyPriority = (typeof COMPANY_PRIORITIES)[number]
 export type CompanyActivityStatus = (typeof COMPANY_ACTIVITY_STATUSES)[number]
+export type CompanyOwnership = (typeof COMPANY_OWNERSHIPS)[number]
 export type OwnershipScope = (typeof OWNERSHIP_SCOPES)[number]
 
 export interface CompanyOwner {
@@ -80,7 +89,7 @@ export interface Company {
   industry?: string | null
   industryId?: string | null
   industryRef?: IndustryRef | null
-  ownership?: string | null
+  ownership?: CompanyOwnership | null
   priority?: CompanyPriority | null
   ownerId?: string | null
   owner?: CompanyOwner | null
@@ -133,3 +142,26 @@ export interface CompaniesQuery {
   includeArchived?: boolean
   archivedOnly?: boolean
 }
+
+
+export interface CompanyMutationPayload {
+  legalName: string
+  brandName?: string
+  industry?: string
+  ownership?: CompanyOwnership
+  priority?: CompanyPriority
+  website?: string
+  headOfficeCity?: string
+  centralPhone?: string | null
+  source?: string
+  registrationNumber?: string
+  nationalId?: string
+  economicCode?: string
+  establishmentDate?: string
+  activityStatus?: CompanyActivityStatus
+  registeredCapital?: string
+  employeeCount?: number
+}
+
+export type CreateCompanyPayload = CompanyMutationPayload
+export type UpdateCompanyPayload = Partial<CompanyMutationPayload>
