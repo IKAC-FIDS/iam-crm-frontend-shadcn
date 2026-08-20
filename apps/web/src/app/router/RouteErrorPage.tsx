@@ -12,22 +12,22 @@ export function RouteErrorPage() {
   const navigate = useNavigate()
 
   return (
-    <main className="grid min-h-svh place-items-center bg-[#EFF5FA] p-6">
-      <div className="w-full max-w-xl rounded-[24px] border border-[#E4EAF3] bg-[#FCFCFF] p-8 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
-        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#FFDAD6] text-[#BA1A1A]">
+    <main className="grid min-h-svh place-items-center bg-[var(--app-background)] p-6">
+      <div className="w-full max-w-xl rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center shadow-[var(--app-shadow-elevated)]">
+        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--destructive-soft)] text-[var(--destructive)]">
           <AlertTriangle className="size-6" />
         </div>
 
-        <h1 className="mt-5 text-xl font-bold text-[#0F172A]">
+        <h1 className="mt-5 text-xl font-bold text-[var(--app-heading)]">
           {uiText.errors.route.title}
         </h1>
 
-        <p className="mt-3 text-sm leading-7 text-[#64748B]">
+        <p className="mt-3 text-sm leading-7 text-[var(--app-text-secondary)]">
           {uiText.errors.route.description}
         </p>
 
         <Button
-          className="mt-6 rounded-xl bg-[#0053B2] hover:bg-[#004A9F]"
+          className="mt-6 rounded-xl bg-[var(--app-primary)] hover:bg-[var(--app-primary-hover)]"
           onClick={() => navigate("/dashboard", { replace: true })}
         >
           <ArrowRight className="size-4" />

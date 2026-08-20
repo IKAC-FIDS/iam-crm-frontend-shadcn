@@ -39,35 +39,35 @@ export function AppHeader() {
     user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#E4EAF3]/80 bg-[#FCFCFF]/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-[var(--app-divider)]/80 bg-[var(--app-surface)]/85 backdrop-blur-xl">
       <div className="flex min-h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <SidebarTrigger
           aria-label={uiText.common.openCloseMainMenu}
-          className="size-9 rounded-xl text-[#55677F] hover:bg-[#EFF5FA] hover:text-[#0053B2]"
+          className="size-9 rounded-xl text-[var(--app-primary-alt)] hover:bg-[var(--app-background)] hover:text-[var(--app-primary)]"
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-3">
-            <h1 className="truncate text-lg font-bold text-[#0F172A]">
+            <h1 className="truncate text-lg font-bold text-[var(--app-heading)]">
               {title}
             </h1>
 
-            <div className="hidden h-4 w-px bg-[#E4EAF3] sm:block" />
+            <div className="hidden h-4 w-px bg-[var(--app-divider)] sm:block" />
 
-            <nav className="hidden min-w-0 items-center gap-1 text-xs text-[#64748B] sm:flex">
+            <nav className="hidden min-w-0 items-center gap-1 text-xs text-[var(--app-text-secondary)] sm:flex">
               {breadcrumbs.map((item, index) => (
                 <div
                   key={`${item.label}-${index}`}
                   className="flex min-w-0 items-center gap-1"
                 >
                   {index > 0 ? (
-                    <ChevronLeft className="size-3 shrink-0 text-[#C2CAD6]" />
+                    <ChevronLeft className="size-3 shrink-0 text-[var(--app-outline)]" />
                   ) : null}
 
                   {item.to ? (
                     <Link
                       to={item.to}
-                      className="truncate transition hover:text-[#0053B2]"
+                      className="truncate transition hover:text-[var(--app-primary)]"
                     >
                       {item.label}
                     </Link>
@@ -79,7 +79,7 @@ export function AppHeader() {
             </nav>
           </div>
 
-          <p className="mt-1 hidden text-[11px] text-[#64748B] lg:block">
+          <p className="mt-1 hidden text-[11px] text-[var(--app-text-secondary)] lg:block">
             {uiText.app.workspaceSubtitle}
           </p>
         </div>
@@ -88,12 +88,11 @@ export function AppHeader() {
           type="button"
           variant="ghost"
           size="icon"
-          className="relative size-10 rounded-xl text-[#55677F] hover:bg-[#EFF5FA] hover:text-[#0053B2]"
+          className="size-10 rounded-xl text-[var(--app-primary-alt)] hover:bg-[var(--app-background)] hover:text-[var(--app-primary)]"
           aria-label={uiText.common.notifications}
           onClick={() => navigate("/notifications")}
         >
           <Bell className="size-5" />
-          <span className="absolute end-2 top-2 size-2 rounded-full border-2 border-[#FCFCFF] bg-[#E91E63]" />
         </Button>
 
         <DropdownMenu>
@@ -102,19 +101,19 @@ export function AppHeader() {
               <Button
                 type="button"
                 variant="ghost"
-                className="h-11 gap-3 rounded-2xl px-2 hover:bg-[#EFF5FA]"
+                className="h-11 gap-3 rounded-2xl px-2 hover:bg-[var(--app-background)]"
               />
             }
           >
-            <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#D6E3FF] to-[#D0E5FB] text-sm font-bold text-[#003F88] ring-1 ring-[#0053B2]/10">
+            <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[var(--app-primary-soft)] to-[var(--info-light)] text-sm font-bold text-[var(--app-primary-active)] ring-1 ring-[var(--app-primary)]/10">
               {initial}
             </div>
 
             <div className="hidden min-w-0 text-start sm:grid">
-              <span className="max-w-40 truncate text-sm font-semibold text-[#0F172A]">
+              <span className="max-w-40 truncate text-sm font-semibold text-[var(--app-heading)]">
                 {user?.fullName}
               </span>
-              <span className="max-w-40 truncate text-[11px] text-[#64748B]">
+              <span className="max-w-40 truncate text-[11px] text-[var(--app-text-secondary)]">
                 {user?.roleName || user?.role}
               </span>
             </div>
@@ -122,18 +121,18 @@ export function AppHeader() {
 
           <DropdownMenuContent
             align="end"
-            className="w-64 rounded-2xl border-[#E4EAF3] p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
+            className="w-64 rounded-2xl border-[var(--app-divider)] p-2 shadow-[var(--app-shadow-popover)]"
             dir="rtl"
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="px-2 py-2">
                 <div className="grid gap-0.5">
-                  <span className="text-sm font-semibold text-[#0F172A]">
+                  <span className="text-sm font-semibold text-[var(--app-heading)]">
                     {user?.fullName}
                   </span>
                   <span
                     dir="ltr"
-                    className="text-right text-xs font-normal text-[#64748B]"
+                    className="text-right text-xs font-normal text-[var(--app-text-secondary)]"
                   >
                     {user?.email}
                   </span>
@@ -164,7 +163,7 @@ export function AppHeader() {
             <DropdownMenuItem
               disabled={isLoggingOut}
               onClick={() => void logout()}
-              className="rounded-xl text-[#BA1A1A] focus:bg-[#FFDAD6] focus:text-[#BA1A1A]"
+              className="rounded-xl text-[var(--destructive)] focus:bg-[var(--destructive-soft)] focus:text-[var(--destructive)]"
             >
               <LogOut className="size-4" />
               {isLoggingOut

@@ -17,6 +17,7 @@ export const uiText = {
     underDevelopment: "در حال توسعه",
     notAvailable: "-",
     fallbackUserInitial: "U",
+    retry: "تلاش دوباره",
   },
 
   navigation: {
@@ -55,6 +56,7 @@ export const uiText = {
       emailLabel: "ایمیل سازمانی",
       emailPlaceholder: "your_mail@rsa.ir",
       passwordLabel: "رمز عبور",
+      passwordPlaceholder: "••••••••",
       forgotPassword: "رمز عبور را فراموش کرده‌اید؟",
       submit: "ورود به سامانه",
       submitting: "در حال ورود...",
@@ -148,7 +150,8 @@ export const uiText = {
       axis: {
         count: "تعداد فرصت",
         value: "ارزش",
-        valueHint: "مقادیر محور عمودی در حالت ارزش به‌صورت خلاصه نمایش داده می‌شوند.",
+        valueHint:
+          "مقادیر محور عمودی در حالت ارزش به‌صورت خلاصه نمایش داده می‌شوند.",
       },
       activeSummary: {
         countPrefix: "تعداد فرصت‌های فعال تا",

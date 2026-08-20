@@ -15,10 +15,8 @@
 }
 
 :root {
-  /* Typography */
   --app-font-family: "BYekan", Tahoma, Arial, sans-serif;
 
-  /* NESHANE brand */
   --primary: #0053B2;
   --primary-foreground: #FFFFFF;
   --primary-hover: #004A9F;
@@ -27,7 +25,6 @@
   --primary-soft: #D6E3FF;
   --on-primary-container: #001B3D;
 
-  /* App surfaces */
   --background: #EFF5FA;
   --foreground: #0F172A;
   --card: #FCFCFF;
@@ -38,7 +35,6 @@
   --surface-soft: #F7FAFD;
   --surface-muted: #EFF5FA;
 
-  /* Neutrals */
   --secondary: #E4EAF3;
   --secondary-foreground: #0F172A;
   --muted: #E4EAF3;
@@ -48,10 +44,10 @@
   --outline: #C2CAD6;
   --ring: #0053B2;
 
-  /* Semantic */
   --accent: #D6E3FF;
   --accent-foreground: #001B3D;
   --destructive: #BA1A1A;
+  --destructive-soft: #FFDAD6;
   --success: #048A3B;
   --success-light: #E6F9EE;
   --warning: #F59E0B;
@@ -60,7 +56,6 @@
   --info-light: #D0E5FB;
   --brand-accent: #E91E63;
 
-  /* Explicit app aliases */
   --app-primary: #0053B2;
   --app-primary-hover: #004A9F;
   --app-primary-active: #003F88;
@@ -75,28 +70,33 @@
   --app-icon-muted: #64748B;
   --app-background: #EFF5FA;
   --app-surface: #FCFCFF;
+  --app-surface-soft: #F7FAFD;
   --app-divider: #E4EAF3;
   --app-outline: #C2CAD6;
+  --app-accent: #E91E63;
 
-  /* Chart palette */
   --app-chart-1: #0053B2;
   --app-chart-2: #55677F;
   --app-chart-3: #1371D3;
   --app-chart-4: #64748B;
 
-  /* Layout */
   --app-drawer-width: 260px;
   --app-content-max-width: 1680px;
 
-  /* Radius */
   --app-radius-sm: 6px;
   --app-radius-md: 8px;
   --app-radius-lg: 12px;
+  --app-radius-xl: 16px;
+  --app-radius-card: 20px;
+  --app-radius-feature: 24px;
+  --app-radius-hero: 28px;
 
-  /* Shadows */
   --app-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --app-shadow-card-hover: 0 14px 35px rgba(15, 23, 42, 0.07);
   --app-shadow-popover: 0 8px 24px rgba(15, 23, 42, 0.12);
-  --app-shadow-login: 0 10px 40px rgba(15, 23, 42, 0.14);
+  --app-shadow-elevated: 0 18px 50px rgba(15, 23, 42, 0.08);
+  --app-shadow-brand: 0 20px 50px rgba(0, 83, 178, 0.24);
+  --app-shadow-hero: 0 24px 70px rgba(0, 63, 136, 0.22);
 }
 
 html {
@@ -120,7 +120,6 @@ body {
       transparent 28rem
     ),
     var(--app-background);
-
   color: var(--app-on-surface);
 }
 
@@ -129,7 +128,6 @@ body {
   color: var(--app-on-primary-container);
 }
 
-/* Shared typography primitives */
 .font-app {
   font-family: var(--app-font-family);
 }
@@ -187,6 +185,17 @@ body {
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.6;
+}
+
+.ui-surface {
+  border: 1px solid var(--app-divider);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-card);
+}
+
+.ui-focus-ring:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
 }
 
 @media (max-width: 639px) {

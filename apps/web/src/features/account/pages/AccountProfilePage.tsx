@@ -21,20 +21,18 @@ export function AccountProfilePage() {
 
   return (
     <div className="grid gap-6">
-      <section className="relative overflow-hidden rounded-[24px] border border-[#D6E3FF] bg-[#FCFCFF] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)] sm:p-8">
-        <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[#D6E3FF]/60 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-primary-soft)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-elevated)] sm:p-8">
+        <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
 
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="grid size-20 shrink-0 place-items-center rounded-[26px] bg-gradient-to-br from-[#0053B2] to-[#003F88] text-2xl font-bold text-white shadow-[0_20px_50px_rgba(0,83,178,0.24)]">
+          <div className="grid size-20 shrink-0 place-items-center rounded-[26px] bg-gradient-to-br from-[var(--app-primary)] to-[var(--app-primary-active)] text-2xl font-bold text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
             {user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial}
           </div>
 
           <div className="min-w-0">
-            <h2 className="truncate text-2xl font-bold text-[#0F172A]">
-              {profileText.title}
-            </h2>
+            <h2 className="ui-page-title truncate">{profileText.title}</h2>
 
-            <p className="mt-2 text-sm leading-7 text-[#64748B]">
+            <p className="mt-2 text-sm leading-7 text-[var(--app-text-secondary)]">
               {profileText.description}
             </p>
           </div>
@@ -47,19 +45,16 @@ export function AccountProfilePage() {
           value={user?.fullName || uiText.common.notAvailable}
           icon={<UserRound className="size-5" />}
         />
-
         <ProfileCard
           label={profileText.cards.organizationRole}
           value={user?.roleName || user?.role || uiText.common.notAvailable}
           icon={<ShieldCheck className="size-5" />}
         />
-
         <ProfileCard
           label={profileText.cards.permissionCount}
           value={String(user?.permissions.length ?? 0)}
           icon={<KeyRound className="size-5" />}
         />
-
         <ProfileCard
           label={profileText.cards.sessionStatus}
           value={profileText.cards.sessionActive}
@@ -68,14 +63,11 @@ export function AccountProfilePage() {
         />
       </div>
 
-      <Card className="overflow-hidden rounded-[20px] border-[#E4EAF3] bg-[#FCFCFF] shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+      <Card className="overflow-hidden rounded-[var(--app-radius-card)] border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
         <CardContent className="p-0">
-          <div className="border-b border-[#E4EAF3] px-6 py-5">
-            <h3 className="font-bold text-[#0F172A]">
-              {profileText.account.title}
-            </h3>
-
-            <p className="mt-1 text-xs text-[#64748B]">
+          <div className="border-b border-[var(--app-divider)] px-6 py-5">
+            <h3 className="ui-card-title">{profileText.account.title}</h3>
+            <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
               {profileText.account.description}
             </p>
           </div>
@@ -86,20 +78,17 @@ export function AccountProfilePage() {
               value={user?.fullName}
               icon={<UserRound className="size-4" />}
             />
-
             <UserField
               label={profileText.account.fields.email}
               value={user?.email}
               icon={<AtSign className="size-4" />}
               ltr
             />
-
             <UserField
               label={profileText.account.fields.role}
               value={user?.roleName || user?.role}
               icon={<ShieldCheck className="size-4" />}
             />
-
             <UserField
               label={profileText.account.fields.permissionCount}
               value={String(user?.permissions.length ?? 0)}
@@ -124,21 +113,21 @@ function ProfileCard({
   success?: boolean
 }) {
   return (
-    <div className="rounded-[18px] border border-[#E4EAF3] bg-[#FCFCFF] p-5 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_35px_rgba(15,23,42,0.07)]">
+    <div className="rounded-[18px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[var(--app-shadow-card-hover)]">
       <div
         className={[
           "mb-4 grid size-10 place-items-center rounded-xl",
           success
-            ? "bg-[#E6F9EE] text-[#048A3B]"
-            : "bg-[#D6E3FF] text-[#0053B2]",
+            ? "bg-[var(--success-light)] text-[var(--success)]"
+            : "bg-[var(--app-primary-soft)] text-[var(--app-primary)]",
         ].join(" ")}
       >
         {icon}
       </div>
 
-      <div className="text-xs text-[#64748B]">{label}</div>
+      <div className="text-xs text-[var(--app-text-secondary)]">{label}</div>
 
-      <div className="mt-1 truncate text-base font-bold text-[#0F172A]">
+      <div className="mt-1 truncate text-base font-bold text-[var(--app-heading)]">
         {value}
       </div>
     </div>
@@ -157,15 +146,15 @@ function UserField({
   ltr?: boolean
 }) {
   return (
-    <div className="border-b border-[#E4EAF3] px-6 py-5 odd:sm:border-e">
-      <div className="flex items-center gap-2 text-xs text-[#64748B]">
+    <div className="border-b border-[var(--app-divider)] px-6 py-5 odd:sm:border-e">
+      <div className="flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
         {icon}
         {label}
       </div>
 
       <div
         dir={ltr ? "ltr" : undefined}
-        className="mt-2 text-sm font-semibold text-[#0F172A]"
+        className="mt-2 text-sm font-semibold text-[var(--app-heading)]"
       >
         {value || uiText.common.notAvailable}
       </div>

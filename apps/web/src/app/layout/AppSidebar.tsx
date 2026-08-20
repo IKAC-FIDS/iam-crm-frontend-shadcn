@@ -74,9 +74,7 @@ export function AppSidebar() {
   )
 
   useEffect(() => {
-    if (!activeGroup) {
-      return
-    }
+    if (!activeGroup) return
 
     setOpenGroups((current) => ({
       ...current,
@@ -86,10 +84,7 @@ export function AppSidebar() {
 
   const handleNavigate = (path: string) => {
     navigate(path)
-
-    if (isMobile) {
-      setOpenMobile(false)
-    }
+    if (isMobile) setOpenMobile(false)
   }
 
   const toggleGroup = (group: NavigationGroupKey) => {
@@ -101,6 +96,16 @@ export function AppSidebar() {
 
   const isCollapsed = state === "collapsed" && !isMobile
 
+  const routeButtonClass = (active: boolean, nested = false) =>
+    [
+      "relative rounded-xl text-[13px] transition-all duration-200",
+      nested ? "h-10 pe-3 ps-7" : "h-11 px-3",
+      "before:absolute before:inset-y-2 before:end-0 before:w-1 before:rounded-full before:transition-all",
+      active
+        ? "bg-[var(--app-primary-soft)] font-semibold text-[var(--app-on-primary-container)] before:bg-[var(--app-primary)]"
+        : "text-[var(--app-text-secondary)] before:bg-transparent hover:bg-[var(--app-background)] hover:text-[var(--app-heading)]",
+    ].join(" ")
+
   return (
     <Sidebar
       side="right"
@@ -108,25 +113,24 @@ export function AppSidebar() {
       dir="rtl"
       className="border-l-0"
     >
-      <SidebarHeader className="border-b border-[#E4EAF3] bg-[#FCFCFF] px-3 py-4">
+      <SidebarHeader className="border-b border-[var(--app-divider)] bg-[var(--app-surface)] px-3 py-4">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               tooltip={uiText.app.name}
               onClick={() => handleNavigate("/dashboard")}
-              className="h-14 rounded-2xl px-2 transition-colors hover:bg-[#EFF5FA]"
+              className="h-14 rounded-2xl px-2 transition-colors hover:bg-[var(--app-background)]"
             >
-              <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[#0053B2] to-[#003F88] text-white shadow-[0_8px_20px_rgba(0,83,178,0.20)]">
+              <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-[var(--app-primary)] to-[var(--app-primary-active)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
                 <ShieldCheck className="size-5" />
               </div>
 
               <div className="grid min-w-0 flex-1 text-start leading-tight">
-                <span className="truncate text-sm font-bold text-[#0F172A]">
+                <span className="truncate text-sm font-bold text-[var(--app-heading)]">
                   {uiText.app.name}
                 </span>
-
-                <span className="mt-1 truncate text-[11px] text-[#64748B]">
+                <span className="mt-1 truncate text-[11px] text-[var(--app-text-secondary)]">
                   {uiText.app.tagline}
                 </span>
               </div>
@@ -135,14 +139,11 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="bg-[#FCFCFF] px-2 py-3">
+      <SidebarContent className="bg-[var(--app-surface)] px-2 py-3">
         <SidebarMenu className="gap-1">
           {topLevelRoutes.map((route) => {
             const Icon = route.icon ?? LayoutDashboard
-            const active = isMenuRouteActive(
-              route.path,
-              location.pathname,
-            )
+            const active = isMenuRouteActive(route.path, location.pathname)
 
             return (
               <SidebarMenuItem key={route.id}>
@@ -150,19 +151,13 @@ export function AppSidebar() {
                   tooltip={route.label}
                   isActive={active}
                   onClick={() => handleNavigate(route.path)}
-                  className={[
-                    "relative h-11 rounded-xl px-3 text-[13px] transition-all duration-200",
-                    "before:absolute before:inset-y-2 before:end-0 before:w-1 before:rounded-full before:transition-all",
-                    active
-                      ? "bg-[#D6E3FF] font-bold text-[#001B3D] before:bg-[#0053B2]"
-                      : "font-semibold text-[#55677F] before:bg-transparent hover:bg-[#EFF5FA] hover:text-[#0F172A]",
-                  ].join(" ")}
+                  className={routeButtonClass(active)}
                 >
                   <Icon
                     className={
                       active
-                        ? "text-[#0053B2]"
-                        : "text-[#64748B]"
+                        ? "text-[var(--app-primary)]"
+                        : "text-[var(--app-icon-muted)]"
                     }
                   />
                   <span>{route.label}</span>
@@ -172,7 +167,7 @@ export function AppSidebar() {
           })}
         </SidebarMenu>
 
-        <div className="my-3 h-px bg-[#E4EAF3]" />
+        <div className="my-3 h-px bg-[var(--app-divider)]" />
 
         {groups.map(({ group, label, routes }) => {
           const GroupIcon = groupIcons[group]
@@ -192,8 +187,8 @@ export function AppSidebar() {
                         className={[
                           "mx-auto grid size-9 place-items-center rounded-xl transition-colors",
                           groupIsActive
-                            ? "bg-[#D6E3FF] text-[#0053B2]"
-                            : "text-[#64748B] hover:bg-[#EFF5FA] hover:text-[#0053B2]",
+                            ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
+                            : "text-[var(--app-icon-muted)] hover:bg-[var(--app-background)] hover:text-[var(--app-primary)]",
                         ].join(" ")}
                         aria-label={label}
                         title={label}
@@ -206,7 +201,7 @@ export function AppSidebar() {
                   <DropdownMenuContent
                     side="left"
                     align="start"
-                    className="w-56 rounded-2xl border-[#E4EAF3] p-2"
+                    className="w-56 rounded-2xl border-[var(--app-divider)] p-2"
                     dir="rtl"
                   >
                     {routes.map((route) => {
@@ -223,15 +218,15 @@ export function AppSidebar() {
                           className={[
                             "rounded-xl",
                             active
-                              ? "bg-[#D6E3FF] font-semibold text-[#001B3D]"
-                              : "text-[#55677F]",
+                              ? "bg-[var(--app-primary-soft)] font-semibold text-[var(--app-on-primary-container)]"
+                              : "text-[var(--app-primary-alt)]",
                           ].join(" ")}
                         >
                           <Icon
                             className={
                               active
-                                ? "text-[#0053B2]"
-                                : "text-[#64748B]"
+                                ? "text-[var(--app-primary)]"
+                                : "text-[var(--app-icon-muted)]"
                             }
                           />
                           {route.label}
@@ -255,8 +250,8 @@ export function AppSidebar() {
                 className={[
                   "flex h-11 w-full items-center gap-2 rounded-xl px-3 text-start transition-colors",
                   groupIsActive
-                    ? "bg-[#EFF5FA] text-[#001B3D]"
-                    : "text-[#55677F] hover:bg-[#EFF5FA] hover:text-[#0F172A]",
+                    ? "bg-[var(--app-background)] text-[var(--app-on-primary-container)]"
+                    : "text-[var(--app-primary-alt)] hover:bg-[var(--app-background)] hover:text-[var(--app-heading)]",
                 ].join(" ")}
                 aria-expanded={open}
               >
@@ -264,18 +259,16 @@ export function AppSidebar() {
                   className={[
                     "size-4 shrink-0",
                     groupIsActive
-                      ? "text-[#0053B2]"
-                      : "text-[#64748B]",
+                      ? "text-[var(--app-primary)]"
+                      : "text-[var(--app-icon-muted)]",
                   ].join(" ")}
                 />
 
-                <span className="flex-1 text-sm font-bold">
-                  {label}
-                </span>
+                <span className="flex-1 text-sm font-bold">{label}</span>
 
                 <ChevronDown
                   className={[
-                    "size-4 shrink-0 text-[#64748B] transition-transform duration-200",
+                    "size-4 shrink-0 text-[var(--app-icon-muted)] transition-transform duration-200",
                     open ? "rotate-180" : "",
                   ].join(" ")}
                 />
@@ -304,19 +297,13 @@ export function AppSidebar() {
                             tooltip={route.label}
                             isActive={active}
                             onClick={() => handleNavigate(route.path)}
-                            className={[
-                              "relative h-10 rounded-xl pe-3 ps-7 text-[13px] transition-all duration-200",
-                              "before:absolute before:inset-y-2 before:end-0 before:w-1 before:rounded-full before:transition-all",
-                              active
-                                ? "bg-[#D6E3FF] font-semibold text-[#001B3D] before:bg-[#0053B2]"
-                                : "text-[#64748B] before:bg-transparent hover:bg-[#EFF5FA] hover:text-[#0F172A]",
-                            ].join(" ")}
+                            className={routeButtonClass(active, true)}
                           >
                             <Icon
                               className={
                                 active
-                                  ? "text-[#0053B2]"
-                                  : "text-[#64748B]"
+                                  ? "text-[var(--app-primary)]"
+                                  : "text-[var(--app-icon-muted)]"
                               }
                             />
                             <span>{route.label}</span>
@@ -332,23 +319,23 @@ export function AppSidebar() {
         })}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[#E4EAF3] bg-[#FCFCFF] p-3">
+      <SidebarFooter className="border-t border-[var(--app-divider)] bg-[var(--app-surface)] p-3">
         <button
           type="button"
           onClick={() => handleNavigate("/account/profile")}
-          className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-[#EFF5FA] p-2.5 text-start transition-all duration-200 hover:border-[#C2CAD6] hover:bg-[#D6E3FF] group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0"
+          className="flex w-full items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)] p-2.5 text-start transition-all duration-200 hover:border-[var(--app-outline)] hover:bg-[var(--app-primary-soft)] group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0"
           aria-label={uiText.common.profile}
         >
-          <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-sm font-bold text-[#003F88] ring-1 ring-[#0053B2]/10">
+          <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--app-primary-soft)] text-sm font-bold text-[var(--app-primary-active)] ring-1 ring-[var(--app-primary)]/10">
             {initial}
           </div>
 
           <div className="grid min-w-0 flex-1 gap-0.5 group-data-[collapsible=icon]:hidden">
-            <span className="truncate text-sm font-semibold text-[#0F172A]">
+            <span className="truncate text-sm font-semibold text-[var(--app-heading)]">
               {user?.fullName}
             </span>
 
-            <span className="truncate text-[11px] text-[#55677F]">
+            <span className="truncate text-[11px] text-[var(--app-primary-alt)]">
               {user?.roleName || user?.role}
             </span>
           </div>
