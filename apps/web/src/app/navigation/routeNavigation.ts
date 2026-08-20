@@ -1,25 +1,74 @@
 import type { AuthUser } from "@/store/authStore"
+import { uiText } from "@/config/uiText"
 import { canAccessRoute } from "./routeAccess"
-import { appMenuRoutes, getRouteByPath, navigationGroups } from "./routeRegistry"
+import {
+  appMenuRoutes,
+  getNavigationGroupLabel,
+  getRouteByPath,
+  navigationGroups,
+} from "./routeRegistry"
 
 export function getVisibleMenuRoutes(user: AuthUser | null | undefined) {
-  return appMenuRoutes.filter((route) => canAccessRoute(user, route.access)).sort((a, b) => a.order - b.order)
+  return appMenuRoutes
+    .filter((route) => canAccessRoute(user, route.access))
+    .sort((left, right) => left.order - right.order)
 }
 
 export function getVisibleMenuGroups(user: AuthUser | null | undefined) {
   const routes = getVisibleMenuRoutes(user)
-  return navigationGroups.map((group) => ({ group, routes: routes.filter((route) => route.group === group) })).filter((entry) => entry.routes.length > 0)
+
+  return navigationGroups
+    .map((group) => ({
+      group,
+      label: getNavigationGroupLabel(group),
+      routes: routes.filter((route) => route.group === group),
+    }))
+    .filter((entry) => entry.routes.length > 0)
 }
 
 export function isMenuRouteActive(routePath: string, pathname: string) {
   return pathname === routePath || (routePath !== "/dashboard" && pathname.startsWith(`${routePath}/`))
 }
 
-export interface AppBreadcrumb { label: string; to?: string }
+export interface AppBreadcrumb {
+  label: string
+  to?: string
+}
 
 export function getRoutePresentation(pathname: string) {
+  if (pathname === "/account/profile") {
+    return {
+      title: uiText.common.profile,
+      breadcrumbs: [
+        { label: uiText.common.home, to: "/dashboard" },
+        { label: uiText.navigation.groups.account },
+        { label: uiText.common.profile },
+      ] as AppBreadcrumb[],
+    }
+  }
+
   const route = getRouteByPath(pathname)
-  if (!route) return { title: "داشبورد", breadcrumbs: [{ label: "خانه", to: "/dashboard" }] as AppBreadcrumb[] }
-  if (route.path === "/dashboard") return { title: route.label, breadcrumbs: [{ label: "داشبورد" }] as AppBreadcrumb[] }
-  return { title: route.label, breadcrumbs: [{ label: "خانه", to: "/dashboard" }, { label: route.group }, { label: route.label }] as AppBreadcrumb[] }
+
+  if (!route) {
+    return {
+      title: uiText.navigation.dashboard,
+      breadcrumbs: [{ label: uiText.common.home, to: "/dashboard" }] as AppBreadcrumb[],
+    }
+  }
+
+  if (route.path === "/dashboard") {
+    return {
+      title: route.label,
+      breadcrumbs: [{ label: uiText.navigation.dashboard }] as AppBreadcrumb[],
+    }
+  }
+
+  return {
+    title: route.label,
+    breadcrumbs: [
+      { label: uiText.common.home, to: "/dashboard" },
+      { label: getNavigationGroupLabel(route.group) },
+      { label: route.label },
+    ] as AppBreadcrumb[],
+  }
 }

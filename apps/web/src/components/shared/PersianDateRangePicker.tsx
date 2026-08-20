@@ -8,6 +8,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { Calendar } from "@workspace/ui/components/calendar"
 
+import { uiText } from "@/config/uiText"
 import { formatJalaliDate } from "@/lib/date/jalali"
 
 export type PersianDateRange = {
@@ -26,11 +27,11 @@ export function PersianDateRangePicker({
   value,
   onChange,
   disabled = false,
-  placeholder = "انتخاب بازه تاریخ",
+  placeholder = uiText.date.pickDateRange,
 }: PersianDateRangePickerProps) {
   const label =
     value?.from && value?.to
-      ? `${formatJalaliDate(value.from)} تا ${formatJalaliDate(value.to)}`
+      ? `${formatJalaliDate(value.from)} ${uiText.date.rangeSeparator} ${formatJalaliDate(value.to)}`
       : value?.from
         ? formatJalaliDate(value.from)
         : placeholder
@@ -50,10 +51,7 @@ export function PersianDateRangePicker({
         {label}
       </PopoverTrigger>
 
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-      >
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="range"
           selected={{

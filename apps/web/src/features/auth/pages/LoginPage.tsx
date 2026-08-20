@@ -17,9 +17,9 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
+import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuth } from "../hooks/useAuth"
-import { uiText } from "@/config/uiText"
 
 const loginText = uiText.auth.login
 
@@ -29,7 +29,6 @@ const loginSchema = z.object({
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
-
 
 export function LoginPage() {
   const { login, isLoading } = useAuth()
@@ -63,9 +62,7 @@ export function LoginPage() {
 
           <div>
             <div className="font-bold text-[#0F172A]">{uiText.app.name}</div>
-            <div className="text-xs text-[#64748B]">
-              {uiText.app.tagline}
-            </div>
+            <div className="text-xs text-[#64748B]">{uiText.app.tagline}</div>
           </div>
         </div>
 
@@ -111,7 +108,7 @@ export function LoginPage() {
                     id="email"
                     type="email"
                     autoComplete="email"
-                    placeholder="your_mail@rsa.ir"
+                    placeholder={loginText.emailPlaceholder}
                     dir="ltr"
                     className="h-12 rounded-xl border-[#E4EAF3] bg-white ps-10 text-left focus-visible:ring-[#0053B2]"
                     aria-invalid={Boolean(errors.email)}
@@ -207,7 +204,6 @@ export function LoginPage() {
       <section className="relative hidden min-h-svh overflow-hidden bg-[#003F88] p-12 text-white lg:flex xl:p-16">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -start-24 top-24 size-80 rounded-full bg-[#0053B2] blur-3xl" />
-
           <div className="absolute -bottom-20 end-0 size-96 rounded-full bg-[#1371D3]/40 blur-3xl" />
 
           <div
@@ -231,7 +227,6 @@ export function LoginPage() {
               <h2 className="text-4xl font-bold leading-[1.35] xl:whitespace-nowrap xl:text-5xl">
                 {loginText.hero.headline}
               </h2>
-
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import { Clock3 } from "lucide-react"
 
 import { Input } from "@workspace/ui/components/input"
 
+import { uiText } from "@/config/uiText"
 import { PersianDatePicker } from "./PersianDatePicker"
 
 type PersianDateTimePickerProps = {
@@ -16,7 +17,7 @@ export function PersianDateTimePicker({
   value,
   onChange,
   disabled = false,
-  placeholder = "انتخاب تاریخ و ساعت",
+  placeholder = uiText.date.pickDateTime,
 }: PersianDateTimePickerProps) {
   const timeValue = useMemo(() => {
     if (!value) {

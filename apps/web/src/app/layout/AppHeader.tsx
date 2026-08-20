@@ -3,8 +3,8 @@ import {
   ChevronLeft,
   LogOut,
   Settings,
+  UserRound,
 } from "lucide-react"
-
 import {
   Link,
   useLocation,
@@ -12,47 +12,31 @@ import {
 } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
-
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
-import {
-  SidebarTrigger,
-} from "@workspace/ui/components/sidebar"
-
+import { getRoutePresentation } from "@/app/navigation/routeNavigation"
+import { uiText } from "@/config/uiText"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { useAuthStore } from "@/store/authStore"
-
-import {
-  getRoutePresentation,
-} from "@/app/navigation/routeNavigation"
-
-import { uiText } from "@/config/uiText"
 
 export function AppHeader() {
   const location = useLocation()
   const navigate = useNavigate()
-
   const user = useAuthStore((state) => state.user)
-
-  const {
-    logout,
-    isLoggingOut,
-  } = useAuth()
-
-  const {
-    title,
-    breadcrumbs,
-  } = getRoutePresentation(location.pathname)
+  const { logout, isLoggingOut } = useAuth()
+  const { title, breadcrumbs } = getRoutePresentation(location.pathname)
 
   const initial =
-    user?.fullName?.trim().charAt(0) || "U"
+    user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#E4EAF3]/80 bg-[#FCFCFF]/85 backdrop-blur-xl">
@@ -88,9 +72,7 @@ export function AppHeader() {
                       {item.label}
                     </Link>
                   ) : (
-                    <span className="truncate">
-                      {item.label}
-                    </span>
+                    <span className="truncate">{item.label}</span>
                   )}
                 </div>
               ))}
@@ -98,7 +80,7 @@ export function AppHeader() {
           </div>
 
           <p className="mt-1 hidden text-[11px] text-[#64748B] lg:block">
-            فضای کاری مدیریت ارتباط با مشتری
+            {uiText.app.workspaceSubtitle}
           </p>
         </div>
 
@@ -111,7 +93,6 @@ export function AppHeader() {
           onClick={() => navigate("/notifications")}
         >
           <Bell className="size-5" />
-
           <span className="absolute end-2 top-2 size-2 rounded-full border-2 border-[#FCFCFF] bg-[#E91E63]" />
         </Button>
 
@@ -133,7 +114,6 @@ export function AppHeader() {
               <span className="max-w-40 truncate text-sm font-semibold text-[#0F172A]">
                 {user?.fullName}
               </span>
-
               <span className="max-w-40 truncate text-[11px] text-[#64748B]">
                 {user?.roleName || user?.role}
               </span>
@@ -145,29 +125,38 @@ export function AppHeader() {
             className="w-64 rounded-2xl border-[#E4EAF3] p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)]"
             dir="rtl"
           >
-            <DropdownMenuLabel className="px-2 py-2">
-              <div className="grid gap-0.5">
-                <span className="text-sm font-semibold text-[#0F172A]">
-                  {user?.fullName}
-                </span>
-
-                <span
-                  dir="ltr"
-                  className="text-right text-xs font-normal text-[#64748B]"
-                >
-                  {user?.email}
-                </span>
-              </div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="px-2 py-2">
+                <div className="grid gap-0.5">
+                  <span className="text-sm font-semibold text-[#0F172A]">
+                    {user?.fullName}
+                  </span>
+                  <span
+                    dir="ltr"
+                    className="text-right text-xs font-normal text-[#64748B]"
+                  >
+                    {user?.email}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onClick={() => navigate("/account/profile")}
+              className="rounded-xl"
+            >
+              <UserRound className="size-4" />
+              {uiText.common.profile}
+            </DropdownMenuItem>
 
             <DropdownMenuItem
               onClick={() => navigate("/account/security")}
               className="rounded-xl"
             >
               <Settings className="size-4" />
-                {uiText.common.accountSecurity}
+              {uiText.common.accountSecurity}
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -178,7 +167,6 @@ export function AppHeader() {
               className="rounded-xl text-[#BA1A1A] focus:bg-[#FFDAD6] focus:text-[#BA1A1A]"
             >
               <LogOut className="size-4" />
-
               {isLoggingOut
                 ? uiText.common.loggingOut
                 : uiText.common.logoutFromAccount}

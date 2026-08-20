@@ -28,16 +28,11 @@ export function AppSidebar() {
   const location = useLocation()
 
   const groups = getVisibleMenuGroups(user)
-
-  const initial = user?.fullName?.trim().charAt(0) || "U"
+  const initial =
+    user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial
 
   return (
-    <Sidebar
-      side="right"
-      collapsible="icon"
-      dir="rtl"
-      className="border-l-0"
-    >
+    <Sidebar side="right" collapsible="icon" dir="rtl" className="border-l-0">
       <SidebarHeader className="border-b border-[#E4EAF3]/80 px-3 py-4">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -55,7 +50,6 @@ export function AppSidebar() {
                 <span className="truncate text-sm font-bold text-[#0F172A]">
                   {uiText.app.name}
                 </span>
-
                 <span className="mt-1 truncate text-[11px] text-[#64748B]">
                   {uiText.app.tagline}
                 </span>
@@ -66,20 +60,17 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-1 py-3">
-        {groups.map(({ group, routes }) => (
+        {groups.map(({ group, label, routes }) => (
           <SidebarGroup key={group} className="py-2">
             <SidebarGroupLabel className="mb-1 px-3 text-[11px] font-semibold tracking-wide text-[#64748B]">
-              {group}
+              {label}
             </SidebarGroupLabel>
 
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
                 {routes.map((route) => {
                   const Icon = route.icon
-                  const active = isMenuRouteActive(
-                    route.path,
-                    location.pathname
-                  )
+                  const active = isMenuRouteActive(route.path, location.pathname)
 
                   return (
                     <SidebarMenuItem key={route.id}>
@@ -101,7 +92,6 @@ export function AppSidebar() {
                               : "text-[#64748B]"
                           }
                         />
-
                         <span>{route.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -114,7 +104,12 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[#E4EAF3]/80 p-3">
-        <div className="flex items-center gap-3 rounded-2xl bg-[#EFF5FA]/70 p-2.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0">
+        <button
+          type="button"
+          onClick={() => navigate("/account/profile")}
+          className="flex w-full items-center gap-3 rounded-2xl bg-[#EFF5FA]/70 p-2.5 text-start transition hover:bg-[#E4EAF3]/70 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0"
+          aria-label={uiText.common.profile}
+        >
           <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#D6E3FF] text-sm font-bold text-[#003F88]">
             {initial}
           </div>
@@ -123,12 +118,11 @@ export function AppSidebar() {
             <span className="truncate text-sm font-semibold text-[#0F172A]">
               {user?.fullName}
             </span>
-
             <span className="truncate text-[11px] text-[#64748B]">
               {user?.roleName || user?.role}
             </span>
           </div>
-        </div>
+        </button>
       </SidebarFooter>
 
       <SidebarRail />

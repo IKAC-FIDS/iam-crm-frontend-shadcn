@@ -8,6 +8,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { Calendar } from "@workspace/ui/components/calendar"
 
+import { uiText } from "@/config/uiText"
 import { formatJalaliDate } from "@/lib/date/jalali"
 
 type PersianDatePickerProps = {
@@ -20,7 +21,7 @@ type PersianDatePickerProps = {
 export function PersianDatePicker({
   value,
   onChange,
-  placeholder = "انتخاب تاریخ",
+  placeholder = uiText.date.pickDate,
   disabled = false,
 }: PersianDatePickerProps) {
   return (
@@ -35,16 +36,10 @@ export function PersianDatePicker({
         }
       >
         <CalendarIcon className="size-4" />
-
-        {value
-          ? formatJalaliDate(value)
-          : placeholder}
+        {value ? formatJalaliDate(value) : placeholder}
       </PopoverTrigger>
 
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-      >
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar
           mode="single"
           selected={value}
