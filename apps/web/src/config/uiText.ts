@@ -113,53 +113,30 @@ export const uiText = {
         activeCount: "فرصت فعال",
       },
     },
-
     actions: {
       opportunities: "مشاهده فرصت‌ها",
       companies: "مشاهده شرکت‌ها",
       activities: "مشاهده فعالیت‌ها",
     },
-
     permissions: {
       title: "نمای مدیریتی برای این حساب فعال نیست",
       description:
         "برای مشاهده شاخص‌ها و نمودارهای تحلیلی داشبورد، مجوز گزارش‌گیری سازمانی موردنیاز است. سایر بخش‌های مجاز از منوی اصلی در دسترس هستند.",
     },
-
     units: {
       rial: "ریال",
       opportunity: "فرصت",
     },
-
     kpis: {
-      totalPortfolio: {
-        title: "ارزش کل سبد فرصت‌ها",
-      },
-      activePipeline: {
-        title: "ارزش پایپ‌لاین فعال",
-        subtitle: "فرصت فعال",
-      },
-      totalWon: {
-        title: "فروش موفق تجمعی",
-        subtitle: "فرصت موفق",
-      },
-      periodWon: {
-        title: "فروش موفق دوره",
-        subtitle: "فرصت موفق در دوره",
-      },
+      totalPortfolio: { title: "ارزش کل سبد فرصت‌ها" },
+      activePipeline: { title: "ارزش پایپ‌لاین فعال", subtitle: "فرصت فعال" },
+      totalWon: { title: "فروش موفق تجمعی", subtitle: "فرصت موفق" },
+      periodWon: { title: "فروش موفق دوره", subtitle: "فرصت موفق در دوره" },
     },
-
     trend: {
       title: "ریتم ۱۲ ماهه فرصت‌ها",
-      modes: {
-        count: "تعداد",
-        value: "ارزش",
-      },
-      series: {
-        created: "ایجادشده",
-        won: "موفق",
-        lost: "از دست‌رفته",
-      },
+      modes: { count: "تعداد", value: "ارزش" },
+      series: { created: "ایجادشده", won: "موفق", lost: "از دست‌رفته" },
       axis: {
         count: "تعداد فرصت",
         value: "ارزش",
@@ -174,34 +151,23 @@ export const uiText = {
       currentPeriodFallback: "ماه جاری",
       ariaLabel: "نمودار روند دوازده‌ماهه فرصت‌ها",
     },
-
     status: {
       title: "ترکیب سبد فرصت‌ها",
-      description:
-        "سهم فرصت‌های فعال، موفق و از دست‌رفته از کل سبد جاری",
+      description: "سهم فرصت‌های فعال، موفق و از دست‌رفته از کل سبد جاری",
       total: "کل فرصت‌ها",
       active: "فعال",
       won: "موفق",
       lost: "از دست‌رفته",
       ariaLabel: "نمودار ترکیب سبد فرصت‌ها",
-      legend: {
-        countLabel: "تعداد فرصت",
-        shareLabel: "سهم از کل",
-      },
+      legend: { countLabel: "تعداد فرصت", shareLabel: "سهم از کل" },
     },
-
     attention: {
       title: "نیازمند توجه",
       description:
         "مواردی که از زمان‌بندی مورد انتظار عبور کرده‌اند یا نیاز به اقدام دارند",
       empty: "در حال حاضر مورد فوری قابل نمایشی وجود ندارد.",
-      types: {
-        opportunity: "فرصت",
-        task: "کار",
-        meeting: "جلسه",
-      },
+      types: { opportunity: "فرصت", task: "کار", meeting: "جلسه" },
     },
-
     recentActivities: {
       title: "آخرین فعالیت‌ها",
       description: "جدیدترین تعاملات ثبت‌شده در محدوده دسترسی شما",
@@ -211,7 +177,6 @@ export const uiText = {
       restrictedDescription:
         "این بخش فقط برای کاربران دارای مجوز مشاهده فعالیت‌ها نمایش داده می‌شود.",
     },
-
     errors: {
       summaryTitle: "دریافت اطلاعات داشبورد انجام نشد",
       summaryFallback:
@@ -220,7 +185,6 @@ export const uiText = {
         "در حال حاضر امکان دریافت آخرین فعالیت‌ها وجود ندارد.",
       retry: "تلاش دوباره",
     },
-
     welcomeBadge: "فضای کاری مدیریت فروش",
     welcomeTitlePrefix: "خوش آمدید،",
     welcomeDescription:
@@ -229,6 +193,125 @@ export const uiText = {
       title: "داشبورد تحلیلی",
       description:
         "در مرحله بعد، شاخص‌های فروش، وضعیت پایپ‌لاین، فرصت‌های فعال و فعالیت‌های کلیدی به این بخش اضافه می‌شوند.",
+    },
+  },
+
+  companies: {
+    list: {
+      title: "شرکت‌ها",
+      description:
+        "نمای یکپارچه مشتریان سازمانی، مالکیت حساب‌ها و وضعیت ارتباطات فروش",
+      create: "ایجاد شرکت",
+      searchPlaceholder: "جستجو در نام، صنعت، شهر یا شماره تماس...",
+      unassigned: "بدون مالک",
+      archived: "بایگانی‌شده",
+      active: "فعال",
+      openCompany: "مشاهده جزئیات شرکت",
+      columns: {
+        company: "شرکت",
+        industry: "صنعت",
+        priority: "اولویت",
+        owner: "مالک",
+        status: "وضعیت",
+        updatedAt: "آخرین بروزرسانی",
+      },
+      filters: {
+        allPriorities: "همه اولویت‌ها",
+        allOwners: "همه مالکیت‌ها",
+        mine: "شرکت‌های من",
+        team: "تیم من",
+        unassigned: "بدون مالک",
+        activeOnly: "فعال",
+        archivedOnly: "بایگانی‌شده",
+        allArchiveStates: "همه وضعیت‌ها",
+      },
+      priorities: {
+        LOW: "کم",
+        MEDIUM: "متوسط",
+        HIGH: "زیاد",
+        STRATEGIC: "استراتژیک",
+      },
+      emptyTitle: "شرکتی برای نمایش وجود ندارد",
+      emptyDescription:
+        "فیلترها را تغییر دهید یا در صورت داشتن مجوز، یک شرکت جدید ایجاد کنید.",
+      errorTitle: "دریافت فهرست شرکت‌ها انجام نشد",
+      errorDescription:
+        "امکان دریافت اطلاعات شرکت‌ها از سرور وجود ندارد. دوباره تلاش کنید.",
+    },
+
+    detail: {
+      back: "بازگشت به شرکت‌ها",
+      active: "فعال",
+      archived: "بایگانی‌شده",
+      unassigned: "بدون مالک",
+      notSpecified: "ثبت نشده",
+      errorTitle: "دریافت اطلاعات شرکت انجام نشد",
+      errorDescription:
+        "اطلاعات این شرکت در حال حاضر قابل دریافت نیست. دوباره تلاش کنید.",
+      metrics: {
+        pipelineValue: "ارزش پایپ‌لاین فعال",
+        pipelineHint: "جمع فرصت‌های غیرنهایی",
+        openOpportunities: "فرصت فعال",
+        people: "افراد مرتبط",
+        lastInteraction: "آخرین تعامل",
+      },
+      sections: {
+        overview: "تصویر کلی شرکت",
+        overviewDescription:
+          "اطلاعات کلیدی حساب برای تصمیم‌گیری سریع در یک نگاه",
+        opportunities: "فرصت‌های فروش",
+        opportunitiesDescription:
+          "آخرین فرصت‌های مرتبط با این شرکت و وضعیت فعلی آن‌ها",
+        legal: "اطلاعات ثبتی و سازمانی",
+        people: "افراد کلیدی",
+        peopleDescription: "مخاطبان و افراد ثبت‌شده در این حساب",
+        timeline: "خط زمانی تعاملات",
+        timelineDescription:
+          "آخرین فعالیت‌های ثبت‌شده برای حفظ Context ارتباط با مشتری",
+        ecosystem: "اکوسیستم حساب",
+        ecosystemDescription:
+          "دارایی‌ها و اطلاعات تکمیلی متصل به این شرکت",
+      },
+      fields: {
+        legalName: "نام حقوقی",
+        brandName: "نام تجاری",
+        industry: "صنعت",
+        owner: "مالک حساب",
+        team: "تیم مالک",
+        city: "شهر / استان",
+        phone: "تلفن مرکزی",
+        website: "وب‌سایت",
+        source: "منبع ورود",
+        registrationNumber: "شماره ثبت",
+        nationalId: "شناسه ملی",
+        economicCode: "کد اقتصادی",
+        establishmentDate: "تاریخ تأسیس",
+        activityStatus: "وضعیت فعالیت",
+        employeeCount: "تعداد پرسنل",
+        registeredCapital: "سرمایه ثبتی",
+        createdAt: "تاریخ ایجاد",
+        updatedAt: "آخرین بروزرسانی",
+      },
+      empty: {
+        opportunitiesTitle: "فرصت فروشی ثبت نشده",
+        opportunitiesDescription:
+          "هنوز فرصت فروشی برای این شرکت ثبت نشده است.",
+        peopleTitle: "فردی ثبت نشده",
+        peopleDescription:
+          "هنوز فرد یا مخاطبی برای این شرکت ثبت نشده است.",
+      },
+      timeline: {
+        emptyTitle: "فعالیتی ثبت نشده",
+        emptyDescription:
+          "با ثبت تماس، جلسه یا تعامل بعدی، تاریخچه ارتباط اینجا شکل می‌گیرد.",
+        fallbackTitle: "فعالیت شرکت",
+      },
+      ecosystem: {
+        branches: "شعب",
+        social: "کانال اجتماعی",
+        legalDocuments: "اسناد حقوقی",
+        callCard: "کال کارت",
+      },
     },
   },
 
