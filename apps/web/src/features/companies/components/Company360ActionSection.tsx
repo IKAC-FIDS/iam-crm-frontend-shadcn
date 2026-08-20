@@ -4,17 +4,6 @@ import type { ReactNode } from "react"
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
 
-type Company360ActionSectionProps = {
-  title: string
-  description?: string
-  count?: number
-  icon?: ReactNode
-  children: ReactNode
-  onCreate?: () => void
-  onViewAll?: () => void
-  createAriaLabel?: string
-}
-
 export function Company360ActionSection({
   title,
   description,
@@ -23,8 +12,17 @@ export function Company360ActionSection({
   children,
   onCreate,
   onViewAll,
-  createAriaLabel,
-}: Company360ActionSectionProps) {
+  contentClassName = "max-h-[238px]",
+}: {
+  title: string
+  description?: string
+  count?: number
+  icon?: ReactNode
+  children: ReactNode
+  onCreate?: () => void
+  onViewAll?: () => void
+  contentClassName?: string
+}) {
   return (
     <section className="group relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)] transition-shadow duration-200 hover:shadow-md">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />
@@ -36,7 +34,6 @@ export function Company360ActionSection({
               {icon}
             </div>
           ) : null}
-
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="ui-section-title">{title}</h2>
@@ -58,14 +55,13 @@ export function Company360ActionSection({
             size="icon"
             className="size-9 shrink-0 rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
             onClick={onCreate}
-            aria-label={createAriaLabel || title}
           >
             <Plus className="size-4" />
           </Button>
         ) : null}
       </header>
 
-      <div className="mx-2 max-h-[238px] min-h-0 overflow-y-auto overscroll-contain px-3 pb-2 pe-2 [scrollbar-gutter:stable] sm:mx-3">
+      <div className={`mx-2 min-h-0 overflow-y-auto overscroll-contain px-3 pb-2 pe-2 [scrollbar-gutter:stable] sm:mx-3 ${contentClassName}`}>
         {children}
       </div>
 

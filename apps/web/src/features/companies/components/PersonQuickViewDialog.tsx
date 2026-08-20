@@ -5,7 +5,6 @@ import {
   BriefcaseBusiness,
   Building2,
   GraduationCap,
-  // Linkedin,
   Phone,
   Star,
   UsersRound,
