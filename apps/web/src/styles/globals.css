@@ -1,0 +1,13 @@
+:root {
+  --primary: #0053B2;
+  --primary-hover: #004A9F;
+  --primary-active: #003F88;
+
+  --background: #EFF5FA;
+  --card: #FCFCFF;
+
+  --foreground: #0F172A;
+  --muted-foreground: #64748B;
+
+  --border: #E4EAF3;
+}
