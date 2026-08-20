@@ -1,9 +1,11 @@
 import {
-  CalendarClock,
   Building2,
+  CalendarClock,
   ListTodo,
   UsersRound,
 } from "lucide-react"
+
+import { uiText } from "@/config/uiText"
 
 import { CompanyMetricCard } from "./CompanyMetricCard"
 
@@ -21,25 +23,22 @@ export function Company360SummaryCards({ summary }: Props) {
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <CompanyMetricCard
         icon={Building2}
-        label="فرصت‌های باز"
+        label={uiText.companies.detail.metrics.openOpportunities}
         value={summary.openOpportunityCount.toLocaleString("fa-IR")}
       />
-
       <CompanyMetricCard
         icon={ListTodo}
-        label="کارهای فعال"
+        label={uiText.navigation.tasks}
         value={summary.activeTaskCount.toLocaleString("fa-IR")}
       />
-
       <CompanyMetricCard
         icon={CalendarClock}
-        label="جلسات پیش‌رو"
+        label={uiText.navigation.meetings}
         value={summary.upcomingMeetingCount.toLocaleString("fa-IR")}
       />
-
       <CompanyMetricCard
         icon={UsersRound}
-        label="اشخاص شرکت"
+        label={uiText.companies.detail.metrics.people}
         value={summary.peopleCount.toLocaleString("fa-IR")}
       />
     </div>
