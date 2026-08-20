@@ -14,6 +14,10 @@ export function getVisibleMenuRoutes(user: AuthUser | null | undefined) {
     .sort((left, right) => left.order - right.order)
 }
 
+export function getVisibleTopLevelRoutes(user: AuthUser | null | undefined) {
+  return getVisibleMenuRoutes(user).filter((route) => route.group === null)
+}
+
 export function getVisibleMenuGroups(user: AuthUser | null | undefined) {
   const routes = getVisibleMenuRoutes(user)
 
@@ -27,7 +31,10 @@ export function getVisibleMenuGroups(user: AuthUser | null | undefined) {
 }
 
 export function isMenuRouteActive(routePath: string, pathname: string) {
-  return pathname === routePath || (routePath !== "/dashboard" && pathname.startsWith(`${routePath}/`))
+  return (
+    pathname === routePath ||
+    (routePath !== "/dashboard" && pathname.startsWith(`${routePath}/`))
+  )
 }
 
 export interface AppBreadcrumb {
@@ -52,22 +59,30 @@ export function getRoutePresentation(pathname: string) {
   if (!route) {
     return {
       title: uiText.navigation.dashboard,
-      breadcrumbs: [{ label: uiText.common.home, to: "/dashboard" }] as AppBreadcrumb[],
+      breadcrumbs: [
+        { label: uiText.common.home, to: "/dashboard" },
+      ] as AppBreadcrumb[],
     }
   }
 
   if (route.path === "/dashboard") {
     return {
       title: route.label,
-      breadcrumbs: [{ label: uiText.navigation.dashboard }] as AppBreadcrumb[],
+      breadcrumbs: [
+        { label: uiText.navigation.dashboard },
+      ] as AppBreadcrumb[],
     }
   }
+
+  const groupLabel = route.group
+    ? getNavigationGroupLabel(route.group)
+    : uiText.common.home
 
   return {
     title: route.label,
     breadcrumbs: [
       { label: uiText.common.home, to: "/dashboard" },
-      { label: getNavigationGroupLabel(route.group) },
+      { label: groupLabel },
       { label: route.label },
     ] as AppBreadcrumb[],
   }
