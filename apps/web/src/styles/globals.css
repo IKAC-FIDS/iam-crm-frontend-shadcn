@@ -1,56 +1,115 @@
+@font-face {
+  font-family: "BYekan";
+  src: url("../assets/fonts/BYekan-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BYekan";
+  src: url("../assets/fonts/BYekan-Bold.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
+  /* Typography */
+  --app-font-family: "BYekan", Tahoma, Arial, sans-serif;
+
+  /* NESHANE brand */
   --primary: #0053B2;
   --primary-foreground: #FFFFFF;
-
-  --background: #EFF5FA;
-  --foreground: #0F172A;
-
-  --card: #FCFCFF;
-  --card-foreground: #0F172A;
-
-  --popover: #FCFCFF;
-  --popover-foreground: #0F172A;
-
-  --secondary: #E4EAF3;
-  --secondary-foreground: #0F172A;
-
-  --muted: #E4EAF3;
-  --muted-foreground: #64748B;
-
-  --accent: #D6E3FF;
-  --accent-foreground: #001B3D;
-
-  --destructive: #BA1A1A;
-
-  --border: #E4EAF3;
-  --input: #E4EAF3;
-  --ring: #0053B2;
-
   --primary-hover: #004A9F;
   --primary-active: #003F88;
+  --primary-alt: #55677F;
+  --primary-soft: #D6E3FF;
+  --on-primary-container: #001B3D;
 
+  /* App surfaces */
+  --background: #EFF5FA;
+  --foreground: #0F172A;
+  --card: #FCFCFF;
+  --card-foreground: #0F172A;
+  --popover: #FCFCFF;
+  --popover-foreground: #0F172A;
   --surface: #FCFCFF;
   --surface-soft: #F7FAFD;
   --surface-muted: #EFF5FA;
 
+  /* Neutrals */
+  --secondary: #E4EAF3;
+  --secondary-foreground: #0F172A;
+  --muted: #E4EAF3;
+  --muted-foreground: #64748B;
+  --border: #E4EAF3;
+  --input: #E4EAF3;
   --outline: #C2CAD6;
+  --ring: #0053B2;
 
+  /* Semantic */
+  --accent: #D6E3FF;
+  --accent-foreground: #001B3D;
+  --destructive: #BA1A1A;
   --success: #048A3B;
   --success-light: #E6F9EE;
-
   --warning: #F59E0B;
   --warning-light: #FFF4E0;
-
   --info: #1371D3;
   --info-light: #D0E5FB;
+  --brand-accent: #E91E63;
 
-  --app-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --app-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.06);
-  --app-shadow-lg: 0 20px 60px rgba(15, 23, 42, 0.08);
+  /* Explicit app aliases */
+  --app-primary: #0053B2;
+  --app-primary-hover: #004A9F;
+  --app-primary-active: #003F88;
+  --app-primary-alt: #55677F;
+  --app-primary-soft: #D6E3FF;
+  --app-on-primary: #FFFFFF;
+  --app-on-primary-container: #001B3D;
+
+  --app-heading: #0F172A;
+  --app-on-surface: #0F172A;
+  --app-text-secondary: #64748B;
+  --app-icon-muted: #64748B;
+  --app-background: #EFF5FA;
+  --app-surface: #FCFCFF;
+  --app-divider: #E4EAF3;
+  --app-outline: #C2CAD6;
+
+  /* Chart palette */
+  --app-chart-1: #0053B2;
+  --app-chart-2: #55677F;
+  --app-chart-3: #1371D3;
+  --app-chart-4: #64748B;
+
+  /* Layout */
+  --app-drawer-width: 260px;
+  --app-content-max-width: 1680px;
+
+  /* Radius */
+  --app-radius-sm: 6px;
+  --app-radius-md: 8px;
+  --app-radius-lg: 12px;
+
+  /* Shadows */
+  --app-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --app-shadow-popover: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --app-shadow-login: 0 10px 40px rgba(15, 23, 42, 0.14);
 }
 
 html {
-  background: var(--background);
+  background: var(--app-background);
+  font-family: var(--app-font-family);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--app-font-family);
 }
 
 body {
@@ -60,12 +119,82 @@ body {
       rgba(214, 227, 255, 0.38),
       transparent 28rem
     ),
-    var(--background);
+    var(--app-background);
 
-  color: var(--foreground);
+  color: var(--app-on-surface);
 }
 
 ::selection {
-  background: #D6E3FF;
-  color: #001B3D;
+  background: var(--app-primary-soft);
+  color: var(--app-on-primary-container);
+}
+
+/* Shared typography primitives */
+.font-app {
+  font-family: var(--app-font-family);
+}
+
+.ui-page-title {
+  color: var(--app-heading);
+  font-family: var(--app-font-family);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+.ui-section-title {
+  color: var(--app-heading);
+  font-family: var(--app-font-family);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.ui-card-title {
+  color: var(--app-heading);
+  font-family: var(--app-font-family);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.ui-body {
+  color: var(--app-text-secondary);
+  font-family: var(--app-font-family);
+  font-size: 0.875rem;
+  line-height: 1.9;
+}
+
+.ui-caption {
+  color: var(--app-text-secondary);
+  font-family: var(--app-font-family);
+  font-size: 0.75rem;
+  line-height: 1.75;
+}
+
+.ui-label {
+  color: var(--app-heading);
+  font-family: var(--app-font-family);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.ui-navigation-group {
+  color: var(--app-primary-alt);
+  font-family: var(--app-font-family);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+@media (max-width: 639px) {
+  .ui-page-title {
+    font-size: 1.25rem;
+  }
+
+  .ui-section-title {
+    font-size: 1rem;
+  }
 }
