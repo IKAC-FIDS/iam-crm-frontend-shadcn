@@ -41,13 +41,13 @@ export function CurrencyInput({
           onValueChange?.(sanitizeDecimal(event.target.value, decimalScale))
         }}
         className={[
-          "h-11 rounded-xl pe-14 text-left tabular-nums",
+          "h-11 rounded-xl pr-16 text-left tabular-nums",
           className,
         ]
           .filter(Boolean)
           .join(" ")}
       />
-      <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--app-text-secondary)]">
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--app-text-secondary)]">
         {unit}
       </span>
     </div>

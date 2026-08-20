@@ -29,7 +29,7 @@ export const companyFormSchema = z.object({
   website: optionalText,
   headOfficeCity: optionalText,
   centralPhone: optionalPhone,
-  source: optionalText,
+  sourceId: optionalText,
   registrationNumber: z.string().trim().max(50).optional(),
   nationalId: z.string().trim().max(50).optional(),
   economicCode: z.string().trim().max(50).optional(),

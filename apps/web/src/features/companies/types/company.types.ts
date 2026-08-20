@@ -143,17 +143,17 @@ export interface CompaniesQuery {
   archivedOnly?: boolean
 }
 
-
 export interface CompanyMutationPayload {
   legalName: string
   brandName?: string
   industry?: string
+  industryId?: string
   ownership?: CompanyOwnership
   priority?: CompanyPriority
   website?: string
   headOfficeCity?: string
   centralPhone?: string | null
-  source?: string
+  sourceId?: string
   registrationNumber?: string
   nationalId?: string
   economicCode?: string

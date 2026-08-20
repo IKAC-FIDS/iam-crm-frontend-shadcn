@@ -36,6 +36,7 @@ import {
   type Company,
   type CompanyMutationPayload,
 } from "../types/company.types"
+import { useLeadSources } from "../hooks/useCompanyLookups"
 import {
   companyFormSchema,
   type CompanyFormValues,
@@ -61,7 +62,7 @@ function toFormValues(company?: Company | null): CompanyFormValues {
     website: company?.website ?? "",
     headOfficeCity: company?.headOfficeCity ?? "",
     centralPhone: company?.centralPhone ?? "",
-    source: company?.sourceRef?.name ?? company?.source ?? "",
+    sourceId: company?.sourceRef?.id ?? company?.sourceId ?? "",
     registrationNumber: company?.registrationNumber ?? "",
     nationalId: company?.nationalId ?? "",
     economicCode: company?.economicCode ?? "",
@@ -90,6 +91,18 @@ export function CompanyFormDialog({
 }: CompanyFormDialogProps) {
   const text = uiText.companies.form
   const defaultValues = useMemo(() => toFormValues(company), [company])
+  const {
+    data: leadSources = [],
+    isPending: isLeadSourcesPending,
+  } = useLeadSources(open)
+
+  const sourceOptions = useMemo(() => {
+    const current = company?.sourceRef
+    if (!current || leadSources.some((item) => item.id === current.id)) {
+      return leadSources
+    }
+    return [current, ...leadSources]
+  }, [company?.sourceRef, leadSources])
 
   const {
     register,
@@ -120,7 +133,7 @@ export function CompanyFormDialog({
       website: clean(values.website),
       headOfficeCity: clean(values.headOfficeCity),
       centralPhone: clean(values.centralPhone)?.replace(/\s|-/g, "") ?? null,
-      source: clean(values.source),
+      sourceId: clean(values.sourceId),
       registrationNumber: clean(values.registrationNumber),
       nationalId: clean(values.nationalId),
       economicCode: clean(values.economicCode),
@@ -309,13 +322,20 @@ export function CompanyFormDialog({
 
                     <Field
                       label={text.fields.source}
-                      error={errors.source?.message}
+                      error={errors.sourceId?.message}
                     >
-                      <Input
-                        {...register("source")}
-                        placeholder={text.placeholders.source}
-                        className="h-11 rounded-xl"
-                      />
+                      <select
+                        {...register("sourceId")}
+                        className={selectClass}
+                        disabled={isLeadSourcesPending}
+                      >
+                        <option value="">{text.selectPlaceholder}</option>
+                        {sourceOptions.map((source) => (
+                          <option key={source.id} value={source.id}>
+                            {source.name}
+                          </option>
+                        ))}
+                      </select>
                     </Field>
 
                     <Field
