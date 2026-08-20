@@ -452,6 +452,8 @@ export const uiText = {
     calendar: {
       previousMonth: "ماه قبل",
       nextMonth: "ماه بعد",
+      selectMonth: "انتخاب ماه",
+      selectYear: "انتخاب سال",
       today: "امروز",
       clear: "پاک کردن",
       weekdays: ["ش", "ی", "د", "س", "چ", "پ", "ج"],

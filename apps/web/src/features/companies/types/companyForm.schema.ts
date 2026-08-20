@@ -23,7 +23,7 @@ const optionalPhone = z
 export const companyFormSchema = z.object({
   legalName: z.string().trim().min(2, validation.legalNameRequired),
   brandName: optionalText,
-  industry: optionalText,
+  industryId: optionalText,
   ownership: z.enum(COMPANY_OWNERSHIPS).optional(),
   priority: z.enum(COMPANY_PRIORITIES).optional(),
   website: optionalText,

@@ -19,6 +19,8 @@ type PersianCalendarProps = {
   onChange?: (date?: Date) => void
   minDate?: Date
   maxDate?: Date
+  minYear?: number
+  maxYear?: number
 }
 
 export function PersianCalendar({
@@ -26,11 +28,29 @@ export function PersianCalendar({
   onChange,
   minDate,
   maxDate,
+  minYear = 1300,
+  maxYear = 1500,
 }: PersianCalendarProps) {
   const today = useMemo(() => new Date(), [])
   const initial = dateToJalali(value ?? today)
   const [viewYear, setViewYear] = useState(initial.year)
   const [viewMonth, setViewMonth] = useState(initial.month)
+
+  const resolvedMinYear = minDate
+    ? Math.max(minYear, dateToJalali(minDate).year)
+    : minYear
+  const resolvedMaxYear = maxDate
+    ? Math.min(maxYear, dateToJalali(maxDate).year)
+    : maxYear
+
+  const years = useMemo(
+    () =>
+      Array.from(
+        { length: Math.max(0, resolvedMaxYear - resolvedMinYear + 1) },
+        (_, index) => resolvedMaxYear - index,
+      ),
+    [resolvedMaxYear, resolvedMinYear],
+  )
 
   useEffect(() => {
     if (!value) return
@@ -47,6 +67,7 @@ export function PersianCalendar({
 
   function move(delta: number) {
     const next = addJalaliMonths(viewYear, viewMonth, delta)
+    if (next.year < resolvedMinYear || next.year > resolvedMaxYear) return
     setViewYear(next.year)
     setViewMonth(next.month)
   }
@@ -67,34 +88,57 @@ export function PersianCalendar({
   const text = uiText.date.calendar
 
   return (
-    <div dir="rtl" className="w-[310px] p-3">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <div dir="rtl" className="w-[330px] p-3">
+      <div className="mb-3 flex items-center gap-2">
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="rounded-xl"
+          className="shrink-0 rounded-xl"
           aria-label={text.previousMonth}
+          disabled={viewYear === resolvedMinYear && viewMonth === 1}
           onClick={() => move(-1)}
         >
           <ChevronRight className="size-4" />
         </Button>
 
-        <div className="text-center">
-          <div className="text-sm font-bold text-[var(--app-heading)]">
-            {text.months[viewMonth - 1]}
-          </div>
-          <div className="text-[11px] text-[var(--app-text-secondary)]">
-            {new Intl.NumberFormat("fa-IR", { useGrouping: false }).format(viewYear)}
-          </div>
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_92px] gap-2">
+          <select
+            aria-label={text.selectMonth}
+            value={viewMonth}
+            onChange={(event) => setViewMonth(Number(event.target.value))}
+            className={headerSelectClass}
+          >
+            {text.months.map((month, index) => (
+              <option key={month} value={index + 1}>
+                {month}
+              </option>
+            ))}
+          </select>
+
+          <select
+            aria-label={text.selectYear}
+            value={viewYear}
+            onChange={(event) => setViewYear(Number(event.target.value))}
+            className={headerSelectClass}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {new Intl.NumberFormat("fa-IR", {
+                  useGrouping: false,
+                }).format(year)}
+              </option>
+            ))}
+          </select>
         </div>
 
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="rounded-xl"
+          className="shrink-0 rounded-xl"
           aria-label={text.nextMonth}
+          disabled={viewYear === resolvedMaxYear && viewMonth === 12}
           onClick={() => move(1)}
         >
           <ChevronLeft className="size-4" />
@@ -172,3 +216,6 @@ export function PersianCalendar({
     </div>
   )
 }
+
+const headerSelectClass =
+  "h-9 w-full rounded-xl border border-input bg-background px-2 text-xs font-bold text-[var(--app-heading)] outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"

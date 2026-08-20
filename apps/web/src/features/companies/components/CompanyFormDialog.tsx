@@ -36,7 +36,7 @@ import {
   type Company,
   type CompanyMutationPayload,
 } from "../types/company.types"
-import { useLeadSources } from "../hooks/useCompanyLookups"
+import { useIndustries, useLeadSources } from "../hooks/useCompanyLookups"
 import {
   companyFormSchema,
   type CompanyFormValues,
@@ -56,7 +56,7 @@ function toFormValues(company?: Company | null): CompanyFormValues {
   return {
     legalName: company?.legalName ?? "",
     brandName: company?.brandName ?? "",
-    industry: company?.industryRef?.name ?? company?.industry ?? "",
+    industryId: company?.industryRef?.id ?? company?.industryId ?? "",
     ownership: company?.ownership ?? undefined,
     priority: company?.priority ?? undefined,
     website: company?.website ?? "",
@@ -95,6 +95,10 @@ export function CompanyFormDialog({
     data: leadSources = [],
     isPending: isLeadSourcesPending,
   } = useLeadSources(open)
+  const {
+    data: industries = [],
+    isPending: isIndustriesPending,
+  } = useIndustries(open)
 
   const sourceOptions = useMemo(() => {
     const current = company?.sourceRef
@@ -103,6 +107,14 @@ export function CompanyFormDialog({
     }
     return [current, ...leadSources]
   }, [company?.sourceRef, leadSources])
+
+  const industryOptions = useMemo(() => {
+    const current = company?.industryRef
+    if (!current || industries.some((item) => item.id === current.id)) {
+      return industries
+    }
+    return [current, ...industries]
+  }, [company?.industryRef, industries])
 
   const {
     register,
@@ -127,7 +139,7 @@ export function CompanyFormDialog({
     const payload: CompanyMutationPayload = {
       legalName: values.legalName.trim(),
       brandName: clean(values.brandName),
-      industry: clean(values.industry),
+      industryId: clean(values.industryId),
       ownership: values.ownership,
       priority: values.priority,
       website: clean(values.website),
@@ -300,13 +312,20 @@ export function CompanyFormDialog({
                   >
                     <Field
                       label={text.fields.industry}
-                      error={errors.industry?.message}
+                      error={errors.industryId?.message}
                     >
-                      <Input
-                        {...register("industry")}
-                        placeholder={text.placeholders.industry}
-                        className="h-11 rounded-xl"
-                      />
+                      <select
+                        {...register("industryId")}
+                        className={selectClass}
+                        disabled={isIndustriesPending}
+                      >
+                        <option value="">{text.selectPlaceholder}</option>
+                        {industryOptions.map((industry) => (
+                          <option key={industry.id} value={industry.id}>
+                            {industry.name}
+                          </option>
+                        ))}
+                      </select>
                     </Field>
 
                     <Field label={text.fields.priority}>
