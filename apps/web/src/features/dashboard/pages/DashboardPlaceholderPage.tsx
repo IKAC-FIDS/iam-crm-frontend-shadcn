@@ -1,0 +1,6 @@
+import { LogOut } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import { useAuth } from "@/features/auth/hooks/useAuth"
+import { useAuthStore } from "@/store/authStore"
+export function DashboardPlaceholderPage(){ const user=useAuthStore(s=>s.user); const {logout,isLoggingOut}=useAuth(); return <main className="min-h-svh bg-background p-6"><div className="mx-auto grid max-w-5xl gap-6"><div className="flex items-center justify-between gap-4"><div><h1 className="text-2xl font-bold">Ø¯Ø§Ø´Ø¨ÙˆØ±Ø¯</h1><p className="mt-1 text-sm text-muted-foreground">ÙˆØ±ÙˆØ¯ Ùˆ Ù…Ø¯ÛŒØ±ÛŒØª Ù†Ø´Ø³Øª Ø¨Ø§ Ù…ÙˆÙÙ‚ÛŒØª ÙØ¹Ø§Ù„ Ø§Ø³Øª.</p></div><Button variant="outline" disabled={isLoggingOut} onClick={()=>void logout()}><LogOut className="size-4"/>Ø®Ø±ÙˆØ¬</Button></div><Card><CardHeader><CardTitle>Ø§Ø·Ù„Ø§Ø¹Ø§Øª Ú©Ø§Ø±Ø¨Ø± Ø¬Ø§Ø±ÛŒ</CardTitle></CardHeader><CardContent className="grid gap-2 text-sm"><p>Ù†Ø§Ù…: {user?.fullName}</p><p dir="ltr" className="text-right">Ø§ÛŒÙ…ÛŒÙ„: {user?.email}</p><p>Ù†Ù‚Ø´: {user?.roleName||user?.role}</p><p>Ù…Ø¬ÙˆØ²Ù‡Ø§: {user?.permissions.length??0}</p></CardContent></Card></div></main> }

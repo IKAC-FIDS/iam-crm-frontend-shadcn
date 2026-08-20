@@ -1,13 +1,7 @@
 :root {
-  --primary: #0053B2;
-  --primary-hover: #004A9F;
-  --primary-active: #003F88;
-
-  --background: #EFF5FA;
-  --card: #FCFCFF;
-
-  --foreground: #0F172A;
-  --muted-foreground: #64748B;
-
-  --border: #E4EAF3;
+  --primary:#0053B2; --primary-foreground:#FFFFFF; --background:#EFF5FA; --foreground:#0F172A;
+  --card:#FCFCFF; --card-foreground:#0F172A; --popover:#FCFCFF; --popover-foreground:#0F172A;
+  --secondary:#E4EAF3; --secondary-foreground:#0F172A; --muted:#E4EAF3; --muted-foreground:#64748B;
+  --accent:#D6E3FF; --accent-foreground:#001B3D; --destructive:#BA1A1A; --border:#E4EAF3; --input:#E4EAF3; --ring:#0053B2;
+  --primary-hover:#004A9F; --primary-active:#003F88;
 }
