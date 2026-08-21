@@ -144,17 +144,17 @@ export function PeoplePage() {
           />
           <Metric
             icon={<ContactRound className="size-4" />}
-            label={text.metrics.primaryInPage}
+            label={text.metrics.primaryCurrentPage}
             value={metrics.primary}
           />
           <Metric
             icon={<Phone className="size-4" />}
-            label={text.metrics.phoneInPage}
+            label={text.metrics.phoneCurrentPage}
             value={metrics.phone}
           />
           <Metric
             icon={<Mail className="size-4" />}
-            label={text.metrics.emailInPage}
+            label={text.metrics.emailCurrentPage}
             value={metrics.email}
           />
         </div>
