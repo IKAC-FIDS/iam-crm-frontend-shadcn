@@ -51,7 +51,7 @@ function Field({
   className?: string
 }) {
   return (
-    <div className={className}>
+    <div className={`min-w-0 ${className ?? ""}`}>
       <Label className="mb-2 block text-xs font-bold text-[var(--app-heading)]">
         {label}
       </Label>
@@ -81,7 +81,7 @@ function BaseDialog({
       <DialogContent
         showCloseButton={false}
         dir="rtl"
-        className="max-h-[92vh] w-[min(720px,calc(100vw-24px))] max-w-none gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-none"
+        className="max-h-[92vh] w-full max-w-[calc(100%_-_1.5rem)] min-w-0 gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-[720px]"
       >
         <DialogHeader className="border-b border-[var(--app-divider)] p-5">
           <div className="flex items-start gap-3">
@@ -103,8 +103,10 @@ function BaseDialog({
             </Button>
           </div>
         </DialogHeader>
-        <div className="min-h-0 overflow-y-auto p-5">{children}</div>
-        <div className="flex justify-end gap-2 border-t border-[var(--app-divider)] bg-[var(--app-background)]/60 p-4">
+        <div className="min-h-0 max-w-full min-w-0 overflow-y-auto p-5">
+          {children}
+        </div>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-[var(--app-divider)] bg-[var(--app-background)]/60 p-4">
           <Button
             variant="outline"
             className="rounded-xl"

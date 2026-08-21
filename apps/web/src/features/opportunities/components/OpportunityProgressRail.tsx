@@ -18,7 +18,7 @@ export function OpportunityProgressRail({
     ).map((history) => history.toStageId)
   )
   return (
-    <section className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] px-4 py-3 shadow-sm">
+    <section className="w-full max-w-full min-w-0 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] px-4 py-3 shadow-sm">
       <div className="mb-2 flex items-center justify-between">
         <h2 className="text-xs font-bold text-[var(--app-heading)]">
           {text.title}
@@ -27,8 +27,8 @@ export function OpportunityProgressRail({
           {opportunity.stage?.label}
         </span>
       </div>
-      <div className="overflow-x-auto pb-1">
-        <div className="flex min-w-max items-start" dir="rtl">
+      <div className="w-full max-w-full min-w-0 overflow-x-auto pb-1">
+        <div className="flex w-max min-w-full items-start" dir="rtl">
           {stages.map((stage, index) => {
             const current = stage.id === opportunity.stageId
             const wasVisited = visited.has(stage.id) && !current

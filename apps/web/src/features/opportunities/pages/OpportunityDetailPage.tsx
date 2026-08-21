@@ -226,7 +226,7 @@ export function OpportunityDetailPage() {
   ]
 
   return (
-    <div className="mx-auto grid w-full max-w-[1480px] gap-4" dir="rtl">
+    <div className="mx-auto grid w-full max-w-[1440px] min-w-0 gap-4" dir="rtl">
       <Button
         type="button"
         variant="ghost"
@@ -241,11 +241,11 @@ export function OpportunityDetailPage() {
       <header
         className={
           archived
-            ? "rounded-[24px] border border-[var(--warning)]/35 bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
-            : "rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
+            ? "max-w-full min-w-0 rounded-[24px] border border-[var(--warning)]/35 bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
+            : "max-w-full min-w-0 rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
         }
       >
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge tone={archived ? "warning" : "success"}>
@@ -255,17 +255,21 @@ export function OpportunityDetailPage() {
                 {text.priorities[opportunity.priority]}
               </StatusBadge>
             </div>
-            <h1 className="mt-2 text-xl font-bold text-[var(--app-heading)] sm:text-2xl">
+            <h1 className="mt-2 max-w-full text-xl font-bold break-words text-[var(--app-heading)] sm:text-2xl">
               {opportunity.title}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--app-text-secondary)]">
-              <span className="flex items-center gap-1.5">
-                <Building2 className="size-3.5" />
-                {opportunityCompanyName(opportunity)}
+              <span className="flex max-w-full min-w-0 items-center gap-1.5">
+                <Building2 className="size-3.5 shrink-0" />
+                <span className="min-w-0 break-words">
+                  {opportunityCompanyName(opportunity)}
+                </span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <Layers3 className="size-3.5" />
-                {opportunity.stage?.label || uiText.common.notAvailable}
+              <span className="flex max-w-full min-w-0 items-center gap-1.5">
+                <Layers3 className="size-3.5 shrink-0" />
+                <span className="min-w-0 break-words">
+                  {opportunity.stage?.label || uiText.common.notAvailable}
+                </span>
               </span>
             </div>
             {archived && opportunity.archiveReason ? (
@@ -274,7 +278,7 @@ export function OpportunityDetailPage() {
               </p>
             ) : null}
           </div>
-          <div className="flex shrink-0 flex-wrap gap-1.5">
+          <div className="flex max-w-full shrink-0 flex-wrap gap-1.5">
             {canUpdate && !archived ? (
               <Button
                 variant="outline"
@@ -353,7 +357,7 @@ export function OpportunityDetailPage() {
         </p>
       ) : null}
 
-      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--app-primary)]/15 bg-[var(--app-surface)] p-1 shadow-sm">
+      <nav className="flex w-full max-w-full min-w-0 gap-1 overflow-x-auto rounded-xl border border-[var(--app-primary)]/15 bg-[var(--app-surface)] p-1 shadow-sm">
         {navItems.map((item) => (
           <Button
             key={item.id}
@@ -361,8 +365,8 @@ export function OpportunityDetailPage() {
             variant="ghost"
             className={
               tab === item.id
-                ? "h-9 min-w-fit flex-1 rounded-lg bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
-                : "h-9 min-w-fit flex-1 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-primary-soft)]/55"
+                ? "h-9 min-w-fit shrink-0 rounded-lg bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)] sm:flex-1"
+                : "h-9 min-w-fit shrink-0 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-primary-soft)]/55 sm:flex-1"
             }
             onClick={() => setTab(item.id)}
           >

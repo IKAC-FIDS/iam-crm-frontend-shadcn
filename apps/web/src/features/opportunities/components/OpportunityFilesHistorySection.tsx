@@ -87,7 +87,7 @@ export function OpportunityFilesHistorySection({
     }
   }
   return (
-    <div className="grid gap-4">
+    <div className="grid w-full max-w-full min-w-0 gap-4">
       <Section
         title={text.sections.attachments}
         count={attachments.data?.meta.total}
@@ -115,7 +115,7 @@ export function OpportunityFilesHistorySection({
             {attachments.data.data.map((item) => (
               <article
                 key={item.id}
-                className="flex items-start gap-3 rounded-xl border border-[var(--app-divider)] p-3"
+                className="flex min-w-0 items-start gap-3 rounded-xl border border-[var(--app-divider)] p-3"
               >
                 <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
                   <FileArchive className="size-5" />
@@ -185,7 +185,7 @@ export function OpportunityFilesHistorySection({
           </div>
         ) : null}
       </Section>
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-2">
         <Section title={text.sections.stageHistory}>
           {histories.length ? (
             <div className="grid gap-0">
@@ -213,7 +213,7 @@ export function OpportunityFilesHistorySection({
                       : ""}
                   </p>
                   {history.note ? (
-                    <p className="mt-2 text-[10px] leading-5 whitespace-pre-wrap text-[var(--app-heading)]">
+                    <p className="mt-2 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-heading)]">
                       {history.note}
                     </p>
                   ) : null}
@@ -247,7 +247,7 @@ export function OpportunityFilesHistorySection({
                     </p>
                   ) : null}
                   {item.notes ? (
-                    <p className="mt-1 text-[10px] leading-5 whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                    <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
                       {item.notes}
                     </p>
                   ) : null}
@@ -292,9 +292,9 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className="overflow-hidden">
+    <SurfaceCard className="max-w-full min-w-0 overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
             <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[9px] text-[var(--app-primary)]">
@@ -304,7 +304,7 @@ function Section({
         </h2>
         {action}
       </div>
-      <div className="p-3 sm:p-4">{children}</div>
+      <div className="max-w-full min-w-0 p-3 sm:p-4">{children}</div>
     </SurfaceCard>
   )
 }
@@ -330,7 +330,7 @@ function PermissionNotice() {
 }
 function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
   return (
-    <div className="[&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+    <div className="w-full max-w-full min-w-0 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
       <EmptyState icon={icon} title={title} />
     </div>
   )

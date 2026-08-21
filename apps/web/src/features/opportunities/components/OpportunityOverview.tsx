@@ -45,7 +45,7 @@ export function OpportunityExecutiveSummary({
     ? opportunity.activities
     : []
   return (
-    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard icon={<CircleDollarSign />} title={text.commercial}>
         <Metric
           label={text.estimated}
@@ -137,9 +137,9 @@ export function OpportunityOverview({
     ? opportunity.activities
     : []
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2.5fr)_minmax(260px,1fr)]">
-      <div className="grid content-start gap-3">
-        <SurfaceCard className="p-4">
+    <div className="grid w-full min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(240px,300px)] xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+      <div className="grid min-w-0 content-start gap-3">
+        <SurfaceCard className="min-w-0 p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.description}
           </h2>
@@ -153,7 +153,7 @@ export function OpportunityOverview({
             </p>
           )}
         </SurfaceCard>
-        <section className="rounded-2xl border border-[var(--app-divider)]/80 bg-[var(--app-background)]/45 p-4">
+        <section className="min-w-0 rounded-2xl border border-[var(--app-divider)]/80 bg-[var(--app-background)]/45 p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.businessContext}
           </h2>
@@ -176,7 +176,7 @@ export function OpportunityOverview({
             />
           </div>
         </section>
-        <SurfaceCard className="p-4">
+        <SurfaceCard className="min-w-0 p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.recentActivity}
           </h2>
@@ -185,7 +185,7 @@ export function OpportunityOverview({
               {activities.slice(0, 8).map((item, index, recent) => (
                 <div
                   key={item.id}
-                  className="relative border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
+                  className="relative min-w-0 border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
                 >
                   {index === 0 ||
                   formatJalaliDate(recent[index - 1]?.occurredAt) !==
@@ -195,7 +195,7 @@ export function OpportunityOverview({
                     </p>
                   ) : null}
                   <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <StatusBadge
                       tone={
                         item.type === "STAGE_CHANGE" ? "primary" : "neutral"
@@ -208,12 +208,12 @@ export function OpportunityOverview({
                     </time>
                   </div>
                   {item.outcome ? (
-                    <p className="mt-2 text-xs font-bold text-[var(--app-heading)]">
+                    <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
                       {item.outcome}
                     </p>
                   ) : null}
                   {item.notes ? (
-                    <p className="mt-1 text-[10px] leading-5 whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                    <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
                       {item.notes}
                     </p>
                   ) : null}
@@ -225,8 +225,8 @@ export function OpportunityOverview({
           )}
         </SurfaceCard>
       </div>
-      <aside className="grid content-start gap-3">
-        <SurfaceCard className="p-4 shadow-sm">
+      <aside className="grid min-w-0 content-start gap-3">
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
               <Building2 className="size-4.5" />
@@ -235,10 +235,10 @@ export function OpportunityOverview({
               <h2 className="text-sm font-bold text-[var(--app-heading)]">
                 {text.sections.company}
               </h2>
-              <p className="mt-2 text-xs font-bold text-[var(--app-heading)]">
+              <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
                 {opportunityCompanyName(opportunity)}
               </p>
-              <p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
+              <p className="mt-1 text-[10px] break-words text-[var(--app-text-secondary)]">
                 {opportunity.company?.industry || uiText.common.notAvailable}
               </p>
             </div>
@@ -255,7 +255,7 @@ export function OpportunityOverview({
             </Button>
           ) : null}
         </SurfaceCard>
-        <SurfaceCard className="p-4 shadow-sm">
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
               <ContactRound className="size-4.5" />
@@ -266,10 +266,10 @@ export function OpportunityOverview({
               </h2>
               {opportunity.primaryContact ? (
                 <>
-                  <p className="mt-2 text-xs font-bold text-[var(--app-heading)]">
+                  <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
                     {opportunity.primaryContact.fullName}
                   </p>
-                  <p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
+                  <p className="mt-1 text-[10px] break-words text-[var(--app-text-secondary)]">
                     {[
                       opportunity.primaryContact.title,
                       opportunity.primaryContact.department,
@@ -277,7 +277,7 @@ export function OpportunityOverview({
                       .filter(Boolean)
                       .join(" · ") || uiText.common.notAvailable}
                   </p>
-                  <p className="mt-2 text-[10px] text-[var(--app-text-secondary)]">
+                  <p className="mt-2 text-[10px] break-all text-[var(--app-text-secondary)]">
                     {opportunity.primaryContact.email ||
                       opportunity.primaryContact.phone ||
                       uiText.common.notAvailable}
@@ -311,7 +311,7 @@ export function OpportunityOverview({
             </Button>
           ) : null}
         </SurfaceCard>
-        <SurfaceCard className="p-4 shadow-sm">
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.ownership}
           </h2>
@@ -343,7 +343,7 @@ function SummaryCard({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className="p-3 shadow-sm">
+    <SurfaceCard className="w-full min-w-0 p-3 shadow-sm">
       <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
         <span className="grid size-7 place-items-center rounded-lg bg-[var(--app-primary-soft)] text-[var(--app-primary)] [&_svg]:size-3.5">
           {icon}
@@ -358,7 +358,9 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 text-[10px]">
       <span className="text-[var(--app-text-secondary)]">{label}</span>
-      <span className="font-bold text-[var(--app-heading)]">{value}</span>
+      <span className="min-w-0 text-end font-bold break-words text-[var(--app-heading)]">
+        {value}
+      </span>
     </div>
   )
 }
@@ -372,12 +374,12 @@ function Info({
   icon?: ReactNode
 }) {
   return (
-    <div className="rounded-xl bg-[var(--app-background)]/65 p-2.5">
+    <div className="min-w-0 rounded-xl bg-[var(--app-background)]/65 p-2.5">
       <p className="flex items-center gap-1 text-[9px] font-bold text-[var(--app-text-secondary)] [&_svg]:size-3">
         {icon}
         {label}
       </p>
-      <p className="mt-1.5 text-xs text-[var(--app-heading)]">
+      <p className="mt-1.5 text-xs break-words text-[var(--app-heading)]">
         {value || uiText.common.notAvailable}
       </p>
     </div>
@@ -392,7 +394,7 @@ function CompactEmpty({
   title: string
 }) {
   return (
-    <div className="[&_.size-11]:size-9 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+    <div className="w-full max-w-full min-w-0 [&_.size-11]:size-9 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
       <EmptyState icon={icon} title={title} />
     </div>
   )

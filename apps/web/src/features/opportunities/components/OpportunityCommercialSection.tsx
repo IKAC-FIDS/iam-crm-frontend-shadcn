@@ -209,7 +209,7 @@ export function OpportunityCommercialSection({
       : null
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 items-start gap-4 xl:grid-cols-2">
       <ResourceSection
         className="xl:col-span-2"
         title={text.sections.lineItems}
@@ -234,7 +234,7 @@ export function OpportunityCommercialSection({
         ) : lineItems.isError ? (
           <SectionError onRetry={() => void lineItems.refetch()} />
         ) : lineItems.data?.length ? (
-          <div className="overflow-x-auto">
+          <div className="w-full max-w-full min-w-0 overflow-x-auto">
             <table className="w-full min-w-[820px] text-start text-xs">
               <thead>
                 <tr className="border-b border-[var(--app-divider)] text-[10px] text-[var(--app-text-secondary)]">
@@ -365,10 +365,10 @@ export function OpportunityCommercialSection({
             {documents.data.data.map((item) => (
               <div
                 key={item.id}
-                className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3"
+                className="min-w-0 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge tone="info">
                         {text.documentTypes[item.type]}
@@ -377,7 +377,7 @@ export function OpportunityCommercialSection({
                         {text.documentStatuses[item.status]}
                       </StatusBadge>
                     </div>
-                    <h3 className="mt-3 text-xs font-bold text-[var(--app-heading)]">
+                    <h3 className="mt-3 text-xs font-bold break-words text-[var(--app-heading)]">
                       {item.title}
                     </h3>
                     <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
@@ -509,7 +509,7 @@ export function OpportunityCommercialSection({
               {payments.data.data.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-xl border border-[var(--app-divider)] p-3"
+                  className="min-w-0 rounded-xl border border-[var(--app-divider)] p-3"
                 >
                   <div className="flex items-start justify-between">
                     <StatusBadge tone={paymentTone(item.status)}>
@@ -535,7 +535,7 @@ export function OpportunityCommercialSection({
                       </div>
                     ) : null}
                   </div>
-                  <p className="mt-4 text-lg font-bold text-[var(--app-heading)]">
+                  <p className="mt-4 text-lg font-bold break-words text-[var(--app-heading)]">
                     {money(item.amount)}{" "}
                     <span className="text-[10px] font-normal">
                       {item.currency}
@@ -696,9 +696,9 @@ function ResourceSection({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className={`overflow-hidden ${className}`}>
+    <SurfaceCard className={`max-w-full min-w-0 overflow-hidden ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
+        <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
             <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[9px] text-[var(--app-primary)]">
@@ -708,7 +708,7 @@ function ResourceSection({
         </h2>
         {action}
       </div>
-      <div className="p-3 sm:p-4">{children}</div>
+      <div className="max-w-full min-w-0 p-3 sm:p-4">{children}</div>
     </SurfaceCard>
   )
 }
@@ -762,16 +762,16 @@ function PermissionNotice() {
 }
 function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
   return (
-    <div className="[&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+    <div className="w-full max-w-full min-w-0 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
       <EmptyState icon={icon} title={title} />
     </div>
   )
 }
 function PaymentMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[var(--app-background)] p-3">
+    <div className="min-w-0 rounded-xl bg-[var(--app-background)] p-3">
       <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
-      <p className="mt-1 text-xs font-bold text-[var(--app-heading)]">
+      <p className="mt-1 text-xs font-bold break-words text-[var(--app-heading)]">
         {value}
       </p>
     </div>
