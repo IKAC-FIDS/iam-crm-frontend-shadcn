@@ -22,6 +22,13 @@ export interface PersonContact {
   typeOption?: LookupOption | null
 }
 
+export type PersonContactType =
+  | "MOBILE"
+  | "WORK"
+  | "PERSONAL_EMAIL"
+  | "WORK_EMAIL"
+  | "OTHER"
+
 export interface PersonSocial {
   id: string
   platform?: string | null
@@ -31,6 +38,19 @@ export interface PersonSocial {
   note?: string | null
   platformOption?: LookupOption | null
 }
+
+export type PersonSocialPlatform =
+  | "LINKEDIN"
+  | "INSTAGRAM"
+  | "TELEGRAM"
+  | "BALE"
+  | "EITAA"
+  | "SOROUSH"
+  | "ROOBIKA"
+  | "APARAT"
+  | "YOUTUBE"
+  | "WEBSITE"
+  | "OTHER"
 
 export interface EmploymentPosition {
   id: string
@@ -130,9 +150,6 @@ export interface PersonMutationPayload {
   department?: string
   personaRole?: string
   seniorityLevel?: string
-  linkedinUrl?: string
-  email?: string
-  phone?: string
   isPrimaryContact?: boolean
   isSecondaryContact?: boolean
 }
@@ -148,16 +165,14 @@ export interface LookupOption {
 }
 
 export interface PersonContactPayload {
-  typeOptionId?: string
-  type?: string
+  type: PersonContactType
   value: string
   isPrimary?: boolean
   note?: string
 }
 
 export interface PersonSocialPayload {
-  platformOptionId?: string
-  platform?: string
+  platform: PersonSocialPlatform
   handle: string
   isPrimary?: boolean
   note?: string

@@ -508,6 +508,9 @@ export const uiText = {
     },
     career: {
       current: "سمت فعلی",
+      present: "اکنون",
+      position: "سمت",
+      companyActions: "مدیریت سابقه شرکت",
       addEmployment: "افزودن سابقه شغلی",
       addPosition: "افزودن سمت",
       editEmployment: "ویرایش سابقه شغلی",
@@ -536,6 +539,13 @@ export const uiText = {
       primary: "راه تماس اصلی",
       deleteTitle: "حذف راه تماس",
       deleteDescription: "آیا از حذف این راه تماس اطمینان دارید؟",
+      types: {
+        MOBILE: "موبایل",
+        WORK: "تلفن کاری",
+        PERSONAL_EMAIL: "ایمیل شخصی",
+        WORK_EMAIL: "ایمیل کاری",
+        OTHER: "سایر",
+      },
     },
     socialIdentity: {
       title: "هویت اجتماعی",
@@ -548,6 +558,19 @@ export const uiText = {
       primary: "شبکه اجتماعی اصلی",
       deleteTitle: "حذف شبکه اجتماعی",
       deleteDescription: "آیا از حذف این شبکه اجتماعی اطمینان دارید؟",
+      platforms: {
+        LINKEDIN: "لینکدین",
+        INSTAGRAM: "اینستاگرام",
+        TELEGRAM: "تلگرام",
+        BALE: "بله",
+        EITAA: "ایتا",
+        SOROUSH: "سروش",
+        ROOBIKA: "روبیکا",
+        APARAT: "آپارات",
+        YOUTUBE: "یوتیوب",
+        WEBSITE: "وب‌سایت",
+        OTHER: "سایر",
+      },
     },
     education: {
       add: "افزودن سابقه تحصیلی",

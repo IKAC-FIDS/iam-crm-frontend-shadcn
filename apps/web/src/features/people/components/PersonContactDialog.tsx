@@ -6,8 +6,8 @@ import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
-import { usePeopleLookup } from "../hooks/usePeople"
-import type { PersonContact, PersonContactPayload } from "../types/person.types"
+import { PERSON_CONTACT_TYPE_OPTIONS } from "../constants/personOptions"
+import type { PersonContact, PersonContactPayload, PersonContactType } from "../types/person.types"
 import { getPeopleErrorMessage } from "../utils/peopleError"
 
 export function PersonContactDialog({ open, onOpenChange, contact, isPending, error, onSubmit }: {
@@ -19,16 +19,14 @@ export function PersonContactDialog({ open, onOpenChange, contact, isPending, er
   onSubmit: (payload: PersonContactPayload) => Promise<void>
 }) {
   const text = uiText.people.contactHub
-  const lookup = usePeopleLookup("contact_types")
-  const options = Array.isArray(lookup.data) ? lookup.data : []
-  const [typeOptionId, setTypeOptionId] = useState("")
+  const [type, setType] = useState<PersonContactType>("MOBILE")
   const [value, setValue] = useState("")
   const [note, setNote] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setTypeOptionId(contact?.typeOptionId || contact?.typeOption?.id || "")
+    setType(PERSON_CONTACT_TYPE_OPTIONS.some((option) => option.value === contact?.type) ? contact?.type as PersonContactType : "MOBILE")
     setValue(contact?.value || "")
     setNote(contact?.note || "")
     setIsPrimary(Boolean(contact?.isPrimary))
@@ -36,8 +34,8 @@ export function PersonContactDialog({ open, onOpenChange, contact, isPending, er
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!typeOptionId || !value.trim()) return
-    await onSubmit({ typeOptionId, value: value.trim(), note: note.trim() || undefined, isPrimary })
+    if (!value.trim()) return
+    await onSubmit({ type, value: value.trim(), note: note.trim() || undefined, isPrimary })
   }
 
   return (
@@ -49,19 +47,17 @@ export function PersonContactDialog({ open, onOpenChange, contact, isPending, er
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-4 p-5">
           <Field label={text.type}>
-            <select value={typeOptionId} onChange={(event) => setTypeOptionId(event.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
-              <option value="">{text.selectType}</option>
-              {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            <select value={type} onChange={(event) => setType(event.target.value as PersonContactType)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">
+              {PERSON_CONTACT_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </Field>
-          {lookup.isError ? <InlineError message={uiText.people.nested.lookupError} /> : null}
           <Field label={text.value}><Input dir="auto" value={value} onChange={(event) => setValue(event.target.value)} className="h-11 rounded-xl" /></Field>
           <Field label={text.note}><textarea value={note} onChange={(event) => setNote(event.target.value)} className="min-h-24 rounded-xl border border-input bg-background p-3 text-sm" /></Field>
           <label className="flex items-center gap-2 text-sm text-[var(--app-heading)]"><input type="checkbox" checked={isPrimary} onChange={(event) => setIsPrimary(event.target.checked)} />{text.primary}</label>
           {error ? <InlineError message={getPeopleErrorMessage(error, uiText.people.nested.mutationError)} /> : null}
           <div className="flex justify-end gap-2 border-t border-[var(--app-divider)] pt-4">
             <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>{uiText.common.cancel}</Button>
-            <Button type="submit" disabled={isPending || !typeOptionId || !value.trim()} className="rounded-xl bg-[var(--app-primary)] hover:bg-[var(--app-primary-hover)]">{isPending ? uiText.common.processing : uiText.people.actions.save}</Button>
+            <Button type="submit" disabled={isPending || !value.trim()} className="rounded-xl bg-[var(--app-primary)] hover:bg-[var(--app-primary-hover)]">{isPending ? uiText.common.processing : uiText.people.actions.save}</Button>
           </div>
         </form>
       </DialogContent>

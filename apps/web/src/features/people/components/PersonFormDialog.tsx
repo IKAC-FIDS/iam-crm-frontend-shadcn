@@ -26,10 +26,8 @@ type FormState = {
   department: string
   personaRole: string
   seniorityLevel: string
-  linkedinUrl: string
-  email: string
-  phone: string
-  contactRole: "normal" | "primary" | "secondary"
+  isPrimaryContact: boolean
+  isSecondaryContact: boolean
 }
 
 const emptyForm: FormState = {
@@ -39,10 +37,8 @@ const emptyForm: FormState = {
   department: "",
   personaRole: "",
   seniorityLevel: "",
-  linkedinUrl: "",
-  email: "",
-  phone: "",
-  contactRole: "normal",
+  isPrimaryContact: false,
+  isSecondaryContact: false,
 }
 
 function stateFromPerson(person?: PersonDetail | null): FormState {
@@ -54,14 +50,8 @@ function stateFromPerson(person?: PersonDetail | null): FormState {
     department: person.department ?? "",
     personaRole: person.personaRole || person.personaTag || "",
     seniorityLevel: person.seniorityLevel ?? "",
-    linkedinUrl: person.linkedinUrl ?? "",
-    email: person.email ?? "",
-    phone: person.phone ?? "",
-    contactRole: person.isPrimaryContact
-      ? "primary"
-      : person.isSecondaryContact
-        ? "secondary"
-        : "normal",
+    isPrimaryContact: Boolean(person.isPrimaryContact),
+    isSecondaryContact: Boolean(person.isSecondaryContact),
   }
 }
 
@@ -111,11 +101,8 @@ export function PersonFormDialog({
       department: form.department || undefined,
       personaRole: form.personaRole || undefined,
       seniorityLevel: form.seniorityLevel || undefined,
-      linkedinUrl: form.linkedinUrl.trim() || undefined,
-      email: form.email.trim() || undefined,
-      phone: form.phone.trim() || undefined,
-      isPrimaryContact: form.contactRole === "primary",
-      isSecondaryContact: form.contactRole === "secondary",
+      isPrimaryContact: form.isPrimaryContact,
+      isSecondaryContact: form.isSecondaryContact,
     })
   }
 
@@ -201,22 +188,27 @@ export function PersonFormDialog({
                 <p className="mb-2 text-xs font-bold text-[var(--app-heading)]">
                   {text.fields.contactRole}
                 </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["normal", "secondary", "primary"] as const).map((role) => (
-                    <button
-                      key={role}
-                      type="button"
-                      onClick={() => patch({ contactRole: role })}
-                      className={[
-                        "rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors",
-                        form.contactRole === role
-                          ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
-                          : "border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)]",
-                      ].join(" ")}
-                    >
-                      {text.contactRole[role]}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 py-2.5 text-xs font-bold text-[var(--app-heading)]">
+                    <input
+                      type="checkbox"
+                      checked={form.isPrimaryContact}
+                      onChange={(event) =>
+                        patch({ isPrimaryContact: event.target.checked })
+                      }
+                    />
+                    {text.contactRole.primary}
+                  </label>
+                  <label className="flex items-center gap-2 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 py-2.5 text-xs font-bold text-[var(--app-heading)]">
+                    <input
+                      type="checkbox"
+                      checked={form.isSecondaryContact}
+                      onChange={(event) =>
+                        patch({ isSecondaryContact: event.target.checked })
+                      }
+                    />
+                    {text.contactRole.secondary}
+                  </label>
                 </div>
               </div>
             </FormSection>
@@ -243,34 +235,6 @@ export function PersonFormDialog({
                 />
               </Field>
 
-              <Field label={text.fields.phone}>
-                <Input
-                  dir="ltr"
-                  value={form.phone}
-                  onChange={(event) => patch({ phone: event.target.value })}
-                  className="h-11 rounded-xl text-start"
-                />
-              </Field>
-
-              <Field label={text.fields.email}>
-                <Input
-                  dir="ltr"
-                  value={form.email}
-                  onChange={(event) => patch({ email: event.target.value })}
-                  className="h-11 rounded-xl text-start"
-                />
-              </Field>
-
-              <Field label={text.fields.linkedin}>
-                <Input
-                  dir="ltr"
-                  value={form.linkedinUrl}
-                  onChange={(event) =>
-                    patch({ linkedinUrl: event.target.value })
-                  }
-                  className="h-11 rounded-xl text-start"
-                />
-              </Field>
             </FormSection>
           </div>
 
