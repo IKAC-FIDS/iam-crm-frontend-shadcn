@@ -11,6 +11,7 @@ import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { PeoplePage } from "@/features/people/pages/PeoplePage"
+import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 
 import { PermissionRoute } from "./PermissionRoute"
@@ -22,7 +23,9 @@ const featureRoutes = appMenuRoutes
     (route) =>
       route.path !== "/dashboard" &&
       route.path !== "/companies" &&
-      route.path !== "/people",
+      route.path !== "/people" &&
+      route.path !== "/opportunities" &&
+      route.path !== "/pipeline",
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -88,6 +91,18 @@ export const router = createBrowserRouter([
                 path: "/people",
                 element: <PeoplePage />,
               },
+            ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{ type: "permissions", mode: "any", permissions: ["opportunity:view"] }}
+              />
+            ),
+            children: [
+              { path: "/opportunities", element: <OpportunityWorkspacePage /> },
+              { path: "/opportunities/:id", element: <FeaturePlaceholderPage /> },
+              { path: "/pipeline", element: <Navigate to="/opportunities" replace /> },
             ],
           },
           {

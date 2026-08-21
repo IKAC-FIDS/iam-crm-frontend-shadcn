@@ -18,7 +18,6 @@ import {
   ShieldCheck,
   Users,
   UserRound,
-  Workflow,
 } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -77,15 +76,6 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: "sales",
     order: 30,
     icon: BriefcaseBusiness,
-    access: any(["opportunity:view"]),
-  },
-  {
-    id: "pipeline",
-    path: "/pipeline",
-    label: navText.pipeline,
-    group: "sales",
-    order: 40,
-    icon: Workflow,
     access: any(["opportunity:view"]),
   },
   {

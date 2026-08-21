@@ -22,11 +22,13 @@ export function DataTableShell<Row>({
   columns,
   getRowKey,
   emptyState,
+  onRowClick,
 }: {
   rows: Row[]
   columns: DataTableColumn<Row>[]
   getRowKey: (row: Row) => string
   emptyState?: ReactNode
+  onRowClick?: (row: Row) => void
 }) {
   if (!rows.length && emptyState) {
     return <>{emptyState}</>
@@ -55,7 +57,11 @@ export function DataTableShell<Row>({
           {rows.map((row) => (
             <TableRow
               key={getRowKey(row)}
-              className="h-12 border-[var(--app-divider)] hover:bg-[var(--app-background)]/55"
+              className={[
+                "h-12 border-[var(--app-divider)] hover:bg-[var(--app-background)]/55",
+                onRowClick ? "cursor-pointer" : "",
+              ].join(" ")}
+              onClick={() => onRowClick?.(row)}
             >
               {columns.map((column) => (
                 <TableCell
