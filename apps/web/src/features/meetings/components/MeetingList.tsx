@@ -1,4 +1,5 @@
 import { CalendarDays } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import {
   DataTableShell,
@@ -42,6 +43,8 @@ export function MeetingList({
   onCancel: (meeting: Meeting) => void
 }) {
   const text = uiText.meetings
+  const navigate = useNavigate()
+
   const columns: DataTableColumn<Meeting>[] = [
     {
       id: "meeting",
@@ -113,18 +116,24 @@ export function MeetingList({
       header: text.fields.actions,
       className: "w-16",
       cell: (meeting) => (
-        <MeetingActionsMenu
-          meeting={meeting}
-          canUpdate={canUpdate}
-          canComplete={canComplete}
-          canCancel={canCancel}
-          onEdit={() => onEdit(meeting)}
-          onComplete={() => onComplete(meeting)}
-          onCancel={() => onCancel(meeting)}
-        />
+        <div
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <MeetingActionsMenu
+            meeting={meeting}
+            canUpdate={canUpdate}
+            canComplete={canComplete}
+            canCancel={canCancel}
+            onEdit={() => onEdit(meeting)}
+            onComplete={() => onComplete(meeting)}
+            onCancel={() => onCancel(meeting)}
+          />
+        </div>
       ),
     },
   ]
+
   return (
     <div className="w-full max-w-full overflow-x-auto">
       <div className="min-w-[920px]">
@@ -132,6 +141,7 @@ export function MeetingList({
           rows={meetings}
           columns={columns}
           getRowKey={(meeting) => meeting.id}
+          onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
           emptyState={
             <EmptyState
               icon={CalendarDays}

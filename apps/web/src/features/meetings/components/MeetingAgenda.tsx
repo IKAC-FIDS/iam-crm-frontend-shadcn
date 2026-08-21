@@ -6,6 +6,7 @@ import {
   UsersRound,
   Video,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -45,11 +46,14 @@ export function MeetingAgenda({
   onComplete: (meeting: Meeting) => void
   onCancel: (meeting: Meeting) => void
 }) {
+  const navigate = useNavigate()
   const groups = new Map<string, Meeting[]>()
+
   meetings.forEach((meeting) => {
     const key = meetingDayKey(meeting.startAt)
     groups.set(key, [...(groups.get(key) || []), meeting])
   })
+
   if (!meetings.length) {
     return (
       <EmptyState
@@ -66,11 +70,13 @@ export function MeetingAgenda({
       />
     )
   }
+
   return (
     <div className="grid min-w-0 gap-7">
       {[...groups.values()].map((items) => {
         const first = items[0]
         if (!first) return null
+
         return (
           <section key={meetingDayKey(first.startAt)} className="min-w-0">
             <div className="mb-3 flex items-center gap-3">
@@ -79,6 +85,7 @@ export function MeetingAgenda({
               </h2>
               <div className="h-px min-w-0 flex-1 bg-[var(--app-divider)]" />
             </div>
+
             <div className="grid gap-2.5">
               {items.map((meeting) => {
                 const cancelled = meeting.status === "CANCELLED"
@@ -88,10 +95,22 @@ export function MeetingAgenda({
                     : meeting.mode === "HYBRID"
                       ? Layers3
                       : MapPin
+
+                const openMeeting = () =>
+                  navigate(`/meetings/${meeting.id}`)
+
                 return (
                   <article
                     key={meeting.id}
-                    className={`grid min-w-0 grid-cols-[72px_minmax(0,1fr)] overflow-hidden rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)] transition-colors hover:border-[var(--app-primary)]/25 sm:grid-cols-[94px_minmax(0,1fr)] ${
+                    tabIndex={0}
+                    onClick={openMeeting}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        openMeeting()
+                      }
+                    }}
+                    className={`grid min-w-0 cursor-pointer grid-cols-[72px_minmax(0,1fr)] overflow-hidden rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)] transition-colors hover:border-[var(--app-primary)]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30 sm:grid-cols-[94px_minmax(0,1fr)] ${
                       cancelled ? "opacity-70" : ""
                     }`}
                   >
@@ -110,6 +129,7 @@ export function MeetingAgenda({
                         {meetingTimeRange(meeting).split("–")[1]}
                       </span>
                     </div>
+
                     <div className="min-w-0 p-3.5 sm:p-4">
                       <div className="flex min-w-0 items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -124,7 +144,12 @@ export function MeetingAgenda({
                             ) : null}
                           </p>
                         </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
+
+                        <div
+                          className="flex shrink-0 items-center gap-1.5"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
                           <StatusBadge tone={meetingStatusTone(meeting.status)}>
                             {meetingStatusLabel(meeting.status)}
                           </StatusBadge>
@@ -139,11 +164,13 @@ export function MeetingAgenda({
                           />
                         </div>
                       </div>
+
                       <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-[10px] text-[var(--app-text-secondary)]">
                         <span className="inline-flex items-center gap-1.5">
                           <ModeIcon className="size-3.5" />
                           {meetingModeLabel(meeting.mode)}
                         </span>
+
                         {meeting.organizer?.fullName ||
                         meeting.assignees?.length ? (
                           <span className="inline-flex items-center gap-1.5">
@@ -153,18 +180,19 @@ export function MeetingAgenda({
                               : meeting.organizer?.fullName}
                           </span>
                         ) : null}
+
                         {meeting.attendees?.length ? (
                           <span className="inline-flex items-center gap-1.5">
                             <UsersRound className="size-3.5" />
-                            {meeting.attendees.length.toLocaleString(
-                              "fa-IR"
-                            )}{" "}
+                            {meeting.attendees.length.toLocaleString("fa-IR")}{" "}
                             {uiText.meetings.agenda.attendees}
                           </span>
                         ) : null}
+
                         {meeting.location ? (
                           <span className="truncate">{meeting.location}</span>
                         ) : null}
+
                         {!meeting.location && meeting.mode !== "IN_PERSON" ? (
                           <span>{uiText.meetings.agenda.online}</span>
                         ) : null}
