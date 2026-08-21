@@ -20,11 +20,13 @@ export function SearchableCompanySelect({
   onChange,
   placeholder,
   allowEmpty = true,
+  disabled = false,
 }: {
   value?: string
   onChange: (value?: string) => void
   placeholder?: string
   allowEmpty?: boolean
+  disabled?: boolean
 }) {
   const text = uiText.people.companySelect
   const [open, setOpen] = useState(false)
@@ -64,6 +66,7 @@ export function SearchableCompanySelect({
           <Button
             type="button"
             variant="outline"
+            disabled={disabled}
             className="h-11 w-full justify-between rounded-xl px-3 font-normal"
           />
         }

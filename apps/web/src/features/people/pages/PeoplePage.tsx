@@ -17,18 +17,11 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
 import { PeopleFilterBar } from "../components/PeopleFilterBar"
+import { CreatePersonDialog } from "../components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "../components/Person360WorkspaceDialog"
 import { PersonCard } from "../components/PersonCard"
-import { PersonFormDialog } from "../components/PersonFormDialog"
-import {
-  useCreatePerson,
-  usePeopleDirectory,
-  usePeopleLookups,
-} from "../hooks/usePeople"
-import type {
-  PeopleDirectoryQuery,
-  PersonMutationPayload,
-} from "../types/person.types"
+import { usePeopleDirectory, usePeopleLookups } from "../hooks/usePeople"
+import type { PeopleDirectoryQuery } from "../types/person.types"
 
 const initialQuery: PeopleDirectoryQuery = {
   page: 1,
@@ -66,7 +59,6 @@ export function PeoplePage() {
 
   const directory = usePeopleDirectory(debouncedQuery, canViewDirectory)
   const lookups = usePeopleLookups()
-  const createMutation = useCreatePerson()
 
   const metrics = useMemo(() => {
     const rows = directory.data?.data ?? []
@@ -80,12 +72,6 @@ export function PeoplePage() {
 
   function patchQuery(patch: Partial<PeopleDirectoryQuery>) {
     setQuery((current) => ({ ...current, ...patch }))
-  }
-
-  async function createPerson(payload: PersonMutationPayload) {
-    const person = await createMutation.mutateAsync(payload)
-    setCreateOpen(false)
-    setSelectedPersonId(person.id)
   }
 
   return (
@@ -235,13 +221,10 @@ export function PeoplePage() {
         />
       ) : null}
 
-      <PersonFormDialog
+      <CreatePersonDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        mode="create"
-        lookups={lookups.data}
-        isPending={createMutation.isPending}
-        onSubmit={createPerson}
+        onCreated={(person) => setSelectedPersonId(person.id)}
       />
 
     </div>

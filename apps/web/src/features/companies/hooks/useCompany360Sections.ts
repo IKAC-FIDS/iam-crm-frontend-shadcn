@@ -22,6 +22,10 @@ type PaginatedEnvelope<T> = {
   meta: PaginationMeta
 }
 
+export const company360SectionQueryKeys = {
+  people: (companyId: string) => ["company-people", companyId] as const,
+}
+
 export type CompanyPersonListItem = {
   id: string
   companyId: string

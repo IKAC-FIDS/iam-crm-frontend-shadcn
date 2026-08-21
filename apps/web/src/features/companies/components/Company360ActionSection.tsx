@@ -11,6 +11,7 @@ export function Company360ActionSection({
   icon,
   children,
   onCreate,
+  createLabel,
   onViewAll,
   contentClassName = "max-h-[238px]",
 }: {
@@ -20,6 +21,7 @@ export function Company360ActionSection({
   icon?: ReactNode
   children: ReactNode
   onCreate?: () => void
+  createLabel?: string
   onViewAll?: () => void
   contentClassName?: string
 }) {
@@ -55,6 +57,8 @@ export function Company360ActionSection({
             size="icon"
             className="size-9 shrink-0 rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
             onClick={onCreate}
+            aria-label={createLabel}
+            title={createLabel}
           >
             <Plus className="size-4" />
           </Button>

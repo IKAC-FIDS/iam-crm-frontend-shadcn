@@ -60,6 +60,8 @@ export function PersonFormDialog({
   onOpenChange,
   mode,
   person,
+  initialCompanyId,
+  lockCompany = false,
   lookups,
   isPending,
   onSubmit,
@@ -68,16 +70,26 @@ export function PersonFormDialog({
   onOpenChange: (open: boolean) => void
   mode: "create" | "edit"
   person?: PersonDetail | null
+  initialCompanyId?: string
+  lockCompany?: boolean
   lookups: PeopleLookupSet
   isPending?: boolean
   onSubmit: (payload: PersonMutationPayload) => Promise<void>
 }) {
   const text = uiText.people
-  const [form, setForm] = useState<FormState>(stateFromPerson(person))
+  const [form, setForm] = useState<FormState>(() => ({
+    ...stateFromPerson(person),
+    companyId: person?.companyId || initialCompanyId || "",
+  }))
 
   useEffect(() => {
-    if (open) setForm(stateFromPerson(person))
-  }, [open, person])
+    if (open) {
+      setForm({
+        ...stateFromPerson(person),
+        companyId: person?.companyId || initialCompanyId || "",
+      })
+    }
+  }, [initialCompanyId, open, person])
 
   const valid = useMemo(
     () =>
@@ -157,11 +169,14 @@ export function PersonFormDialog({
                 <Field label={text.fields.company}>
                   <SearchableCompanySelect
                     value={form.companyId || undefined}
-                    onChange={(companyId) =>
-                      patch({ companyId: companyId ?? "" })
-                    }
+                    onChange={(companyId) => {
+                      if (!lockCompany) {
+                        patch({ companyId: companyId ?? "" })
+                      }
+                    }}
                     placeholder={text.form.selectCompany}
                     allowEmpty={false}
+                    disabled={lockCompany}
                   />
                 </Field>
               ) : null}

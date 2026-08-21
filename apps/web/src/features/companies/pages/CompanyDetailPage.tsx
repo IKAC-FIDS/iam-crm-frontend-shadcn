@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { useNavigate, useParams } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
@@ -24,6 +25,7 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
+import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -41,7 +43,10 @@ import {
   type QuickViewField,
 } from "../components/EntityQuickViewDialog"
 import { useCompany } from "../hooks/useCompanies"
-import { useCompany360Overview } from "../hooks/useCompany360"
+import {
+  company360OverviewQueryKeys,
+  useCompany360Overview,
+} from "../hooks/useCompany360"
 import {
   type CompanyActivityItem,
   type CompanyBranch,
@@ -58,6 +63,7 @@ import {
   useCompanyPeople,
   useCompanySocialChannels,
   useCompanyTasks,
+  company360SectionQueryKeys,
 } from "../hooks/useCompany360Sections"
 import { useUpdateCompany } from "../hooks/useCompanyMutations"
 import { getActivityTypeLabel } from "../utils/activityTypeLabels"
@@ -84,6 +90,7 @@ type QuickViewState =
 export function CompanyDetailPage() {
   const text = uiText.companies.detail
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { companyId = "" } = useParams<{ companyId: string }>()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
 
@@ -91,9 +98,11 @@ export function CompanyDetailPage() {
   const [ownerOpen, setOwnerOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
+  const [createPersonOpen, setCreatePersonOpen] = useState(false)
   const [quickView, setQuickView] = useState<QuickViewState>(null)
 
   const canViewPeople = permissions.includes("person:view")
+  const canCreatePerson = permissions.includes("person:create")
   const canViewOpportunities = permissions.includes("opportunity:view")
   const canViewTasks = permissions.includes("task:view")
   const canViewMeetings = permissions.includes("meeting:view")
@@ -398,6 +407,8 @@ export function CompanyDetailPage() {
               description={text.sections.peopleDescription}
               count={peopleQuery.data?.meta.total ?? 0}
               icon={<UsersRound className="size-5" />}
+              onCreate={canCreatePerson ? () => setCreatePersonOpen(true) : undefined}
+              createLabel={uiText.people.actions.create}
               onViewAll={() => goToModule("/people")}
             >
               {peopleQuery.isLoading ? <SectionLoading /> : peopleQuery.data?.data.length ? (
@@ -524,6 +535,25 @@ export function CompanyDetailPage() {
             if (!open) setSelectedPersonId(null)
           }}
           onPersonChanged={() => peopleQuery.refetch()}
+        />
+      ) : null}
+
+      {canCreatePerson ? (
+        <CreatePersonDialog
+          open={createPersonOpen}
+          onOpenChange={setCreatePersonOpen}
+          initialCompanyId={companyId}
+          lockCompany
+          onCreated={async () => {
+            await Promise.all([
+              queryClient.invalidateQueries({
+                queryKey: company360SectionQueryKeys.people(companyId),
+              }),
+              queryClient.invalidateQueries({
+                queryKey: company360OverviewQueryKeys.detail(companyId),
+              }),
+            ])
+          }}
         />
       ) : null}
 

@@ -21,9 +21,13 @@ export type Company360Overview = {
   }
 }
 
+export const company360OverviewQueryKeys = {
+  detail: (companyId: string) => ["company-360-overview", companyId] as const,
+}
+
 export function useCompany360Overview(companyId: string) {
   return useQuery({
-    queryKey: ["company-360-overview", companyId],
+    queryKey: company360OverviewQueryKeys.detail(companyId),
     queryFn: async () => {
       const response = await api.get(`/companies/${companyId}/overview`)
       return unwrapApiResponse<Company360Overview>(response.data)
