@@ -1,4 +1,4 @@
-import {
+﻿import {
   Archive,
   ArrowRight,
   Building2,
@@ -689,9 +689,7 @@ export function CompanyDetailPage() {
                       key={meeting.id}
                       type="button"
                       className="w-full text-start"
-                      onClick={() =>
-                        setQuickView({ kind: "meeting", item: meeting })
-                      }
+                      onClick={() => navigate(`/meetings/${meeting.id}`)}
                     >
                       <EntityRow
                         icon={<CalendarClock className="size-4" />}
@@ -1042,3 +1040,4 @@ function SectionLoading({ count = 4 }: { count?: number }) {
     </div>
   )
 }
+

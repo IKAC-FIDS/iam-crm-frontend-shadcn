@@ -1,4 +1,4 @@
-import {
+﻿import {
   CalendarDays,
   CheckCircle2,
   ListChecks,
@@ -11,6 +11,7 @@ import {
 import {
   useState,
   type Dispatch,
+  type MouseEventHandler,
   type ReactNode,
   type SetStateAction,
 } from "react"
@@ -286,7 +287,16 @@ export function OpportunityExecutionSection({
             {meetings.data.data.map((item) => (
               <article
                 key={item.id}
-                className="min-w-0 rounded-xl border border-[var(--app-divider)] p-3"
+                role="button"
+                tabIndex={0}
+                className="min-w-0 cursor-pointer rounded-xl border border-[var(--app-divider)] p-3 transition-colors hover:border-[var(--app-primary)]/30 hover:bg-[var(--app-primary-soft)]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30"
+                onClick={() => navigate(`/meetings/${item.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    navigate(`/meetings/${item.id}`)
+                  }
+                }}
               >
                 <div className="flex items-start justify-between">
                   <StatusBadge
@@ -303,7 +313,10 @@ export function OpportunityExecutionSection({
                   {canUpdateMeeting && item.status === "SCHEDULED" ? (
                     <IconButton
                       label={uiText.opportunities.actions.edit}
-                      onClick={() => setMeeting(item)}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setMeeting(item)
+                      }}
                     >
                       <Pencil />
                     </IconButton>
@@ -328,12 +341,13 @@ export function OpportunityExecutionSection({
                         size="sm"
                         variant="outline"
                         className="h-8 flex-1 rounded-lg text-[9px]"
-                        onClick={() =>
+                        onClick={(event) => {
+                          event.stopPropagation()
                           setActionTarget({
                             kind: "meetingComplete",
                             id: item.id,
                           })
-                        }
+                        }}
                       >
                         <CheckCircle2 className="size-3" />
                         {text.actions.completeMeeting}
@@ -344,12 +358,13 @@ export function OpportunityExecutionSection({
                         size="sm"
                         variant="outline"
                         className="h-8 rounded-lg text-[9px]"
-                        onClick={() =>
+                        onClick={(event) => {
+                          event.stopPropagation()
                           setActionTarget({
                             kind: "meetingCancel",
                             id: item.id,
                           })
-                        }
+                        }}
                       >
                         <XCircle className="size-3" />
                         {text.actions.cancelMeeting}
@@ -467,7 +482,7 @@ function IconButton({
   children,
 }: {
   label: string
-  onClick: () => void
+  onClick: MouseEventHandler<HTMLButtonElement>
   danger?: boolean
   children: ReactNode
 }) {
@@ -544,3 +559,5 @@ function Pagination({
     </div>
   )
 }
+
+
