@@ -807,6 +807,172 @@
     },
   },
 
+tasks: {
+  title: "کارها",
+  description:
+    "فضای اجرای کارهای روزانه، پیگیری موعدها و مدیریت اقدام‌های مرتبط با فروش",
+  views: { focus: "تمرکز", list: "فهرست" },
+  quick: {
+    all: "همه",
+    overdue: "سررسید گذشته",
+    todo: "انجام‌نشده",
+    inProgress: "در حال انجام",
+    done: "انجام‌شده",
+    cancelled: "لغوشده",
+    mine: "کارهای من",
+    created: "ایجادشده توسط من",
+  },
+  statuses: {
+    TODO: "انجام‌نشده",
+    IN_PROGRESS: "در حال انجام",
+    DONE: "انجام‌شده",
+    CANCELLED: "لغوشده",
+  },
+  priorities: {
+    LOW: "کم",
+    MEDIUM: "متوسط",
+    HIGH: "زیاد",
+    STRATEGIC: "راهبردی",
+  },
+  actions: {
+    create: "ایجاد کار",
+    edit: "ویرایش",
+    save: "ذخیره",
+    more: "عملیات بیشتر",
+    changeStatus: "تغییر وضعیت",
+    assign: "ارجاع",
+    complete: "تکمیل",
+    reschedule: "زمان‌بندی مجدد",
+    delete: "حذف",
+    filters: "فیلترها",
+    clearFilters: "پاک کردن فیلترها",
+    clearSelection: "حذف انتخاب",
+    loadMore: "نمایش بیشتر",
+    apply: "اعمال",
+  },
+  fields: {
+    title: "عنوان کار",
+    description: "توضیحات",
+    priority: "اولویت",
+    status: "وضعیت",
+    company: "شرکت",
+    opportunity: "فرصت",
+    person: "مخاطب",
+    commercialDocument: "سند تجاری",
+    payment: "پرداخت",
+    assignee: "مسئول",
+    dueAt: "موعد انجام",
+    reminderAt: "زمان یادآوری",
+    completionNote: "یادداشت تکمیل",
+    note: "یادداشت",
+  },
+  sections: {
+    task: "تعریف کار",
+    taskDescription: "عنوان، توضیحات و سطح اولویت کار را مشخص کنید.",
+    context: "زمینه تجاری",
+    contextDescription:
+      "کار را در صورت نیاز به شرکت، فرصت، مخاطب، سند یا پرداخت مرتبط کنید.",
+    ownership: "مسئولیت",
+    ownershipDescription:
+      "مسئول اجرای کار را تعیین کنید؛ در صورت خالی بودن، سیاست پیش‌فرض Backend اعمال می‌شود.",
+    schedule: "زمان‌بندی",
+    scheduleDescription: "موعد انجام و زمان یادآوری کار را تنظیم کنید.",
+  },
+  groups: {
+    overdue: "نیازمند اقدام فوری",
+    active: "در جریان",
+    closed: "بسته‌شده",
+  },
+  labels: {
+    overdue: "از موعد گذشته",
+    noDueDate: "بدون موعد",
+    unassigned: "بدون مسئول",
+  },
+  table: {
+    task: "کار",
+    status: "وضعیت",
+    priority: "اولویت",
+    assignee: "مسئول",
+    dueAt: "سررسید",
+    reminderAt: "یادآوری",
+    actions: "عملیات",
+  },
+  filters: {
+    allPriorities: "همه اولویت‌ها",
+    dueFrom: "سررسید از",
+    dueTo: "سررسید تا",
+  },
+  placeholders: {
+    search: "جستجو در عنوان، توضیحات، شرکت، فرصت یا مخاطب...",
+    searchOptions: "جستجو...",
+    loading: "در حال دریافت...",
+    noOptions: "موردی برای نمایش وجود ندارد.",
+    company: "انتخاب شرکت",
+    companyFirst: "ابتدا شرکت را انتخاب کنید",
+    opportunity: "انتخاب فرصت",
+    opportunityFirst: "ابتدا فرصت را انتخاب کنید",
+    person: "انتخاب مخاطب",
+    commercialDocument: "انتخاب سند تجاری",
+    payment: "انتخاب پرداخت",
+    assignee: "انتخاب مسئول",
+    systemAssignee: "پیش‌فرض سیستم",
+  },
+  fallbacks: {
+    opportunity: "فرصت",
+    person: "مخاطب",
+    document: "سند تجاری",
+    payment: "پرداخت",
+  },
+  validation: {
+    titleRequired: "عنوان کار الزامی است.",
+    reminderBeforeDue: "زمان یادآوری باید قبل از موعد انجام باشد.",
+    companyForPerson: "برای انتخاب مخاطب، ابتدا شرکت را مشخص کنید.",
+    opportunityForCommercialContext:
+      "برای انتخاب سند تجاری یا پرداخت، ابتدا فرصت را مشخص کنید.",
+  },
+  dialogs: {
+    createTitle: "ایجاد کار",
+    editTitle: "ویرایش کار",
+    formDescription:
+      "کار، زمینه تجاری، مسئول و زمان‌بندی را در یک جریان یکپارچه ثبت کنید.",
+    completeTitle: "تکمیل کار",
+    completeDescription: "در صورت نیاز نتیجه یا توضیح تکمیل کار را ثبت کنید.",
+    statusTitle: "تغییر وضعیت کار",
+    statusDescription:
+      "وضعیت جدید را انتخاب کنید. یادداشت اختیاری در رویداد ممیزی ثبت می‌شود.",
+    assignTitle: "ارجاع کار",
+    assignDescription: "یک کاربر داخلی مجاز را به‌عنوان مسئول کار انتخاب کنید.",
+    rescheduleTitle: "زمان‌بندی مجدد",
+    rescheduleDescription: "موعد جدید و در صورت نیاز زمان یادآوری را مشخص کنید.",
+    deleteTitle: "حذف کار",
+    deleteDescription:
+      "این کار حذف می‌شود و عملیات قابل بازگشت نیست. در صورت اطمینان ادامه دهید.",
+  },
+  feedback: {
+    created: "کار با موفقیت ایجاد شد.",
+    updated: "کار با موفقیت بروزرسانی شد.",
+    completed: "کار تکمیل شد.",
+    statusChanged: "وضعیت کار تغییر کرد.",
+    assigned: "کار با موفقیت ارجاع شد.",
+    rescheduled: "زمان‌بندی کار بروزرسانی شد.",
+    deleted: "کار حذف شد.",
+  },
+  empty: {
+    title: "کاری برای نمایش وجود ندارد",
+    description:
+      "فیلترها را تغییر دهید یا در صورت داشتن مجوز، یک کار جدید ایجاد کنید.",
+  },
+  errors: {
+    permissionTitle: "دسترسی مشاهده کارها فعال نیست",
+    permissionDescription:
+      "برای مشاهده این بخش به مجوز task:view نیاز دارید.",
+    listTitle: "دریافت کارها انجام نشد",
+    listDescription:
+      "در حال حاضر امکان دریافت فهرست کارها از سرور وجود ندارد. دوباره تلاش کنید.",
+    mutation: "عملیات کار انجام نشد.",
+  },
+},
+
   meetings: {
     title: "جلسات",
     description: "برنامه‌ریزی و پیگیری تعاملات فروش و جلسات پیش‌رو",
@@ -1350,4 +1516,5 @@
     },
   },
 } as const
+
 

@@ -141,15 +141,33 @@ export function OpportunityExecutionSection({
         title={text.sections.tasks}
         count={tasks.data?.meta.total ?? opportunity._count?.tasks}
         action={
-          canCreateTask ? (
-            <Button
-              size="sm"
-              className="rounded-xl bg-[var(--app-primary)]"
-              onClick={() => setTask(null)}
-            >
-              <Plus className="size-4" />
-              {text.actions.addTask}
-            </Button>
+          canViewTasks || canCreateTask ? (
+            <div className="flex flex-wrap gap-2">
+              {canViewTasks ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() =>
+                    navigate(
+                      `/tasks?companyId=${encodeURIComponent(opportunity.companyId)}&opportunityId=${encodeURIComponent(opportunity.id)}`
+                    )
+                  }
+                >
+                  {uiText.dashboard.recentActivities.viewAll}
+                </Button>
+              ) : null}
+              {canCreateTask ? (
+                <Button
+                  size="sm"
+                  className="rounded-xl bg-[var(--app-primary)]"
+                  onClick={() => setTask(null)}
+                >
+                  <Plus className="size-4" />
+                  {text.actions.addTask}
+                </Button>
+              ) : null}
+            </div>
           ) : null
         }
       >
@@ -559,5 +577,6 @@ function Pagination({
     </div>
   )
 }
+
 
 

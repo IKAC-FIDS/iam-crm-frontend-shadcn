@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from "react-router-dom"
+﻿import { Navigate, createBrowserRouter } from "react-router-dom"
 
 import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
@@ -9,6 +9,7 @@ import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { MeetingDetailPage } from "@/features/meetings/pages/MeetingDetailPage"
 import { MeetingsPage } from "@/features/meetings/pages/MeetingsPage"
+import { TasksPage } from "@/features/tasks/pages/TasksPage"
 import { PeoplePage } from "@/features/people/pages/PeoplePage"
 import { OpportunityDetailPage } from "@/features/opportunities/pages/OpportunityDetailPage"
 import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
@@ -24,6 +25,7 @@ const featureRoutes = appMenuRoutes
       route.path !== "/dashboard" &&
       route.path !== "/companies" &&
       route.path !== "/people" &&
+      route.path !== "/tasks" &&
       route.path !== "/meetings" &&
       route.path !== "/opportunities" &&
       route.path !== "/pipeline"
@@ -122,6 +124,17 @@ export const router = createBrowserRouter([
                 policy={{
                   type: "permissions",
                   mode: "any",
+                  permissions: ["task:view"],
+                }}
+              />
+            ),
+            children: [{ path: "/tasks", element: <TasksPage /> }],
+          },          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
                   permissions: ["meeting:view"],
                 }}
               />
@@ -149,3 +162,4 @@ export const router = createBrowserRouter([
     element: <Navigate to="/dashboard" replace />,
   },
 ])
+
