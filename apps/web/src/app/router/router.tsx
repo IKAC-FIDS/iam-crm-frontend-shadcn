@@ -10,6 +10,7 @@ import { LoginPage } from "@/features/auth/pages/LoginPage"
 import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
+import { PeoplePage } from "@/features/people/pages/PeoplePage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 
 import { PermissionRoute } from "./PermissionRoute"
@@ -20,7 +21,8 @@ const featureRoutes = appMenuRoutes
   .filter(
     (route) =>
       route.path !== "/dashboard" &&
-      route.path !== "/companies",
+      route.path !== "/companies" &&
+      route.path !== "/people",
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -68,6 +70,23 @@ export const router = createBrowserRouter([
               {
                 path: "/companies/:companyId",
                 element: <CompanyDetailPage />,
+              },
+            ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: ["people:directory:view"],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/people",
+                element: <PeoplePage />,
               },
             ],
           },

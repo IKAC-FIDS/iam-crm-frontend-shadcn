@@ -1,0 +1,343 @@
+import { X } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+
+import { uiText } from "@/config/uiText"
+import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+import { Input } from "@workspace/ui/components/input"
+
+import type {
+  CompanyOption,
+  PersonDetail,
+  PersonMutationPayload,
+} from "../types/person.types"
+
+type FormState = {
+  companyId: string
+  fullName: string
+  jobTitle: string
+  department: string
+  personaRole: string
+  seniorityLevel: string
+  linkedinUrl: string
+  email: string
+  phone: string
+  contactRole: "normal" | "primary" | "secondary"
+}
+
+const emptyForm: FormState = {
+  companyId: "",
+  fullName: "",
+  jobTitle: "",
+  department: "",
+  personaRole: "",
+  seniorityLevel: "",
+  linkedinUrl: "",
+  email: "",
+  phone: "",
+  contactRole: "normal",
+}
+
+function stateFromPerson(person?: PersonDetail | null): FormState {
+  if (!person) return emptyForm
+  return {
+    companyId: person.companyId ?? "",
+    fullName: person.fullName ?? "",
+    jobTitle: person.jobTitle || person.title || "",
+    department: person.department ?? "",
+    personaRole: person.personaRole || person.personaTag || "",
+    seniorityLevel: person.seniorityLevel ?? "",
+    linkedinUrl: person.linkedinUrl ?? "",
+    email: person.email ?? "",
+    phone: person.phone ?? "",
+    contactRole: person.isPrimaryContact
+      ? "primary"
+      : person.isSecondaryContact
+        ? "secondary"
+        : "normal",
+  }
+}
+
+export function PersonFormDialog({
+  open,
+  onOpenChange,
+  mode,
+  person,
+  companies,
+  isPending,
+  onSubmit,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  mode: "create" | "edit"
+  person?: PersonDetail | null
+  companies: CompanyOption[]
+  isPending?: boolean
+  onSubmit: (payload: PersonMutationPayload) => Promise<void>
+}) {
+  const text = uiText.people
+  const [form, setForm] = useState<FormState>(stateFromPerson(person))
+
+  useEffect(() => {
+    if (open) setForm(stateFromPerson(person))
+  }, [open, person])
+
+  const valid = useMemo(
+    () =>
+      Boolean(form.fullName.trim()) &&
+      (mode === "edit" || Boolean(form.companyId)),
+    [form.companyId, form.fullName, mode],
+  )
+
+  function patch(values: Partial<FormState>) {
+    setForm((current) => ({ ...current, ...values }))
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault()
+    if (!valid) return
+
+    await onSubmit({
+      ...(mode === "create" ? { companyId: form.companyId } : {}),
+      fullName: form.fullName.trim(),
+      jobTitle: form.jobTitle.trim() || undefined,
+      department: form.department.trim() || undefined,
+      personaRole: form.personaRole.trim() || undefined,
+      seniorityLevel: form.seniorityLevel.trim() || undefined,
+      linkedinUrl: form.linkedinUrl.trim() || undefined,
+      email: form.email.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      isPrimaryContact: form.contactRole === "primary",
+      isSecondaryContact: form.contactRole === "secondary",
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        dir="rtl"
+        className="max-h-[90vh] w-[min(900px,calc(100vw-24px))] max-w-none gap-0 overflow-hidden rounded-[30px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 shadow-[var(--app-shadow-elevated)] sm:max-w-none"
+      >
+        <DialogHeader className="border-b border-[var(--app-divider)] bg-[linear-gradient(155deg,var(--app-primary-soft),var(--app-surface)_70%)] px-5 py-5 sm:px-7">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <DialogTitle className="text-lg font-bold text-[var(--app-heading)]">
+                {mode === "create"
+                  ? text.form.createTitle
+                  : text.form.editTitle}
+              </DialogTitle>
+              <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                {text.form.description}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="rounded-xl"
+              aria-label={text.actions.close}
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <form onSubmit={submit} className="min-h-0 overflow-y-auto p-5 sm:p-7">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <FormSection
+              title={text.form.identityTitle}
+              description={text.form.identityDescription}
+            >
+              <Field label={text.fields.fullName}>
+                <Input
+                  autoFocus
+                  value={form.fullName}
+                  onChange={(event) => patch({ fullName: event.target.value })}
+                  className="h-11 rounded-xl"
+                />
+              </Field>
+
+              {mode === "create" ? (
+                <Field label={text.fields.company}>
+                  <select
+                    required
+                    value={form.companyId}
+                    onChange={(event) =>
+                      patch({ companyId: event.target.value })
+                    }
+                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">{text.form.selectCompany}</option>
+                    {companies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.brandName || company.legalName}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              ) : null}
+
+              <Field label={text.fields.jobTitle}>
+                <Input
+                  value={form.jobTitle}
+                  onChange={(event) => patch({ jobTitle: event.target.value })}
+                  className="h-11 rounded-xl"
+                />
+              </Field>
+
+              <Field label={text.fields.department}>
+                <Input
+                  value={form.department}
+                  onChange={(event) => patch({ department: event.target.value })}
+                  className="h-11 rounded-xl"
+                />
+              </Field>
+
+              <div>
+                <p className="mb-2 text-xs font-bold text-[var(--app-heading)]">
+                  {text.fields.contactRole}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {(["normal", "secondary", "primary"] as const).map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => patch({ contactRole: role })}
+                      className={[
+                        "rounded-xl border px-3 py-2.5 text-xs font-bold transition-colors",
+                        form.contactRole === role
+                          ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
+                          : "border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)]",
+                      ].join(" ")}
+                    >
+                      {text.contactRole[role]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </FormSection>
+
+            <FormSection
+              title={text.form.salesProfileTitle}
+              description={text.form.salesProfileDescription}
+            >
+              <Field label={text.fields.personaRole}>
+                <Input
+                  value={form.personaRole}
+                  onChange={(event) => patch({ personaRole: event.target.value })}
+                  className="h-11 rounded-xl"
+                />
+              </Field>
+
+              <Field label={text.fields.seniorityLevel}>
+                <Input
+                  value={form.seniorityLevel}
+                  onChange={(event) =>
+                    patch({ seniorityLevel: event.target.value })
+                  }
+                  className="h-11 rounded-xl"
+                />
+              </Field>
+
+              <Field label={text.fields.phone}>
+                <Input
+                  dir="ltr"
+                  value={form.phone}
+                  onChange={(event) => patch({ phone: event.target.value })}
+                  className="h-11 rounded-xl text-start"
+                />
+              </Field>
+
+              <Field label={text.fields.email}>
+                <Input
+                  dir="ltr"
+                  value={form.email}
+                  onChange={(event) => patch({ email: event.target.value })}
+                  className="h-11 rounded-xl text-start"
+                />
+              </Field>
+
+              <Field label={text.fields.linkedin}>
+                <Input
+                  dir="ltr"
+                  value={form.linkedinUrl}
+                  onChange={(event) =>
+                    patch({ linkedinUrl: event.target.value })
+                  }
+                  className="h-11 rounded-xl text-start"
+                />
+              </Field>
+            </FormSection>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2 border-t border-[var(--app-divider)] pt-5">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              disabled={isPending}
+              onClick={() => onOpenChange(false)}
+            >
+              {uiText.common.cancel}
+            </Button>
+            <Button
+              type="submit"
+              disabled={!valid || isPending}
+              className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+            >
+              {isPending
+                ? uiText.common.processing
+                : mode === "create"
+                  ? text.actions.create
+                  : text.actions.save}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
+      <h3 className="text-sm font-bold text-[var(--app-heading)]">{title}</h3>
+      <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-secondary)]">
+        {description}
+      </p>
+      <div className="mt-4 grid gap-4">{children}</div>
+    </section>
+  )
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs font-bold text-[var(--app-heading)]">
+        {label}
+      </span>
+      {children}
+    </label>
+  )
+}
