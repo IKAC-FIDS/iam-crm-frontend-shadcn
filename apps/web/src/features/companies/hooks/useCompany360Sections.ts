@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
-import { unwrapApiResponse } from "@/lib/apiResponse"
 
 export type PaginationMeta = {
   page: number
@@ -37,64 +36,6 @@ export type CompanyPersonListItem = {
   phone?: string | null
   isPrimaryContact?: boolean | null
   isSecondaryContact?: boolean | null
-}
-
-export type PersonContact = {
-  id: string
-  type?: string | null
-  value: string
-  isPrimary?: boolean | null
-  note?: string | null
-  typeOption?: {
-    id?: string
-    code?: string
-    label?: string
-  } | null
-}
-
-export type PersonSocial = {
-  id: string
-  platform?: string | null
-  handle: string
-  isPrimary?: boolean | null
-  note?: string | null
-  platformOption?: {
-    id?: string
-    code?: string
-    label?: string
-  } | null
-}
-
-export type CompanyPersonDetail = CompanyPersonListItem & {
-  linkedinUrl?: string | null
-  contacts?: PersonContact[]
-  socials?: PersonSocial[]
-  employmentHistory?: Array<{
-    id: string
-    company?: {
-      id: string
-      legalName: string
-      brandName?: string | null
-    } | null
-    positions?: Array<{
-      id: string
-      title?: string | null
-      department?: string | null
-      startDate?: string | null
-      endDate?: string | null
-      isCurrent?: boolean | null
-    }>
-  }>
-  educationHistory?: Array<{
-    id: string
-    degree?: string | null
-    fieldOfStudy?: string | null
-    educationDate?: string | null
-    university?: {
-      id: string
-      name: string
-    } | null
-  }>
 }
 
 export type CompanyOpportunityItem = {
@@ -258,17 +199,6 @@ export function useCompanyPeople(
     enabled,
     { companyId },
   )
-}
-
-export function usePersonDetail(personId: string | null) {
-  return useQuery({
-    queryKey: ["person-detail", personId],
-    queryFn: async () => {
-      const response = await api.get(`/people/${personId}`)
-      return unwrapApiResponse<CompanyPersonDetail>(response.data)
-    },
-    enabled: Boolean(personId),
-  })
 }
 
 export function useCompanyOpportunities(

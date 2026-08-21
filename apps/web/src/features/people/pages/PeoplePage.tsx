@@ -7,8 +7,8 @@ import {
   UsersRound,
 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
@@ -17,16 +17,13 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
 import { PeopleFilterBar } from "../components/PeopleFilterBar"
-import { Person360Dialog } from "../components/Person360Dialog"
+import { Person360WorkspaceDialog } from "../components/Person360WorkspaceDialog"
 import { PersonCard } from "../components/PersonCard"
 import { PersonFormDialog } from "../components/PersonFormDialog"
 import {
   useCreatePerson,
-  useDeletePerson,
   usePeopleDirectory,
   usePeopleLookups,
-  usePerson,
-  useUpdatePerson,
 } from "../hooks/usePeople"
 import type {
   PeopleDirectoryQuery,
@@ -40,21 +37,25 @@ const initialQuery: PeopleDirectoryQuery = {
 
 export function PeoplePage() {
   const text = uiText.people
+  const [searchParams] = useSearchParams()
+  const initialCompanyId = searchParams.get("companyId")?.trim() || undefined
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
 
   const canViewDirectory = permissions.includes("people:directory:view")
   const canViewPerson = permissions.includes("person:view")
   const canCreate = permissions.includes("person:create")
-  const canEdit = permissions.includes("person:update")
-  const canDelete = permissions.includes("person:delete")
 
-  const [query, setQuery] = useState<PeopleDirectoryQuery>(initialQuery)
+  const [query, setQuery] = useState<PeopleDirectoryQuery>(() => ({
+    ...initialQuery,
+    companyId: initialCompanyId,
+  }))
   const [debouncedQuery, setDebouncedQuery] =
-    useState<PeopleDirectoryQuery>(initialQuery)
+    useState<PeopleDirectoryQuery>(() => ({
+      ...initialQuery,
+      companyId: initialCompanyId,
+    }))
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -65,11 +66,7 @@ export function PeoplePage() {
 
   const directory = usePeopleDirectory(debouncedQuery, canViewDirectory)
   const lookups = usePeopleLookups()
-  const selectedPerson = usePerson(selectedPersonId)
-
   const createMutation = useCreatePerson()
-  const updateMutation = useUpdatePerson(selectedPersonId ?? "")
-  const deleteMutation = useDeletePerson()
 
   const metrics = useMemo(() => {
     const rows = directory.data?.data ?? []
@@ -89,20 +86,6 @@ export function PeoplePage() {
     const person = await createMutation.mutateAsync(payload)
     setCreateOpen(false)
     setSelectedPersonId(person.id)
-  }
-
-  async function updatePerson(payload: PersonMutationPayload) {
-    if (!selectedPersonId) return
-    const { companyId: _ignoredCompanyId, ...data } = payload
-    await updateMutation.mutateAsync(data)
-    setEditOpen(false)
-  }
-
-  async function deletePerson() {
-    if (!selectedPersonId) return
-    await deleteMutation.mutateAsync(selectedPersonId)
-    setDeleteOpen(false)
-    setSelectedPersonId(null)
   }
 
   return (
@@ -242,17 +225,15 @@ export function PeoplePage() {
         />
       )}
 
-      <Person360Dialog
-        personId={selectedPersonId}
-        open={Boolean(selectedPersonId) && !editOpen && !deleteOpen}
-        onOpenChange={(open) => {
-          if (!open) setSelectedPersonId(null)
-        }}
-        canEdit={canEdit && canViewPerson}
-        canDelete={canDelete && canViewPerson}
-        onEdit={() => setEditOpen(true)}
-        onDelete={() => setDeleteOpen(true)}
-      />
+      {selectedPersonId ? (
+        <Person360WorkspaceDialog
+          personId={selectedPersonId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedPersonId(null)
+          }}
+        />
+      ) : null}
 
       <PersonFormDialog
         open={createOpen}
@@ -263,26 +244,6 @@ export function PeoplePage() {
         onSubmit={createPerson}
       />
 
-      <PersonFormDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        mode="edit"
-        person={selectedPerson.data ?? null}
-        lookups={lookups.data}
-        isPending={updateMutation.isPending}
-        onSubmit={updatePerson}
-      />
-
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title={text.delete.title}
-        description={text.delete.description}
-        confirmLabel={text.actions.delete}
-        tone="danger"
-        isPending={deleteMutation.isPending}
-        onConfirm={deletePerson}
-      />
     </div>
   )
 }

@@ -24,6 +24,7 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
+import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
@@ -39,7 +40,6 @@ import {
   EntityQuickViewDialog,
   type QuickViewField,
 } from "../components/EntityQuickViewDialog"
-import { PersonQuickViewDialog } from "../components/PersonQuickViewDialog"
 import { useCompany } from "../hooks/useCompanies"
 import { useCompany360Overview } from "../hooks/useCompany360"
 import {
@@ -516,13 +516,16 @@ export function CompanyDetailPage() {
         </div>
       </div>
 
-      <PersonQuickViewDialog
-        personId={selectedPersonId}
-        open={Boolean(selectedPersonId)}
-        onOpenChange={(open) => {
-          if (!open) setSelectedPersonId(null)
-        }}
-      />
+      {selectedPersonId ? (
+        <Person360WorkspaceDialog
+          personId={selectedPersonId}
+          open
+          onOpenChange={(open) => {
+            if (!open) setSelectedPersonId(null)
+          }}
+          onPersonChanged={() => peopleQuery.refetch()}
+        />
+      ) : null}
 
       <EntityQuickViewDialog
         open={Boolean(quickView)}
