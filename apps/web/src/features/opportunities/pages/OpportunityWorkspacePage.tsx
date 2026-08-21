@@ -1,6 +1,6 @@
 import { BriefcaseBusiness, LayoutList, Plus, Rows3 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -51,6 +51,7 @@ export function OpportunityWorkspacePage() {
   const user = useAuthStore((state) => state.user)
   const permissions = user?.permissions ?? []
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCompanyId = searchParams.get("companyId")?.trim() || undefined
   const [view, setView] = useState<"pipeline" | "list">(searchParams.get("view") === "list" ? "list" : "pipeline")
@@ -170,7 +171,7 @@ export function OpportunityWorkspacePage() {
     }
   }
 
-  const onView = (item: Opportunity) => navigate(`/opportunities/${item.id}`)
+  const onView = (item: Opportunity) => navigate(`/opportunities/${item.id}`, { state: { backTo: `${location.pathname}${location.search}` } })
 
   if (!canView) return <ErrorState title={text.errors.permissionTitle} description={text.errors.permissionDescription} />
 
