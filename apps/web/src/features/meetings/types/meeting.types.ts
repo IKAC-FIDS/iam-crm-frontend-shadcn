@@ -112,3 +112,19 @@ export interface MeetingOpportunityOption {
   title: string
   companyId: string
 }
+
+export interface MeetingAttachment {
+  id: string
+  entityType: "MEETING"
+  entityId: string
+  originalFileName: string
+  mimeType: string
+  sizeBytes: number
+  description?: string | null
+  createdAt: string
+}
+
+export interface MeetingAttachmentPage {
+  data: MeetingAttachment[]
+  meta: MeetingPage["meta"]
+}

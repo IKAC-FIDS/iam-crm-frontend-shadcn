@@ -7,10 +7,11 @@ import { LoginPage } from "@/features/auth/pages/LoginPage"
 import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
-import { PeoplePage } from "@/features/people/pages/PeoplePage"
+import { MeetingDetailPage } from "@/features/meetings/pages/MeetingDetailPage"
 import { MeetingsPage } from "@/features/meetings/pages/MeetingsPage"
-import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
+import { PeoplePage } from "@/features/people/pages/PeoplePage"
 import { OpportunityDetailPage } from "@/features/opportunities/pages/OpportunityDetailPage"
+import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 
 import { PermissionRoute } from "./PermissionRoute"
@@ -125,7 +126,10 @@ export const router = createBrowserRouter([
                 }}
               />
             ),
-            children: [{ path: "/meetings", element: <MeetingsPage /> }],
+            children: [
+              { path: "/meetings", element: <MeetingsPage /> },
+              { path: "/meetings/:id", element: <MeetingDetailPage /> },
+            ],
           },
           {
             path: "/account/profile",

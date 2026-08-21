@@ -1,4 +1,4 @@
-export const uiText = {
+﻿export const uiText = {
   app: {
     name: "NESHANE CRM",
     tagline: "فضای کاری امن و یکپارچه",
@@ -929,6 +929,102 @@ export const uiText = {
       reminderPast: "یادآوری جلسه آینده نمی‌تواند در گذشته باشد.",
       urlInvalid: "پیوند جلسه باید با http یا https شروع شود.",
     },
+    detail: {
+      actions: {
+        back: "بازگشت به جلسات",
+        join: "ورود به جلسه",
+        uploadAttachment: "افزودن صورتجلسه یا مستند",
+        download: "دانلود",
+        deleteAttachment: "حذف مستند",
+      },
+      sections: {
+        schedule: "زمان و نحوه برگزاری",
+        context: "زمینه تجاری",
+        people: "افراد جلسه",
+        agenda: "دستور جلسه",
+        description: "توضیحات",
+        outcome: "نتیجه جلسه",
+        cancellation: "اطلاعات لغو",
+        attachments: "صورتجلسه و مستندات",
+        lifecycle: "چرخه جلسه",
+      },
+      labels: {
+        date: "تاریخ",
+        time: "ساعت",
+        mode: "نوع برگزاری",
+        reminder: "یادآوری",
+        noReminder: "بدون یادآوری",
+        location: "محل جلسه",
+        meetingUrl: "پیوند جلسه",
+        company: "شرکت",
+        opportunity: "فرصت",
+        organizer: "برگزارکننده",
+        assignees: "مسئولان داخلی",
+        attendees: "مدعوین شرکت",
+      },
+      lifecycle: {
+        created: "ایجاد جلسه",
+        updated: "آخرین به‌روزرسانی",
+        completed: "ثبت برگزاری",
+        cancelled: "ثبت لغو",
+      },
+      empty: {
+        agenda: "دستور جلسه‌ای ثبت نشده است.",
+        description: "توضیحی برای این جلسه ثبت نشده است.",
+        outcomeScheduled:
+          "پس از ثبت جلسه به‌عنوان برگزارشده، نتیجه جلسه در این بخش نمایش داده می‌شود.",
+        completionNote: "یادداشت نتیجه‌ای برای جلسه ثبت نشده است.",
+        cancellationReason: "دلیلی برای لغو جلسه ثبت نشده است.",
+      },
+      attachments: {
+        scheduledHint:
+          "پس از ثبت جلسه به‌عنوان برگزارشده، امکان بارگذاری صورتجلسه و مستندات جلسه فعال می‌شود.",
+        cancelledHint:
+          "این جلسه لغو شده است و امکان بارگذاری صورتجلسه یا مستند برای آن وجود ندارد.",
+        completedHint:
+          "صورتجلسه، فایل‌های ارائه‌شده و مستندات مرتبط با جلسه را در این بخش نگهداری کنید.",
+        emptyTitle: "هنوز مستندی ثبت نشده است",
+        emptyDescription:
+          "صورتجلسه یا فایل مرتبط با این جلسه را اضافه کنید.",
+        fileLabel: "فایل",
+        fileHint: "حداکثر اندازه فایل ۲۵ مگابایت است.",
+        descriptionLabel: "عنوان یا توضیح فایل",
+        fileTooLarge: "حجم فایل نباید بیشتر از ۲۵ مگابایت باشد.",
+      },
+      dialogs: {
+        uploadTitle: "افزودن صورتجلسه یا مستند",
+        uploadDescription:
+          "فایل مرتبط با جلسه را همراه با توضیح اختیاری بارگذاری کنید.",
+        deleteAttachmentTitle: "حذف مستند جلسه",
+        deleteAttachmentDescription:
+          "این فایل از مستندات جلسه حذف می‌شود. این عملیات قابل بازگشت نیست.",
+      },
+      feedback: {
+        uploaded: "مستند جلسه با موفقیت بارگذاری شد.",
+        downloaded: "دانلود فایل آغاز شد.",
+        deleted: "مستند جلسه حذف شد.",
+      },
+      errors: {
+        permissionTitle: "دسترسی مشاهده جلسه فعال نیست",
+        permissionDescription:
+          "برای مشاهده جزئیات این جلسه به مجوز meeting:view نیاز دارید.",
+        loadTitle: "دریافت جزئیات جلسه انجام نشد",
+        loadDescription:
+          "اطلاعات جلسه در دسترس نیست. دوباره تلاش کنید.",
+        attachmentPermissionTitle: "دسترسی مشاهده مستندات فعال نیست",
+        attachmentPermissionDescription:
+          "برای مشاهده صورتجلسه و مستندات به مجوز attachment:view نیاز دارید.",
+        attachmentLoad: "دریافت مستندات جلسه انجام نشد",
+        attachmentLoadDescription:
+          "فهرست مستندات جلسه در دسترس نیست. دوباره تلاش کنید.",
+        attachmentMutation: "ثبت تغییرات مستندات جلسه انجام نشد.",
+      },
+      fileUnits: {
+        bytes: "بایت",
+        kilobytes: "کیلوبایت",
+        megabytes: "مگابایت",
+      },
+    },
     empty: {
       title: "جلسه‌ای پیدا نشد",
       description: "فیلترها را تغییر دهید یا جلسه جدیدی ایجاد کنید.",
@@ -1254,3 +1350,4 @@ export const uiText = {
     },
   },
 } as const
+

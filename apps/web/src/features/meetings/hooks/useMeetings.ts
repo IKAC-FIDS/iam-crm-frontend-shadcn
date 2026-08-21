@@ -10,12 +10,15 @@ import {
   cancelMeeting,
   completeMeeting,
   createMeeting,
+  deleteMeetingAttachment,
   getMeeting,
   getMeetingAssignees,
+  getMeetingAttachments,
   getMeetingOpportunities,
   getMeetingPeople,
   getMeetings,
   updateMeeting,
+  uploadMeetingAttachment,
 } from "../api/meetings.api"
 import type {
   Meeting,
@@ -29,6 +32,10 @@ export const meetingKeys = {
   list: (query: MeetingQuery) => [...meetingKeys.lists(), query] as const,
   details: () => [...meetingKeys.all, "detail"] as const,
   detail: (id: string) => [...meetingKeys.details(), id] as const,
+  attachments: (id: string) =>
+    [...meetingKeys.detail(id), "attachments"] as const,
+  attachmentList: (id: string, page: number) =>
+    [...meetingKeys.attachments(id), page] as const,
   assignees: (search: string) =>
     [...meetingKeys.all, "assignees", search] as const,
   opportunities: (companyId: string, search: string) =>
@@ -177,5 +184,50 @@ export function useMeetingPeopleOptions(
       last.meta.hasNext ? last.meta.page + 1 : undefined,
     enabled: enabled && Boolean(companyId),
     staleTime: 120_000,
+  })
+}
+
+export function useMeetingAttachments(
+  id: string,
+  page: number,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: meetingKeys.attachmentList(id, page),
+    queryFn: () => getMeetingAttachments(id, page),
+    enabled: enabled && Boolean(id),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useUploadMeetingAttachment(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      file,
+      description,
+    }: {
+      file: File
+      description?: string
+    }) => uploadMeetingAttachment(id, file, description),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: meetingKeys.attachments(id) }),
+        queryClient.invalidateQueries({ queryKey: meetingKeys.detail(id) }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+      ])
+    },
+  })
+}
+
+export function useDeleteMeetingAttachment(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteMeetingAttachment,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: meetingKeys.attachments(id),
+      })
+    },
   })
 }
