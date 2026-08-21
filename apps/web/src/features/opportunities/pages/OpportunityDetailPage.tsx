@@ -3,7 +3,6 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   Building2,
-  CalendarClock,
   CircleDollarSign,
   FileClock,
   Layers3,
@@ -24,7 +23,6 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
-import { formatJalaliDate } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
@@ -56,10 +54,7 @@ import type {
   OpportunityTransition,
   OpportunityUpdatePayload,
 } from "../types/opportunity.types"
-import {
-  formatOpportunityValue,
-  opportunityCompanyName,
-} from "../utils/opportunityFormatters"
+import { opportunityCompanyName } from "../utils/opportunityFormatters"
 
 type DetailTab = "overview" | "commercial" | "execution" | "files"
 
@@ -231,11 +226,12 @@ export function OpportunityDetailPage() {
   ]
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <div className="mx-auto grid w-full max-w-[1480px] gap-4" dir="rtl">
       <Button
         type="button"
         variant="ghost"
-        className="w-fit rounded-xl text-[var(--app-text-secondary)]"
+        size="sm"
+        className="h-8 w-fit rounded-lg px-2 text-[var(--app-text-secondary)]"
         onClick={() => navigate(backTo)}
       >
         <ArrowRight className="size-4" />
@@ -245,15 +241,13 @@ export function OpportunityDetailPage() {
       <header
         className={
           archived
-            ? "relative overflow-hidden rounded-[30px] border border-[var(--warning)]/35 bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-7"
-            : "relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-7"
+            ? "rounded-[24px] border border-[var(--warning)]/35 bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
+            : "rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
         }
       >
-        <div className="pointer-events-none absolute -end-20 -top-24 size-60 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge tone="primary">{detailText.cockpit}</StatusBadge>
               <StatusBadge tone={archived ? "warning" : "success"}>
                 {archived ? text.status.archived : text.status.active}
               </StatusBadge>
@@ -261,10 +255,10 @@ export function OpportunityDetailPage() {
                 {text.priorities[opportunity.priority]}
               </StatusBadge>
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">
+            <h1 className="mt-2 text-xl font-bold text-[var(--app-heading)] sm:text-2xl">
               {opportunity.title}
             </h1>
-            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-[var(--app-text-secondary)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--app-text-secondary)]">
               <span className="flex items-center gap-1.5">
                 <Building2 className="size-3.5" />
                 {opportunityCompanyName(opportunity)}
@@ -273,40 +267,19 @@ export function OpportunityDetailPage() {
                 <Layers3 className="size-3.5" />
                 {opportunity.stage?.label || uiText.common.notAvailable}
               </span>
-              <span className="flex items-center gap-1.5">
-                <UserRoundCog className="size-3.5" />
-                {opportunity.owner?.fullName || text.fields.noOwner}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CalendarClock className="size-3.5" />
-                {formatJalaliDate(opportunity.expectedCloseDate) ||
-                  uiText.common.notAvailable}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CircleDollarSign className="size-3.5" />
-                {formatOpportunityValue(opportunity.estimatedValue)}
-                {opportunity.estimatedValue == null
-                  ? null
-                  : ` ${text.fields.valueUnit}`}
-              </span>
-              <span>
-                {text.fields.probability}:{" "}
-                {opportunity.probability == null
-                  ? uiText.common.notAvailable
-                  : `${opportunity.probability.toLocaleString("fa-IR")}%`}
-              </span>
             </div>
             {archived && opportunity.archiveReason ? (
-              <p className="mt-4 rounded-xl bg-[var(--warning-light)] px-3 py-2 text-[10px] text-[var(--app-text-secondary)]">
+              <p className="mt-2 rounded-lg bg-[var(--warning-light)] px-3 py-1.5 text-[10px] text-[var(--app-text-secondary)]">
                 {opportunity.archiveReason}
               </p>
             ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex shrink-0 flex-wrap gap-1.5">
             {canUpdate && !archived ? (
               <Button
                 variant="outline"
-                className="rounded-xl"
+                size="sm"
+                className="h-9 rounded-lg"
                 onClick={() => setEditOpen(true)}
               >
                 <Pencil className="size-4" />
@@ -316,7 +289,8 @@ export function OpportunityDetailPage() {
             {canChangeStage && !archived ? (
               <Button
                 variant="outline"
-                className="rounded-xl"
+                size="sm"
+                className="h-9 rounded-lg"
                 disabled={
                   transitionsQuery.isLoading ||
                   transitionsQuery.isError ||
@@ -331,7 +305,8 @@ export function OpportunityDetailPage() {
             {canChangeOwner && !archived ? (
               <Button
                 variant="outline"
-                className="rounded-xl"
+                size="sm"
+                className="h-9 rounded-lg"
                 onClick={() => setOwnerOpen(true)}
               >
                 <UserRoundCog className="size-4" />
@@ -340,7 +315,8 @@ export function OpportunityDetailPage() {
             ) : null}
             {archived && canRestore ? (
               <Button
-                className="rounded-xl bg-[var(--app-primary)]"
+                size="sm"
+                className="h-9 rounded-lg bg-[var(--app-primary)]"
                 onClick={() => setArchiveOpen(true)}
               >
                 <RotateCcw className="size-4" />
@@ -349,7 +325,8 @@ export function OpportunityDetailPage() {
             ) : !archived && canArchive ? (
               <Button
                 variant="outline"
-                className="rounded-xl text-[var(--destructive)]"
+                size="sm"
+                className="h-9 rounded-lg text-[var(--destructive)]"
                 onClick={() => setArchiveOpen(true)}
               >
                 <Archive className="size-4" />
@@ -376,7 +353,7 @@ export function OpportunityDetailPage() {
         </p>
       ) : null}
 
-      <nav className="sticky top-2 z-10 flex gap-1 overflow-x-auto rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-1.5 shadow-sm backdrop-blur">
+      <nav className="flex gap-1 overflow-x-auto rounded-xl border border-[var(--app-primary)]/15 bg-[var(--app-surface)] p-1 shadow-sm">
         {navItems.map((item) => (
           <Button
             key={item.id}
@@ -384,8 +361,8 @@ export function OpportunityDetailPage() {
             variant="ghost"
             className={
               tab === item.id
-                ? "min-w-fit flex-1 rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]"
-                : "min-w-fit flex-1 rounded-xl text-[var(--app-text-secondary)]"
+                ? "h-9 min-w-fit flex-1 rounded-lg bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)]"
+                : "h-9 min-w-fit flex-1 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-primary-soft)]/55"
             }
             onClick={() => setTab(item.id)}
           >

@@ -5,6 +5,7 @@ import {
   History,
   Plus,
   Trash2,
+  type LucideIcon,
 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { toast } from "sonner"
@@ -86,7 +87,7 @@ export function OpportunityFilesHistorySection({
     }
   }
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-4">
       <Section
         title={text.sections.attachments}
         count={attachments.data?.meta.total}
@@ -106,15 +107,15 @@ export function OpportunityFilesHistorySection({
         {!canView ? (
           <PermissionNotice />
         ) : attachments.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : attachments.isError ? (
           <SectionError onRetry={() => void attachments.refetch()} />
         ) : attachments.data?.data.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {attachments.data.data.map((item) => (
               <article
                 key={item.id}
-                className="flex items-start gap-3 rounded-2xl border border-[var(--app-divider)] p-4"
+                className="flex items-start gap-3 rounded-xl border border-[var(--app-divider)] p-3"
               >
                 <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
                   <FileArchive className="size-5" />
@@ -159,7 +160,7 @@ export function OpportunityFilesHistorySection({
             ))}
           </div>
         ) : (
-          <EmptyState icon={FileArchive} title={text.empty.attachments} />
+          <CompactEmpty icon={FileArchive} title={text.empty.attachments} />
         )}
         {attachments.data ? (
           <div className="mt-4 flex justify-end gap-2">
@@ -184,7 +185,7 @@ export function OpportunityFilesHistorySection({
           </div>
         ) : null}
       </Section>
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid items-start gap-4 xl:grid-cols-2">
         <Section title={text.sections.stageHistory}>
           {histories.length ? (
             <div className="grid gap-0">
@@ -220,7 +221,7 @@ export function OpportunityFilesHistorySection({
               ))}
             </div>
           ) : (
-            <EmptyState icon={History} title={text.empty.stageHistory} />
+            <CompactEmpty icon={History} title={text.empty.stageHistory} />
           )}
         </Section>
         <Section title={text.sections.activityHistory}>
@@ -254,7 +255,7 @@ export function OpportunityFilesHistorySection({
               ))}
             </div>
           ) : (
-            <EmptyState icon={Activity} title={text.empty.activities} />
+            <CompactEmpty icon={Activity} title={text.empty.activities} />
           )}
         </Section>
       </div>
@@ -292,7 +293,7 @@ function Section({
 }) {
   return (
     <SurfaceCard className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
         <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
@@ -303,7 +304,7 @@ function Section({
         </h2>
         {action}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-3 sm:p-4">{children}</div>
     </SurfaceCard>
   )
 }
@@ -325,6 +326,13 @@ function PermissionNotice() {
         uiText.opportunities.detail.errors.resourcePermissionDescription
       }
     />
+  )
+}
+function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="[&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+      <EmptyState icon={icon} title={title} />
+    </div>
   )
 }
 function activityLabel(type: string) {

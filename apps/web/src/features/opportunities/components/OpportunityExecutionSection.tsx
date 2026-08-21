@@ -6,6 +6,7 @@ import {
   Plus,
   Trash2,
   XCircle,
+  type LucideIcon,
 } from "lucide-react"
 import {
   useState,
@@ -149,7 +150,7 @@ export function OpportunityExecutionSection({
     }
   }
   return (
-    <div className="grid gap-5">
+    <div className="grid items-start gap-4 xl:grid-cols-2">
       <Section
         title={text.sections.tasks}
         count={tasks.data?.meta.total ?? opportunity._count?.tasks}
@@ -169,15 +170,15 @@ export function OpportunityExecutionSection({
         {!canViewTasks ? (
           <PermissionNotice />
         ) : tasks.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : tasks.isError ? (
           <SectionError onRetry={() => void tasks.refetch()} />
         ) : tasks.data?.data.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2 2xl:grid-cols-2">
             {tasks.data.data.map((item) => (
               <article
                 key={item.id}
-                className="rounded-2xl border border-[var(--app-divider)] p-4"
+                className="rounded-xl border border-[var(--app-divider)] p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <StatusBadge
@@ -249,7 +250,7 @@ export function OpportunityExecutionSection({
             ))}
           </div>
         ) : (
-          <EmptyState icon={ListChecks} title={text.empty.tasks} />
+          <CompactEmpty icon={ListChecks} title={text.empty.tasks} />
         )}
         {tasks.data ? (
           <Pagination meta={tasks.data.meta} setPage={setTaskPage} />
@@ -274,15 +275,15 @@ export function OpportunityExecutionSection({
         {!canViewMeetings ? (
           <PermissionNotice />
         ) : meetings.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : meetings.isError ? (
           <SectionError onRetry={() => void meetings.refetch()} />
         ) : meetings.data?.data.length ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2 2xl:grid-cols-2">
             {meetings.data.data.map((item) => (
               <article
                 key={item.id}
-                className="rounded-2xl border border-[var(--app-divider)] p-4"
+                className="rounded-xl border border-[var(--app-divider)] p-3"
               >
                 <div className="flex items-start justify-between">
                   <StatusBadge
@@ -357,7 +358,7 @@ export function OpportunityExecutionSection({
             ))}
           </div>
         ) : (
-          <EmptyState icon={CalendarDays} title={text.empty.meetings} />
+          <CompactEmpty icon={CalendarDays} title={text.empty.meetings} />
         )}
         {meetings.data ? (
           <Pagination meta={meetings.data.meta} setPage={setMeetingPage} />
@@ -435,7 +436,7 @@ function Section({
 }) {
   return (
     <SurfaceCard className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
         <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
@@ -446,7 +447,7 @@ function Section({
         </h2>
         {action}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-3 sm:p-4">{children}</div>
     </SurfaceCard>
   )
 }
@@ -495,6 +496,13 @@ function PermissionNotice() {
         uiText.opportunities.detail.errors.resourcePermissionDescription
       }
     />
+  )
+}
+function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="[&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+      <EmptyState icon={icon} title={title} />
+    </div>
   )
 }
 function Pagination({

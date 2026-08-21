@@ -45,7 +45,7 @@ export function OpportunityExecutiveSummary({
     ? opportunity.activities
     : []
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
       <SummaryCard icon={<CircleDollarSign />} title={text.commercial}>
         <Metric
           label={text.estimated}
@@ -137,27 +137,27 @@ export function OpportunityOverview({
     ? opportunity.activities
     : []
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(300px,.8fr)]">
-      <div className="grid content-start gap-4">
-        <SurfaceCard className="p-5">
+    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2.5fr)_minmax(260px,1fr)]">
+      <div className="grid content-start gap-3">
+        <SurfaceCard className="p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.description}
           </h2>
           {opportunity.description ? (
-            <p className="mt-3 text-xs leading-7 whitespace-pre-wrap text-[var(--app-text-secondary)]">
+            <p className="mt-2 text-xs leading-6 whitespace-pre-wrap text-[var(--app-text-secondary)]">
               {opportunity.description}
             </p>
           ) : (
-            <p className="mt-3 text-xs text-[var(--app-text-secondary)]">
+            <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
               {text.empty.description}
             </p>
           )}
         </SurfaceCard>
-        <SurfaceCard className="p-5">
+        <section className="rounded-2xl border border-[var(--app-divider)]/80 bg-[var(--app-background)]/45 p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.businessContext}
           </h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <Info
               label={text.fields.source}
               value={opportunity.sourceOption?.label || opportunity.source}
@@ -175,17 +175,17 @@ export function OpportunityOverview({
               value={formatJalaliDateTime(opportunity.updatedAt)}
             />
           </div>
-        </SurfaceCard>
-        <SurfaceCard className="p-5">
+        </section>
+        <SurfaceCard className="p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.recentActivity}
           </h2>
           {activities.length ? (
-            <div className="mt-4 grid gap-0">
+            <div className="mt-3 grid gap-0">
               {activities.slice(0, 8).map((item, index, recent) => (
                 <div
                   key={item.id}
-                  className="relative border-s border-[var(--app-divider)] ps-5 pb-5 last:pb-0"
+                  className="relative border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
                 >
                   {index === 0 ||
                   formatJalaliDate(recent[index - 1]?.occurredAt) !==
@@ -221,15 +221,15 @@ export function OpportunityOverview({
               ))}
             </div>
           ) : (
-            <EmptyState icon={Activity} title={text.empty.activities} />
+            <CompactEmpty icon={Activity} title={text.empty.activities} />
           )}
         </SurfaceCard>
       </div>
-      <aside className="grid content-start gap-4">
-        <SurfaceCard className="p-5">
+      <aside className="grid content-start gap-3">
+        <SurfaceCard className="p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-              <Building2 className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+              <Building2 className="size-4.5" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-[var(--app-heading)]">
@@ -247,7 +247,7 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 w-full rounded-xl"
+              className="mt-3 h-8 w-full rounded-lg text-[10px]"
               onClick={onCompany}
             >
               <ExternalLink className="size-3.5" />
@@ -255,10 +255,10 @@ export function OpportunityOverview({
             </Button>
           ) : null}
         </SurfaceCard>
-        <SurfaceCard className="p-5">
+        <SurfaceCard className="p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-              <ContactRound className="size-5" />
+            <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+              <ContactRound className="size-4.5" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-[var(--app-heading)]">
@@ -294,7 +294,7 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 w-full rounded-xl"
+              className="mt-3 h-8 w-full rounded-lg text-[10px]"
               onClick={onPerson}
             >
               <UserRound className="size-3.5" />
@@ -304,18 +304,18 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-4 w-full rounded-xl"
+              className="mt-3 h-8 w-full rounded-lg text-[10px]"
               onClick={onEdit}
             >
               {uiText.opportunities.actions.edit}
             </Button>
           ) : null}
         </SurfaceCard>
-        <SurfaceCard className="p-5">
+        <SurfaceCard className="p-4 shadow-sm">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.ownership}
           </h2>
-          <div className="mt-4 grid gap-3">
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
             <Info
               icon={<UserRound />}
               label={text.fields.owner}
@@ -343,14 +343,14 @@ function SummaryCard({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className="p-4">
+    <SurfaceCard className="p-3 shadow-sm">
       <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
-        <span className="grid size-8 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)] [&_svg]:size-4">
+        <span className="grid size-7 place-items-center rounded-lg bg-[var(--app-primary-soft)] text-[var(--app-primary)] [&_svg]:size-3.5">
           {icon}
         </span>
         {title}
       </div>
-      <div className="mt-4 grid gap-2">{children}</div>
+      <div className="mt-2 grid gap-1.5">{children}</div>
     </SurfaceCard>
   )
 }
@@ -372,7 +372,7 @@ function Info({
   icon?: ReactNode
 }) {
   return (
-    <div className="rounded-2xl bg-[var(--app-background)]/65 p-3">
+    <div className="rounded-xl bg-[var(--app-background)]/65 p-2.5">
       <p className="flex items-center gap-1 text-[9px] font-bold text-[var(--app-text-secondary)] [&_svg]:size-3">
         {icon}
         {label}
@@ -380,6 +380,20 @@ function Info({
       <p className="mt-1.5 text-xs text-[var(--app-heading)]">
         {value || uiText.common.notAvailable}
       </p>
+    </div>
+  )
+}
+
+function CompactEmpty({
+  icon,
+  title,
+}: {
+  icon: typeof Activity
+  title: string
+}) {
+  return (
+    <div className="[&_.size-11]:size-9 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+      <EmptyState icon={icon} title={title} />
     </div>
   )
 }

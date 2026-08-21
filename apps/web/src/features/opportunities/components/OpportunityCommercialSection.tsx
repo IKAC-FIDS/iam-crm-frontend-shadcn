@@ -6,6 +6,7 @@ import {
   Plus,
   Trash2,
   Upload,
+  type LucideIcon,
 } from "lucide-react"
 import {
   useState,
@@ -208,8 +209,9 @@ export function OpportunityCommercialSection({
       : null
 
   return (
-    <div className="grid gap-5">
+    <div className="grid items-start gap-4 xl:grid-cols-2">
       <ResourceSection
+        className="xl:col-span-2"
         title={text.sections.lineItems}
         count={opportunity._count?.lineItems}
         action={
@@ -228,7 +230,7 @@ export function OpportunityCommercialSection({
         {!canViewItems ? (
           <PermissionNotice />
         ) : lineItems.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : lineItems.isError ? (
           <SectionError onRetry={() => void lineItems.refetch()} />
         ) : lineItems.data?.length ? (
@@ -313,7 +315,7 @@ export function OpportunityCommercialSection({
             </table>
           </div>
         ) : (
-          <EmptyState icon={PackageOpen} title={text.empty.lineItems} />
+          <CompactEmpty icon={PackageOpen} title={text.empty.lineItems} />
         )}
       </ResourceSection>
 
@@ -355,15 +357,15 @@ export function OpportunityCommercialSection({
         {!canViewDocuments ? (
           <PermissionNotice />
         ) : documents.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : documents.isError ? (
           <SectionError onRetry={() => void documents.refetch()} />
         ) : documents.data?.data.length ? (
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-2 2xl:grid-cols-2">
             {documents.data.data.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4"
+                className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -452,7 +454,7 @@ export function OpportunityCommercialSection({
             ))}
           </div>
         ) : (
-          <EmptyState icon={FileText} title={text.empty.documents} />
+          <CompactEmpty icon={FileText} title={text.empty.documents} />
         )}
         {documents.data ? (
           <Pagination meta={documents.data.meta} setPage={setDocumentPage} />
@@ -478,7 +480,7 @@ export function OpportunityCommercialSection({
         {!canViewPayments ? (
           <PermissionNotice />
         ) : payments.isLoading ? (
-          <LoadingState />
+          <LoadingState rows={2} />
         ) : payments.isError ? (
           <SectionError onRetry={() => void payments.refetch()} />
         ) : payments.data?.data.length ? (
@@ -503,11 +505,11 @@ export function OpportunityCommercialSection({
                 />
               </div>
             ) : null}
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-2 2xl:grid-cols-2">
               {payments.data.data.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-2xl border border-[var(--app-divider)] p-4"
+                  className="rounded-xl border border-[var(--app-divider)] p-3"
                 >
                   <div className="flex items-start justify-between">
                     <StatusBadge tone={paymentTone(item.status)}>
@@ -601,7 +603,7 @@ export function OpportunityCommercialSection({
             </div>
           </>
         ) : (
-          <EmptyState icon={CreditCard} title={text.empty.payments} />
+          <CompactEmpty icon={CreditCard} title={text.empty.payments} />
         )}
         {payments.data ? (
           <Pagination meta={payments.data.meta} setPage={setPaymentPage} />
@@ -681,19 +683,21 @@ export function OpportunityCommercialSection({
 }
 
 function ResourceSection({
+  className = "",
   title,
   count,
   action,
   children,
 }: {
+  className?: string
   title: string
   count?: number
   action?: ReactNode
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] px-5 py-4">
+    <SurfaceCard className={`overflow-hidden ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
         <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
@@ -704,7 +708,7 @@ function ResourceSection({
         </h2>
         {action}
       </div>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-3 sm:p-4">{children}</div>
     </SurfaceCard>
   )
 }
@@ -754,6 +758,13 @@ function PermissionNotice() {
         uiText.opportunities.detail.errors.resourcePermissionDescription
       }
     />
+  )
+}
+function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
+  return (
+    <div className="[&_h3]:mt-2 [&>div]:min-h-0 [&>div]:p-4">
+      <EmptyState icon={icon} title={title} />
+    </div>
   )
 }
 function PaymentMetric({ label, value }: { label: string; value: string }) {
