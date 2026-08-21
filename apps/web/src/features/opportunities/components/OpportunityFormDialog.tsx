@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
 
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { CurrencyInput } from "@/components/shared/inputs"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { uiText } from "@/config/uiText"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
@@ -267,14 +268,9 @@ export function OpportunityFormDialog({
               </select>
             </Field>
             <Field label={text.fields.estimatedValue}>
-              <Input
-                type="number"
-                min={0}
+              <CurrencyInput
                 value={state.estimatedValue}
-                onChange={(event) =>
-                  patch({ estimatedValue: event.target.value })
-                }
-                className="h-11 rounded-xl"
+                onValueChange={(estimatedValue) => patch({ estimatedValue })}
               />
             </Field>
             <Field label={text.fields.expectedCloseDate}>

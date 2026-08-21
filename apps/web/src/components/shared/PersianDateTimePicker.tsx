@@ -1,9 +1,8 @@
 import { useMemo } from "react"
 import { Clock3 } from "lucide-react"
 
-import { Input } from "@workspace/ui/components/input"
-
 import { uiText } from "@/config/uiText"
+import { TimeInput } from "./inputs"
 import { PersianDatePicker } from "./PersianDatePicker"
 
 type PersianDateTimePickerProps = {
@@ -54,16 +53,11 @@ export function PersianDateTimePicker({
 
     const [hours, minutes] = time.split(":").map(Number)
 
-    if (
-      Number.isNaN(hours) ||
-      Number.isNaN(minutes)
-    ) {
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) {
       return
     }
 
-    const next = value
-      ? new Date(value)
-      : new Date()
+    const next = value ? new Date(value) : new Date()
 
     next.setHours(hours, minutes, 0, 0)
 
@@ -82,13 +76,11 @@ export function PersianDateTimePicker({
       <div className="relative">
         <Clock3 className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-        <Input
-          type="time"
+        <TimeInput
           value={timeValue}
-          onChange={(event) =>
-            handleTimeChange(event.target.value)
-          }
+          onValueChange={handleTimeChange}
           disabled={disabled}
+          aria-label={uiText.date.timeLabel}
           className="pe-9"
         />
       </div>

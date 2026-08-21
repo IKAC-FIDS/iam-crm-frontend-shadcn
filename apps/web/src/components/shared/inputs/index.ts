@@ -1,4 +1,5 @@
 export * from "./CurrencyInput"
 export * from "./NumberInput"
 export * from "./PercentageInput"
+export * from "./TimeInput"
 export * from "./number.utils"

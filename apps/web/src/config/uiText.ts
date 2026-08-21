@@ -677,8 +677,8 @@ export const uiText = {
         company: "مشاهده شرکت",
         contact: "مشاهده پروفایل فرد",
         addLineItem: "افزودن قلم",
-        addDocument: "افزودن سند",
-        uploadDocument: "بارگذاری سند",
+        addDocument: "افزودن سند مالی",
+        uploadDocument: "افزودن سند قراردادی",
         addPayment: "ثبت پرداخت",
         markPaid: "ثبت به‌عنوان پرداخت‌شده",
         cancelPayment: "لغو پرداخت",
@@ -1070,6 +1070,7 @@ export const uiText = {
     rangeTo: "تا تاریخ",
     rangeSeparator: "تا",
     timeLabel: "ساعت",
+    timePlaceholder: "00:00",
     calendar: {
       previousMonth: "ماه قبل",
       nextMonth: "ماه بعد",

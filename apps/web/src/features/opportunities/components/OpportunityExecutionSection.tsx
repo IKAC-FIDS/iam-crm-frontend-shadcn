@@ -150,7 +150,7 @@ export function OpportunityExecutionSection({
     }
   }
   return (
-    <div className="grid w-full max-w-full min-w-0 items-start gap-4 xl:grid-cols-2">
+    <div className="grid w-full max-w-full min-w-0 items-stretch gap-4 md:grid-cols-2">
       <Section
         title={text.sections.tasks}
         count={tasks.data?.meta.total ?? opportunity._count?.tasks}
@@ -435,8 +435,8 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className="max-w-full min-w-0 overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
+    <SurfaceCard className="flex h-[400px] max-h-[420px] min-h-[320px] max-w-full min-w-0 flex-col overflow-hidden">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
@@ -447,7 +447,9 @@ function Section({
         </h2>
         {action}
       </div>
-      <div className="max-w-full min-w-0 p-3 sm:p-4">{children}</div>
+      <div className="min-h-0 max-w-full min-w-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+        {children}
+      </div>
     </SurfaceCard>
   )
 }
@@ -500,7 +502,7 @@ function PermissionNotice() {
 }
 function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
   return (
-    <div className="w-full max-w-full min-w-0 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
+    <div className="h-full w-full max-w-full min-w-0 [&_h3]:mt-2 [&>div]:h-full [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
       <EmptyState icon={icon} title={title} />
     </div>
   )

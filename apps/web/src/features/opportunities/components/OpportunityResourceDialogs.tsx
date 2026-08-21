@@ -4,6 +4,7 @@ import { toast } from "sonner"
 
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { CurrencyInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
@@ -162,9 +163,11 @@ export function LineItemDialog({
       setProductId(item?.productId ?? "")
       setDescription(item?.description ?? "")
       setChannel(
-        item?.salesChannel === "DIGIKALA" || item?.salesChannel === "OTHER"
-          ? item.salesChannel
-          : "IN_PERSON"
+        !item?.productId
+          ? "OTHER"
+          : item.salesChannel === "DIGIKALA" || item.salesChannel === "OTHER"
+            ? item.salesChannel
+            : "IN_PERSON"
       )
       setQuantity(String(item?.quantity ?? 1))
       setUnitPrice(item?.unitPrice == null ? "" : String(item.unitPrice))
@@ -172,17 +175,33 @@ export function LineItemDialog({
       setTax(String(item?.taxAmount ?? 0))
     }
   }, [item, open])
+  function applyCatalogPrice(
+    id: string,
+    nextChannel: Exclude<SalesChannel, "LEGACY_UNKNOWN">
+  ) {
+    const product = options.find((value) => value.id === id)
+    if (!product || nextChannel === "OTHER") return
+    setUnitPrice(
+      String(
+        nextChannel === "DIGIKALA"
+          ? (product.digikalaPriceIrr ?? product.defaultUnitPrice ?? "")
+          : (product.inPersonPriceIrr ?? product.defaultUnitPrice ?? "")
+      )
+    )
+  }
   function selectProduct(id: string) {
     setProductId(id)
-    const product = options.find((value) => value.id === id)
-    if (product)
-      setUnitPrice(
-        String(
-          channel === "DIGIKALA"
-            ? (product.digikalaPriceIrr ?? product.defaultUnitPrice ?? "")
-            : (product.inPersonPriceIrr ?? product.defaultUnitPrice ?? "")
-        )
-      )
+    if (!id) {
+      setChannel("OTHER")
+      return
+    }
+    const nextChannel = channel === "OTHER" ? "IN_PERSON" : channel
+    setChannel(nextChannel)
+    applyCatalogPrice(id, nextChannel)
+  }
+  function selectChannel(nextChannel: Exclude<SalesChannel, "LEGACY_UNKNOWN">) {
+    setChannel(nextChannel)
+    applyCatalogPrice(productId, nextChannel)
   }
   return (
     <BaseDialog
@@ -223,7 +242,7 @@ export function LineItemDialog({
             value={channel}
             disabled={!productId}
             onChange={(event) =>
-              setChannel(
+              selectChannel(
                 event.target.value as Exclude<SalesChannel, "LEGACY_UNKNOWN">
               )
             }
@@ -244,13 +263,7 @@ export function LineItemDialog({
           />
         </Field>
         <Field label={text.fields.unitPrice}>
-          <Input
-            type="number"
-            min={0}
-            value={unitPrice}
-            onChange={(event) => setUnitPrice(event.target.value)}
-            className="h-11 rounded-xl"
-          />
+          <CurrencyInput value={unitPrice} onValueChange={setUnitPrice} />
         </Field>
         <Field label={text.fields.discount}>
           <Input

@@ -696,8 +696,10 @@ function ResourceSection({
   children: ReactNode
 }) {
   return (
-    <SurfaceCard className={`max-w-full min-w-0 overflow-hidden ${className}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
+    <SurfaceCard
+      className={`flex max-h-[440px] max-w-full min-w-0 flex-col overflow-hidden ${className}`}
+    >
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
@@ -708,7 +710,9 @@ function ResourceSection({
         </h2>
         {action}
       </div>
-      <div className="max-w-full min-w-0 p-3 sm:p-4">{children}</div>
+      <div className="min-h-0 max-w-full min-w-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
+        {children}
+      </div>
     </SurfaceCard>
   )
 }

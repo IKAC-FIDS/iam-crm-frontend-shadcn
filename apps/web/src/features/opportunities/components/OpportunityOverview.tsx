@@ -153,7 +153,7 @@ export function OpportunityOverview({
             </p>
           )}
         </SurfaceCard>
-        <section className="min-w-0 rounded-2xl border border-[var(--app-divider)]/80 bg-[var(--app-background)]/45 p-4">
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.businessContext}
           </h2>
@@ -175,54 +175,56 @@ export function OpportunityOverview({
               value={formatJalaliDateTime(opportunity.updatedAt)}
             />
           </div>
-        </section>
+        </SurfaceCard>
         <SurfaceCard className="min-w-0 p-4">
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.recentActivity}
           </h2>
-          {activities.length ? (
-            <div className="mt-3 grid gap-0">
-              {activities.slice(0, 8).map((item, index, recent) => (
-                <div
-                  key={item.id}
-                  className="relative min-w-0 border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
-                >
-                  {index === 0 ||
-                  formatJalaliDate(recent[index - 1]?.occurredAt) !==
-                    formatJalaliDate(item.occurredAt) ? (
-                    <p className="mb-2 text-[9px] font-bold text-[var(--app-text-secondary)]">
-                      {formatJalaliDate(item.occurredAt)}
-                    </p>
-                  ) : null}
-                  <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                    <StatusBadge
-                      tone={
-                        item.type === "STAGE_CHANGE" ? "primary" : "neutral"
-                      }
-                    >
-                      {activityLabel(item.type)}
-                    </StatusBadge>
-                    <time className="text-[9px] text-[var(--app-text-secondary)]">
-                      {formatJalaliDateTime(item.occurredAt)}
-                    </time>
+          <div className="mt-3 max-h-[360px] min-h-0 overflow-y-auto overscroll-contain pe-1">
+            {activities.length ? (
+              <div className="grid gap-0">
+                {activities.slice(0, 8).map((item, index, recent) => (
+                  <div
+                    key={item.id}
+                    className="relative min-w-0 border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
+                  >
+                    {index === 0 ||
+                    formatJalaliDate(recent[index - 1]?.occurredAt) !==
+                      formatJalaliDate(item.occurredAt) ? (
+                      <p className="mb-2 text-[9px] font-bold text-[var(--app-text-secondary)]">
+                        {formatJalaliDate(item.occurredAt)}
+                      </p>
+                    ) : null}
+                    <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <StatusBadge
+                        tone={
+                          item.type === "STAGE_CHANGE" ? "primary" : "neutral"
+                        }
+                      >
+                        {activityLabel(item.type)}
+                      </StatusBadge>
+                      <time className="text-[9px] text-[var(--app-text-secondary)]">
+                        {formatJalaliDateTime(item.occurredAt)}
+                      </time>
+                    </div>
+                    {item.outcome ? (
+                      <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
+                        {item.outcome}
+                      </p>
+                    ) : null}
+                    {item.notes ? (
+                      <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                        {item.notes}
+                      </p>
+                    ) : null}
                   </div>
-                  {item.outcome ? (
-                    <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
-                      {item.outcome}
-                    </p>
-                  ) : null}
-                  {item.notes ? (
-                    <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
-                      {item.notes}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <CompactEmpty icon={Activity} title={text.empty.activities} />
-          )}
+                ))}
+              </div>
+            ) : (
+              <CompactEmpty icon={Activity} title={text.empty.activities} />
+            )}
+          </div>
         </SurfaceCard>
       </div>
       <aside className="grid min-w-0 content-start gap-3">
