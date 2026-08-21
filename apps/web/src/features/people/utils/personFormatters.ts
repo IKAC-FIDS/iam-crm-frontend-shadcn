@@ -1,6 +1,8 @@
-import { uiText } from "@/config/uiText"
-
-import type { PersonDirectoryItem } from "../types/person.types"
+import type {
+  LookupOption,
+  PersonDirectoryItem,
+  PeopleLookupSet,
+} from "../types/person.types"
 
 export function personCompanyName(person: PersonDirectoryItem) {
   return person.company?.brandName || person.company?.legalName || ""
@@ -14,22 +16,27 @@ export function personPersona(person: PersonDirectoryItem) {
   return person.personaRole || person.personaTag || ""
 }
 
-export function formatPersonaRole(value?: string | null) {
-  if (!value) return ""
-
-  const normalized = value.trim().toUpperCase()
-  const labels = uiText.people.lookups.personaRoles
-
-  return labels[normalized as keyof typeof labels] ?? value
+export function lookupLabel(
+  options: LookupOption[],
+  code?: string | null,
+) {
+  if (!code) return ""
+  return options.find((option) => option.code === code)?.label || code
 }
 
-export function formatSeniorityLevel(value?: string | null) {
-  if (!value) return ""
-
-  const normalized = value.trim().toUpperCase()
-  const labels = uiText.people.lookups.seniorityLevels
-
-  return labels[normalized as keyof typeof labels] ?? value
+export function personDisplayValues(
+  person: PersonDirectoryItem,
+  lookups: PeopleLookupSet,
+) {
+  return {
+    jobTitle: lookupLabel(lookups.jobTitles, personJobTitle(person)),
+    department: lookupLabel(lookups.departments, person.department),
+    personaRole: lookupLabel(lookups.personaRoles, personPersona(person)),
+    seniorityLevel: lookupLabel(
+      lookups.seniorityLevels,
+      person.seniorityLevel,
+    ),
+  }
 }
 
 export function primaryContactValue(person: PersonDirectoryItem) {

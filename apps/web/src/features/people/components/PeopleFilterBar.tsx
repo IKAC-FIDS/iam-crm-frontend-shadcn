@@ -5,9 +5,11 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
 import type {
-  CompanyOption,
+  LookupOption,
   PeopleDirectoryQuery,
+  PeopleLookupSet,
 } from "../types/person.types"
+import { SearchableCompanySelect } from "./SearchableCompanySelect"
 
 type BooleanFilter = "all" | "true" | "false"
 
@@ -23,12 +25,12 @@ function selectToBoolean(value: string) {
 
 export function PeopleFilterBar({
   query,
-  companies,
+  lookups,
   onChange,
   onClear,
 }: {
   query: PeopleDirectoryQuery
-  companies: CompanyOption[]
+  lookups: PeopleLookupSet
   onChange: (patch: Partial<PeopleDirectoryQuery>) => void
   onClear: () => void
 }) {
@@ -45,8 +47,8 @@ export function PeopleFilterBar({
 
   return (
     <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5">
-      <div className="flex flex-col gap-3 xl:flex-row">
-        <div className="relative min-w-0 flex-1">
+      <div className="grid gap-3">
+        <div className="relative">
           <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
           <Input
             value={query.search ?? ""}
@@ -59,39 +61,24 @@ export function PeopleFilterBar({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <NativeSelect
-            value={query.companyId ?? ""}
-            onChange={(value) =>
-              onChange({ companyId: value || undefined, page: 1 })
-            }
-          >
-            <option value="">{text.filters.allCompanies}</option>
-            {companies.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.brandName || company.legalName}
-              </option>
-            ))}
-          </NativeSelect>
-
-          <Input
-            value={query.jobTitle ?? ""}
-            onChange={(event) =>
-              onChange({ jobTitle: event.target.value || undefined, page: 1 })
-            }
-            placeholder={text.filters.jobTitle}
-            className="h-11 rounded-xl"
+          <SearchableCompanySelect
+            value={query.companyId}
+            onChange={(companyId) => onChange({ companyId, page: 1 })}
+            placeholder={text.filters.allCompanies}
           />
 
-          <Input
-            value={query.department ?? ""}
-            onChange={(event) =>
-              onChange({
-                department: event.target.value || undefined,
-                page: 1,
-              })
-            }
-            placeholder={text.filters.department}
-            className="h-11 rounded-xl"
+          <LookupSelect
+            value={query.jobTitle}
+            options={lookups.jobTitles}
+            placeholder={text.filters.allJobTitles}
+            onChange={(jobTitle) => onChange({ jobTitle, page: 1 })}
+          />
+
+          <LookupSelect
+            value={query.department}
+            options={lookups.departments}
+            placeholder={text.filters.allDepartments}
+            onChange={(department) => onChange({ department, page: 1 })}
           />
 
           <NativeSelect
@@ -107,6 +94,24 @@ export function PeopleFilterBar({
             <option value="true">{text.contactRole.primary}</option>
             <option value="false">{text.filters.notPrimary}</option>
           </NativeSelect>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <LookupSelect
+            value={query.personaRole}
+            options={lookups.personaRoles}
+            placeholder={text.filters.allPersonaRoles}
+            onChange={(personaRole) => onChange({ personaRole, page: 1 })}
+          />
+
+          <LookupSelect
+            value={query.seniorityLevel}
+            options={lookups.seniorityLevels}
+            placeholder={text.filters.allSeniorityLevels}
+            onChange={(seniorityLevel) =>
+              onChange({ seniorityLevel, page: 1 })
+            }
+          />
         </div>
       </div>
 
@@ -154,6 +159,32 @@ export function PeopleFilterBar({
         ) : null}
       </div>
     </section>
+  )
+}
+
+function LookupSelect({
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  value?: string
+  options: LookupOption[]
+  placeholder: string
+  onChange: (value?: string) => void
+}) {
+  return (
+    <NativeSelect
+      value={value ?? ""}
+      onChange={(next) => onChange(next || undefined)}
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.code}>
+          {option.label}
+        </option>
+      ))}
+    </NativeSelect>
   )
 }
 

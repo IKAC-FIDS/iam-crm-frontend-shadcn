@@ -12,10 +12,12 @@ import {
 import { Input } from "@workspace/ui/components/input"
 
 import type {
-  CompanyOption,
+  LookupOption,
+  PeopleLookupSet,
   PersonDetail,
   PersonMutationPayload,
 } from "../types/person.types"
+import { SearchableCompanySelect } from "./SearchableCompanySelect"
 
 type FormState = {
   companyId: string
@@ -68,7 +70,7 @@ export function PersonFormDialog({
   onOpenChange,
   mode,
   person,
-  companies,
+  lookups,
   isPending,
   onSubmit,
 }: {
@@ -76,7 +78,7 @@ export function PersonFormDialog({
   onOpenChange: (open: boolean) => void
   mode: "create" | "edit"
   person?: PersonDetail | null
-  companies: CompanyOption[]
+  lookups: PeopleLookupSet
   isPending?: boolean
   onSubmit: (payload: PersonMutationPayload) => Promise<void>
 }) {
@@ -105,10 +107,10 @@ export function PersonFormDialog({
     await onSubmit({
       ...(mode === "create" ? { companyId: form.companyId } : {}),
       fullName: form.fullName.trim(),
-      jobTitle: form.jobTitle.trim() || undefined,
-      department: form.department.trim() || undefined,
-      personaRole: form.personaRole.trim() || undefined,
-      seniorityLevel: form.seniorityLevel.trim() || undefined,
+      jobTitle: form.jobTitle || undefined,
+      department: form.department || undefined,
+      personaRole: form.personaRole || undefined,
+      seniorityLevel: form.seniorityLevel || undefined,
       linkedinUrl: form.linkedinUrl.trim() || undefined,
       email: form.email.trim() || undefined,
       phone: form.phone.trim() || undefined,
@@ -166,37 +168,32 @@ export function PersonFormDialog({
 
               {mode === "create" ? (
                 <Field label={text.fields.company}>
-                  <select
-                    required
-                    value={form.companyId}
-                    onChange={(event) =>
-                      patch({ companyId: event.target.value })
+                  <SearchableCompanySelect
+                    value={form.companyId || undefined}
+                    onChange={(companyId) =>
+                      patch({ companyId: companyId ?? "" })
                     }
-                    className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="">{text.form.selectCompany}</option>
-                    {companies.map((company) => (
-                      <option key={company.id} value={company.id}>
-                        {company.brandName || company.legalName}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder={text.form.selectCompany}
+                    allowEmpty={false}
+                  />
                 </Field>
               ) : null}
 
               <Field label={text.fields.jobTitle}>
-                <Input
+                <LookupSelect
                   value={form.jobTitle}
-                  onChange={(event) => patch({ jobTitle: event.target.value })}
-                  className="h-11 rounded-xl"
+                  options={lookups.jobTitles}
+                  placeholder={text.form.selectJobTitle}
+                  onChange={(jobTitle) => patch({ jobTitle })}
                 />
               </Field>
 
               <Field label={text.fields.department}>
-                <Input
+                <LookupSelect
                   value={form.department}
-                  onChange={(event) => patch({ department: event.target.value })}
-                  className="h-11 rounded-xl"
+                  options={lookups.departments}
+                  placeholder={text.form.selectDepartment}
+                  onChange={(department) => patch({ department })}
                 />
               </Field>
 
@@ -229,20 +226,20 @@ export function PersonFormDialog({
               description={text.form.salesProfileDescription}
             >
               <Field label={text.fields.personaRole}>
-                <Input
+                <LookupSelect
                   value={form.personaRole}
-                  onChange={(event) => patch({ personaRole: event.target.value })}
-                  className="h-11 rounded-xl"
+                  options={lookups.personaRoles}
+                  placeholder={text.form.selectPersonaRole}
+                  onChange={(personaRole) => patch({ personaRole })}
                 />
               </Field>
 
               <Field label={text.fields.seniorityLevel}>
-                <Input
+                <LookupSelect
                   value={form.seniorityLevel}
-                  onChange={(event) =>
-                    patch({ seniorityLevel: event.target.value })
-                  }
-                  className="h-11 rounded-xl"
+                  options={lookups.seniorityLevels}
+                  placeholder={text.form.selectSeniority}
+                  onChange={(seniorityLevel) => patch({ seniorityLevel })}
                 />
               </Field>
 
@@ -302,6 +299,33 @@ export function PersonFormDialog({
         </form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function LookupSelect({
+  value,
+  options,
+  placeholder,
+  onChange,
+}: {
+  value: string
+  options: LookupOption[]
+  placeholder: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option.id} value={option.code}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   )
 }
 

@@ -8,7 +8,9 @@ import {
 import {
   createPerson,
   deletePerson,
+  getCompanyOption,
   getCompanyOptions,
+  getLookupOptions,
   getPeopleDirectory,
   getPerson,
   updatePerson,
@@ -26,7 +28,11 @@ export const peopleQueryKeys = {
   details: () => [...peopleQueryKeys.all, "detail"] as const,
   detail: (personId: string) =>
     [...peopleQueryKeys.details(), personId] as const,
-  companyOptions: () => [...peopleQueryKeys.all, "company-options"] as const,
+  lookup: (group: string) => [...peopleQueryKeys.all, "lookup", group] as const,
+  companyOptions: (search: string) =>
+    [...peopleQueryKeys.all, "company-options", search] as const,
+  companyOption: (companyId: string) =>
+    [...peopleQueryKeys.all, "company-option", companyId] as const,
 }
 
 export function usePeopleDirectory(
@@ -49,11 +55,54 @@ export function usePerson(personId: string | null) {
   })
 }
 
-export function usePeopleCompanyOptions(enabled = true) {
+export function usePeopleLookup(group: string) {
   return useQuery({
-    queryKey: peopleQueryKeys.companyOptions(),
-    queryFn: getCompanyOptions,
+    queryKey: peopleQueryKeys.lookup(group),
+    queryFn: () => getLookupOptions(group),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function usePeopleLookups() {
+  const departments = usePeopleLookup("departments")
+  const jobTitles = usePeopleLookup("job-titles")
+  const personaRoles = usePeopleLookup("persona-roles")
+  const seniorityLevels = usePeopleLookup("seniority-levels")
+
+  return {
+    departments,
+    jobTitles,
+    personaRoles,
+    seniorityLevels,
+    data: {
+      departments: departments.data ?? [],
+      jobTitles: jobTitles.data ?? [],
+      personaRoles: personaRoles.data ?? [],
+      seniorityLevels: seniorityLevels.data ?? [],
+    },
+    isLoading:
+      departments.isLoading ||
+      jobTitles.isLoading ||
+      personaRoles.isLoading ||
+      seniorityLevels.isLoading,
+  }
+}
+
+export function usePeopleCompanyOptions(search: string, enabled = true) {
+  return useQuery({
+    queryKey: peopleQueryKeys.companyOptions(search),
+    queryFn: () => getCompanyOptions(search),
     enabled,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function usePeopleCompanyOption(companyId?: string, enabled = true) {
+  return useQuery({
+    queryKey: peopleQueryKeys.companyOption(companyId ?? ""),
+    queryFn: () => getCompanyOption(companyId ?? ""),
+    enabled: enabled && Boolean(companyId),
     staleTime: 60_000,
   })
 }

@@ -437,6 +437,10 @@ export const uiText = {
     filters: {
       searchPlaceholder: "جستجو در نام، سمت، شرکت، ایمیل یا تلفن...",
       allCompanies: "همه شرکت‌ها",
+      allJobTitles: "همه سمت‌های سازمانی",
+      allDepartments: "همه دپارتمان‌ها",
+      allPersonaRoles: "همه نقش‌ها در فرآیند خرید",
+      allSeniorityLevels: "همه سطوح ارشدیت",
       jobTitle: "سمت سازمانی",
       department: "دپارتمان",
       allContactRoles: "همه مخاطبان",
@@ -445,6 +449,15 @@ export const uiText = {
       hasPhone: "دارای تلفن",
       hasEmail: "دارای ایمیل",
     },
+    companySelect: {
+      placeholder: "انتخاب شرکت",
+      searchPlaceholder: "جستجو در نام شرکت، شناسه ملی یا شماره ثبت...",
+      loading: "در حال دریافت شرکت‌ها...",
+      empty: "شرکتی مطابق جستجو پیدا نشد.",
+      clear: "همه شرکت‌ها",
+      firstTenHint: "حداکثر ۱۰ نتیجه نمایش داده می‌شود؛ برای یافتن شرکت‌های دیگر جستجو کنید.",
+    },
+
     contactRole: {
       normal: "مخاطب عادی",
       primary: "مخاطب اصلی",
@@ -486,6 +499,10 @@ export const uiText = {
       salesProfileDescription:
         "اطلاعاتی که برای شناخت نقش فرد در فرآیند خرید و برقراری ارتباط استفاده می‌شود.",
       selectCompany: "انتخاب شرکت",
+      selectJobTitle: "انتخاب سمت سازمانی",
+      selectDepartment: "انتخاب دپارتمان",
+      selectPersonaRole: "انتخاب نقش در فرآیند خرید",
+      selectSeniority: "انتخاب سطح ارشدیت",
     },
     career: {
       current: "سمت فعلی",

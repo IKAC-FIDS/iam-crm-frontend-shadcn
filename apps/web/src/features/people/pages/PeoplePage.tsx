@@ -23,8 +23,8 @@ import { PersonFormDialog } from "../components/PersonFormDialog"
 import {
   useCreatePerson,
   useDeletePerson,
-  usePeopleCompanyOptions,
   usePeopleDirectory,
+  usePeopleLookups,
   usePerson,
   useUpdatePerson,
 } from "../hooks/usePeople"
@@ -62,7 +62,7 @@ export function PeoplePage() {
   }, [query])
 
   const directory = usePeopleDirectory(debouncedQuery)
-  const companyOptions = usePeopleCompanyOptions()
+  const lookups = usePeopleLookups()
   const selectedPerson = usePerson(selectedPersonId)
 
   const createMutation = useCreatePerson()
@@ -162,7 +162,7 @@ export function PeoplePage() {
 
       <PeopleFilterBar
         query={query}
-        companies={companyOptions.data ?? []}
+        lookups={lookups.data}
         onChange={patchQuery}
         onClear={() => setQuery(initialQuery)}
       />
@@ -183,6 +183,7 @@ export function PeoplePage() {
               <PersonCard
                 key={person.id}
                 person={person}
+                lookups={lookups.data}
                 onClick={() => setSelectedPersonId(person.id)}
               />
             ))}
@@ -248,7 +249,7 @@ export function PeoplePage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         mode="create"
-        companies={companyOptions.data ?? []}
+        lookups={lookups.data}
         isPending={createMutation.isPending}
         onSubmit={createPerson}
       />
@@ -258,7 +259,7 @@ export function PeoplePage() {
         onOpenChange={setEditOpen}
         mode="edit"
         person={selectedPerson.data ?? null}
-        companies={companyOptions.data ?? []}
+        lookups={lookups.data}
         isPending={updateMutation.isPending}
         onSubmit={updatePerson}
       />

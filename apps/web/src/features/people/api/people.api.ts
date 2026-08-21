@@ -3,6 +3,8 @@ import { unwrapApiResponse } from "@/lib/apiResponse"
 
 import type {
   CompanyOption,
+  LookupOption,
+  PaginatedCompanyOptions,
   PaginatedPeople,
   PeopleDirectoryQuery,
   PersonDetail,
@@ -14,6 +16,12 @@ interface PaginatedPeopleEnvelope {
   success?: boolean
   data: PersonDirectoryItem[]
   meta: PaginatedPeople["meta"]
+}
+
+interface PaginatedCompanyOptionsEnvelope {
+  success?: boolean
+  data: CompanyOption[]
+  meta: PaginatedCompanyOptions["meta"]
 }
 
 export async function getPeopleDirectory(query: PeopleDirectoryQuery) {
@@ -69,7 +77,32 @@ export async function deletePerson(personId: string) {
   return unwrapApiResponse<PersonDetail>(response.data)
 }
 
-export async function getCompanyOptions() {
-  const response = await api.get("/companies/options")
-  return unwrapApiResponse<CompanyOption[]>(response.data)
+export async function getLookupOptions(group: string) {
+  const response = await api.get(`/lookups/${group}`, {
+    params: { active: "true" },
+  })
+  return unwrapApiResponse<LookupOption[]>(response.data)
+}
+
+export async function getCompanyOptions(search?: string) {
+  const response = await api.get<PaginatedCompanyOptionsEnvelope>(
+    "/companies/options",
+    {
+      params: {
+        page: 1,
+        limit: 10,
+        search: search?.trim() || undefined,
+      },
+    },
+  )
+
+  return {
+    data: response.data.data,
+    meta: response.data.meta,
+  } satisfies PaginatedCompanyOptions
+}
+
+export async function getCompanyOption(companyId: string) {
+  const response = await api.get(`/companies/options/${companyId}`)
+  return unwrapApiResponse<CompanyOption>(response.data)
 }

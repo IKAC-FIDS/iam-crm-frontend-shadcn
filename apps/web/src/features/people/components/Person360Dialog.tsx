@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 
-import { usePerson } from "../hooks/usePeople"
+import { usePeopleLookups, usePerson } from "../hooks/usePeople"
 import {
   formatPersonDate,
   personCompanyName,
@@ -51,6 +51,7 @@ export function Person360Dialog({
 }) {
   const text = uiText.people
   const query = usePerson(personId)
+  const lookups = usePeopleLookups()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,7 +94,7 @@ export function Person360Dialog({
                       ) : null}
                     </div>
                     <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                      {personJobTitle(query.data) || text.notSpecified}
+                      {personDisplayValues(query.data, lookups.data).jobTitle || text.notSpecified}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--app-text-secondary)]">
                       <span className="inline-flex items-center gap-1.5">

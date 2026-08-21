@@ -18,11 +18,7 @@ export interface PersonContact {
   value: string
   isPrimary?: boolean | null
   note?: string | null
-  typeOption?: {
-    id?: string
-    code?: string
-    label?: string
-  } | null
+  typeOption?: LookupOption | null
 }
 
 export interface PersonSocial {
@@ -31,11 +27,7 @@ export interface PersonSocial {
   handle: string
   isPrimary?: boolean | null
   note?: string | null
-  platformOption?: {
-    id?: string
-    code?: string
-    label?: string
-  } | null
+  platformOption?: LookupOption | null
 }
 
 export interface EmploymentPosition {
@@ -140,8 +132,40 @@ export interface PersonMutationPayload {
   isSecondaryContact?: boolean
 }
 
+export interface LookupOption {
+  id: string
+  group: string
+  code: string
+  label: string
+  description?: string | null
+  isActive?: boolean
+  sortOrder?: number
+}
+
+export interface PeopleLookupSet {
+  departments: LookupOption[]
+  jobTitles: LookupOption[]
+  personaRoles: LookupOption[]
+  seniorityLevels: LookupOption[]
+}
+
 export interface CompanyOption {
   id: string
   legalName: string
   brandName?: string | null
+  nationalId?: string | null
+  registrationNumber?: string | null
+  economicCode?: string | null
+}
+
+export interface PaginatedCompanyOptions {
+  data: CompanyOption[]
+  meta: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+    hasNext?: boolean
+    hasPrevious?: boolean
+  }
 }

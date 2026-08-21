@@ -8,24 +8,27 @@ import {
 
 import { uiText } from "@/config/uiText"
 
-import type { PersonDirectoryItem } from "../types/person.types"
+import type {
+  PeopleLookupSet,
+  PersonDirectoryItem,
+} from "../types/person.types"
 import {
   personCompanyName,
-  personJobTitle,
-  personPersona,
+  personDisplayValues,
 } from "../utils/personFormatters"
 
 export function PersonCard({
   person,
+  lookups,
   onClick,
 }: {
   person: PersonDirectoryItem
+  lookups: PeopleLookupSet
   onClick: () => void
 }) {
   const text = uiText.people
   const company = personCompanyName(person)
-  const jobTitle = personJobTitle(person)
-  const persona = personPersona(person)
+  const display = personDisplayValues(person, lookups)
 
   return (
     <button
@@ -62,7 +65,7 @@ export function PersonCard({
               ) : null}
             </div>
             <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
-              {jobTitle || text.notSpecified}
+              {display.jobTitle || text.notSpecified}
             </p>
           </div>
         </div>
@@ -72,20 +75,24 @@ export function PersonCard({
             icon={<Building2 className="size-3.5" />}
             value={company || text.notSpecified}
           />
-          {person.department ? (
+
+          {display.department ? (
             <MetaRow
               icon={<span className="text-[10px] font-bold">D</span>}
-              value={person.department}
+              value={display.department}
             />
           ) : null}
-          {persona ? (
+
+          {display.personaRole || display.seniorityLevel ? (
             <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--app-on-primary-container)]">
-                {persona}
-              </span>
-              {person.seniorityLevel ? (
+              {display.personaRole ? (
+                <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--app-on-primary-container)]">
+                  {display.personaRole}
+                </span>
+              ) : null}
+              {display.seniorityLevel ? (
                 <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2.5 py-1 text-[10px] text-[var(--app-text-secondary)]">
-                  {person.seniorityLevel}
+                  {display.seniorityLevel}
                 </span>
               ) : null}
             </div>
