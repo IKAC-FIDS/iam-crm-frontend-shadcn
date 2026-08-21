@@ -410,13 +410,7 @@ export function CommercialDocumentDialog({
           />
         </Field>
         <Field label={text.fields.amount}>
-          <Input
-            type="number"
-            min={0}
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            className="h-11 rounded-xl"
-          />
+          <CurrencyInput min={0} value={amount} onValueChange={setAmount} />
         </Field>
         <Field label={text.fields.currency}>
           <Input
@@ -517,13 +511,7 @@ export function PaymentDialog({
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={text.fields.amount}>
-          <Input
-            type="number"
-            min={0.01}
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            className="h-11 rounded-xl"
-          />
+          <CurrencyInput min={0.01} value={amount} onValueChange={setAmount} />
         </Field>
         <Field label={text.fields.currency}>
           <Input

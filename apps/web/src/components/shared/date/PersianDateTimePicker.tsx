@@ -1,5 +1,3 @@
-import { Clock3 } from "lucide-react"
-
 import { uiText } from "@/config/uiText"
 import { TimeInput } from "@/components/shared/inputs"
 import { combineDateAndTime } from "@/lib/date/jalali"
@@ -38,19 +36,16 @@ export function PersianDateTimePicker({
         }}
       />
 
-      <div className="relative">
-        <Clock3 className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
-        <TimeInput
-          value={timeValue}
-          disabled={disabled || !value}
-          aria-label={uiText.date.timeLabel}
-          onValueChange={(time) => {
-            if (!value) return
-            onChange?.(combineDateAndTime(value, time))
-          }}
-          className="h-11 rounded-xl ps-9 text-left"
-        />
-      </div>
+      <TimeInput
+        value={timeValue}
+        disabled={disabled || !value}
+        aria-label={uiText.date.timeLabel}
+        onValueChange={(time) => {
+          if (!value) return
+          onChange?.(combineDateAndTime(value, time))
+        }}
+        className="h-11 rounded-xl"
+      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, type InputHTMLAttributes } from "react"
+import { Clock3 } from "lucide-react"
 
 import { Input } from "@workspace/ui/components/input"
 
@@ -41,27 +42,30 @@ export function TimeInput({
   useEffect(() => setDraft(value), [value])
 
   return (
-    <Input
-      {...props}
-      type="text"
-      inputMode="numeric"
-      dir="ltr"
-      lang="en-GB"
-      maxLength={5}
-      placeholder={uiText.date.timePlaceholder}
-      value={draft}
-      onChange={(event) => {
-        const next = timeDraft(event.target.value)
-        setDraft(next)
-        if (validTime(next)) onValueChange?.(next)
-      }}
-      onBlur={(event) => {
-        if (!validTime(draft)) setDraft(value)
-        onBlur?.(event)
-      }}
-      className={["text-left tabular-nums", className]
-        .filter(Boolean)
-        .join(" ")}
-    />
+    <div className="relative w-full min-w-0" dir="ltr">
+      <Input
+        {...props}
+        type="text"
+        inputMode="numeric"
+        dir="ltr"
+        lang="en-GB"
+        maxLength={5}
+        placeholder={uiText.date.timePlaceholder}
+        value={draft}
+        onChange={(event) => {
+          const next = timeDraft(event.target.value)
+          setDraft(next)
+          if (validTime(next)) onValueChange?.(next)
+        }}
+        onBlur={(event) => {
+          if (!validTime(draft)) setDraft(value)
+          onBlur?.(event)
+        }}
+        className={["w-full min-w-0 pe-10 text-left tabular-nums", className]
+          .filter(Boolean)
+          .join(" ")}
+      />
+      <Clock3 className="pointer-events-none absolute inset-y-0 end-3 my-auto size-4 shrink-0 text-muted-foreground" />
+    </div>
   )
 }
