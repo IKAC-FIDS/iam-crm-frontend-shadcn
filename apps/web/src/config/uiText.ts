@@ -185,9 +185,6 @@ export const uiText = {
         "در حال حاضر امکان دریافت آخرین فعالیت‌ها وجود ندارد.",
       retry: "تلاش دوباره",
     },
-    feedback: {
-      created: "فرد با موفقیت ایجاد شد.",
-    },
     welcomeBadge: "فضای کاری مدیریت فروش",
     welcomeTitlePrefix: "خوش آمدید،",
     welcomeDescription:
@@ -431,6 +428,9 @@ export const uiText = {
       close: "بستن",
       add: "افزودن",
       retry: "تلاش دوباره",
+    },
+    feedback: {
+      created: "فرد با موفقیت ایجاد شد.",
     },
     metrics: {
       total: "کل افراد",
