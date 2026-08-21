@@ -32,6 +32,26 @@ import {
   personPersona,
 } from "../utils/personFormatters"
 
+
+function personDisplayValues(
+  person: any,
+  lookupData: any,
+) {
+  const items = lookupData?.data ?? lookupData ?? []
+
+  const findLabel = (group: string, code: string | null | undefined) =>
+    items
+      .filter((item: any) => item.group === group)
+      .find((item: any) => item.code === code)?.label || code || null
+
+  return {
+    jobTitle: findLabel("job-titles", person.title || person.jobTitle),
+    department: findLabel("departments", person.department),
+    personaRole: findLabel("persona-roles", person.personaTag || person.personaRole),
+    seniorityLevel: findLabel("seniority-levels", person.seniorityLevel),
+  }
+}
+
 export function Person360Dialog({
   personId,
   open,
