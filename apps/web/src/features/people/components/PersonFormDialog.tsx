@@ -313,6 +313,7 @@ function LookupSelect({
   placeholder: string
   onChange: (value: string) => void
 }) {
+  const safeOptions = Array.isArray(options) ? options : []
   return (
     <select
       value={value}
@@ -320,7 +321,7 @@ function LookupSelect({
       className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       <option value="">{placeholder}</option>
-      {options.map((option) => (
+      {safeOptions.map((option) => (
         <option key={option.id} value={option.code}>
           {option.label}
         </option>

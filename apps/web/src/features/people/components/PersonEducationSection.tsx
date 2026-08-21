@@ -1,0 +1,20 @@
+import { BookOpen } from "lucide-react"
+import { useState } from "react"
+
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { ErrorState } from "@/components/shared/ErrorState"
+import { LoadingState } from "@/components/shared/LoadingState"
+import { uiText } from "@/config/uiText"
+import { getApiErrorMessage } from "@/lib/apiResponse"
+
+import { useCreateEducationHistory, useDeleteEducationHistory, usePersonEducationHistory, useUpdateEducationHistory } from "../hooks/usePeople"
+import type { EducationHistory, EducationHistoryPayload } from "../types/person.types"
+import { formatPersonDate } from "../utils/personFormatters"
+import { EmptyLine, RowActions, SectionHeader } from "./PersonContactsSection"
+import { PersonEducationDialog } from "./PersonEducationDialog"
+
+export function PersonEducationSection({ personId, canEdit }: { personId: string; canEdit: boolean }) {
+  const text = uiText.people; const query = usePersonEducationHistory(personId); const createMutation = useCreateEducationHistory(personId); const updateMutation = useUpdateEducationHistory(personId); const deleteMutation = useDeleteEducationHistory(personId); const [editing, setEditing] = useState<EducationHistory | null | undefined>(undefined); const [deleting, setDeleting] = useState<EducationHistory | null>(null); const items = Array.isArray(query.data) ? query.data : []
+  async function save(payload: EducationHistoryPayload) { if (editing) await updateMutation.mutateAsync({ id: editing.id, payload }); else await createMutation.mutateAsync(payload); setEditing(undefined) }
+  return <><SectionHeader title={text.sections.education} canEdit={canEdit} addLabel={text.education.add} onAdd={() => setEditing(null)} />{query.isLoading ? <LoadingState rows={2} /> : query.isError ? <ErrorState title={text.nested.loadError} description={getApiErrorMessage(query.error, text.nested.loadError)} retryLabel={uiText.common.retry} onRetry={() => void query.refetch()} /> : items.length ? <div className="relative grid gap-3 before:absolute before:bottom-5 before:right-[11px] before:top-5 before:w-px before:bg-[var(--app-divider)]">{items.map((education) => <div key={education.id} className="relative flex gap-4"><span className="relative z-10 mt-4 grid size-[23px] shrink-0 place-items-center rounded-full border-4 border-[var(--app-surface)] bg-[var(--app-primary)]"><BookOpen className="size-2.5 text-white" /></span><div className="min-w-0 flex-1 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold">{education.university?.name || text.notSpecified}</p>{education.degree ? <p className="mt-1 text-[10px] font-bold text-[var(--app-primary)]">{education.degreeLabel || text.education.degrees[education.degree]}</p> : null}<p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">{formatPersonDate(education.educationDate)}</p>{education.description ? <p className="mt-2 text-[10px] leading-5 text-[var(--app-text-secondary)]">{education.description}</p> : null}</div>{canEdit ? <RowActions onEdit={() => setEditing(education)} onDelete={() => setDeleting(education)} /> : null}</div></div></div>)}</div> : <EmptyLine>{text.empty.education}</EmptyLine>}<PersonEducationDialog open={editing !== undefined} onOpenChange={(open) => { if (!open) setEditing(undefined) }} education={editing} isPending={createMutation.isPending || updateMutation.isPending} error={createMutation.error || updateMutation.error} onSubmit={save} /><ConfirmDialog open={Boolean(deleting)} onOpenChange={(open) => { if (!open) setDeleting(null) }} title={text.education.deleteTitle} description={deleteMutation.error ? getApiErrorMessage(deleteMutation.error, text.nested.deleteError) : text.education.deleteDescription} confirmLabel={text.actions.delete} isPending={deleteMutation.isPending} onConfirm={async () => { if (deleting) { await deleteMutation.mutateAsync(deleting.id); setDeleting(null) } }} /></>
+}

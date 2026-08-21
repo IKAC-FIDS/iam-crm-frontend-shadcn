@@ -14,7 +14,8 @@ export interface PersonCompanyRef {
 
 export interface PersonContact {
   id: string
-  type: string
+  type?: string | null
+  typeOptionId?: string | null
   value: string
   isPrimary?: boolean | null
   note?: string | null
@@ -23,7 +24,8 @@ export interface PersonContact {
 
 export interface PersonSocial {
   id: string
-  platform: string
+  platform?: string | null
+  platformOptionId?: string | null
   handle: string
   isPrimary?: boolean | null
   note?: string | null
@@ -41,6 +43,7 @@ export interface EmploymentPosition {
 
 export interface EmploymentHistory {
   id: string
+  companyId?: string | null
   description?: string | null
   company?: {
     id: string
@@ -52,7 +55,9 @@ export interface EmploymentHistory {
 
 export interface EducationHistory {
   id: string
-  degree?: string | null
+  degree?: PersonEducationDegree | null
+  degreeLabel?: string | null
+  universityId?: string | null
   educationDate?: string | null
   description?: string | null
   university?: {
@@ -140,6 +145,57 @@ export interface LookupOption {
   description?: string | null
   isActive?: boolean
   sortOrder?: number
+}
+
+export interface PersonContactPayload {
+  typeOptionId?: string
+  type?: string
+  value: string
+  isPrimary?: boolean
+  note?: string
+}
+
+export interface PersonSocialPayload {
+  platformOptionId?: string
+  platform?: string
+  handle: string
+  isPrimary?: boolean
+  note?: string
+}
+
+export interface EmploymentHistoryPayload {
+  companyId: string
+  description?: string
+}
+
+export interface EmploymentPositionPayload {
+  title: string
+  startDate?: string
+  endDate?: string
+  isCurrent?: boolean
+  description?: string
+}
+
+export type PersonEducationDegree =
+  | "DIPLOMA"
+  | "ASSOCIATE"
+  | "BACHELOR"
+  | "PHD"
+  | "POSTDOC"
+
+export interface EducationHistoryPayload {
+  degree?: PersonEducationDegree
+  universityId?: string
+  educationDate?: string
+  description?: string
+}
+
+export interface UniversityOption {
+  id: string
+  name: string
+  code?: string | null
+  description?: string | null
+  isActive?: boolean
 }
 
 export interface PeopleLookupSet {

@@ -3,13 +3,24 @@ import { unwrapApiResponse } from "@/lib/apiResponse"
 
 import type {
   CompanyOption,
+  EducationHistory,
+  EducationHistoryPayload,
+  EmploymentHistory,
+  EmploymentHistoryPayload,
+  EmploymentPosition,
+  EmploymentPositionPayload,
   LookupOption,
   PaginatedCompanyOptions,
   PaginatedPeople,
   PeopleDirectoryQuery,
   PersonDetail,
+  PersonContact,
+  PersonContactPayload,
   PersonDirectoryItem,
   PersonMutationPayload,
+  PersonSocial,
+  PersonSocialPayload,
+  UniversityOption,
 } from "../types/person.types"
 
 interface PaginatedPeopleEnvelope {
@@ -81,7 +92,113 @@ export async function getLookupOptions(group: string) {
   const response = await api.get(`/lookups/${group}`, {
     params: { active: "true" },
   })
-  return unwrapApiResponse<LookupOption[]>(response.data)
+  const options = unwrapApiResponse<LookupOption[]>(response.data)
+  return Array.isArray(options) ? options : []
+}
+
+export async function getPersonContacts(personId: string) {
+  const response = await api.get(`/people/${personId}/contacts`)
+  const data = unwrapApiResponse<PersonContact[]>(response.data)
+  return Array.isArray(data) ? data : []
+}
+
+export async function createPersonContact(personId: string, payload: PersonContactPayload) {
+  const response = await api.post(`/people/${personId}/contacts`, payload)
+  return unwrapApiResponse<PersonContact>(response.data)
+}
+
+export async function updatePersonContact(personId: string, contactId: string, payload: Partial<PersonContactPayload>) {
+  const response = await api.patch(`/people/${personId}/contacts/${contactId}`, payload)
+  return unwrapApiResponse<PersonContact>(response.data)
+}
+
+export async function deletePersonContact(personId: string, contactId: string) {
+  const response = await api.delete(`/people/${personId}/contacts/${contactId}`)
+  return unwrapApiResponse<PersonContact>(response.data)
+}
+
+export async function getPersonSocials(personId: string) {
+  const response = await api.get(`/people/${personId}/socials`)
+  const data = unwrapApiResponse<PersonSocial[]>(response.data)
+  return Array.isArray(data) ? data : []
+}
+
+export async function createPersonSocial(personId: string, payload: PersonSocialPayload) {
+  const response = await api.post(`/people/${personId}/socials`, payload)
+  return unwrapApiResponse<PersonSocial>(response.data)
+}
+
+export async function updatePersonSocial(personId: string, socialId: string, payload: Partial<PersonSocialPayload>) {
+  const response = await api.patch(`/people/${personId}/socials/${socialId}`, payload)
+  return unwrapApiResponse<PersonSocial>(response.data)
+}
+
+export async function deletePersonSocial(personId: string, socialId: string) {
+  const response = await api.delete(`/people/${personId}/socials/${socialId}`)
+  return unwrapApiResponse<PersonSocial>(response.data)
+}
+
+export async function getEmploymentHistory(personId: string) {
+  const response = await api.get(`/people/${personId}/employment-history`)
+  const data = unwrapApiResponse<EmploymentHistory[]>(response.data)
+  return Array.isArray(data) ? data : []
+}
+
+export async function createEmploymentHistory(personId: string, payload: EmploymentHistoryPayload) {
+  const response = await api.post(`/people/${personId}/employment-history`, payload)
+  return unwrapApiResponse<EmploymentHistory>(response.data)
+}
+
+export async function updateEmploymentHistory(personId: string, employmentId: string, payload: Partial<EmploymentHistoryPayload>) {
+  const response = await api.patch(`/people/${personId}/employment-history/${employmentId}`, payload)
+  return unwrapApiResponse<EmploymentHistory>(response.data)
+}
+
+export async function deleteEmploymentHistory(personId: string, employmentId: string) {
+  const response = await api.delete(`/people/${personId}/employment-history/${employmentId}`)
+  return unwrapApiResponse<EmploymentHistory>(response.data)
+}
+
+export async function createEmploymentPosition(personId: string, employmentId: string, payload: EmploymentPositionPayload) {
+  const response = await api.post(`/people/${personId}/employment-history/${employmentId}/positions`, payload)
+  return unwrapApiResponse<EmploymentPosition>(response.data)
+}
+
+export async function updateEmploymentPosition(personId: string, employmentId: string, positionId: string, payload: Partial<EmploymentPositionPayload>) {
+  const response = await api.patch(`/people/${personId}/employment-history/${employmentId}/positions/${positionId}`, payload)
+  return unwrapApiResponse<EmploymentPosition>(response.data)
+}
+
+export async function deleteEmploymentPosition(personId: string, employmentId: string, positionId: string) {
+  const response = await api.delete(`/people/${personId}/employment-history/${employmentId}/positions/${positionId}`)
+  return unwrapApiResponse<{ id: string; deleted: boolean }>(response.data)
+}
+
+export async function getEducationHistory(personId: string) {
+  const response = await api.get(`/people/${personId}/education-history`)
+  const data = unwrapApiResponse<EducationHistory[]>(response.data)
+  return Array.isArray(data) ? data : []
+}
+
+export async function createEducationHistory(personId: string, payload: EducationHistoryPayload) {
+  const response = await api.post(`/people/${personId}/education-history`, payload)
+  return unwrapApiResponse<EducationHistory>(response.data)
+}
+
+export async function updateEducationHistory(personId: string, educationId: string, payload: Partial<EducationHistoryPayload>) {
+  const response = await api.patch(`/people/${personId}/education-history/${educationId}`, payload)
+  return unwrapApiResponse<EducationHistory>(response.data)
+}
+
+export async function deleteEducationHistory(personId: string, educationId: string) {
+  const response = await api.delete(`/people/${personId}/education-history/${educationId}`)
+  return unwrapApiResponse<{ id: string; deleted: boolean }>(response.data)
+}
+
+export async function getUniversities() {
+  const response = await api.get("/universities")
+  const data = unwrapApiResponse<UniversityOption[]>(response.data)
+  return Array.isArray(data) ? data : []
 }
 
 export async function getCompanyOptions(search?: string) {

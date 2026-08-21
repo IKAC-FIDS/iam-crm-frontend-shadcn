@@ -42,6 +42,8 @@ export function PeoplePage() {
   const text = uiText.people
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
 
+  const canViewDirectory = permissions.includes("people:directory:view")
+  const canViewPerson = permissions.includes("person:view")
   const canCreate = permissions.includes("person:create")
   const canEdit = permissions.includes("person:update")
   const canDelete = permissions.includes("person:delete")
@@ -61,7 +63,7 @@ export function PeoplePage() {
     return () => window.clearTimeout(timeout)
   }, [query])
 
-  const directory = usePeopleDirectory(debouncedQuery)
+  const directory = usePeopleDirectory(debouncedQuery, canViewDirectory)
   const lookups = usePeopleLookups()
   const selectedPerson = usePerson(selectedPersonId)
 
@@ -167,7 +169,12 @@ export function PeoplePage() {
         onClear={() => setQuery(initialQuery)}
       />
 
-      {directory.isLoading ? (
+      {!canViewDirectory ? (
+        <ErrorState
+          title={text.errors.permissionTitle}
+          description={text.errors.permissionDescription}
+        />
+      ) : directory.isLoading ? (
         <LoadingState />
       ) : directory.isError ? (
         <ErrorState
@@ -184,7 +191,9 @@ export function PeoplePage() {
                 key={person.id}
                 person={person}
                 lookups={lookups.data}
-                onClick={() => setSelectedPersonId(person.id)}
+                onClick={() => {
+                  if (canViewPerson) setSelectedPersonId(person.id)
+                }}
               />
             ))}
           </div>
@@ -239,8 +248,8 @@ export function PeoplePage() {
         onOpenChange={(open) => {
           if (!open) setSelectedPersonId(null)
         }}
-        canEdit={canEdit}
-        canDelete={canDelete}
+        canEdit={canEdit && canViewPerson}
+        canDelete={canDelete && canViewPerson}
         onEdit={() => setEditOpen(true)}
         onDelete={() => setDeleteOpen(true)}
       />

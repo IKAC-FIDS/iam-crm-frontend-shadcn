@@ -173,13 +173,14 @@ function LookupSelect({
   placeholder: string
   onChange: (value?: string) => void
 }) {
+  const safeOptions = Array.isArray(options) ? options : []
   return (
     <NativeSelect
       value={value ?? ""}
       onChange={(next) => onChange(next || undefined)}
     >
       <option value="">{placeholder}</option>
-      {options.map((option) => (
+      {safeOptions.map((option) => (
         <option key={option.id} value={option.code}>
           {option.label}
         </option>

@@ -41,7 +41,9 @@ export function SearchableCompanySelect({
   const optionsQuery = usePeopleCompanyOptions(debouncedSearch, open)
   const selectedQuery = usePeopleCompanyOption(value, Boolean(value))
 
-  const options = optionsQuery.data?.data ?? []
+  const options = Array.isArray(optionsQuery.data?.data)
+    ? optionsQuery.data.data
+    : []
 
   const selected = useMemo(() => {
     return (

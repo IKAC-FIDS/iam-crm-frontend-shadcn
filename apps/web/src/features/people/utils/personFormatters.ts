@@ -17,11 +17,12 @@ export function personPersona(person: PersonDirectoryItem) {
 }
 
 export function lookupLabel(
-  options: LookupOption[],
+  options: LookupOption[] | unknown,
   code?: string | null,
 ) {
   if (!code) return ""
-  return options.find((option) => option.code === code)?.label || code
+  const safeOptions = Array.isArray(options) ? options : []
+  return safeOptions.find((option) => option.code === code)?.label || code
 }
 
 export function personDisplayValues(
@@ -29,18 +30,19 @@ export function personDisplayValues(
   lookups: PeopleLookupSet,
 ) {
   return {
-    jobTitle: lookupLabel(lookups.jobTitles, personJobTitle(person)),
-    department: lookupLabel(lookups.departments, person.department),
-    personaRole: lookupLabel(lookups.personaRoles, personPersona(person)),
+    jobTitle: lookupLabel(lookups?.jobTitles, personJobTitle(person)),
+    department: lookupLabel(lookups?.departments, person.department),
+    personaRole: lookupLabel(lookups?.personaRoles, personPersona(person)),
     seniorityLevel: lookupLabel(
-      lookups.seniorityLevels,
+      lookups?.seniorityLevels,
       person.seniorityLevel,
     ),
   }
 }
 
 export function primaryContactValue(person: PersonDirectoryItem) {
-  const primary = person.contacts?.find(
+  const contacts = Array.isArray(person.contacts) ? person.contacts : []
+  const primary = contacts.find(
     (item) => item.isPrimary && item.value?.trim(),
   )
 
