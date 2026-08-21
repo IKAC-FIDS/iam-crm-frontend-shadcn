@@ -1,4 +1,5 @@
-import { ListChecks } from "lucide-react"
+﻿import { ListChecks } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 import {
   DataTableShell,
@@ -19,10 +20,7 @@ import {
   taskStatusLabel,
   taskStatusTone,
 } from "../utils/taskFormatters"
-import {
-  TaskActionsMenu,
-  type TaskDialogAction,
-} from "./TaskActionsMenu"
+import { TaskActionsMenu } from "./TaskActionsMenu"
 
 export function TaskList({
   tasks,
@@ -43,9 +41,13 @@ export function TaskList({
   canDelete: boolean
   onCreate: () => void
   onEdit: (task: Task) => void
-  onAction: (task: Task, action: TaskDialogAction) => void
+  onAction: (
+    task: Task,
+    action: "status" | "assign" | "complete" | "reschedule" | "delete"
+  ) => void
 }) {
   const text = uiText.tasks
+  const navigate = useNavigate()
 
   const columns: DataTableColumn<Task>[] = [
     {
@@ -122,15 +124,20 @@ export function TaskList({
       header: text.table.actions,
       className: "w-16",
       cell: (task) => (
-        <TaskActionsMenu
-          task={task}
-          canUpdate={canUpdate}
-          canAssign={canAssign}
-          canComplete={canComplete}
-          canDelete={canDelete}
-          onEdit={() => onEdit(task)}
-          onAction={(action) => onAction(task, action)}
-        />
+        <div
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <TaskActionsMenu
+            task={task}
+            canUpdate={canUpdate}
+            canAssign={canAssign}
+            canComplete={canComplete}
+            canDelete={canDelete}
+            onEdit={() => onEdit(task)}
+            onAction={(action) => onAction(task, action)}
+          />
+        </div>
       ),
     },
   ]
@@ -142,6 +149,7 @@ export function TaskList({
           rows={tasks}
           columns={columns}
           getRowKey={(task) => task.id}
+          onRowClick={(task) => navigate(`/tasks/${task.id}`)}
           emptyState={
             <EmptyState
               icon={ListChecks}
@@ -161,3 +169,4 @@ export function TaskList({
     </div>
   )
 }
+

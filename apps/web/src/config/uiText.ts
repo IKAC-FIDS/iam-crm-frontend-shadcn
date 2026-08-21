@@ -971,8 +971,53 @@ tasks: {
       "در حال حاضر امکان دریافت فهرست کارها از سرور وجود ندارد. دوباره تلاش کنید.",
     mutation: "عملیات کار انجام نشد.",
   },
+  detail: {
+    description:
+      "نمایش جزئیات کار، زمینه تجاری، مسئولیت و چرخه اجرای کار.",
+    actions: {
+      back: "بازگشت به کارها",
+    },
+    sections: {
+      schedule: "زمان‌بندی",
+      description: "توضیحات",
+      outcome: "نتیجه انجام کار",
+      cancellation: "اطلاعات لغو",
+      context: "زمینه تجاری",
+      ownership: "مسئولیت",
+      lifecycle: "چرخه کار",
+    },
+    labels: {
+      due: "موعد انجام",
+      reminder: "یادآوری",
+      noReminder: "بدون یادآوری",
+      assignee: "مسئول اجرا",
+      createdBy: "ایجادکننده",
+      completedBy: "تکمیل‌کننده",
+      company: "شرکت",
+      opportunity: "فرصت",
+      person: "مخاطب",
+      document: "سند تجاری",
+      payment: "پرداخت",
+    },
+    lifecycle: {
+      created: "ایجاد کار",
+      updated: "آخرین بروزرسانی",
+      completed: "تکمیل کار",
+      cancelled: "لغو کار",
+    },
+    empty: {
+      description: "توضیحی برای این کار ثبت نشده است.",
+      completionNote: "یادداشت تکمیل ثبت نشده است.",
+      cancelReason: "دلیل لغو ثبت نشده است.",
+      activeOutcome: "نتیجه انجام کار پس از تکمیل نمایش داده می‌شود.",
+    },
+    errors: {
+      loadTitle: "دریافت کار انجام نشد",
+      loadDescription:
+        "اطلاعات کار از سرویس دریافت نشد. دوباره تلاش کنید.",
+    },
+  },
 },
-
   meetings: {
     title: "جلسات",
     description: "برنامه‌ریزی و پیگیری تعاملات فروش و جلسات پیش‌رو",
@@ -1516,5 +1561,9 @@ tasks: {
     },
   },
 } as const
+
+
+
+
 
 

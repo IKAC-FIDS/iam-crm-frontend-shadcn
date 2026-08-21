@@ -51,7 +51,11 @@ export async function updateTask(id: string, payload: Partial<TaskPayload>) {
   return unwrapApiResponse<Task>(response.data)
 }
 
-export async function changeTaskStatus(id: string, status: Task["status"], note?: string) {
+export async function changeTaskStatus(
+  id: string,
+  status: Task["status"],
+  note?: string
+) {
   const response = await api.patch(`/tasks/${id}/status`, {
     status,
     note: note?.trim() || undefined,
@@ -71,7 +75,11 @@ export async function completeTask(id: string, completionNote?: string) {
   return unwrapApiResponse<Task>(response.data)
 }
 
-export async function rescheduleTask(id: string, dueAt: string, reminderAt?: string) {
+export async function rescheduleTask(
+  id: string,
+  dueAt: string,
+  reminderAt?: string
+) {
   const response = await api.patch(`/tasks/${id}/reschedule`, {
     dueAt,
     reminderAt,
@@ -85,23 +93,36 @@ export async function deleteTask(id: string) {
 
 export async function getTaskAssignees(search: string, page: number) {
   const response = await api.get("/users/assignee-options", {
-    params: { search: search.trim() || undefined, page, limit: 25 },
-  })
-  const body = response.data as { data?: TaskAssigneeOption[]; meta?: TaskPage["meta"] }
-  return {
-    data: Array.isArray(body.data) ? body.data : [],
-    meta: body.meta ?? {
-      total: 0,
+    params: {
+      search: search.trim() || undefined,
       page,
       limit: 25,
-      totalPages: 0,
-      hasNext: false,
-      hasPrevious: page > 1,
     },
+  })
+  const body = response.data as {
+    data?: TaskAssigneeOption[]
+    meta?: TaskPage["meta"]
+  }
+  return {
+    data: Array.isArray(body.data) ? body.data : [],
+    meta:
+      body.meta ??
+      ({
+        total: 0,
+        page,
+        limit: 25,
+        totalPages: 0,
+        hasNext: false,
+        hasPrevious: page > 1,
+      } satisfies TaskPage["meta"]),
   }
 }
 
-export function getTaskOpportunities(companyId: string, search: string, page: number) {
+export function getTaskOpportunities(
+  companyId: string,
+  search: string,
+  page: number
+) {
   return getOpportunities({
     page,
     limit: 25,

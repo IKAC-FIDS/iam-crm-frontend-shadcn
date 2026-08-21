@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react"
+﻿import { useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -25,6 +25,7 @@ import {
 } from "../hooks/useTasks"
 import type { Task, TaskOption, TaskStatus } from "../types/task.types"
 import { type TaskDialogAction } from "./TaskActionsMenu"
+export type { TaskDialogAction } from "./TaskActionsMenu"
 import { TaskOptionSelect } from "./TaskOptionSelect"
 
 export function TaskActionDialogs({
@@ -302,3 +303,4 @@ const selectClass =
   "h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm outline-none focus:border-[var(--app-primary)]"
 const textareaClass =
   "w-full resize-none rounded-xl border border-input bg-transparent p-3 text-sm outline-none focus:border-[var(--app-primary)]"
+

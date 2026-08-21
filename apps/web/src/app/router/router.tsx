@@ -10,6 +10,7 @@ import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { MeetingDetailPage } from "@/features/meetings/pages/MeetingDetailPage"
 import { MeetingsPage } from "@/features/meetings/pages/MeetingsPage"
 import { TasksPage } from "@/features/tasks/pages/TasksPage"
+import { TaskDetailPage } from "@/features/tasks/pages/TaskDetailPage"
 import { PeoplePage } from "@/features/people/pages/PeoplePage"
 import { OpportunityDetailPage } from "@/features/opportunities/pages/OpportunityDetailPage"
 import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
@@ -128,7 +129,8 @@ export const router = createBrowserRouter([
                 }}
               />
             ),
-            children: [{ path: "/tasks", element: <TasksPage /> }],
+            children: [{ path: "/tasks", element: <TasksPage /> },
+              { path: "/tasks/:id", element: <TaskDetailPage /> }],
           },          {
             element: (
               <PermissionRoute
@@ -162,4 +164,5 @@ export const router = createBrowserRouter([
     element: <Navigate to="/dashboard" replace />,
   },
 ])
+
 
