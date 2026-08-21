@@ -22,8 +22,6 @@ import type {
   PaymentMethod,
   OpportunityTask,
   OpportunityTaskPayload,
-  OpportunityMeeting,
-  OpportunityMeetingPayload,
   OpportunityAttachment,
   PaginatedResource,
   ProductCatalogOption,
@@ -321,44 +319,6 @@ export async function completeOpportunityTask(
 }
 export async function deleteOpportunityTask(taskId: string) {
   await api.delete(`/tasks/${taskId}`)
-}
-
-export async function getOpportunityMeetings(id: string, page = 1) {
-  const response = await api.get("/meetings", {
-    params: { opportunityId: id, page, limit: 20 },
-  })
-  return paginated<OpportunityMeeting>(response.data)
-}
-export async function createOpportunityMeeting(
-  payload: OpportunityMeetingPayload
-) {
-  const response = await api.post("/meetings", payload)
-  return unwrapApiResponse<OpportunityMeeting>(response.data)
-}
-export async function updateOpportunityMeeting(
-  meetingId: string,
-  payload: Partial<OpportunityMeetingPayload>
-) {
-  const response = await api.patch(`/meetings/${meetingId}`, payload)
-  return unwrapApiResponse<OpportunityMeeting>(response.data)
-}
-export async function completeOpportunityMeeting(
-  meetingId: string,
-  completionNote?: string
-) {
-  const response = await api.patch(`/meetings/${meetingId}/complete`, {
-    completionNote: completionNote?.trim() || undefined,
-  })
-  return unwrapApiResponse<OpportunityMeeting>(response.data)
-}
-export async function cancelOpportunityMeeting(
-  meetingId: string,
-  cancellationReason?: string
-) {
-  const response = await api.patch(`/meetings/${meetingId}/cancel`, {
-    cancellationReason: cancellationReason?.trim() || undefined,
-  })
-  return unwrapApiResponse<OpportunityMeeting>(response.data)
 }
 
 export async function getOpportunityAttachments(id: string, page = 1) {

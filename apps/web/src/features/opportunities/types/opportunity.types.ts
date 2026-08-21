@@ -286,38 +286,6 @@ export interface OpportunityTaskPayload {
   opportunityId: string
 }
 
-export type MeetingStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED"
-export type MeetingMode = "IN_PERSON" | "ONLINE" | "HYBRID"
-export interface OpportunityMeeting {
-  id: string
-  companyId: string
-  opportunityId?: string | null
-  title: string
-  agenda?: string | null
-  description?: string | null
-  mode: MeetingMode
-  location?: string | null
-  meetingUrl?: string | null
-  startAt: string
-  endAt: string
-  status: MeetingStatus
-  organizer?: { id: string; fullName?: string | null } | null
-  createdAt: string
-  updatedAt?: string
-}
-export interface OpportunityMeetingPayload {
-  companyId: string
-  opportunityId: string
-  title: string
-  agenda?: string
-  description?: string
-  mode: MeetingMode
-  location?: string
-  meetingUrl?: string
-  startAt: string
-  endAt: string
-}
-
 export interface OpportunityAttachment {
   id: string
   entityType: "OPPORTUNITY"

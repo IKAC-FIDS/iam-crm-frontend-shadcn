@@ -22,12 +22,9 @@ import { useProductCatalogOptions } from "../hooks/useOpportunities"
 import type {
   CommercialDocument,
   CommercialDocumentPayload,
-  MeetingMode,
   OpportunityAttachment,
   OpportunityLineItem,
   OpportunityLineItemPayload,
-  OpportunityMeeting,
-  OpportunityMeetingPayload,
   OpportunityPayment,
   OpportunityPaymentPayload,
   OpportunityPriority,
@@ -684,119 +681,6 @@ export function TaskDialog({
             rows={3}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            className="w-full rounded-xl border border-input bg-transparent p-3 text-sm"
-          />
-        </Field>
-      </div>
-    </BaseDialog>
-  )
-}
-
-export function MeetingDialog({
-  open,
-  onOpenChange,
-  meeting,
-  opportunityId,
-  companyId,
-  pending,
-  onSubmit,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  meeting?: OpportunityMeeting | null
-  opportunityId: string
-  companyId: string
-  pending: boolean
-  onSubmit: (payload: OpportunityMeetingPayload) => void
-}) {
-  const text = uiText.opportunities.detail
-  const [title, setTitle] = useState("")
-  const [mode, setMode] = useState<MeetingMode>("IN_PERSON")
-  const [startAt, setStartAt] = useState<Date>()
-  const [endAt, setEndAt] = useState<Date>()
-  const [location, setLocation] = useState("")
-  const [meetingUrl, setMeetingUrl] = useState("")
-  const [agenda, setAgenda] = useState("")
-  useEffect(() => {
-    if (open) {
-      setTitle(meeting?.title ?? "")
-      setMode(meeting?.mode ?? "IN_PERSON")
-      setStartAt(meeting?.startAt ? new Date(meeting.startAt) : undefined)
-      setEndAt(meeting?.endAt ? new Date(meeting.endAt) : undefined)
-      setLocation(meeting?.location ?? "")
-      setMeetingUrl(meeting?.meetingUrl ?? "")
-      setAgenda(meeting?.agenda ?? "")
-    }
-  }, [meeting, open])
-  return (
-    <BaseDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={meeting ? text.dialogs.meetingEdit : text.dialogs.meetingCreate}
-      pending={pending}
-      onSave={() => {
-        if (!startAt || !endAt || endAt <= startAt)
-          return toast.error(text.errors.endBeforeStart)
-        onSubmit({
-          companyId,
-          opportunityId,
-          title: title.trim(),
-          mode,
-          startAt: startAt.toISOString(),
-          endAt: endAt.toISOString(),
-          location: location.trim() || undefined,
-          meetingUrl: meetingUrl.trim() || undefined,
-          agenda: agenda.trim() || undefined,
-        })
-      }}
-    >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={text.fields.meetingTitle} className="sm:col-span-2">
-          <Input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className="h-11 rounded-xl"
-          />
-        </Field>
-        <Field label={text.fields.meetingMode}>
-          <select
-            className={selectClass}
-            value={mode}
-            onChange={(event) => setMode(event.target.value as MeetingMode)}
-          >
-            {Object.entries(text.meetingModes).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label={text.fields.location}>
-          <Input
-            value={location}
-            onChange={(event) => setLocation(event.target.value)}
-            className="h-11 rounded-xl"
-          />
-        </Field>
-        <Field label={text.fields.startAt}>
-          <PersianDateTimePicker value={startAt} onChange={setStartAt} />
-        </Field>
-        <Field label={text.fields.endAt}>
-          <PersianDateTimePicker value={endAt} onChange={setEndAt} />
-        </Field>
-        <Field label={text.fields.meetingUrl} className="sm:col-span-2">
-          <Input
-            dir="ltr"
-            value={meetingUrl}
-            onChange={(event) => setMeetingUrl(event.target.value)}
-            className="h-11 rounded-xl"
-          />
-        </Field>
-        <Field label={text.fields.agenda} className="sm:col-span-2">
-          <textarea
-            rows={3}
-            value={agenda}
-            onChange={(event) => setAgenda(event.target.value)}
             className="w-full rounded-xl border border-input bg-transparent p-3 text-sm"
           />
         </Field>

@@ -8,6 +8,7 @@ import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
 import { PeoplePage } from "@/features/people/pages/PeoplePage"
+import { MeetingsPage } from "@/features/meetings/pages/MeetingsPage"
 import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
 import { OpportunityDetailPage } from "@/features/opportunities/pages/OpportunityDetailPage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
@@ -22,6 +23,7 @@ const featureRoutes = appMenuRoutes
       route.path !== "/dashboard" &&
       route.path !== "/companies" &&
       route.path !== "/people" &&
+      route.path !== "/meetings" &&
       route.path !== "/opportunities" &&
       route.path !== "/pipeline"
   )
@@ -112,6 +114,18 @@ export const router = createBrowserRouter([
                 element: <Navigate to="/opportunities" replace />,
               },
             ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: ["meeting:view"],
+                }}
+              />
+            ),
+            children: [{ path: "/meetings", element: <MeetingsPage /> }],
           },
           {
             path: "/account/profile",

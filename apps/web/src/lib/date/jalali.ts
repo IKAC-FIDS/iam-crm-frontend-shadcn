@@ -20,7 +20,7 @@ export function dateToJalali(date: Date): JalaliDateParts {
   const result = toJalaali(
     date.getFullYear(),
     date.getMonth() + 1,
-    date.getDate(),
+    date.getDate()
   )
 
   return {
@@ -33,7 +33,7 @@ export function dateToJalali(date: Date): JalaliDateParts {
 export function jalaliToDate(
   year: number,
   month: number,
-  day: number,
+  day: number
 ): Date | null {
   if (!isValidJalaaliDate(year, month, day)) return null
 
@@ -56,11 +56,11 @@ export function getJalaliMonthStartWeekday(year: number, month: number) {
 export function addJalaliMonths(
   year: number,
   month: number,
-  delta: number,
+  delta: number
 ): { year: number; month: number } {
   const absolute = year * 12 + (month - 1) + delta
   const nextYear = Math.floor(absolute / 12)
-  const nextMonth = ((absolute % 12) + 12) % 12 + 1
+  const nextMonth = (((absolute % 12) + 12) % 12) + 1
   return { year: nextYear, month: nextMonth }
 }
 
@@ -77,9 +77,7 @@ export function startOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-export function formatJalaliDate(
-  date?: Date | string | null,
-): string {
+export function formatJalaliDate(date?: Date | string | null): string {
   if (!date) return ""
 
   const value = typeof date === "string" ? new Date(date) : date
@@ -92,9 +90,7 @@ export function formatJalaliDate(
   }).format(value)
 }
 
-export function formatJalaliDateTime(
-  date?: Date | string | null,
-): string {
+export function formatJalaliDateTime(date?: Date | string | null): string {
   if (!date) return ""
 
   const value = typeof date === "string" ? new Date(date) : date
@@ -110,6 +106,19 @@ export function formatJalaliDateTime(
   }).format(value)
 }
 
+export function format24Hour(date?: Date | string | null): string {
+  if (!date) return ""
+
+  const value = typeof date === "string" ? new Date(date) : date
+  if (Number.isNaN(value.getTime())) return ""
+
+  return new Intl.DateTimeFormat("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(value)
+}
+
 export function toApiDate(date?: Date | null): string | null {
   if (!date) return null
   const year = date.getFullYear()
@@ -122,13 +131,17 @@ export function fromApiDate(value?: string | null): Date | undefined {
   if (!value) return undefined
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
   if (!match) return undefined
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  const date = new Date(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3])
+  )
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
 export function combineDateAndTime(
   date?: Date,
-  time?: string,
+  time?: string
 ): Date | undefined {
   if (!date) return undefined
   const [hour = "0", minute = "0"] = (time || "00:00").split(":")
@@ -139,12 +152,10 @@ export function combineDateAndTime(
     Number(hour),
     Number(minute),
     0,
-    0,
+    0
   )
 }
 
-export function toIsoString(
-  date?: Date | null,
-): string | null {
+export function toIsoString(date?: Date | null): string | null {
   return date ? date.toISOString() : null
 }

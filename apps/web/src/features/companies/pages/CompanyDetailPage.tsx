@@ -27,6 +27,7 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
+import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
@@ -97,6 +98,7 @@ export function CompanyDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [createPersonOpen, setCreatePersonOpen] = useState(false)
+  const [createMeetingOpen, setCreateMeetingOpen] = useState(false)
   const [quickView, setQuickView] = useState<QuickViewState>(null)
 
   const canViewPeople = permissions.includes("person:view")
@@ -104,6 +106,7 @@ export function CompanyDetailPage() {
   const canViewOpportunities = permissions.includes("opportunity:view")
   const canViewTasks = permissions.includes("task:view")
   const canViewMeetings = permissions.includes("meeting:view")
+  const canCreateMeeting = permissions.includes("meeting:create")
   const canViewActivities = permissions.includes("activity:view")
 
   const query = useCompany(companyId)
@@ -671,6 +674,10 @@ export function CompanyDetailPage() {
               title={uiText.navigation.meetings}
               count={meetingsQuery.data?.meta.total ?? 0}
               icon={<CalendarClock className="size-5" />}
+              onCreate={
+                canCreateMeeting ? () => setCreateMeetingOpen(true) : undefined
+              }
+              createLabel={uiText.meetings.actions.create}
               onViewAll={() => goToModule("/meetings")}
             >
               {meetingsQuery.isLoading ? (
@@ -801,6 +808,15 @@ export function CompanyDetailPage() {
               }),
             ])
           }}
+        />
+      ) : null}
+
+      {createMeetingOpen ? (
+        <MeetingFormDialog
+          open
+          onOpenChange={setCreateMeetingOpen}
+          initialCompanyId={companyId}
+          lockCompany
         />
       ) : null}
 

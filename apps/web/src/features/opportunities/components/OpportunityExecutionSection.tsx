@@ -14,6 +14,7 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -23,31 +24,30 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
+import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
+import {
+  useCancelMeeting as useCancelMeetingMutation,
+  useCompleteMeeting as useCompleteMeetingMutation,
+  useMeetings as useMeetingList,
+} from "@/features/meetings/hooks/useMeetings"
+import type { Meeting } from "@/features/meetings/types/meeting.types"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 
 import {
-  useCancelOpportunityMeeting,
-  useCompleteOpportunityMeeting,
   useCompleteOpportunityTask,
-  useCreateOpportunityMeeting,
   useCreateOpportunityTask,
   useDeleteOpportunityTask,
-  useOpportunityMeetings,
   useOpportunityTasks,
-  useUpdateOpportunityMeeting,
   useUpdateOpportunityTask,
 } from "../hooks/useOpportunities"
 import type {
   Opportunity,
-  OpportunityMeeting,
-  OpportunityMeetingPayload,
   OpportunityTask,
   OpportunityTaskPayload,
 } from "../types/opportunity.types"
 import {
-  MeetingDialog,
   TaskDialog,
   type ResourceActionTarget,
   type ResourceDeleteTarget,
@@ -61,6 +61,7 @@ export function OpportunityExecutionSection({
   permissions: string[]
 }) {
   const text = uiText.opportunities.detail
+  const navigate = useNavigate()
   const canViewTasks = permissions.includes("task:view")
   const canCreateTask =
     permissions.includes("task:create") && !opportunity.archivedAt
@@ -82,44 +83,28 @@ export function OpportunityExecutionSection({
   const [taskPage, setTaskPage] = useState(1)
   const [meetingPage, setMeetingPage] = useState(1)
   const tasks = useOpportunityTasks(opportunity.id, taskPage, canViewTasks)
-  const meetings = useOpportunityMeetings(
-    opportunity.id,
-    meetingPage,
+  const meetings = useMeetingList(
+    { page: meetingPage, limit: 20, opportunityId: opportunity.id },
     canViewMeetings
   )
   const [task, setTask] = useState<OpportunityTask | null | undefined>(
     undefined
   )
-  const [meeting, setMeeting] = useState<OpportunityMeeting | null | undefined>(
-    undefined
-  )
+  const [meeting, setMeeting] = useState<Meeting | null | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<ResourceDeleteTarget>(null)
   const [actionTarget, setActionTarget] = useState<ResourceActionTarget>(null)
   const createTask = useCreateOpportunityTask(opportunity.id)
   const updateTask = useUpdateOpportunityTask(opportunity.id)
   const completeTask = useCompleteOpportunityTask(opportunity.id)
   const deleteTask = useDeleteOpportunityTask(opportunity.id)
-  const createMeeting = useCreateOpportunityMeeting(opportunity.id)
-  const updateMeeting = useUpdateOpportunityMeeting(opportunity.id)
-  const completeMeeting = useCompleteOpportunityMeeting(opportunity.id)
-  const cancelMeeting = useCancelOpportunityMeeting(opportunity.id)
+  const completeMeeting = useCompleteMeetingMutation()
+  const cancelMeeting = useCancelMeetingMutation()
   async function saveTask(payload: OpportunityTaskPayload) {
     try {
       if (task) await updateTask.mutateAsync({ taskId: task.id, payload })
       else await createTask.mutateAsync(payload)
       toast.success(text.feedback.saved)
       setTask(undefined)
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, text.errors.mutation))
-    }
-  }
-  async function saveMeeting(payload: OpportunityMeetingPayload) {
-    try {
-      if (meeting)
-        await updateMeeting.mutateAsync({ meetingId: meeting.id, payload })
-      else await createMeeting.mutateAsync(payload)
-      toast.success(text.feedback.saved)
-      setMeeting(undefined)
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.mutation))
     }
@@ -140,9 +125,9 @@ export function OpportunityExecutionSection({
       if (actionTarget.kind === "taskComplete")
         await completeTask.mutateAsync({ taskId: actionTarget.id })
       if (actionTarget.kind === "meetingComplete")
-        await completeMeeting.mutateAsync({ meetingId: actionTarget.id })
+        await completeMeeting.mutateAsync({ id: actionTarget.id })
       if (actionTarget.kind === "meetingCancel")
-        await cancelMeeting.mutateAsync({ meetingId: actionTarget.id })
+        await cancelMeeting.mutateAsync({ id: actionTarget.id })
       toast.success(text.feedback.saved)
       setActionTarget(null)
     } catch (error) {
@@ -260,15 +245,33 @@ export function OpportunityExecutionSection({
         title={text.sections.meetings}
         count={meetings.data?.meta.total}
         action={
-          canCreateMeeting ? (
-            <Button
-              size="sm"
-              className="rounded-xl bg-[var(--app-primary)]"
-              onClick={() => setMeeting(null)}
-            >
-              <Plus className="size-4" />
-              {text.actions.addMeeting}
-            </Button>
+          canViewMeetings || canCreateMeeting ? (
+            <div className="flex flex-wrap gap-2">
+              {canViewMeetings ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() =>
+                    navigate(
+                      `/meetings?companyId=${encodeURIComponent(opportunity.companyId)}&opportunityId=${encodeURIComponent(opportunity.id)}`
+                    )
+                  }
+                >
+                  {uiText.dashboard.recentActivities.viewAll}
+                </Button>
+              ) : null}
+              {canCreateMeeting ? (
+                <Button
+                  size="sm"
+                  className="rounded-xl bg-[var(--app-primary)]"
+                  onClick={() => setMeeting(null)}
+                >
+                  <Plus className="size-4" />
+                  {text.actions.addMeeting}
+                </Button>
+              ) : null}
+            </div>
           ) : null
         }
       >
@@ -378,16 +381,20 @@ export function OpportunityExecutionSection({
         />
       ) : null}
       {meeting !== undefined ? (
-        <MeetingDialog
+        <MeetingFormDialog
           open
           onOpenChange={(open) => {
             if (!open) setMeeting(undefined)
           }}
           meeting={meeting}
-          opportunityId={opportunity.id}
-          companyId={opportunity.companyId}
-          pending={createMeeting.isPending || updateMeeting.isPending}
-          onSubmit={saveMeeting}
+          initialCompanyId={opportunity.companyId}
+          initialOpportunity={{
+            id: opportunity.id,
+            title: opportunity.title,
+            companyId: opportunity.companyId,
+          }}
+          lockCompany
+          lockOpportunity
         />
       ) : null}
       <ConfirmDialog

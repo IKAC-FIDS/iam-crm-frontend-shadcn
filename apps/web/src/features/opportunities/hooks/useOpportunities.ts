@@ -42,11 +42,6 @@ import {
   updateOpportunityTask,
   completeOpportunityTask,
   deleteOpportunityTask,
-  getOpportunityMeetings,
-  createOpportunityMeeting,
-  updateOpportunityMeeting,
-  completeOpportunityMeeting,
-  cancelOpportunityMeeting,
   getOpportunityAttachments,
   uploadOpportunityAttachment,
   deleteOpportunityAttachment,
@@ -64,7 +59,6 @@ import type {
   OpportunityPaymentPayload,
   PaymentMethod,
   OpportunityTaskPayload,
-  OpportunityMeetingPayload,
 } from "../types/opportunity.types"
 
 export const opportunityQueryKeys = {
@@ -93,8 +87,6 @@ export const opportunityQueryKeys = {
     [...opportunityQueryKeys.detail(id), "payments", page] as const,
   tasks: (id: string, page = 1) =>
     [...opportunityQueryKeys.detail(id), "tasks", page] as const,
-  meetings: (id: string, page = 1) =>
-    [...opportunityQueryKeys.detail(id), "meetings", page] as const,
   attachments: (id: string, page = 1) =>
     [...opportunityQueryKeys.detail(id), "attachments", page] as const,
 }
@@ -598,64 +590,6 @@ export function useDeleteOpportunityTask(id: string) {
   ])
   return useMutation({
     mutationFn: deleteOpportunityTask,
-    onSuccess: invalidate,
-  })
-}
-
-export function useOpportunityMeetings(id: string, page = 1, enabled = true) {
-  return useQuery({
-    queryKey: opportunityQueryKeys.meetings(id, page),
-    queryFn: () => getOpportunityMeetings(id, page),
-    enabled: enabled && Boolean(id),
-    placeholderData: keepPreviousData,
-  })
-}
-export function useCreateOpportunityMeeting(id: string) {
-  const invalidate = useDetailResourceInvalidation(id, [
-    [...opportunityQueryKeys.detail(id), "meetings"],
-  ])
-  return useMutation({
-    mutationFn: createOpportunityMeeting,
-    onSuccess: invalidate,
-  })
-}
-export function useUpdateOpportunityMeeting(id: string) {
-  const invalidate = useDetailResourceInvalidation(id, [
-    [...opportunityQueryKeys.detail(id), "meetings"],
-  ])
-  return useMutation({
-    mutationFn: ({
-      meetingId,
-      payload,
-    }: {
-      meetingId: string
-      payload: Partial<OpportunityMeetingPayload>
-    }) => updateOpportunityMeeting(meetingId, payload),
-    onSuccess: invalidate,
-  })
-}
-export function useCompleteOpportunityMeeting(id: string) {
-  const invalidate = useDetailResourceInvalidation(id, [
-    [...opportunityQueryKeys.detail(id), "meetings"],
-  ])
-  return useMutation({
-    mutationFn: ({ meetingId, note }: { meetingId: string; note?: string }) =>
-      completeOpportunityMeeting(meetingId, note),
-    onSuccess: invalidate,
-  })
-}
-export function useCancelOpportunityMeeting(id: string) {
-  const invalidate = useDetailResourceInvalidation(id, [
-    [...opportunityQueryKeys.detail(id), "meetings"],
-  ])
-  return useMutation({
-    mutationFn: ({
-      meetingId,
-      reason,
-    }: {
-      meetingId: string
-      reason?: string
-    }) => cancelOpportunityMeeting(meetingId, reason),
     onSuccess: invalidate,
   })
 }
