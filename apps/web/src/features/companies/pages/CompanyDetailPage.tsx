@@ -52,7 +52,6 @@ import {
   type CompanyBranch,
   type CompanyLegalDocument,
   type CompanyMeeting,
-  type CompanyOpportunityItem,
   type CompanySocialChannel,
   type CompanyTask,
   useCompanyActivities,
@@ -78,7 +77,6 @@ import {
 const SECTION_PAGE_SIZE = 12
 
 type QuickViewState =
-  | { kind: "opportunity"; item: CompanyOpportunityItem }
   | { kind: "task"; item: CompanyTask }
   | { kind: "meeting"; item: CompanyMeeting }
   | { kind: "activity"; item: CompanyActivityItem }
@@ -112,14 +110,43 @@ export function CompanyDetailPage() {
   const overviewQuery = useCompany360Overview(companyId)
   const updateMutation = useUpdateCompany(companyId)
 
-  const peopleQuery = useCompanyPeople(companyId, 1, SECTION_PAGE_SIZE, canViewPeople)
-  const opportunitiesQuery = useCompanyOpportunities(companyId, 1, SECTION_PAGE_SIZE, canViewOpportunities)
-  const tasksQuery = useCompanyTasks(companyId, 1, SECTION_PAGE_SIZE, canViewTasks)
-  const meetingsQuery = useCompanyMeetings(companyId, 1, SECTION_PAGE_SIZE, canViewMeetings)
-  const activitiesQuery = useCompanyActivities(companyId, 1, SECTION_PAGE_SIZE, canViewActivities)
+  const peopleQuery = useCompanyPeople(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewPeople
+  )
+  const opportunitiesQuery = useCompanyOpportunities(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewOpportunities
+  )
+  const tasksQuery = useCompanyTasks(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewTasks
+  )
+  const meetingsQuery = useCompanyMeetings(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewMeetings
+  )
+  const activitiesQuery = useCompanyActivities(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE,
+    canViewActivities
+  )
   const branchesQuery = useCompanyBranches(companyId, 1, SECTION_PAGE_SIZE)
   const socialQuery = useCompanySocialChannels(companyId, 1, SECTION_PAGE_SIZE)
-  const documentsQuery = useCompanyLegalDocuments(companyId, 1, SECTION_PAGE_SIZE)
+  const documentsQuery = useCompanyLegalDocuments(
+    companyId,
+    1,
+    SECTION_PAGE_SIZE
+  )
 
   if (query.isLoading) return <LoadingState />
   if (query.isError || !query.data) {
@@ -136,7 +163,9 @@ export function CompanyDetailPage() {
   const company = query.data
   const displayName = companyDisplayName(company.legalName, company.brandName)
   const opportunityRows = opportunitiesQuery.data?.data ?? []
-  const activeOpportunities = opportunityRows.filter((item) => !item.stage?.isTerminal)
+  const activeOpportunities = opportunityRows.filter(
+    (item) => !item.stage?.isTerminal
+  )
   const pipelineValue = activeOpportunities.reduce((sum, item) => {
     const value = Number(item.estimatedValue ?? item.amount ?? 0)
     return Number.isFinite(value) ? sum + value : sum
@@ -156,10 +185,14 @@ export function CompanyDetailPage() {
 
   const overview = overviewQuery.data?.summary
   const peopleCount = overview?.peopleCount ?? peopleQuery.data?.meta.total ?? 0
-  const activeTaskCount = overview?.activeTaskCount ?? tasksQuery.data?.meta.total ?? 0
-  const upcomingMeetingCount = overview?.upcomingMeetingCount ?? meetingsQuery.data?.meta.total ?? 0
+  const activeTaskCount =
+    overview?.activeTaskCount ?? tasksQuery.data?.meta.total ?? 0
+  const upcomingMeetingCount =
+    overview?.upcomingMeetingCount ?? meetingsQuery.data?.meta.total ?? 0
   const openOpportunityCount =
-    overview?.openOpportunityCount ?? opportunitiesQuery.data?.meta.total ?? activeOpportunities.length
+    overview?.openOpportunityCount ??
+    opportunitiesQuery.data?.meta.total ??
+    activeOpportunities.length
 
   function goToModule(path: string) {
     navigate(`${path}?companyId=${encodeURIComponent(companyId)}`)
@@ -189,7 +222,9 @@ export function CompanyDetailPage() {
                 <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-[var(--app-text-secondary)]">
                   <span className="inline-flex items-center gap-1.5">
                     <Building2 className="size-3.5" />
-                    {company.industryRef?.name || company.industry || text.notSpecified}
+                    {company.industryRef?.name ||
+                      company.industry ||
+                      text.notSpecified}
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <UsersRound className="size-3.5" />
@@ -227,8 +262,10 @@ export function CompanyDetailPage() {
                 </Button>
               ) : null}
 
-              {(!company.archivedAt && permissions.includes("company:archive")) ||
-              (company.archivedAt && permissions.includes("company:restore")) ? (
+              {(!company.archivedAt &&
+                permissions.includes("company:archive")) ||
+              (company.archivedAt &&
+                permissions.includes("company:restore")) ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -260,12 +297,37 @@ export function CompanyDetailPage() {
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <CompanyMetricCard icon={CircleDollarSign} label={text.metrics.pipelineValue} value={formatCompanyNumber(pipelineValue)} hint={text.metrics.pipelineHint} />
-        <CompanyMetricCard icon={Building2} label={text.metrics.openOpportunities} value={formatCompanyNumber(openOpportunityCount)} />
-        <CompanyMetricCard icon={UsersRound} label={text.metrics.people} value={formatCompanyNumber(peopleCount)} />
-        <CompanyMetricCard icon={ListTodo} label={uiText.navigation.tasks} value={formatCompanyNumber(activeTaskCount)} />
-        <CompanyMetricCard icon={CalendarClock} label={uiText.navigation.meetings} value={formatCompanyNumber(upcomingMeetingCount)} />
-        <CompanyMetricCard icon={CalendarClock} label={text.metrics.lastInteraction} value={formatCompanyDate(lastActivity)} />
+        <CompanyMetricCard
+          icon={CircleDollarSign}
+          label={text.metrics.pipelineValue}
+          value={formatCompanyNumber(pipelineValue)}
+          hint={text.metrics.pipelineHint}
+        />
+        <CompanyMetricCard
+          icon={Building2}
+          label={text.metrics.openOpportunities}
+          value={formatCompanyNumber(openOpportunityCount)}
+        />
+        <CompanyMetricCard
+          icon={UsersRound}
+          label={text.metrics.people}
+          value={formatCompanyNumber(peopleCount)}
+        />
+        <CompanyMetricCard
+          icon={ListTodo}
+          label={uiText.navigation.tasks}
+          value={formatCompanyNumber(activeTaskCount)}
+        />
+        <CompanyMetricCard
+          icon={CalendarClock}
+          label={uiText.navigation.meetings}
+          value={formatCompanyNumber(upcomingMeetingCount)}
+        />
+        <CompanyMetricCard
+          icon={CalendarClock}
+          label={text.metrics.lastInteraction}
+          value={formatCompanyDate(lastActivity)}
+        />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
@@ -280,29 +342,63 @@ export function CompanyDetailPage() {
             <CompanyInfoGrid
               items={[
                 { label: text.fields.legalName, value: company.legalName },
-                { label: text.fields.brandName, value: company.brandName || text.notSpecified },
-                { label: text.fields.industry, value: company.industryRef?.name || company.industry || text.notSpecified },
-                { label: text.fields.owner, value: company.owner?.fullName || text.unassigned },
-                { label: text.fields.city, value: company.headOfficeCity || text.notSpecified },
+                {
+                  label: text.fields.brandName,
+                  value: company.brandName || text.notSpecified,
+                },
+                {
+                  label: text.fields.industry,
+                  value:
+                    company.industryRef?.name ||
+                    company.industry ||
+                    text.notSpecified,
+                },
+                {
+                  label: text.fields.owner,
+                  value: company.owner?.fullName || text.unassigned,
+                },
+                {
+                  label: text.fields.city,
+                  value: company.headOfficeCity || text.notSpecified,
+                },
                 {
                   label: text.fields.phone,
                   value: company.centralPhone ? (
-                    <a href={`tel:${company.centralPhone}`} dir="ltr" className="inline-flex items-center gap-1.5 text-[var(--app-primary)]">
+                    <a
+                      href={`tel:${company.centralPhone}`}
+                      dir="ltr"
+                      className="inline-flex items-center gap-1.5 text-[var(--app-primary)]"
+                    >
                       <Phone className="size-3.5" />
                       {company.centralPhone}
                     </a>
-                  ) : text.notSpecified,
+                  ) : (
+                    text.notSpecified
+                  ),
                 },
                 {
                   label: text.fields.website,
                   value: websiteHref ? (
-                    <a href={websiteHref} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[var(--app-primary)]">
+                    <a
+                      href={websiteHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-[var(--app-primary)]"
+                    >
                       {company.website}
                       <ExternalLink className="size-3.5" />
                     </a>
-                  ) : text.notSpecified,
+                  ) : (
+                    text.notSpecified
+                  ),
                 },
-                { label: text.fields.source, value: company.sourceRef?.name || company.source || text.notSpecified },
+                {
+                  label: text.fields.source,
+                  value:
+                    company.sourceRef?.name ||
+                    company.source ||
+                    text.notSpecified,
+                },
               ]}
             />
           </SurfaceCard>
@@ -313,14 +409,40 @@ export function CompanyDetailPage() {
             </div>
             <CompanyInfoGrid
               items={[
-                { label: text.fields.registrationNumber, value: company.registrationNumber || text.notSpecified },
-                { label: text.fields.nationalId, value: company.nationalId || text.notSpecified },
-                { label: text.fields.economicCode, value: company.economicCode || text.notSpecified },
-                { label: text.fields.establishmentDate, value: formatCompanyDate(company.establishmentDate) },
-                { label: text.fields.activityStatus, value: company.activityStatus ? activityStatusLabel[company.activityStatus] : text.notSpecified },
-                { label: text.fields.employeeCount, value: formatCompanyNumber(company.employeeCount) },
-                { label: text.fields.registeredCapital, value: formatCompanyNumber(company.registeredCapital) },
-                { label: text.fields.updatedAt, value: formatCompanyDateTime(company.updatedAt) },
+                {
+                  label: text.fields.registrationNumber,
+                  value: company.registrationNumber || text.notSpecified,
+                },
+                {
+                  label: text.fields.nationalId,
+                  value: company.nationalId || text.notSpecified,
+                },
+                {
+                  label: text.fields.economicCode,
+                  value: company.economicCode || text.notSpecified,
+                },
+                {
+                  label: text.fields.establishmentDate,
+                  value: formatCompanyDate(company.establishmentDate),
+                },
+                {
+                  label: text.fields.activityStatus,
+                  value: company.activityStatus
+                    ? activityStatusLabel[company.activityStatus]
+                    : text.notSpecified,
+                },
+                {
+                  label: text.fields.employeeCount,
+                  value: formatCompanyNumber(company.employeeCount),
+                },
+                {
+                  label: text.fields.registeredCapital,
+                  value: formatCompanyNumber(company.registeredCapital),
+                },
+                {
+                  label: text.fields.updatedAt,
+                  value: formatCompanyDateTime(company.updatedAt),
+                },
               ]}
             />
           </SurfaceCard>
@@ -333,22 +455,37 @@ export function CompanyDetailPage() {
               icon={<CircleDollarSign className="size-5" />}
               onViewAll={() => goToModule("/opportunities")}
             >
-              {opportunitiesQuery.isLoading ? <SectionLoading /> : opportunityRows.length ? (
+              {opportunitiesQuery.isLoading ? (
+                <SectionLoading />
+              ) : opportunityRows.length ? (
                 <div className="grid gap-2.5">
                   {opportunityRows.map((item) => (
-                    <button key={item.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "opportunity", item })}>
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="w-full cursor-pointer rounded-2xl text-start focus-visible:ring-2 focus-visible:ring-[var(--app-primary)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                      onClick={() =>
+                        navigate(
+                          `/opportunities/${encodeURIComponent(item.id)}`
+                        )
+                      }
+                    >
                       <EntityRow
                         icon={<Building2 className="size-4" />}
                         title={item.title}
                         subtitle={item.owner?.fullName ?? undefined}
-                        meta={formatCompanyNumber(item.estimatedValue ?? item.amount ?? null)}
+                        meta={formatCompanyNumber(
+                          item.estimatedValue ?? item.amount ?? null
+                        )}
                         badge={item.stage?.label || item.stage?.code}
                         badgeColor={item.stage?.color}
                       />
                     </button>
                   ))}
                 </div>
-              ) : <SectionEmpty />}
+              ) : (
+                <SectionEmpty />
+              )}
             </Company360ActionSection>
           ) : null}
 
@@ -360,20 +497,39 @@ export function CompanyDetailPage() {
               contentClassName="max-h-[476px]"
               onViewAll={() => goToModule("/activities")}
             >
-              {activitiesQuery.isLoading ? <SectionLoading count={6} /> : activitiesQuery.data?.data.length ? (
+              {activitiesQuery.isLoading ? (
+                <SectionLoading count={6} />
+              ) : activitiesQuery.data?.data.length ? (
                 <div className="grid gap-2.5">
                   {activitiesQuery.data.data.map((activity) => (
-                    <button key={activity.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "activity", item: activity })}>
+                    <button
+                      key={activity.id}
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() =>
+                        setQuickView({ kind: "activity", item: activity })
+                      }
+                    >
                       <EntityRow
                         icon={<CalendarClock className="size-4" />}
                         title={getActivityTypeLabel(activity.type)}
-                        subtitle={activity.createdBy?.fullName || activity.person?.fullName || undefined}
-                        meta={formatCompanyDateTime(activity.activityDate || activity.occurredAt || activity.createdAt)}
+                        subtitle={
+                          activity.createdBy?.fullName ||
+                          activity.person?.fullName ||
+                          undefined
+                        }
+                        meta={formatCompanyDateTime(
+                          activity.activityDate ||
+                            activity.occurredAt ||
+                            activity.createdAt
+                        )}
                       />
                     </button>
                   ))}
                 </div>
-              ) : <SectionEmpty />}
+              ) : (
+                <SectionEmpty />
+              )}
             </Company360ActionSection>
           ) : null}
 
@@ -383,20 +539,35 @@ export function CompanyDetailPage() {
             icon={<FileText className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
-            {documentsQuery.isLoading ? <SectionLoading /> : documentsQuery.data?.data.length ? (
+            {documentsQuery.isLoading ? (
+              <SectionLoading />
+            ) : documentsQuery.data?.data.length ? (
               <div className="grid gap-2.5">
                 {documentsQuery.data.data.map((document) => (
-                  <button key={document.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "document", item: document })}>
+                  <button
+                    key={document.id}
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() =>
+                      setQuickView({ kind: "document", item: document })
+                    }
+                  >
                     <EntityRow
                       icon={<FileText className="size-4" />}
-                      title={document.title || document.type || text.notSpecified}
+                      title={
+                        document.title || document.type || text.notSpecified
+                      }
                       subtitle={document.type || undefined}
-                      meta={formatCompanyDate(document.documentDate || document.createdAt)}
+                      meta={formatCompanyDate(
+                        document.documentDate || document.createdAt
+                      )}
                     />
                   </button>
                 ))}
               </div>
-            ) : <SectionEmpty />}
+            ) : (
+              <SectionEmpty />
+            )}
           </Company360ActionSection>
         </div>
 
@@ -407,11 +578,15 @@ export function CompanyDetailPage() {
               description={text.sections.peopleDescription}
               count={peopleQuery.data?.meta.total ?? 0}
               icon={<UsersRound className="size-5" />}
-              onCreate={canCreatePerson ? () => setCreatePersonOpen(true) : undefined}
+              onCreate={
+                canCreatePerson ? () => setCreatePersonOpen(true) : undefined
+              }
               createLabel={uiText.people.actions.create}
               onViewAll={() => goToModule("/people")}
             >
-              {peopleQuery.isLoading ? <SectionLoading /> : peopleQuery.data?.data.length ? (
+              {peopleQuery.isLoading ? (
+                <SectionLoading />
+              ) : peopleQuery.data?.data.length ? (
                 <div className="grid gap-2.5">
                   {peopleQuery.data.data.map((person) => (
                     <button
@@ -424,9 +599,14 @@ export function CompanyDetailPage() {
                         {person.fullName.slice(0, 1)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-bold text-[var(--app-heading)]">{person.fullName}</p>
+                        <p className="truncate text-xs font-bold text-[var(--app-heading)]">
+                          {person.fullName}
+                        </p>
                         <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
-                          {person.jobTitle || person.title || person.department || text.notSpecified}
+                          {person.jobTitle ||
+                            person.title ||
+                            person.department ||
+                            text.notSpecified}
                         </p>
                       </div>
                       {person.isPrimaryContact ? (
@@ -438,7 +618,11 @@ export function CompanyDetailPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyState icon={UsersRound} title={text.empty.peopleTitle} description={text.empty.peopleDescription} />
+                <EmptyState
+                  icon={UsersRound}
+                  title={text.empty.peopleTitle}
+                  description={text.empty.peopleDescription}
+                />
               )}
             </Company360ActionSection>
           ) : null}
@@ -450,20 +634,35 @@ export function CompanyDetailPage() {
               icon={<ListTodo className="size-5" />}
               onViewAll={() => goToModule("/tasks")}
             >
-              {tasksQuery.isLoading ? <SectionLoading /> : tasksQuery.data?.data.length ? (
+              {tasksQuery.isLoading ? (
+                <SectionLoading />
+              ) : tasksQuery.data?.data.length ? (
                 <div className="grid gap-2.5">
                   {tasksQuery.data.data.map((task) => (
-                    <button key={task.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "task", item: task })}>
+                    <button
+                      key={task.id}
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() => setQuickView({ kind: "task", item: task })}
+                    >
                       <EntityRow
                         icon={<ListTodo className="size-4" />}
                         title={task.title}
-                        subtitle={[task.assignedTo?.fullName, task.status, task.priority].filter(Boolean).join(" · ")}
+                        subtitle={[
+                          task.assignedTo?.fullName,
+                          task.status,
+                          task.priority,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                         meta={formatCompanyDateTime(task.dueAt)}
                       />
                     </button>
                   ))}
                 </div>
-              ) : <SectionEmpty />}
+              ) : (
+                <SectionEmpty />
+              )}
             </Company360ActionSection>
           ) : null}
 
@@ -474,20 +673,37 @@ export function CompanyDetailPage() {
               icon={<CalendarClock className="size-5" />}
               onViewAll={() => goToModule("/meetings")}
             >
-              {meetingsQuery.isLoading ? <SectionLoading /> : meetingsQuery.data?.data.length ? (
+              {meetingsQuery.isLoading ? (
+                <SectionLoading />
+              ) : meetingsQuery.data?.data.length ? (
                 <div className="grid gap-2.5">
                   {meetingsQuery.data.data.map((meeting) => (
-                    <button key={meeting.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "meeting", item: meeting })}>
+                    <button
+                      key={meeting.id}
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() =>
+                        setQuickView({ kind: "meeting", item: meeting })
+                      }
+                    >
                       <EntityRow
                         icon={<CalendarClock className="size-4" />}
                         title={meeting.title}
-                        subtitle={[meeting.mode, meeting.location, meeting.organizer?.fullName].filter(Boolean).join(" · ")}
+                        subtitle={[
+                          meeting.mode,
+                          meeting.location,
+                          meeting.organizer?.fullName,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                         meta={formatCompanyDateTime(meeting.startAt)}
                       />
                     </button>
                   ))}
                 </div>
-              ) : <SectionEmpty />}
+              ) : (
+                <SectionEmpty />
+              )}
             </Company360ActionSection>
           ) : null}
 
@@ -497,15 +713,31 @@ export function CompanyDetailPage() {
             icon={<MapPin className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
-            {branchesQuery.isLoading ? <SectionLoading /> : branchesQuery.data?.data.length ? (
+            {branchesQuery.isLoading ? (
+              <SectionLoading />
+            ) : branchesQuery.data?.data.length ? (
               <div className="grid gap-2.5">
                 {branchesQuery.data.data.map((branch) => (
-                  <button key={branch.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "branch", item: branch })}>
-                    <EntityRow icon={<MapPin className="size-4" />} title={branch.name || branch.city || text.notSpecified} subtitle={branch.address || branch.city || undefined} meta={branch.phone || undefined} />
+                  <button
+                    key={branch.id}
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() =>
+                      setQuickView({ kind: "branch", item: branch })
+                    }
+                  >
+                    <EntityRow
+                      icon={<MapPin className="size-4" />}
+                      title={branch.name || branch.city || text.notSpecified}
+                      subtitle={branch.address || branch.city || undefined}
+                      meta={branch.phone || undefined}
+                    />
                   </button>
                 ))}
               </div>
-            ) : <SectionEmpty />}
+            ) : (
+              <SectionEmpty />
+            )}
           </Company360ActionSection>
 
           <Company360ActionSection
@@ -514,15 +746,30 @@ export function CompanyDetailPage() {
             icon={<Share2 className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
-            {socialQuery.isLoading ? <SectionLoading /> : socialQuery.data?.data.length ? (
+            {socialQuery.isLoading ? (
+              <SectionLoading />
+            ) : socialQuery.data?.data.length ? (
               <div className="grid gap-2.5">
                 {socialQuery.data.data.map((channel) => (
-                  <button key={channel.id} type="button" className="w-full text-start" onClick={() => setQuickView({ kind: "social", item: channel })}>
-                    <EntityRow icon={<Share2 className="size-4" />} title={channel.platform || text.notSpecified} subtitle={channel.handle || undefined} />
+                  <button
+                    key={channel.id}
+                    type="button"
+                    className="w-full text-start"
+                    onClick={() =>
+                      setQuickView({ kind: "social", item: channel })
+                    }
+                  >
+                    <EntityRow
+                      icon={<Share2 className="size-4" />}
+                      title={channel.platform || text.notSpecified}
+                      subtitle={channel.handle || undefined}
+                    />
                   </button>
                 ))}
               </div>
-            ) : <SectionEmpty />}
+            ) : (
+              <SectionEmpty />
+            )}
           </Company360ActionSection>
         </div>
       </div>
@@ -578,15 +825,23 @@ export function CompanyDetailPage() {
         }}
       />
 
-      <ChangeCompanyOwnerDialog company={company} open={ownerOpen} onOpenChange={setOwnerOpen} />
-      <ArchiveCompanyDialog company={company} open={archiveOpen} onOpenChange={setArchiveOpen} />
+      <ChangeCompanyOwnerDialog
+        company={company}
+        open={ownerOpen}
+        onOpenChange={setOwnerOpen}
+      />
+      <ArchiveCompanyDialog
+        company={company}
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+      />
     </div>
   )
 }
 
 function quickViewProps(
   state: QuickViewState,
-  fallback: string,
+  fallback: string
 ): {
   title: string
   subtitle?: ReactNode
@@ -596,23 +851,6 @@ function quickViewProps(
   if (!state) return { title: fallback, fields: [] }
 
   switch (state.kind) {
-    case "opportunity": {
-      const item = state.item
-      return {
-        title: item.title,
-        subtitle: item.stage?.label || item.stage?.code,
-        icon: <CircleDollarSign className="size-5" />,
-        fields: [
-          { value: item.owner?.fullName },
-          { value: formatCompanyNumber(item.estimatedValue ?? item.amount ?? null) },
-          { value: item.primaryContact?.fullName },
-          { value: formatCompanyDate(item.expectedCloseDate) },
-          { value: item.probability != null ? `${formatCompanyNumber(item.probability)}%` : undefined },
-          { value: item.competitor },
-          { value: item.description, wide: true },
-        ],
-      }
-    }
     case "task": {
       const item = state.item
       return {
@@ -642,7 +880,13 @@ function quickViewProps(
           { value: formatCompanyDateTime(item.startAt) },
           { value: formatCompanyDateTime(item.endAt) },
           { value: item.opportunity?.title },
-          { value: item.attendees?.map((entry) => entry.person?.fullName).filter(Boolean).join("، "), wide: true },
+          {
+            value: item.attendees
+              ?.map((entry) => entry.person?.fullName)
+              .filter(Boolean)
+              .join("، "),
+            wide: true,
+          },
           { value: item.agenda, wide: true },
           { value: item.description, wide: true },
         ],
@@ -655,7 +899,11 @@ function quickViewProps(
         subtitle: item.createdBy?.fullName,
         icon: <CalendarClock className="size-5" />,
         fields: [
-          { value: formatCompanyDateTime(item.activityDate || item.occurredAt || item.createdAt) },
+          {
+            value: formatCompanyDateTime(
+              item.activityDate || item.occurredAt || item.createdAt
+            ),
+          },
           { value: item.person?.fullName },
           { value: item.status },
           { value: item.outcome, wide: true },
@@ -685,7 +933,11 @@ function quickViewProps(
         icon: <FileText className="size-5" />,
         fields: [
           { value: state.item.type },
-          { value: formatCompanyDate(state.item.documentDate || state.item.createdAt) },
+          {
+            value: formatCompanyDate(
+              state.item.documentDate || state.item.createdAt
+            ),
+          },
           { value: state.item.description, wide: true },
         ],
       }
@@ -724,7 +976,9 @@ function EntityRow({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <p className="truncate text-xs font-bold text-[var(--app-heading)]">{title}</p>
+          <p className="truncate text-xs font-bold text-[var(--app-heading)]">
+            {title}
+          </p>
           {badge ? (
             <span
               style={badgeStyle}
@@ -735,11 +989,16 @@ function EntityRow({
           ) : null}
         </div>
         {subtitle ? (
-          <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">{subtitle}</p>
+          <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
+            {subtitle}
+          </p>
         ) : null}
       </div>
       {meta ? (
-        <span dir="auto" className="max-w-36 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]">
+        <span
+          dir="auto"
+          className="max-w-36 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]"
+        >
           {meta}
         </span>
       ) : null}
@@ -759,7 +1018,10 @@ function SectionLoading({ count = 4 }: { count?: number }) {
   return (
     <div className="grid gap-2.5">
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]" />
+        <div
+          key={index}
+          className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]"
+        />
       ))}
     </div>
   )
