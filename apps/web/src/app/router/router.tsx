@@ -3,6 +3,7 @@
 import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
 import { AccountProfilePage } from "@/features/account/pages/AccountProfilePage"
+import { AttentionCenterPage } from "@/features/attention/pages/AttentionCenterPage"
 import { LoginPage } from "@/features/auth/pages/LoginPage"
 import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
@@ -23,6 +24,7 @@ import { RouteErrorPage } from "./RouteErrorPage"
 const featureRoutes = appMenuRoutes
   .filter(
     (route) =>
+      route.path !== "/attention" &&
       route.path !== "/dashboard" &&
       route.path !== "/companies" &&
       route.path !== "/people" &&
@@ -145,7 +147,36 @@ export const router = createBrowserRouter([
               { path: "/meetings", element: <MeetingsPage /> },
               { path: "/meetings/:id", element: <MeetingDetailPage /> },
             ],
+          },          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: [
+                    "follow-up:view",
+                    "activity:view",
+                    "notification:view",
+                  ],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/attention",
+                element: <AttentionCenterPage />,
+              },
+              {
+                path: "/follow-ups",
+                element: <Navigate to="/attention?tab=follow-ups" replace />,
+              },
+              {
+                path: "/notifications",
+                element: <Navigate to="/attention?tab=notifications" replace />,
+              },
+            ],
           },
+
           {
             path: "/account/profile",
             element: <AccountProfilePage />,
@@ -164,5 +195,6 @@ export const router = createBrowserRouter([
     element: <Navigate to="/dashboard" replace />,
   },
 ])
+
 
 

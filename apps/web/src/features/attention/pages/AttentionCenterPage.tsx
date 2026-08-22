@@ -1,0 +1,63 @@
+﻿import {Bell,ClipboardCheck,MoreHorizontal} from "lucide-react"
+import {useMemo,useState} from "react"
+import {useNavigate,useSearchParams} from "react-router-dom"
+import {toast} from "sonner"
+import {PageHeader} from "@/components/shared/PageHeader"
+import {PersianDateTimePicker} from "@/components/shared/PersianDateTimePicker"
+import {getApiErrorMessage} from "@/lib/apiResponse"
+import {useAuthStore} from "@/store/authStore"
+import {Badge} from "@workspace/ui/components/badge"
+import {Button} from "@workspace/ui/components/button"
+import {Input} from "@workspace/ui/components/input"
+import {Dialog,DialogContent,DialogHeader,DialogTitle} from "@workspace/ui/components/dialog"
+import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuSeparator,DropdownMenuTrigger} from "@workspace/ui/components/dropdown-menu"
+import {useCompleteFollowUp,useDueFollowUps,useRescheduleFollowUp} from "@/features/followUps/hooks/useFollowUps"
+import type {FollowUpActivity,FollowUpFilter} from "@/features/followUps/types/followUp.types"
+import {activityLabel,dt,dueLabel,dueStatus} from "@/features/followUps/utils/followUpDisplay"
+import {useArchive,useDeleteNotification,useMarkRead,useMarkUnread,useNotifications,useReadAll,useUnarchive,useUnreadCount} from "@/features/notifications/hooks/useNotifications"
+import type {Notification} from "@/features/notifications/types/notification.types"
+
+export function AttentionCenterPage(){
+ const [sp,setSp]=useSearchParams(),nav=useNavigate(),user=useAuthStore(s=>s.user),p=user?.permissions??[]
+ const canF=p.includes("follow-up:view")||p.includes("activity:view"),canN=p.includes("notification:view"),manageN=p.includes("notification:manage")
+ const tab=(sp.get("tab")==="notifications"&&canN)?"notifications":canF?"follow-ups":"notifications"
+ const f=norm(sp.get("quick")),page=Math.max(1,Number(sp.get("page")||1))
+ const fq=useDueFollowUps(page,20,canF),preview=useDueFollowUps(1,50,canF),uq=useUnreadCount(canN)
+ const stats=useMemo(()=>{const a=preview.data?.data??[];return{over:a.filter(x=>dueStatus(x.nextActionDate)==="overdue").length,today:a.filter(x=>dueStatus(x.nextActionDate)==="today").length,unread:uq.data??0}},[preview.data?.data,uq.data])
+ const patch=(o:Record<string,string|null>)=>{const n=new URLSearchParams(sp);Object.entries(o).forEach(([k,v])=>v===null?n.delete(k):n.set(k,v));setSp(n)}
+ if(!canF&&!canN)return <div className="rounded-2xl border p-8 text-center">دسترسی مشاهده پیگیری‌ها یا اعلان‌ها فعال نیست.</div>
+ return <div className="grid gap-6">
+  <PageHeader title="مرکز پیگیری و اعلان‌ها" description="مواردی که نیاز به توجه، پیگیری یا اقدام شما دارند."/>
+  <div className="grid gap-3 sm:grid-cols-3">
+   {canF?<><Kpi t="عقب‌افتاده" n={stats.over} on={()=>patch({tab:"follow-ups",quick:"OVERDUE",page:"1"})}/><Kpi t="پیگیری امروز" n={stats.today} on={()=>patch({tab:"follow-ups",quick:"TODAY",page:"1"})}/></>:null}
+   {canN?<Kpi t="اعلان خوانده‌نشده" n={stats.unread} on={()=>patch({tab:"notifications",quick:null,page:"1"})}/>:null}
+  </div>
+  <div className="flex gap-2 border-b pb-3">
+   {canF?<Button variant={tab==="follow-ups"?"default":"ghost"} onClick={()=>patch({tab:"follow-ups",page:"1"})}><ClipboardCheck className="size-4"/>پیگیری‌ها</Button>:null}
+   {canN?<Button variant={tab==="notifications"?"default":"ghost"} onClick={()=>patch({tab:"notifications",page:"1"})}><Bell className="size-4"/>اعلان‌ها{stats.unread>0?<span className="rounded-full bg-[var(--destructive)] px-1.5 text-[10px] text-white">{stats.unread}</span>:null}</Button>:null}
+  </div>
+  {tab==="follow-ups"?<FollowUps items={fq.data?.data??[]} loading={fq.isLoading} filter={f} canComplete={p.includes("follow-up:complete")} canReschedule={p.includes("follow-up:reschedule")} onFilter={x=>patch({quick:x==="ALL"?null:x,page:"1"})}/>:<Notifications canManage={manageN} nav={nav}/>}
+ </div>
+}
+function Kpi({t,n,on}:{t:string;n:number;on:()=>void}){return <button onClick={on} className="rounded-2xl border bg-[var(--app-surface)] p-4 text-start"><div className="text-xs text-[var(--app-text-secondary)]">{t}</div><div className="mt-1 text-2xl font-bold">{n}</div></button>}
+function norm(v:string|null):FollowUpFilter{return v==="OVERDUE"||v==="TODAY"||v==="UPCOMING"?v:"ALL"}
+function FollowUps({items,loading,filter,canComplete,canReschedule,onFilter}:{items:FollowUpActivity[];loading:boolean;filter:FollowUpFilter;canComplete:boolean;canReschedule:boolean;onFilter:(v:FollowUpFilter)=>void}){
+ const shown=filter==="ALL"?items:items.filter(x=>dueStatus(x.nextActionDate)===filter.toLowerCase())
+ return <div className="grid gap-4"><div className="flex gap-2">{(["ALL","OVERDUE","TODAY","UPCOMING"] as FollowUpFilter[]).map(x=><Button key={x} size="sm" variant={filter===x?"default":"outline"} onClick={()=>onFilter(x)}>{x==="ALL"?"همه":x==="OVERDUE"?"عقب‌افتاده":x==="TODAY"?"امروز":"پیش‌رو"}</Button>)}</div>{loading?<div>در حال دریافت...</div>:shown.length?shown.map(x=><FollowCard key={x.id} x={x} canComplete={canComplete} canReschedule={canReschedule}/>):<div className="rounded-2xl border border-dashed p-8 text-center">موردی وجود ندارد.</div>}</div>
+}
+function FollowCard({x,canComplete,canReschedule}:{x:FollowUpActivity;canComplete:boolean;canReschedule:boolean}){
+ const [mode,setMode]=useState<"complete"|"reschedule"|null>(null),c=useCompleteFollowUp(),r=useRescheduleFollowUp(),[note,setNote]=useState(""),[outcome,setOutcome]=useState(x.outcome||""),[date,setDate]=useState<Date|undefined>(x.nextActionDate?new Date(x.nextActionDate):undefined)
+ const submit=async()=>{try{if(mode==="complete")await c.mutateAsync({id:x.id,outcome,note});else if(mode==="reschedule")await r.mutateAsync({id:x.id,nextActionDate:date?.toISOString()||"",note});toast.success("پیگیری بروزرسانی شد.");setMode(null)}catch(e){toast.error(getApiErrorMessage(e,"عملیات پیگیری انجام نشد."))}}
+ return <><article className="rounded-2xl border bg-[var(--app-surface)] p-4"><div className="flex flex-wrap gap-2"><Badge variant={dueStatus(x.nextActionDate)==="overdue"?"destructive":"secondary"}>{dueLabel(dueStatus(x.nextActionDate))}</Badge><Badge variant="outline">{activityLabel(x.type)}</Badge><b>{x.company?.legalName||"شرکت"}</b></div><div className="mt-2 text-sm text-[var(--app-text-secondary)]">زمان پیگیری: {dt(x.nextActionDate)}</div>{x.notes?<p className="mt-3 text-sm">{x.notes}</p>:null}<div className="mt-4 flex gap-2">{canReschedule?<Button size="sm" variant="outline" onClick={()=>setMode("reschedule")}>زمان‌بندی مجدد</Button>:null}{canComplete?<Button size="sm" onClick={()=>setMode("complete")}>انجام شد</Button>:null}</div></article>
+ <Dialog open={!!mode} onOpenChange={v=>!v&&setMode(null)}><DialogContent dir="rtl"><DialogHeader><DialogTitle>{mode==="complete"?"تکمیل پیگیری":"زمان‌بندی مجدد"}</DialogTitle></DialogHeader>{mode==="complete"?<textarea className="w-full rounded-xl border p-3" rows={4} value={outcome} onChange={e=>setOutcome(e.target.value)}/>:<PersianDateTimePicker value={date} onChange={setDate}/>}<textarea className="w-full rounded-xl border p-3" rows={3} value={note} onChange={e=>setNote(e.target.value)} placeholder="یادداشت"/><Button onClick={()=>void submit()} disabled={c.isPending||r.isPending}>ذخیره</Button></DialogContent></Dialog></>
+}
+function Notifications({canManage,nav}:{canManage:boolean;nav:(p:string)=>void}){
+ const [search,setSearch]=useState(""),[quick,setQuick]=useState<"all"|"unread"|"important"|"archived">("all"),q=useNotifications({page:1,limit:20,search:search||undefined,status:quick==="unread"?"unread":"all",priority:quick==="important"?"HIGH":undefined,archivedOnly:quick==="archived"?true:undefined}),all=useReadAll()
+ return <div className="grid gap-4"><div className="flex flex-col gap-2 lg:flex-row"><div className="flex flex-1 gap-2">{(["all","unread","important","archived"] as const).map(x=><Button key={x} size="sm" variant={quick===x?"default":"outline"} onClick={()=>setQuick(x)}>{x==="all"?"همه":x==="unread"?"خوانده‌نشده":x==="important"?"مهم":"بایگانی"}</Button>)}</div><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="جستجو..."/>{canManage?<Button variant="outline" onClick={()=>void all.mutateAsync()}>خواندن همه</Button>:null}</div>{q.data?.data.length?q.data.data.map(n=><NItem key={n.id} n={n} manage={canManage} nav={nav}/>):<div className="rounded-2xl border border-dashed p-8 text-center">اعلانی وجود ندارد.</div>}</div>
+}
+function NItem({n,manage,nav}:{n:Notification;manage:boolean;nav:(p:string)=>void}){
+ const rd=useMarkRead(),ur=useMarkUnread(),ar=useArchive(),ua=useUnarchive(),del=useDeleteNotification()
+ const open=async()=>{if(manage&&!n.readAt)await rd.mutateAsync(n.id);if(n.actionUrl?.startsWith("/")&&!n.actionUrl.startsWith("//"))nav(n.actionUrl)}
+ return <article className={`rounded-2xl border p-4 ${!n.readAt?"bg-[var(--app-primary-soft)]/40":"bg-[var(--app-surface)]"}`}><div className="flex justify-between gap-3"><div><b>{n.title}</b>{n.body?<p className="mt-1 text-sm text-[var(--app-text-secondary)]">{n.body}</p>:null}</div><span className="text-xs">{dt(n.createdAt)}</span></div><div className="mt-3 flex gap-2">{n.actionUrl?<Button size="sm" variant="outline" onClick={()=>void open()}>مشاهده</Button>:null}{manage?<DropdownMenu><DropdownMenuTrigger render={<Button size="sm" variant="ghost"/>}><MoreHorizontal className="size-4"/></DropdownMenuTrigger><DropdownMenuContent align="end" dir="rtl"><DropdownMenuItem onClick={()=>void(!n.readAt?rd.mutateAsync(n.id):ur.mutateAsync(n.id))}>{!n.readAt?"خوانده شد":"خوانده‌نشده"}</DropdownMenuItem><DropdownMenuItem onClick={()=>void(n.archivedAt?ua.mutateAsync(n.id):ar.mutateAsync(n.id))}>{n.archivedAt?"خروج از بایگانی":"بایگانی"}</DropdownMenuItem><DropdownMenuSeparator/><DropdownMenuItem onClick={()=>window.confirm("حذف شود؟")&&void del.mutateAsync(n.id)}>حذف</DropdownMenuItem></DropdownMenuContent></DropdownMenu>:null}</div></article>
+}
+

@@ -1,5 +1,4 @@
-import {
-  Bell,
+﻿import {
   ChevronLeft,
   LogOut,
   Settings,
@@ -26,6 +25,7 @@ import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 import { getRoutePresentation } from "@/app/navigation/routeNavigation"
 import { uiText } from "@/config/uiText"
 import { useAuth } from "@/features/auth/hooks/useAuth"
+import { NotificationBell } from "@/features/notifications/components/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
 
 export function AppHeader() {
@@ -83,17 +83,9 @@ export function AppHeader() {
             {uiText.app.workspaceSubtitle}
           </p>
         </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-10 rounded-xl text-[var(--app-primary-alt)] hover:bg-[var(--app-background)] hover:text-[var(--app-primary)]"
-          aria-label={uiText.common.notifications}
-          onClick={() => navigate("/notifications")}
-        >
-          <Bell className="size-5" />
-        </Button>
+        <NotificationBell
+          enabled={Boolean(user?.permissions?.includes("notification:view"))}
+        />
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -176,3 +168,4 @@ export function AppHeader() {
     </header>
   )
 }
+

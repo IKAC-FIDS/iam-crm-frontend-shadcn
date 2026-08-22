@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react"
+﻿import type { LucideIcon } from "lucide-react"
 import {
   Activity,
   Bell,
@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChartNoAxesCombined,
   CircleDollarSign,
-  ClipboardCheck,
   Gauge,
   History,
   KeyRound,
@@ -97,22 +96,13 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     access: any(["meeting:view"]),
   },
   {
-    id: "follow-ups",
-    path: "/follow-ups",
-    label: navText.followUps,
+    id: "attention",
+    path: "/attention",
+    label: "پیگیری و اعلان‌ها",
     group: "sales",
     order: 70,
-    icon: ClipboardCheck,
-    access: any(["follow-up:view", "activity:view"]),
-  },
-  {
-    id: "notifications",
-    path: "/notifications",
-    label: navText.notifications,
-    group: "sales",
-    order: 80,
     icon: Bell,
-    access: any(["notification:view"]),
+    access: any(["follow-up:view", "activity:view", "notification:view"]),
   },
   {
     id: "people",
@@ -268,3 +258,5 @@ export function getRouteByPath(pathname: string) {
           pathname.startsWith(`${route.path}/`)),
     )
 }
+
+
