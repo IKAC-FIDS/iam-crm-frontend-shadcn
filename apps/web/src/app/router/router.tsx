@@ -4,6 +4,7 @@ import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
 import { AccountProfilePage } from "@/features/account/pages/AccountProfilePage"
 import { AttentionCenterPage } from "@/features/attention/pages/AttentionCenterPage"
+import { ActivitiesPage } from "@/features/activities/pages/ActivitiesPage"
 import { LoginPage } from "@/features/auth/pages/LoginPage"
 import { CompaniesPage } from "@/features/companies/pages/CompaniesPage"
 import { CompanyDetailPage } from "@/features/companies/pages/CompanyDetailPage"
@@ -24,6 +25,7 @@ import { RouteErrorPage } from "./RouteErrorPage"
 const featureRoutes = appMenuRoutes
   .filter(
     (route) =>
+      route.path !== "/activities" &&
       route.path !== "/attention" &&
       route.path !== "/dashboard" &&
       route.path !== "/companies" &&
@@ -175,7 +177,24 @@ export const router = createBrowserRouter([
                 element: <Navigate to="/attention?tab=notifications" replace />,
               },
             ],
+          },          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: ["activity:view"],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/activities",
+                element: <ActivitiesPage />,
+              },
+            ],
           },
+
 
           {
             path: "/account/profile",
@@ -195,6 +214,7 @@ export const router = createBrowserRouter([
     element: <Navigate to="/dashboard" replace />,
   },
 ])
+
 
 
 
