@@ -15,10 +15,6 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
-import {
-  PersianDateRangePicker,
-  type PersianDateRange,
-} from "@/components/shared/PersianDateRangePicker"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -30,6 +26,11 @@ import {
 } from "@workspace/ui/components/popover"
 
 import { ActivityActionsMenu } from "../components/ActivityActionsMenu"
+import { ActivityDetailDialog } from "../components/ActivityDetailDialog"
+import {
+  ActivityPersianDateRangePicker,
+  type ActivityPersianDateRange,
+} from "../components/ActivityPersianDateRangePicker"
 import { ActivityFormDialog } from "../components/ActivityFormDialog"
 import { ActivityOptionSelect } from "../components/ActivityOptionSelect"
 import {
@@ -40,6 +41,7 @@ import {
 import {
   ACTIVITY_TYPE_OPTIONS,
   type Activity,
+  type ActivityListQuery,
   type ActivityOption,
   type ActivityStatus,
   type ActivityType,
@@ -91,10 +93,6 @@ function companyName(activity: Activity) {
   )
 }
 
-function statusLabel(status?: ActivityStatus) {
-  return status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"
-}
-
 export function ActivitiesPage() {
   const user = useAuthStore((state) => state.user)
   const permissions = user?.permissions ?? []
@@ -116,16 +114,15 @@ export function ActivitiesPage() {
   const [ownerId, setOwnerId] = useState("")
   const [team, setTeam] = useState("")
   const [dateRange, setDateRange] =
-    useState<PersianDateRange>()
+    useState<ActivityPersianDateRange>()
   const [createOpen, setCreateOpen] = useState(false)
   const [editActivity, setEditActivity] =
     useState<Activity | null>(null)
+  const [detailActivity, setDetailActivity] =
+    useState<Activity | null>(null)
 
-  const debouncedSearch = useDebounced(search, 300)
-  const debouncedPersonSearch = useDebounced(
-    personSearch,
-    300
-  )
+  const debouncedSearch = useDebounced(search)
+  const debouncedPersonSearch = useDebounced(personSearch)
 
   const people = useActivityPeopleOptions(
     companyId,
@@ -150,15 +147,13 @@ export function ActivitiesPage() {
         new Set(
           (owners.data || [])
             .map((item) => item.team)
-            .filter(
-              (item): item is string => Boolean(item)
-            )
+            .filter((item): item is string => Boolean(item))
         )
       ).sort((a, b) => a.localeCompare(b, "fa")),
     [owners.data]
   )
 
-  const query = useMemo(() => {
+  const query = useMemo<ActivityListQuery>(() => {
     const from = dateRange?.from
       ? new Date(
           dateRange.from.getFullYear(),
@@ -185,7 +180,7 @@ export function ActivitiesPage() {
 
     return {
       page,
-      limit: 20 as const,
+      limit: 20,
       search: debouncedSearch.trim() || undefined,
       activityType: activityType || undefined,
       status: status || undefined,
@@ -197,12 +192,11 @@ export function ActivitiesPage() {
           : ownerId || undefined,
       team: team || undefined,
       mine: scope === "mine" ? true : undefined,
-      ownershipScope:
-        scope === "team" ? ("team" as const) : ("all" as const),
+      ownershipScope: scope === "team" ? "team" : "all",
       dateFrom: from?.toISOString(),
       dateTo: to?.toISOString(),
-      sortBy: "activityDate" as const,
-      sortOrder: "desc" as const,
+      sortBy: "activityDate",
+      sortOrder: "desc",
     }
   }, [
     activityType,
@@ -303,7 +297,9 @@ export function ActivitiesPage() {
                 : "text-[var(--app-text-secondary)]"
             }
           >
-            {statusLabel(item.status)}
+            {item.status === "COMPLETED"
+              ? "تکمیل‌شده"
+              : "ثبت‌شده"}
           </span>
         ),
       },
@@ -383,7 +379,7 @@ export function ActivitiesPage() {
       </section>
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-        <div className="grid gap-3 xl:grid-cols-[minmax(220px,1.35fr)_auto_minmax(155px,.8fr)_minmax(145px,.72fr)_minmax(190px,1fr)_auto] xl:items-center">
+        <div className="grid gap-3 xl:grid-cols-[minmax(220px,1.35fr)_auto_minmax(155px,.8fr)_minmax(145px,.72fr)_minmax(210px,1fr)_auto] xl:items-center">
           <div className="relative">
             <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
             <Input
@@ -458,13 +454,12 @@ export function ActivitiesPage() {
             <option value="COMPLETED">تکمیل‌شده</option>
           </select>
 
-          <PersianDateRangePicker
+          <ActivityPersianDateRangePicker
             value={dateRange}
             onChange={(value) => {
               setDateRange(value)
               resetPage()
             }}
-            placeholder="بازه تاریخ فعالیت"
           />
 
           <Popover>
@@ -590,6 +585,7 @@ export function ActivitiesPage() {
             }
             columns={columns}
             getRowKey={(item) => item.id}
+            onRowClick={setDetailActivity}
             emptyState={
               <EmptyState
                 icon={ActivityIcon}
@@ -602,18 +598,14 @@ export function ActivitiesPage() {
           <div className="flex flex-col items-center justify-between gap-3 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row">
             <p className="text-xs text-[var(--app-text-secondary)]">
               صفحه{" "}
-              {activities.data.meta.page.toLocaleString(
-                "fa-IR"
-              )}{" "}
+              {activities.data.meta.page.toLocaleString("fa-IR")}{" "}
               از{" "}
               {Math.max(
                 activities.data.meta.totalPages,
                 1
               ).toLocaleString("fa-IR")}
               {" · "}
-              {activities.data.meta.total.toLocaleString(
-                "fa-IR"
-              )}{" "}
+              {activities.data.meta.total.toLocaleString("fa-IR")}{" "}
               فعالیت
               {activities.isFetching
                 ? " · در حال بروزرسانی..."
@@ -658,6 +650,20 @@ export function ActivitiesPage() {
           </div>
         </div>
       ) : null}
+
+      <ActivityDetailDialog
+        activity={detailActivity}
+        open={Boolean(detailActivity)}
+        onOpenChange={(open) => {
+          if (!open) setDetailActivity(null)
+        }}
+        canUpdate={canUpdate}
+        onEdit={() => {
+          if (detailActivity) {
+            setEditActivity(detailActivity)
+          }
+        }}
+      />
 
       <ActivityFormDialog
         open={createOpen}

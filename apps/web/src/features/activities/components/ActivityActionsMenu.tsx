@@ -11,10 +11,6 @@ import {
 
 import type { Activity } from "../types/activity.types"
 
-function getCompanyId(activity: Activity) {
-  return activity.companyId || activity.company?.id || ""
-}
-
 export function ActivityActionsMenu({
   activity,
   canUpdate,
@@ -25,7 +21,7 @@ export function ActivityActionsMenu({
   onEdit: () => void
 }) {
   const navigate = useNavigate()
-  const companyId = getCompanyId(activity)
+  const companyId = activity.companyId || activity.company?.id || ""
 
   return (
     <DropdownMenu>
@@ -37,6 +33,7 @@ export function ActivityActionsMenu({
             size="icon"
             className="size-8 rounded-lg"
             aria-label="عملیات بیشتر"
+            onClick={(event) => event.stopPropagation()}
           />
         }
       >
@@ -47,9 +44,12 @@ export function ActivityActionsMenu({
         align="end"
         className="min-w-44 rounded-xl"
         dir="rtl"
+        onClick={(event) => event.stopPropagation()}
       >
         {companyId ? (
-          <DropdownMenuItem onClick={() => navigate(`/companies/${companyId}`)}>
+          <DropdownMenuItem
+            onClick={() => navigate(`/companies/${companyId}`)}
+          >
             <Building2 />
             مشاهده شرکت
           </DropdownMenuItem>
