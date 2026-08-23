@@ -80,7 +80,16 @@ export async function getUnreadCount() {
     return body.data.total ?? 0
   }
 
-  return body?.total ?? 0
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "total" in body &&
+    typeof body.total === "number"
+  ) {
+    return body.total
+  }
+
+  return 0
 }
 
 function unwrapNotification(value: unknown): Notification {
@@ -117,3 +126,4 @@ export async function unarchive(id: string) {
 export async function removeNotification(id: string) {
   await api.delete(`/notifications/${id}`)
 }
+
