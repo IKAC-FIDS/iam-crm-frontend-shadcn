@@ -373,6 +373,7 @@ function FollowUps({
 
   return (
     <div className="grid gap-4">
+      {/* Attention list UI placeholder: migrated to Tasks-style rows */}
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5">
@@ -671,6 +672,7 @@ function Notifications({
 
   return (
     <div className="grid gap-4">
+      {/* Attention list UI placeholder: migrated to Tasks-style rows */}
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
         <div className="grid gap-3 lg:grid-cols-[minmax(240px,1fr)_auto_auto] lg:items-center">
           <div className="relative min-w-0">
@@ -932,3 +934,4 @@ function NotificationItem({
     </article>
   )
 }
+
