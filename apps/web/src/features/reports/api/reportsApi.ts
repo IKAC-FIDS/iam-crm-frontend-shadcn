@@ -1,4 +1,4 @@
-import { api } from "@/lib/api"
+﻿import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
 export type ReportFilters = {
@@ -70,3 +70,4 @@ export async function getConversionHealth(filters: ReportFilters) {
   const response = await api.get("/reports/conversion-health", { params: params(filters) })
   return unwrapApiResponse<ConversionHealth>(response.data)
 }
+

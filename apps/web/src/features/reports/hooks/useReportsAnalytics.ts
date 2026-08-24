@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+﻿import { useQuery } from "@tanstack/react-query"
 import { getConversionHealth, type ReportFilters } from "../api/reportsApi"
 
 export function useReportsAnalytics(filters: ReportFilters, enabled = true) {
@@ -8,3 +8,4 @@ export function useReportsAnalytics(filters: ReportFilters, enabled = true) {
     enabled,
   })
 }
+
