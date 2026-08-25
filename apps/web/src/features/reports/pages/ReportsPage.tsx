@@ -295,6 +295,8 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
 }
 
 function FunnelChart({ data }: { data: ConversionHealth }) {
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+
   const proposalRate =
     findMilestoneRate(data.milestones, ["تجاری"]) ||
     findMilestoneRate(data.milestones, ["پیش‌فاکتور"]) ||
@@ -310,18 +312,21 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
       label: "سرنخ",
       rate: 100,
       stages: ["سرنخ"],
+      helper: "شروع مسیر فروش",
     },
     {
       key: "engagement",
       label: "تعامل",
       rate: findMilestoneRate(data.milestones, ["تعامل"]),
       stages: ["تماس گرفته شده", "علاقه‌مند"],
+      helper: "برقراری ارتباط و شکل‌گیری علاقه",
     },
     {
       key: "assessment",
       label: "ارزیابی",
       rate: findMilestoneRate(data.milestones, ["ارزیابی"]),
       stages: ["واجد شرایط", "نیازسنجی"],
+      helper: "بررسی تناسب مشتری و نیاز واقعی",
     },
     {
       key: "proposal",
@@ -333,6 +338,7 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
         "پایلوت در حال اجرا",
         "در انتظار تأیید پایلوت",
       ],
+      helper: "ارائه پیشنهاد و در صورت نیاز اجرای پایلوت",
     },
     {
       key: "finalize",
@@ -344,54 +350,137 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
         "نصب در حال اجرا",
         "در انتظار پذیرش مشتری",
       ],
+      helper: "تکمیل خرید، اجرا و پذیرش",
     },
     {
       key: "won",
       label: "برنده",
       rate: data.summary.leadToCustomer.current,
       stages: ["انجام شده"],
+      helper: "تبدیل نهایی به مشتری",
     },
   ]
 
+  const totalLeads = Math.max(0, data.summary.totalLeads)
+  const hovered = phases.find((phase) => phase.key === hoveredKey) ?? null
+
+  const estimatedCount = (rate: number) =>
+    totalLeads === 0 ? 0 : Math.round((totalLeads * rate) / 100)
+
+  const tones = [
+    "var(--chart-1, #2563EB)",
+    "var(--chart-2, #3B82F6)",
+    "var(--chart-3, #60A5FA)",
+    "var(--chart-4, #7C9CF5)",
+    "var(--chart-5, #93B4F7)",
+    "var(--success, #2E7D32)",
+  ]
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+    <div className="relative">
+      {hovered ? (
+        <div
+          className="pointer-events-none absolute start-4 top-4 z-20 w-[340px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
+          dir="rtl"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--app-divider)] pb-3">
+            <div>
+              <div className="text-base font-black text-foreground">
+                {hovered.label}
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                {hovered.helper}
+              </div>
+            </div>
+            <div className="text-left">
+              <div className="text-2xl font-black text-[var(--app-primary)]">
+                {fa(hovered.rate, 1)}٪
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                حدود {fa(estimatedCount(hovered.rate))} سرنخ
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="mb-2 font-bold text-foreground">
+              استیج‌های این فاز
+            </div>
+            <div className="grid gap-1.5">
+              {hovered.stages.map((stage) => (
+                <div
+                  key={stage}
+                  className="rounded-lg bg-muted/60 px-2.5 py-1.5 text-muted-foreground"
+                >
+                  {stage}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p className="mt-3 leading-6 text-muted-foreground">
+            یعنی حدود <strong className="text-foreground">{fa(hovered.rate, 1)}٪</strong>{" "}
+            از سرنخ‌های بازه انتخابی حداقل یک‌بار به این بخش از مسیر فروش رسیده‌اند.
+          </p>
+        </div>
+      ) : null}
+
       <div className="space-y-3">
         {phases.map((phase, index) => {
-          const visualWidth = Math.max(34, Math.min(100, 28 + phase.rate * 0.72))
-          const shade = Math.max(0.42, 0.96 - index * 0.08)
+          const count = estimatedCount(phase.rate)
+          const tone = tones[index] ?? "var(--app-primary)"
+
           return (
-            <div key={phase.key} className="space-y-2">
-              <div
-                className="mx-auto flex h-16 items-center justify-between gap-4 px-5 text-white shadow-sm"
-                style={{
-                  width: `${visualWidth}%`,
-                  backgroundColor: `rgba(37, 99, 235, ${shade})`,
-                  clipPath: "polygon(7% 0, 100% 0, 93% 100%, 0 100%)",
-                }}
-              >
-                <span className="text-sm font-bold">{phase.label}</span>
-                <span className="text-lg font-black">{fa(phase.rate, 1)}٪</span>
+            <div
+              key={phase.key}
+              className="group grid gap-2 rounded-[18px] border border-transparent px-2 py-2 transition hover:border-[var(--app-divider)] hover:bg-muted/25 lg:grid-cols-[110px_minmax(0,1fr)_86px]"
+              onMouseEnter={() => setHoveredKey(phase.key)}
+              onMouseLeave={() => setHoveredKey(null)}
+            >
+              <div className="flex items-center justify-between gap-3 lg:block">
+                <div className="text-sm font-bold">{phase.label}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground lg:hidden">
+                  {fa(phase.rate, 1)}٪
+                </div>
               </div>
-              <div className="text-center text-xs leading-6 text-muted-foreground">
-                {phase.stages.join(" • ")}
+
+              <div className="min-w-0">
+                <div className="relative h-11 overflow-hidden rounded-xl bg-muted">
+                  <div
+                    className="absolute inset-y-0 end-0 rounded-xl transition-all duration-300"
+                    style={{
+                      width: `${Math.max(phase.rate > 0 ? 3 : 0, Math.min(100, phase.rate))}%`,
+                      backgroundColor: tone,
+                    }}
+                  />
+                  <div className="relative z-10 flex h-full items-center justify-end px-3 text-xs font-bold">
+                    {phase.rate >= 18 ? (
+                      <span className="text-white">
+                        {fa(phase.rate, 1)}٪
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="mt-1.5 truncate text-[11px] text-muted-foreground">
+                  {phase.stages.join(" • ")}
+                </div>
+              </div>
+
+              <div className="hidden text-left lg:block">
+                <div className="text-lg font-black">{fa(phase.rate, 1)}٪</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {fa(count)} مورد
+                </div>
               </div>
             </div>
           )
         })}
       </div>
 
-      <div className="rounded-[22px] border border-[var(--app-divider)] bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
-        <div className="mb-2 font-bold text-foreground">توضیح فانل</div>
-        <p>
-          این فانل بر اساس مسیر توافق‌شده نمایش داده می‌شود:
-          <span className="mx-1 font-medium text-foreground">
-            سرنخ ← تعامل ← ارزیابی ← پیشنهاد ← نهایی‌سازی ← برنده
-          </span>
-        </p>
-        <p className="mt-3">
-          وضعیت‌های «متوقف شده»، «بدون پاسخ» و «از دست رفته» خارج از فانل اصلی
-          هستند و در این نمودار نمایش داده نمی‌شوند.
-        </p>
+      <div className="mt-4 rounded-xl bg-muted/35 px-3 py-2 text-xs leading-6 text-muted-foreground">
+        طول هر میله نشان می‌دهد چه درصدی از سرنخ‌ها حداقل یک‌بار به آن فاز رسیده‌اند.
+        برای دیدن استیج‌های هر فاز، نشانگر را روی همان ردیف نگه دارید.
       </div>
     </div>
   )
