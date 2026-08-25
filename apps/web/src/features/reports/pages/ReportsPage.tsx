@@ -1,4 +1,4 @@
-import {
+﻿import {
   Activity,
   ArrowDown,
   ArrowUp,
@@ -386,10 +386,12 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
 }
 
 function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
+  const [hoveredOwnerId, setHoveredOwnerId] = useState<string | null>(null)
+
   if (!data.length) {
     return (
       <div className="grid h-64 place-items-center text-sm text-muted-foreground">
-        داده‌ای برای مقایسه تیم وجود ندارد.
+        Ø¯Ø§Ø¯Ù‡â€ŒØ§ÛŒ Ø¨Ø±Ø§ÛŒ Ù…Ù‚Ø§ÛŒØ³Ù‡ ØªÛŒÙ… ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.
       </div>
     )
   }
@@ -398,10 +400,22 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   const height = 360
   const padding = 58
   const maxValue = Math.max(1, ...data.map((item) => item.pipelineValue))
+
   const averageRate =
     data.reduce((sum, item) => sum + item.conversionRate, 0) / data.length
   const averageValue =
     data.reduce((sum, item) => sum + item.pipelineValue, 0) / data.length
+
+  const median = (values: number[]) => {
+    const sorted = [...values].sort((a, b) => a - b)
+    const middle = Math.floor(sorted.length / 2)
+    return sorted.length % 2 === 0
+      ? (sorted[middle - 1] + sorted[middle]) / 2
+      : sorted[middle]
+  }
+
+  const medianRate = median(data.map((item) => item.conversionRate))
+  const medianValue = median(data.map((item) => item.pipelineValue))
 
   const valueX =
     padding + (averageValue / maxValue) * (width - padding * 2)
@@ -410,9 +424,182 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
     padding -
     (Math.min(100, averageRate) / 100) * (height - padding * 2)
 
+  const hovered =
+    data.find((item) => item.ownerId === hoveredOwnerId) ?? null
+
+  const resultFor = (pipelineValue: number, conversionRate: number) => {
+    const valueAbove = pipelineValue >= averageValue
+    const rateAbove = conversionRate >= averageRate
+
+    if (valueAbove && rateAbove) {
+      return {
+        label: "Ø¹Ù…Ù„Ú©Ø±Ø¯ Ø¨Ø±ØªØ±",
+        explanation: "Ù‡Ù… Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ùˆ Ù‡Ù… Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø¨Ø§Ù„Ø§ØªØ± Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.",
+      }
+    }
+
+    if (!valueAbove && rateAbove) {
+      return {
+        label: "ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ØŒ ÙØ±ØµØª Ú©Ù…",
+        explanation: "Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ Ø§Ø³ØªØŒ Ø§Ù…Ø§ Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ÛŒ Ø¯Ø± Ø§Ø®ØªÛŒØ§Ø± Ú©Ù…ØªØ± Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.",
+      }
+    }
+
+    if (valueAbove && !rateAbove) {
+      return {
+        label: "ÙØ±ØµØª Ø²ÛŒØ§Ø¯ØŒ ØªØ¨Ø¯ÛŒÙ„ Ù¾Ø§ÛŒÛŒÙ†",
+        explanation: "Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ø¨Ø§Ù„Ø§Ø³ØªØŒ Ø§Ù…Ø§ Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± Ø§Ø³Øª.",
+      }
+    }
+
+    return {
+      label: "Ù†ÛŒØ§Ø²Ù…Ù†Ø¯ Ø¨Ø±Ø±Ø³ÛŒ",
+      explanation: "Ù‡Ù… Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ùˆ Ù‡Ù… Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± Ø§Ø³Øª.",
+    }
+  }
+
+  const valueDiffPercent = (value: number) =>
+    averageValue === 0 ? 0 : ((value - averageValue) / averageValue) * 100
+
   return (
-    <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[620px] w-full">
+    <div className="relative overflow-x-auto">
+      {hovered ? (() => {
+        const result = resultFor(
+          hovered.pipelineValue,
+          hovered.conversionRate,
+        )
+        const pipelineDiff = valueDiffPercent(hovered.pipelineValue)
+        const rateDiff = hovered.conversionRate - averageRate
+
+        return (
+          <div className="pointer-events-none absolute end-3 top-3 z-20 w-[330px] max-w-[calc(100%-24px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/98 p-4 text-xs shadow-[var(--app-shadow-popover)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-black text-foreground">
+                  {hovered.ownerName}
+                </div>
+                <div className="mt-1 text-[11px] text-muted-foreground">
+                  Ø¯Ù„ÛŒÙ„ Ù‚Ø±Ø§Ø± Ú¯Ø±ÙØªÙ† Ø§ÛŒÙ† Ú©Ø§Ø±Ø´Ù†Ø§Ø³ Ø¯Ø± Ø§ÛŒÙ† Ø¨Ø®Ø´
+                </div>
+              </div>
+              <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 font-bold text-[var(--app-primary)]">
+                {result.label}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-2 rounded-xl bg-muted/50 p-3">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">ØªØ¹Ø¯Ø§Ø¯ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
+                <strong>{fa(hovered.total)} Ù…ÙˆØ±Ø¯</strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
+                <strong>{fa(hovered.pipelineValue)} Ø±ÛŒØ§Ù„</strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„</span>
+                <strong>{fa(hovered.conversionRate, 1)}Ùª</strong>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t border-[var(--app-divider)] pt-3">
+              <div className="mb-2 font-bold">Ù…Ù‚Ø§ÛŒØ³Ù‡ Ø¨Ø§ ØªÛŒÙ…</div>
+
+              <div className="grid gap-2 text-muted-foreground">
+                <div>
+                  <div className="flex justify-between gap-4">
+                    <span>Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ÙØ±ØµØª ØªÛŒÙ…</span>
+                    <strong className="text-foreground">
+                      {fa(averageValue)} Ø±ÛŒØ§Ù„
+                    </strong>
+                  </div>
+                  <div className="mt-1 text-[11px]">
+                    Ø§ÛŒÙ† Ú©Ø§Ø±Ø´Ù†Ø§Ø³{" "}
+                    <strong className="text-foreground">
+                      {fa(Math.abs(pipelineDiff), 1)}Ùª
+                    </strong>{" "}
+                    {pipelineDiff >= 0 ? "Ø¨Ø§Ù„Ø§ØªØ±" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ±"} Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between gap-4">
+                    <span>Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…</span>
+                    <strong className="text-foreground">
+                      {fa(averageRate, 1)}Ùª
+                    </strong>
+                  </div>
+                  <div className="mt-1 text-[11px]">
+                    Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ùˆ{" "}
+                    <strong className="text-foreground">
+                      {fa(Math.abs(rateDiff), 1)}
+                    </strong>{" "}
+                    ÙˆØ§Ø­Ø¯ Ø¯Ø±ØµØ¯ {rateDiff >= 0 ? "Ø¨Ø§Ù„Ø§ØªØ±" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ±"} Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.
+                  </div>
+                </div>
+
+                <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 text-[10px]">
+                  <div>
+                    <span>Ù…ÛŒØ§Ù†Ù‡ Ø§Ø±Ø²Ø´ ØªÛŒÙ…</span>
+                    <strong className="mt-1 block text-foreground">
+                      {fa(medianValue)} Ø±ÛŒØ§Ù„
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Ù…ÛŒØ§Ù†Ù‡ Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„</span>
+                    <strong className="mt-1 block text-foreground">
+                      {fa(medianRate, 1)}Ùª
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 border-t border-[var(--app-divider)] pt-3">
+              <div className="mb-2 font-bold">Ú†Ø±Ø§ Ø§ÛŒÙ† Ù†ØªÛŒØ¬Ù‡ Ú¯Ø±ÙØªÙ‡ Ø´Ø¯ØŸ</div>
+              <div className="grid gap-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span>Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ…</span>
+                  <strong>
+                    {hovered.pipelineValue >= averageValue ? "Ø¨Ø§Ù„Ø§ØªØ± âœ“" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± âœ•"}
+                  </strong>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span>Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ…</span>
+                  <strong>
+                    {hovered.conversionRate >= averageRate ? "Ø¨Ø§Ù„Ø§ØªØ± âœ“" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± âœ•"}
+                  </strong>
+                </div>
+              </div>
+              <p className="mt-2 rounded-lg bg-[var(--app-primary-soft)] px-3 py-2 leading-5 text-foreground">
+                <strong>Ù†ØªÛŒØ¬Ù‡: {result.label}</strong>
+                <br />
+                <span className="text-[11px] text-muted-foreground">
+                  {result.explanation}
+                </span>
+              </p>
+            </div>
+          </div>
+        )
+      })() : null}
+
+      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+        <span>
+          Ø®Ø· Ø¹Ù…ÙˆØ¯ÛŒ: Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ÙØ±ØµØª ØªÛŒÙ…{" "}
+          <strong className="text-foreground">{fa(averageValue)} Ø±ÛŒØ§Ù„</strong>
+        </span>
+        <span>
+          Ø®Ø· Ø§ÙÙ‚ÛŒ: Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…{" "}
+          <strong className="text-foreground">{fa(averageRate, 1)}Ùª</strong>
+        </span>
+        <span>Ø§Ù†Ø¯Ø§Ø²Ù‡ Ø¯Ø§ÛŒØ±Ù‡: ØªØ¹Ø¯Ø§Ø¯ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
+      </div>
+
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="min-w-[620px] w-full"
+        onMouseLeave={() => setHoveredOwnerId(null)}
+      >
         <rect
           x={padding}
           y={padding}
@@ -446,80 +633,19 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
           opacity="0.04"
         />
 
-        <line
-          x1={padding}
-          x2={padding}
-          y1={padding}
-          y2={height - padding}
-          stroke="var(--app-divider)"
-        />
-        <line
-          x1={padding}
-          x2={width - padding}
-          y1={height - padding}
-          y2={height - padding}
-          stroke="var(--app-divider)"
-        />
-        <line
-          x1={valueX}
-          x2={valueX}
-          y1={padding}
-          y2={height - padding}
-          stroke="var(--app-divider)"
-          strokeDasharray="5 5"
-        />
-        <line
-          x1={padding}
-          x2={width - padding}
-          y1={rateY}
-          y2={rateY}
-          stroke="var(--app-divider)"
-          strokeDasharray="5 5"
-        />
+        <line x1={padding} x2={padding} y1={padding} y2={height - padding} stroke="var(--app-divider)" />
+        <line x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} stroke="var(--app-divider)" />
+        <line x1={valueX} x2={valueX} y1={padding} y2={height - padding} stroke="var(--app-text-secondary)" strokeDasharray="5 5" opacity="0.7" />
+        <line x1={padding} x2={width - padding} y1={rateY} y2={rateY} stroke="var(--app-text-secondary)" strokeDasharray="5 5" opacity="0.7" />
 
-        <text
-          x={padding + 12}
-          y={padding + 20}
-          fontSize="11"
-          fill="var(--success)"
-        >
-          بازده خوب
-        </text>
-        <text
-          x={width - padding - 12}
-          y={padding + 20}
-          textAnchor="end"
-          fontSize="11"
-          fill="var(--success)"
-        >
-          عملکرد برتر
-        </text>
-        <text
-          x={padding + 12}
-          y={height - padding - 12}
-          fontSize="11"
-          fill="var(--app-text-secondary)"
-        >
-          ظرفیت رشد
-        </text>
-        <text
-          x={width - padding - 12}
-          y={height - padding - 12}
-          textAnchor="end"
-          fontSize="11"
-          fill="var(--destructive)"
-        >
-          نیازمند بررسی
-        </text>
+        <text x={padding + 12} y={padding + 20} fontSize="11" fill="var(--success)">ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ØŒ ÙØ±ØµØª Ú©Ù…</text>
+        <text x={width - padding - 12} y={padding + 20} textAnchor="end" fontSize="11" fill="var(--success)">Ø¹Ù…Ù„Ú©Ø±Ø¯ Ø¨Ø±ØªØ±</text>
+        <text x={padding + 12} y={height - padding - 12} fontSize="11" fill="var(--app-text-secondary)">Ù†ÛŒØ§Ø²Ù…Ù†Ø¯ Ø¨Ø±Ø±Ø³ÛŒ</text>
+        <text x={width - padding - 12} y={height - padding - 12} textAnchor="end" fontSize="11" fill="var(--destructive)">ÙØ±ØµØª Ø²ÛŒØ§Ø¯ØŒ ØªØ¨Ø¯ÛŒÙ„ Ù¾Ø§ÛŒÛŒÙ†</text>
 
-        <text
-          x={width / 2}
-          y={height - 12}
-          textAnchor="middle"
-          className="fill-muted-foreground text-[11px]"
-        >
-          ارزش فرصت‌های فروش
-        </text>
+        <text x={width / 2} y={height - 12} textAnchor="middle" className="fill-muted-foreground text-[11px]">Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ÛŒ ÙØ±ÙˆØ´</text>
+        <text x={valueX + 6} y={height - padding + 18} fontSize="9" fill="var(--app-text-secondary)">Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ØªÛŒÙ…</text>
+        <text x={padding + 5} y={rateY - 7} fontSize="9" fill="var(--app-text-secondary)">Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…</text>
 
         {data.map((item) => {
           const x =
@@ -531,22 +657,28 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             (Math.min(100, item.conversionRate) / 100) *
               (height - padding * 2)
           const r = Math.max(8, Math.min(16, 7 + Math.sqrt(item.total)))
+          const isHovered = hoveredOwnerId === item.ownerId
 
           return (
-            <g key={item.ownerId}>
+            <g
+              key={item.ownerId}
+              className="cursor-pointer"
+              onMouseEnter={() => setHoveredOwnerId(item.ownerId)}
+              onFocus={() => setHoveredOwnerId(item.ownerId)}
+              onBlur={() => setHoveredOwnerId(null)}
+              tabIndex={0}
+              role="button"
+              aria-label={`Ù†Ù…Ø§ÛŒØ´ Ø¬Ø²Ø¦ÛŒØ§Øª Ø¹Ù…Ù„Ú©Ø±Ø¯ ${item.ownerName}`}
+            >
               <circle
                 cx={x}
                 cy={y}
-                r={r}
+                r={isHovered ? r + 2 : r}
                 fill="var(--app-primary)"
-                fillOpacity="0.78"
+                fillOpacity={isHovered ? 0.95 : 0.78}
                 stroke="var(--app-surface)"
                 strokeWidth="3"
-              >
-                <title>
-                  {`${item.ownerName} — نرخ تبدیل ${fa(item.conversionRate, 1)}٪`}
-                </title>
-              </circle>
+              />
               <text
                 x={x}
                 y={y - r - 7}
@@ -795,3 +927,5 @@ export function ReportsPage() {
     </div>
   )
 }
+
+
