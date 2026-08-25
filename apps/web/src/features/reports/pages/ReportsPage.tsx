@@ -1,4 +1,4 @@
-﻿import {
+import {
   Activity,
   ArrowDown,
   ArrowUp,
@@ -391,31 +391,20 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   if (!data.length) {
     return (
       <div className="grid h-64 place-items-center text-sm text-muted-foreground">
-        Ø¯Ø§Ø¯Ù‡â€ŒØ§ÛŒ Ø¨Ø±Ø§ÛŒ Ù…Ù‚Ø§ÛŒØ³Ù‡ ØªÛŒÙ… ÙˆØ¬ÙˆØ¯ Ù†Ø¯Ø§Ø±Ø¯.
+        داده‌ای برای مقایسه تیم وجود ندارد.
       </div>
     )
   }
 
-  const width = 700
-  const height = 360
-  const padding = 58
+  const width = 760
+  const height = 410
+  const padding = 66
   const maxValue = Math.max(1, ...data.map((item) => item.pipelineValue))
 
   const averageRate =
     data.reduce((sum, item) => sum + item.conversionRate, 0) / data.length
   const averageValue =
     data.reduce((sum, item) => sum + item.pipelineValue, 0) / data.length
-
-  const median = (values: number[]) => {
-    const sorted = [...values].sort((a, b) => a - b)
-    const middle = Math.floor(sorted.length / 2)
-    return sorted.length % 2 === 0
-      ? (sorted[middle - 1] + sorted[middle]) / 2
-      : sorted[middle]
-  }
-
-  const medianRate = median(data.map((item) => item.conversionRate))
-  const medianValue = median(data.map((item) => item.pipelineValue))
 
   const valueX =
     padding + (averageValue / maxValue) * (width - padding * 2)
@@ -427,270 +416,291 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   const hovered =
     data.find((item) => item.ownerId === hoveredOwnerId) ?? null
 
-  const resultFor = (pipelineValue: number, conversionRate: number) => {
+  const getStatus = (pipelineValue: number, conversionRate: number) => {
     const valueAbove = pipelineValue >= averageValue
     const rateAbove = conversionRate >= averageRate
 
-    if (valueAbove && rateAbove) {
-      return {
-        label: "Ø¹Ù…Ù„Ú©Ø±Ø¯ Ø¨Ø±ØªØ±",
-        explanation: "Ù‡Ù… Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ùˆ Ù‡Ù… Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø¨Ø§Ù„Ø§ØªØ± Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.",
-      }
-    }
-
-    if (!valueAbove && rateAbove) {
-      return {
-        label: "ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ØŒ ÙØ±ØµØª Ú©Ù…",
-        explanation: "Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ Ø§Ø³ØªØŒ Ø§Ù…Ø§ Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ÛŒ Ø¯Ø± Ø§Ø®ØªÛŒØ§Ø± Ú©Ù…ØªØ± Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.",
-      }
-    }
-
-    if (valueAbove && !rateAbove) {
-      return {
-        label: "ÙØ±ØµØª Ø²ÛŒØ§Ø¯ØŒ ØªØ¨Ø¯ÛŒÙ„ Ù¾Ø§ÛŒÛŒÙ†",
-        explanation: "Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ø¨Ø§Ù„Ø§Ø³ØªØŒ Ø§Ù…Ø§ Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± Ø§Ø³Øª.",
-      }
-    }
-
-    return {
-      label: "Ù†ÛŒØ§Ø²Ù…Ù†Ø¯ Ø¨Ø±Ø±Ø³ÛŒ",
-      explanation: "Ù‡Ù… Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ùˆ Ù‡Ù… Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± Ø§Ø³Øª.",
-    }
+    if (valueAbove && rateAbove) return "عملکرد برتر"
+    if (!valueAbove && rateAbove) return "تبدیل خوب، فرصت کم"
+    if (valueAbove && !rateAbove) return "فرصت زیاد، تبدیل پایین"
+    return "نیازمند بررسی"
   }
 
   const valueDiffPercent = (value: number) =>
     averageValue === 0 ? 0 : ((value - averageValue) / averageValue) * 100
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative">
+      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+        <span>
+          خط عمودی: میانگین ارزش فرصت‌های تیم{" "}
+          <strong className="text-foreground">{fa(averageValue)} ریال</strong>
+        </span>
+        <span>
+          خط افقی: میانگین نرخ تبدیل تیم{" "}
+          <strong className="text-foreground">{fa(averageRate, 1)}٪</strong>
+        </span>
+        <span>اندازه دایره: تعداد فرصت‌ها</span>
+      </div>
+
       {hovered ? (() => {
-        const result = resultFor(
-          hovered.pipelineValue,
-          hovered.conversionRate,
-        )
         const pipelineDiff = valueDiffPercent(hovered.pipelineValue)
         const rateDiff = hovered.conversionRate - averageRate
+        const status = getStatus(hovered.pipelineValue, hovered.conversionRate)
 
         return (
-          <div className="pointer-events-none absolute end-3 top-3 z-20 w-[330px] max-w-[calc(100%-24px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/98 p-4 text-xs shadow-[var(--app-shadow-popover)]">
-            <div className="flex items-start justify-between gap-3">
+          <div
+            className="pointer-events-none absolute start-4 top-14 z-20 w-[330px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
+            dir="rtl"
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--app-divider)] pb-3">
               <div>
                 <div className="text-sm font-black text-foreground">
                   {hovered.ownerName}
                 </div>
                 <div className="mt-1 text-[11px] text-muted-foreground">
-                  Ø¯Ù„ÛŒÙ„ Ù‚Ø±Ø§Ø± Ú¯Ø±ÙØªÙ† Ø§ÛŒÙ† Ú©Ø§Ø±Ø´Ù†Ø§Ø³ Ø¯Ø± Ø§ÛŒÙ† Ø¨Ø®Ø´
+                  جزئیات عملکرد کارشناس
                 </div>
               </div>
               <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 font-bold text-[var(--app-primary)]">
-                {result.label}
+                {status}
               </span>
             </div>
 
-            <div className="mt-4 grid gap-2 rounded-xl bg-muted/50 p-3">
+            <div className="mt-3 grid gap-2">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">ØªØ¹Ø¯Ø§Ø¯ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
-                <strong>{fa(hovered.total)} Ù…ÙˆØ±Ø¯</strong>
+                <span className="text-muted-foreground">تعداد فرصت‌ها</span>
+                <strong>{fa(hovered.total)} مورد</strong>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
-                <strong>{fa(hovered.pipelineValue)} Ø±ÛŒØ§Ù„</strong>
+                <span className="text-muted-foreground">ارزش فرصت‌ها</span>
+                <strong>{fa(hovered.pipelineValue)} ریال</strong>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„</span>
-                <strong>{fa(hovered.conversionRate, 1)}Ùª</strong>
+                <span className="text-muted-foreground">نرخ تبدیل</span>
+                <strong>{fa(hovered.conversionRate, 1)}٪</strong>
               </div>
             </div>
 
-            <div className="mt-3 border-t border-[var(--app-divider)] pt-3">
-              <div className="mb-2 font-bold">Ù…Ù‚Ø§ÛŒØ³Ù‡ Ø¨Ø§ ØªÛŒÙ…</div>
+            <div className="my-3 border-t border-[var(--app-divider)]" />
 
-              <div className="grid gap-2 text-muted-foreground">
-                <div>
-                  <div className="flex justify-between gap-4">
-                    <span>Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ÙØ±ØµØª ØªÛŒÙ…</span>
-                    <strong className="text-foreground">
-                      {fa(averageValue)} Ø±ÛŒØ§Ù„
-                    </strong>
-                  </div>
-                  <div className="mt-1 text-[11px]">
-                    Ø§ÛŒÙ† Ú©Ø§Ø±Ø´Ù†Ø§Ø³{" "}
-                    <strong className="text-foreground">
-                      {fa(Math.abs(pipelineDiff), 1)}Ùª
-                    </strong>{" "}
-                    {pipelineDiff >= 0 ? "Ø¨Ø§Ù„Ø§ØªØ±" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ±"} Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between gap-4">
-                    <span>Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…</span>
-                    <strong className="text-foreground">
-                      {fa(averageRate, 1)}Ùª
-                    </strong>
-                  </div>
-                  <div className="mt-1 text-[11px]">
-                    Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ø§Ùˆ{" "}
-                    <strong className="text-foreground">
-                      {fa(Math.abs(rateDiff), 1)}
-                    </strong>{" "}
-                    ÙˆØ§Ø­Ø¯ Ø¯Ø±ØµØ¯ {rateDiff >= 0 ? "Ø¨Ø§Ù„Ø§ØªØ±" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ±"} Ø§Ø² Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ… Ø§Ø³Øª.
-                  </div>
-                </div>
-
-                <div className="mt-1 grid grid-cols-2 gap-2 rounded-lg border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 text-[10px]">
-                  <div>
-                    <span>Ù…ÛŒØ§Ù†Ù‡ Ø§Ø±Ø²Ø´ ØªÛŒÙ…</span>
-                    <strong className="mt-1 block text-foreground">
-                      {fa(medianValue)} Ø±ÛŒØ§Ù„
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Ù…ÛŒØ§Ù†Ù‡ Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„</span>
-                    <strong className="mt-1 block text-foreground">
-                      {fa(medianRate, 1)}Ùª
-                    </strong>
-                  </div>
-                </div>
+            <div className="mb-2 font-bold">مقایسه با تیم</div>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">ارزش فرصت‌ها</span>
+                <strong>
+                  {fa(Math.abs(pipelineDiff), 1)}٪{" "}
+                  {pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">نرخ تبدیل</span>
+                <strong>
+                  {fa(Math.abs(rateDiff), 1)} واحد درصد{" "}
+                  {rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                </strong>
               </div>
             </div>
 
-            <div className="mt-3 border-t border-[var(--app-divider)] pt-3">
-              <div className="mb-2 font-bold">Ú†Ø±Ø§ Ø§ÛŒÙ† Ù†ØªÛŒØ¬Ù‡ Ú¯Ø±ÙØªÙ‡ Ø´Ø¯ØŸ</div>
-              <div className="grid gap-1.5">
-                <div className="flex items-center justify-between gap-3">
-                  <span>Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ…</span>
-                  <strong>
-                    {hovered.pipelineValue >= averageValue ? "Ø¨Ø§Ù„Ø§ØªØ± âœ“" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± âœ•"}
-                  </strong>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span>Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ Ù†Ø³Ø¨Øª Ø¨Ù‡ Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† ØªÛŒÙ…</span>
-                  <strong>
-                    {hovered.conversionRate >= averageRate ? "Ø¨Ø§Ù„Ø§ØªØ± âœ“" : "Ù¾Ø§ÛŒÛŒÙ†â€ŒØªØ± âœ•"}
-                  </strong>
-                </div>
+            <div className="my-3 border-t border-[var(--app-divider)]" />
+
+            <div className="mb-2 font-bold">دلیل نتیجه</div>
+            <div className="grid gap-1.5 leading-5">
+              <div>
+                {hovered.pipelineValue >= averageValue ? "✓" : "•"} ارزش فرصت‌ها{" "}
+                {hovered.pipelineValue >= averageValue ? "بالاتر از" : "پایین‌تر از"} میانگین تیم است.
               </div>
-              <p className="mt-2 rounded-lg bg-[var(--app-primary-soft)] px-3 py-2 leading-5 text-foreground">
-                <strong>Ù†ØªÛŒØ¬Ù‡: {result.label}</strong>
-                <br />
-                <span className="text-[11px] text-muted-foreground">
-                  {result.explanation}
-                </span>
-              </p>
+              <div>
+                {hovered.conversionRate >= averageRate ? "✓" : "•"} نرخ تبدیل{" "}
+                {hovered.conversionRate >= averageRate ? "بالاتر از" : "پایین‌تر از"} میانگین تیم است.
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-xl bg-muted/60 px-3 py-2">
+              <span className="text-muted-foreground">نتیجه: </span>
+              <strong>{status}</strong>
             </div>
           </div>
         )
       })() : null}
 
-      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
-        <span>
-          Ø®Ø· Ø¹Ù…ÙˆØ¯ÛŒ: Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ÙØ±ØµØª ØªÛŒÙ…{" "}
-          <strong className="text-foreground">{fa(averageValue)} Ø±ÛŒØ§Ù„</strong>
-        </span>
-        <span>
-          Ø®Ø· Ø§ÙÙ‚ÛŒ: Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…{" "}
-          <strong className="text-foreground">{fa(averageRate, 1)}Ùª</strong>
-        </span>
-        <span>Ø§Ù†Ø¯Ø§Ø²Ù‡ Ø¯Ø§ÛŒØ±Ù‡: ØªØ¹Ø¯Ø§Ø¯ ÙØ±ØµØªâ€ŒÙ‡Ø§</span>
-      </div>
+      <div className="overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="min-w-[680px] w-full"
+          onMouseLeave={() => setHoveredOwnerId(null)}
+        >
+          <rect
+            x={padding}
+            y={padding}
+            width={Math.max(0, valueX - padding)}
+            height={Math.max(0, rateY - padding)}
+            fill="var(--success)"
+            opacity="0.035"
+          />
+          <rect
+            x={valueX}
+            y={padding}
+            width={Math.max(0, width - padding - valueX)}
+            height={Math.max(0, rateY - padding)}
+            fill="var(--success)"
+            opacity="0.075"
+          />
+          <rect
+            x={padding}
+            y={rateY}
+            width={Math.max(0, valueX - padding)}
+            height={Math.max(0, height - padding - rateY)}
+            fill="var(--warning)"
+            opacity="0.035"
+          />
+          <rect
+            x={valueX}
+            y={rateY}
+            width={Math.max(0, width - padding - valueX)}
+            height={Math.max(0, height - padding - rateY)}
+            fill="var(--destructive)"
+            opacity="0.04"
+          />
 
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="min-w-[620px] w-full"
-        onMouseLeave={() => setHoveredOwnerId(null)}
-      >
-        <rect
-          x={padding}
-          y={padding}
-          width={Math.max(0, valueX - padding)}
-          height={Math.max(0, rateY - padding)}
-          fill="var(--success)"
-          opacity="0.035"
-        />
-        <rect
-          x={valueX}
-          y={padding}
-          width={Math.max(0, width - padding - valueX)}
-          height={Math.max(0, rateY - padding)}
-          fill="var(--success)"
-          opacity="0.075"
-        />
-        <rect
-          x={padding}
-          y={rateY}
-          width={Math.max(0, valueX - padding)}
-          height={Math.max(0, height - padding - rateY)}
-          fill="var(--warning)"
-          opacity="0.035"
-        />
-        <rect
-          x={valueX}
-          y={rateY}
-          width={Math.max(0, width - padding - valueX)}
-          height={Math.max(0, height - padding - rateY)}
-          fill="var(--destructive)"
-          opacity="0.04"
-        />
+          <line
+            x1={padding}
+            x2={padding}
+            y1={padding}
+            y2={height - padding}
+            stroke="var(--app-divider)"
+          />
+          <line
+            x1={padding}
+            x2={width - padding}
+            y1={height - padding}
+            y2={height - padding}
+            stroke="var(--app-divider)"
+          />
 
-        <line x1={padding} x2={padding} y1={padding} y2={height - padding} stroke="var(--app-divider)" />
-        <line x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} stroke="var(--app-divider)" />
-        <line x1={valueX} x2={valueX} y1={padding} y2={height - padding} stroke="var(--app-text-secondary)" strokeDasharray="5 5" opacity="0.7" />
-        <line x1={padding} x2={width - padding} y1={rateY} y2={rateY} stroke="var(--app-text-secondary)" strokeDasharray="5 5" opacity="0.7" />
+          <line
+            x1={valueX}
+            x2={valueX}
+            y1={padding}
+            y2={height - padding}
+            stroke="var(--app-text-secondary)"
+            strokeDasharray="6 6"
+            opacity="0.75"
+          />
+          <line
+            x1={padding}
+            x2={width - padding}
+            y1={rateY}
+            y2={rateY}
+            stroke="var(--app-text-secondary)"
+            strokeDasharray="6 6"
+            opacity="0.75"
+          />
 
-        <text x={padding + 12} y={padding + 20} fontSize="11" fill="var(--success)">ØªØ¨Ø¯ÛŒÙ„ Ø®ÙˆØ¨ØŒ ÙØ±ØµØª Ú©Ù…</text>
-        <text x={width - padding - 12} y={padding + 20} textAnchor="end" fontSize="11" fill="var(--success)">Ø¹Ù…Ù„Ú©Ø±Ø¯ Ø¨Ø±ØªØ±</text>
-        <text x={padding + 12} y={height - padding - 12} fontSize="11" fill="var(--app-text-secondary)">Ù†ÛŒØ§Ø²Ù…Ù†Ø¯ Ø¨Ø±Ø±Ø³ÛŒ</text>
-        <text x={width - padding - 12} y={height - padding - 12} textAnchor="end" fontSize="11" fill="var(--destructive)">ÙØ±ØµØª Ø²ÛŒØ§Ø¯ØŒ ØªØ¨Ø¯ÛŒÙ„ Ù¾Ø§ÛŒÛŒÙ†</text>
+          <text
+            x={padding + 12}
+            y={padding + 20}
+            fontSize="11"
+            fill="var(--success)"
+          >
+            تبدیل خوب، فرصت کم
+          </text>
+          <text
+            x={width - padding - 12}
+            y={padding + 20}
+            textAnchor="end"
+            fontSize="11"
+            fill="var(--success)"
+          >
+            عملکرد برتر
+          </text>
+          <text
+            x={padding + 12}
+            y={height - padding - 12}
+            fontSize="11"
+            fill="var(--app-text-secondary)"
+          >
+            نیازمند بررسی
+          </text>
+          <text
+            x={width - padding - 12}
+            y={height - padding - 12}
+            textAnchor="end"
+            fontSize="11"
+            fill="var(--destructive)"
+          >
+            فرصت زیاد، تبدیل پایین
+          </text>
 
-        <text x={width / 2} y={height - 12} textAnchor="middle" className="fill-muted-foreground text-[11px]">Ø§Ø±Ø²Ø´ ÙØ±ØµØªâ€ŒÙ‡Ø§ÛŒ ÙØ±ÙˆØ´</text>
-        <text x={valueX + 6} y={height - padding + 18} fontSize="9" fill="var(--app-text-secondary)">Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ø§Ø±Ø²Ø´ ØªÛŒÙ…</text>
-        <text x={padding + 5} y={rateY - 7} fontSize="9" fill="var(--app-text-secondary)">Ù…ÛŒØ§Ù†Ú¯ÛŒÙ† Ù†Ø±Ø® ØªØ¨Ø¯ÛŒÙ„ ØªÛŒÙ…</text>
+          <text
+            x={width / 2}
+            y={height - 16}
+            textAnchor="middle"
+            className="fill-muted-foreground text-[11px]"
+          >
+            ارزش فرصت‌های فروش
+          </text>
 
-        {data.map((item) => {
-          const x =
-            padding +
-            (item.pipelineValue / maxValue) * (width - padding * 2)
-          const y =
-            height -
-            padding -
-            (Math.min(100, item.conversionRate) / 100) *
-              (height - padding * 2)
-          const r = Math.max(8, Math.min(16, 7 + Math.sqrt(item.total)))
-          const isHovered = hoveredOwnerId === item.ownerId
+          <text
+            x={padding + 7}
+            y={rateY - 8}
+            fontSize="9"
+            fill="var(--app-text-secondary)"
+          >
+            میانگین نرخ تبدیل
+          </text>
 
-          return (
-            <g
-              key={item.ownerId}
-              className="cursor-pointer"
-              onMouseEnter={() => setHoveredOwnerId(item.ownerId)}
-              onFocus={() => setHoveredOwnerId(item.ownerId)}
-              onBlur={() => setHoveredOwnerId(null)}
-              tabIndex={0}
-              role="button"
-              aria-label={`Ù†Ù…Ø§ÛŒØ´ Ø¬Ø²Ø¦ÛŒØ§Øª Ø¹Ù…Ù„Ú©Ø±Ø¯ ${item.ownerName}`}
-            >
-              <circle
-                cx={x}
-                cy={y}
-                r={isHovered ? r + 2 : r}
-                fill="var(--app-primary)"
-                fillOpacity={isHovered ? 0.95 : 0.78}
-                stroke="var(--app-surface)"
-                strokeWidth="3"
-              />
-              <text
-                x={x}
-                y={y - r - 7}
-                textAnchor="middle"
-                className="fill-foreground text-[10px] font-medium"
+          <text
+            x={valueX + 6}
+            y={height - padding + 18}
+            fontSize="9"
+            fill="var(--app-text-secondary)"
+          >
+            میانگین ارزش فرصت‌ها
+          </text>
+
+          {data.map((item) => {
+            const x =
+              padding +
+              (item.pipelineValue / maxValue) * (width - padding * 2)
+
+            const y =
+              height -
+              padding -
+              (Math.min(100, item.conversionRate) / 100) *
+                (height - padding * 2)
+
+            const r = Math.max(8, Math.min(17, 7 + Math.sqrt(item.total)))
+            const active = hoveredOwnerId === item.ownerId
+
+            return (
+              <g
+                key={item.ownerId}
+                className="cursor-pointer"
+                onMouseEnter={() => setHoveredOwnerId(item.ownerId)}
               >
-                {item.ownerName}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={active ? r + 2 : r}
+                  fill="var(--app-primary)"
+                  fillOpacity={active ? 0.95 : 0.78}
+                  stroke="var(--app-surface)"
+                  strokeWidth="3"
+                />
+                <text
+                  x={x}
+                  y={y - r - 8}
+                  textAnchor="middle"
+                  className="fill-foreground text-[10px] font-medium"
+                >
+                  {item.ownerName}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
+      </div>
     </div>
   )
 }
