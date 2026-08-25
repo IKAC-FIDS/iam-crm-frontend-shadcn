@@ -699,14 +699,14 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             opacity="0.8"
           />
 
-          <text x={padding + 12} y={padding + 22} fontSize="12" fill="#2E7D32">
+          <text x={padding + 18} y={padding + 24} fontSize="11" fill="#2E7D32">
             تبدیل خوب، فرصت کم
           </text>
           <text
-            x={width - padding - 12}
-            y={padding + 22}
+            x={width - padding - 18}
+            y={padding + 24}
             textAnchor="end"
-            fontSize="12"
+            fontSize="11"
             fill="#2E7D32"
           >
             عملکرد برتر
@@ -714,16 +714,16 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
           <text
             x={padding + 12}
             y={height - padding - 16}
-            fontSize="12"
+            fontSize="11"
             fill="#64748B"
           >
             نیازمند بررسی
           </text>
           <text
-            x={width - padding - 12}
+            x={width - padding - 18}
             y={height - padding - 16}
             textAnchor="end"
-            fontSize="12"
+            fontSize="11"
             fill="#C62828"
           >
             فرصت زیاد، تبدیل پایین
@@ -733,23 +733,23 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             x={width / 2}
             y={height - 14}
             textAnchor="middle"
-            className="fill-muted-foreground text-[12px]"
+            className="fill-muted-foreground text-[11px]"
           >
             ارزش فرصت‌های فروش
           </text>
           <text
             x={20}
             y={height / 2}
-            transform={`rotate(-90 20 ${height / 2})`}
+            transform={`rotate(-90 18 ${height / 2})`}
             textAnchor="middle"
-            className="fill-muted-foreground text-[12px]"
+            className="fill-muted-foreground text-[11px]"
           >
             نرخ تبدیل
           </text>
-          <text x={valueX + 8} y={height - padding + 18} fontSize="10" fill="var(--app-text-secondary)">
+          <text x={valueX + 6} y={height - padding + 16} fontSize="9" fill="var(--app-text-secondary)">
             میانگین ارزش تیم
           </text>
-          <text x={padding + 8} y={rateY - 8} fontSize="10" fill="var(--app-text-secondary)">
+          <text x={padding + 6} y={rateY - 7} fontSize="9" fill="var(--app-text-secondary)">
             میانگین نرخ تبدیل
           </text>
 
@@ -1006,15 +1006,14 @@ export function ReportsPage() {
           </section>
 
           <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-            <div className="mb-5 flex items-start justify-between gap-4">
+            <div className="mb-3 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold">عملکرد تیم فروش</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  هر دایره یک کارشناس است؛ محور افقی ارزش فرصت‌ها و محور عمودی نرخ
-                  تبدیل را نشان می‌دهد.
+                <h2 className="text-base font-bold">عملکرد تیم فروش</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس
                 </p>
               </div>
-              <UsersRound className="size-5 text-[var(--app-primary)]" />
+              <UsersRound className="size-4 text-[var(--app-primary)]" />
             </div>
             <OwnerScatter data={data.owners} />
           </section>
