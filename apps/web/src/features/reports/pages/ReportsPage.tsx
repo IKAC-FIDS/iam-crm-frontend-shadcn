@@ -497,9 +497,20 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
     )
   }
 
-  const width = 760
-  const height = 430
-  const padding = 68
+  const width = 860
+  const height = 470
+  const left = 110
+  const right = 110
+  const top = 64
+  const bottom = 92
+
+  const plotLeft = left
+  const plotRight = width - right
+  const plotTop = top
+  const plotBottom = height - bottom
+  const plotWidth = plotRight - plotLeft
+  const plotHeight = plotBottom - plotTop
+
   const maxValue = Math.max(1, ...data.map((item) => item.pipelineValue))
 
   const averageRate =
@@ -507,13 +518,12 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   const averageValue =
     data.reduce((sum, item) => sum + item.pipelineValue, 0) / data.length
 
-  const valueX = padding + (averageValue / maxValue) * (width - padding * 2)
+  const valueX = plotLeft + (averageValue / maxValue) * plotWidth
   const rateY =
-    height -
-    padding -
-    (Math.min(100, averageRate) / 100) * (height - padding * 2)
+    plotBottom - (Math.min(100, averageRate) / 100) * plotHeight
 
-  const hovered = data.find((item) => item.ownerId === hoveredOwnerId) ?? null
+  const hovered =
+    data.find((item) => item.ownerId === hoveredOwnerId) ?? null
 
   const getStatus = (pipelineValue: number, conversionRate: number) => {
     const valueAbove = pipelineValue >= averageValue
@@ -527,6 +537,9 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
   const valueDiffPercent = (value: number) =>
     averageValue === 0 ? 0 : ((value - averageValue) / averageValue) * 100
+
+  const leftQuadrantCenter = (plotLeft + valueX) / 2
+  const rightQuadrantCenter = (valueX + plotRight) / 2
 
   return (
     <div className="relative">
@@ -597,14 +610,18 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                 <span className="text-muted-foreground">ارزش فرصت‌ها</span>
                 <strong>
                   {fa(Math.abs(pipelineDiff), 1)}٪
-                  <span className="ms-1">{pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}</span>
+                  <span className="ms-1">
+                    {pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                  </span>
                 </strong>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">نرخ تبدیل</span>
                 <strong>
                   {fa(Math.abs(rateDiff), 1)} واحد درصد
-                  <span className="ms-1">{rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}</span>
+                  <span className="ms-1">
+                    {rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                  </span>
                 </strong>
               </div>
             </div>
@@ -613,14 +630,10 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
             <div className="mb-2 font-bold">فرمول جایگاه</div>
             <div className="space-y-1 leading-6 text-muted-foreground">
+              <p>محور افقی = ارزش فرصت‌ها در مقایسه با میانگین تیم</p>
+              <p>محور عمودی = نرخ تبدیل در مقایسه با میانگین تیم</p>
               <p>
-                محور افقی = ارزش فرصت‌های کارشناس در مقایسه با میانگین تیم
-              </p>
-              <p>
-                محور عمودی = نرخ تبدیل کارشناس در مقایسه با میانگین تیم
-              </p>
-              <p>
-                نتیجه این کارشناس: <strong className="text-foreground">{status}</strong>
+                نتیجه: <strong className="text-foreground">{status}</strong>
               </p>
             </div>
           </div>
@@ -630,68 +643,68 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
       <div className="overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[700px] w-full"
+          className="min-w-[760px] w-full"
           onMouseLeave={() => setHoveredOwnerId(null)}
         >
           <rect
-            x={padding}
-            y={padding}
-            width={Math.max(0, valueX - padding)}
-            height={Math.max(0, rateY - padding)}
+            x={plotLeft}
+            y={plotTop}
+            width={Math.max(0, valueX - plotLeft)}
+            height={Math.max(0, rateY - plotTop)}
             fill="#2E7D32"
             opacity="0.035"
           />
           <rect
             x={valueX}
-            y={padding}
-            width={Math.max(0, width - padding - valueX)}
-            height={Math.max(0, rateY - padding)}
+            y={plotTop}
+            width={Math.max(0, plotRight - valueX)}
+            height={Math.max(0, rateY - plotTop)}
             fill="#2E7D32"
             opacity="0.08"
           />
           <rect
-            x={padding}
+            x={plotLeft}
             y={rateY}
-            width={Math.max(0, valueX - padding)}
-            height={Math.max(0, height - padding - rateY)}
+            width={Math.max(0, valueX - plotLeft)}
+            height={Math.max(0, plotBottom - rateY)}
             fill="#64748B"
             opacity="0.04"
           />
           <rect
             x={valueX}
             y={rateY}
-            width={Math.max(0, width - padding - valueX)}
-            height={Math.max(0, height - padding - rateY)}
+            width={Math.max(0, plotRight - valueX)}
+            height={Math.max(0, plotBottom - rateY)}
             fill="#C62828"
             opacity="0.04"
           />
 
           <line
-            x1={padding}
-            x2={padding}
-            y1={padding}
-            y2={height - padding}
+            x1={plotLeft}
+            x2={plotLeft}
+            y1={plotTop}
+            y2={plotBottom}
             stroke="var(--app-divider)"
           />
           <line
-            x1={padding}
-            x2={width - padding}
-            y1={height - padding}
-            y2={height - padding}
+            x1={plotLeft}
+            x2={plotRight}
+            y1={plotBottom}
+            y2={plotBottom}
             stroke="var(--app-divider)"
           />
           <line
             x1={valueX}
             x2={valueX}
-            y1={padding}
-            y2={height - padding}
+            y1={plotTop}
+            y2={plotBottom}
             stroke="var(--app-text-secondary)"
             strokeDasharray="7 7"
             opacity="0.8"
           />
           <line
-            x1={padding}
-            x2={width - padding}
+            x1={plotLeft}
+            x2={plotRight}
             y1={rateY}
             y2={rateY}
             stroke="var(--app-text-secondary)"
@@ -699,66 +712,94 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             opacity="0.8"
           />
 
-          <text x={padding + 18} y={padding + 24} fontSize="11" fill="#2E7D32">
+          {/* Quadrant labels: centered inside each quadrant to avoid clipping */}
+          <text
+            x={leftQuadrantCenter}
+            y={plotTop + 28}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="600"
+            fill="#2E7D32"
+          >
             تبدیل خوب، فرصت کم
           </text>
           <text
-            x={width - padding - 18}
-            y={padding + 24}
-            textAnchor="end"
+            x={rightQuadrantCenter}
+            y={plotTop + 28}
+            textAnchor="middle"
             fontSize="11"
+            fontWeight="600"
             fill="#2E7D32"
           >
             عملکرد برتر
           </text>
           <text
-            x={padding + 12}
-            y={height - padding - 16}
+            x={leftQuadrantCenter}
+            y={plotBottom - 22}
+            textAnchor="middle"
             fontSize="11"
+            fontWeight="600"
             fill="#64748B"
           >
             نیازمند بررسی
           </text>
           <text
-            x={width - padding - 18}
-            y={height - padding - 16}
-            textAnchor="end"
+            x={rightQuadrantCenter}
+            y={plotBottom - 22}
+            textAnchor="middle"
             fontSize="11"
+            fontWeight="600"
             fill="#C62828"
           >
             فرصت زیاد، تبدیل پایین
           </text>
 
+          {/* Axis titles */}
           <text
             x={width / 2}
-            y={height - 14}
+            y={height - 18}
             textAnchor="middle"
             className="fill-muted-foreground text-[11px]"
           >
             ارزش فرصت‌های فروش
           </text>
           <text
-            x={20}
-            y={height / 2}
-            transform={`rotate(-90 18 ${height / 2})`}
+            x={30}
+            y={(plotTop + plotBottom) / 2}
+            transform={`rotate(-90 30 ${(plotTop + plotBottom) / 2})`}
             textAnchor="middle"
             className="fill-muted-foreground text-[11px]"
           >
             نرخ تبدیل
           </text>
-          <text x={valueX + 6} y={height - padding + 16} fontSize="9" fill="var(--app-text-secondary)">
+
+          {/* Average labels */}
+          <text
+            x={valueX}
+            y={plotBottom + 24}
+            textAnchor="middle"
+            fontSize="9"
+            fill="var(--app-text-secondary)"
+          >
             میانگین ارزش تیم
           </text>
-          <text x={padding + 6} y={rateY - 7} fontSize="9" fill="var(--app-text-secondary)">
+          <text
+            x={plotLeft + 8}
+            y={rateY - 9}
+            textAnchor="start"
+            fontSize="9"
+            fill="var(--app-text-secondary)"
+          >
             میانگین نرخ تبدیل
           </text>
 
           {data.map((item) => {
-            const x = padding + (item.pipelineValue / maxValue) * (width - padding * 2)
+            const x =
+              plotLeft + (item.pipelineValue / maxValue) * plotWidth
             const y =
-              height -
-              padding -
-              (Math.min(100, item.conversionRate) / 100) * (height - padding * 2)
+              plotBottom -
+              (Math.min(100, item.conversionRate) / 100) * plotHeight
+
             const r = Math.max(9, Math.min(17, 7 + Math.sqrt(item.total)))
             const active = hoveredOwnerId === item.ownerId
 
@@ -779,9 +820,9 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                 />
                 <text
                   x={x}
-                  y={y - r - 8}
+                  y={y - r - 9}
                   textAnchor="middle"
-                  className="fill-foreground text-[11px] font-bold"
+                  className="fill-foreground text-[10px] font-bold"
                 >
                   {item.ownerName}
                 </text>
