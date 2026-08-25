@@ -13,7 +13,10 @@ import {
 import { useMemo, useState } from "react"
 
 import { ErrorState } from "@/components/shared/ErrorState"
-import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import {
+  PersianDateRangePicker,
+  type PersianDateRange,
+} from "@/components/shared/PersianDateRangePicker"
 import { Button } from "@workspace/ui/components/button"
 
 import type {
@@ -26,6 +29,7 @@ import { useReportsAnalytics } from "../hooks/useReportsAnalytics"
 function fa(value: number, digits = 0) {
   return new Intl.NumberFormat("fa-IR", {
     maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
   }).format(value)
 }
 
@@ -35,6 +39,30 @@ function monthLabel(value: string) {
     year: "2-digit",
     month: "short",
   }).format(new Date(Date.UTC(year, month - 1, 1)))
+}
+
+function normalizeText(value: string) {
+  return value
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function findMilestoneRate(
+  milestones: ConversionHealth["milestones"],
+  matchers: string[],
+) {
+  const hit = milestones.find((item) => {
+    const label = normalizeText(item.label).toLowerCase()
+    const key = item.key.toLowerCase()
+    return matchers.some((matcher) => {
+      const needle = normalizeText(matcher).toLowerCase()
+      return label.includes(needle) || key.includes(needle)
+    })
+  })
+
+  return hit?.reachRate ?? 0
 }
 
 function MetricDelta({
@@ -48,13 +76,12 @@ function MetricDelta({
 }) {
   const neutral = metric.delta === 0
   const positive = inverse ? metric.delta < 0 : metric.delta > 0
-  const Icon =
-    metric.delta > 0 ? ArrowUp : metric.delta < 0 ? ArrowDown : Activity
+  const Icon = metric.delta > 0 ? ArrowUp : metric.delta < 0 ? ArrowDown : Activity
 
   return (
     <span
       className={[
-        "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
         neutral
           ? "bg-muted text-muted-foreground"
           : positive
@@ -87,12 +114,12 @@ function KpiCard({
   icon: typeof TrendingUp
 }) {
   return (
-    <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+    <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{title}</p>
           <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
-          <p className="mt-2 text-xs leading-6 text-muted-foreground">{helper}</p>
+          <p className="mt-1 text-xs leading-6 text-muted-foreground">{helper}</p>
         </div>
         <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
           <Icon className="size-5" />
@@ -105,281 +132,266 @@ function KpiCard({
   )
 }
 
-function OutcomeDonut({ data }: { data: ConversionHealth["outcomes"] }) {
-  const won = data.find((item) => item.key === "won")?.rate ?? 0
-  const lost = data.find((item) => item.key === "lost")?.rate ?? 0
-  const hold = data.find((item) => item.key === "onHold")?.rate ?? 0
-
-  const gradient = `conic-gradient(
-    #2E7D32 0 ${won}%,
-    #C62828 ${won}% ${won + lost}%,
-    #F9A825 ${won + lost}% ${won + lost + hold}%,
-    #2196F3 ${won + lost + hold}% 100%
-  )`
-
-  const tone: Record<string, string> = {
+function LeadStatusChart({ data }: { data: ConversionHealth["outcomes"] }) {
+  const colors: Record<string, string> = {
     won: "#2E7D32",
     lost: "#C62828",
     onHold: "#F9A825",
     active: "#2196F3",
   }
 
-  const labels: Record<string, string> = {
-    won: "مشتری",
-    lost: "از دست‌رفته",
-    onHold: "متوقف",
-    active: "در جریان",
-  }
+  const ordered = ["active", "won", "lost", "onHold"]
+    .map((key) => data.find((item) => item.key === key))
+    .filter(Boolean) as ConversionHealth["outcomes"]
+
+  const wonRate = ordered.find((item) => item.key === "won")?.rate ?? 0
+  let pointer = 0
+  const segments = ordered.map((item) => {
+    const start = pointer
+    pointer += item.rate
+    return `${colors[item.key]} ${start}% ${pointer}%`
+  })
+  const gradient = `conic-gradient(${segments.join(", ")})`
 
   return (
-    <div className="grid gap-6 md:grid-cols-[210px_1fr] md:items-center">
-      <div
-        className="relative mx-auto size-48 rounded-full"
-        style={{ background: gradient }}
-      >
-        <div className="absolute inset-7 grid place-items-center rounded-full bg-[var(--app-surface)] text-center">
-          <div>
-            <div className="text-3xl font-black">{fa(won, 1)}٪</div>
-            <div className="mt-1 text-xs text-muted-foreground">تبدیل به مشتری</div>
-          </div>
-        </div>
-      </div>
-
+    <div className="grid gap-6 lg:grid-cols-[1.2fr_320px] lg:items-center">
       <div className="grid gap-3">
-        {data.map((item) => (
+        {ordered.map((item) => (
           <div
             key={item.key}
-            className="flex items-center justify-between rounded-2xl border border-[var(--app-divider)] px-4 py-3"
+            className="rounded-[22px] border border-[var(--app-divider)] px-4 py-3"
           >
-            <div className="flex items-center gap-3">
-              <span
-                className="size-3 rounded-full"
-                style={{ backgroundColor: tone[item.key] }}
-              />
-              <span className="text-sm font-medium">
-                {labels[item.key] ?? item.label}
-              </span>
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span
+                  className="size-3 rounded-full"
+                  style={{ backgroundColor: colors[item.key] }}
+                />
+                <span className="text-base font-bold">{item.label}</span>
+              </div>
+              <div className="text-left">
+                <div className="text-xl font-black">{fa(item.rate, 1)}٪</div>
+                <div className="text-xs text-muted-foreground">
+                  {fa(item.count)} مورد
+                </div>
+              </div>
             </div>
-            <div className="text-left">
-              <span className="font-bold">{fa(item.rate, 1)}٪</span>
-              <span className="ms-2 text-xs text-muted-foreground">
-                {fa(item.count)} مورد
-              </span>
+            <div className="h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(item.rate > 0 ? 5 : 0, item.rate)}%`,
+                  backgroundColor: colors[item.key],
+                }}
+              />
             </div>
           </div>
         ))}
       </div>
-    </div>
-  )
-}
 
-function ProgressChart({ data }: { data: ConversionHealth["milestones"] }) {
-  const labels: Record<string, string> = {
-    engagement: "تعامل اولیه",
-    qualification: "ارزیابی",
-    commercial: "تجاری",
-    pilot: "پایلوت",
-    delivery: "تحویل",
-    acceptance: "پذیرش",
-    won: "مشتری",
-  }
-
-  return (
-    <div className="space-y-4">
-      {data.map((item) => (
-        <div
-          key={item.key}
-          className="grid grid-cols-[92px_1fr_64px] items-center gap-3"
-        >
-          <p className="truncate text-sm font-medium">
-            {labels[item.key] ?? item.label}
-          </p>
-          <div className="h-3 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-[var(--app-primary)] transition-all"
-              style={{
-                width: `${Math.max(item.reachRate > 0 ? 3 : 0, item.reachRate)}%`,
-              }}
-            />
-          </div>
-          <div className="text-left text-sm font-bold">
-            {fa(item.reachRate, 1)}٪
+      <div className="flex justify-center">
+        <div className="relative size-72 rounded-full" style={{ background: gradient }}>
+          <div className="absolute inset-10 grid place-items-center rounded-full bg-[var(--app-surface)] text-center">
+            <div>
+              <div className="text-4xl font-black">{fa(wonRate, 1)}٪</div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                تبدیل به مشتری
+              </div>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
     </div>
   )
 }
 
 function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-
   if (!data.length) {
     return (
-      <div className="grid h-64 place-items-center text-sm text-muted-foreground">
-        داده‌ای برای نمایش روند وجود ندارد.
+      <div className="grid h-60 place-items-center text-sm text-muted-foreground">
+        داده‌ای برای روند زمانی وجود ندارد.
       </div>
     )
   }
 
-  const width = 900
-  const height = 290
-  const left = 62
-  const right = 24
-  const top = 24
-  const bottom = 44
-  const plotWidth = width - left - right
-  const plotHeight = height - top - bottom
+  const width = 760
+  const height = 240
+  const padding = 30
   const max = Math.max(1, ...data.flatMap((item) => [item.leads, item.won]))
-
-  const xAt = (index: number) =>
-    data.length <= 1
-      ? width / 2
-      : left + (index * plotWidth) / (data.length - 1)
-
-  const yAt = (value: number) => top + plotHeight - (value / max) * plotHeight
-
-  const path = (key: "leads" | "won") =>
+  const points = (key: "leads" | "won") =>
     data
       .map((item, index) => {
-        const x = xAt(index)
-        const y = yAt(item[key])
-        return `${index === 0 ? "M" : "L"} ${x} ${y}`
+        const x =
+          data.length <= 1
+            ? width / 2
+            : padding + (index * (width - padding * 2)) / (data.length - 1)
+        const y =
+          height - padding - (item[key] / max) * (height - padding * 2)
+        return `${x},${y}`
       })
       .join(" ")
 
-  const hovered = hoveredIndex === null ? null : data[hoveredIndex]
-
   return (
-    <div className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-background)]/55 p-3">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--app-surface)] px-3 py-2.5">
-        <div className="flex flex-wrap gap-5 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <i className="size-2 rounded-full bg-[var(--app-primary)]" />
-            سرنخ‌های ایجادشده
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <i className="size-2 rounded-full bg-[var(--success)]" />
-            تبدیل‌شده به مشتری
-          </span>
-        </div>
-        <span className="text-[11px] text-muted-foreground">
-          روند ماهانه ورود و تبدیل سرنخ
+    <div>
+      <div className="mb-4 flex flex-wrap gap-4 text-xs">
+        <span className="inline-flex items-center gap-2">
+          <i className="h-0.5 w-5 bg-[#2196F3]" />سرنخ‌های ایجادشده
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <i className="h-0.5 w-5 bg-[#2E7D32]" />مشتری‌شده
         </span>
       </div>
-
-      <div className="relative overflow-x-auto">
-        {hovered ? (
-          <div className="pointer-events-none absolute end-4 top-3 z-10 min-w-40 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-3 text-xs shadow-[var(--app-shadow-popover)]">
-            <strong>{monthLabel(hovered.month)}</strong>
-            <div className="mt-2 grid gap-1.5 text-muted-foreground">
-              <div className="flex justify-between gap-6">
-                <span>ایجادشده</span>
-                <strong className="text-foreground">{fa(hovered.leads)}</strong>
-              </div>
-              <div className="flex justify-between gap-6">
-                <span>مشتری‌شده</span>
-                <strong className="text-foreground">{fa(hovered.won)}</strong>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[720px] w-full"
-          onMouseLeave={() => setHoveredIndex(null)}
-        >
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-            const y = top + ratio * plotHeight
-            const label = Math.round(max * (1 - ratio))
-            return (
-              <g key={ratio}>
-                <line
-                  x1={left}
-                  x2={width - right}
-                  y1={y}
-                  y2={y}
-                  stroke="var(--app-divider)"
-                />
-                <text
-                  x={left - 10}
-                  y={y + 4}
-                  textAnchor="end"
-                  fontSize="10"
-                  fill="var(--app-text-secondary)"
-                >
-                  {fa(label)}
-                </text>
-              </g>
-            )
-          })}
-
-          <path
-            d={path("leads")}
+      <div className="overflow-x-auto">
+        <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[620px]">
+          {[0.25, 0.5, 0.75].map((ratio) => (
+            <line
+              key={ratio}
+              x1={padding}
+              x2={width - padding}
+              y1={padding + ratio * (height - padding * 2)}
+              y2={padding + ratio * (height - padding * 2)}
+              stroke="currentColor"
+              className="text-border"
+              strokeDasharray="4 6"
+            />
+          ))}
+          <polyline
             fill="none"
-            stroke="var(--app-primary)"
-            strokeWidth="3"
+            stroke="#2196F3"
+            strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
+            points={points("leads")}
           />
-          <path
-            d={path("won")}
+          <polyline
             fill="none"
-            stroke="var(--success)"
-            strokeWidth="3"
+            stroke="#2E7D32"
+            strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
+            points={points("won")}
           />
-
           {data.map((item, index) => {
-            const x = xAt(index)
-            const leadY = yAt(item.leads)
-            const wonY = yAt(item.won)
-            const hitWidth = Math.max(48, plotWidth / Math.max(data.length, 1))
-
+            const x =
+              data.length <= 1
+                ? width / 2
+                : padding + (index * (width - padding * 2)) / (data.length - 1)
             return (
-              <g
+              <text
                 key={item.month}
-                className="cursor-pointer"
-                onMouseEnter={() => setHoveredIndex(index)}
+                x={x}
+                y={height - 4}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[11px]"
               >
-                <rect
-                  x={x - hitWidth / 2}
-                  y={top}
-                  width={hitWidth}
-                  height={plotHeight}
-                  fill="transparent"
-                />
-                <circle
-                  cx={x}
-                  cy={leadY}
-                  r={hoveredIndex === index ? 5 : 3.5}
-                  fill="var(--app-primary)"
-                  stroke="var(--app-surface)"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx={x}
-                  cy={wonY}
-                  r={hoveredIndex === index ? 5 : 3.5}
-                  fill="var(--success)"
-                  stroke="var(--app-surface)"
-                  strokeWidth="2"
-                />
-                <text
-                  x={x}
-                  y={height - 12}
-                  textAnchor="middle"
-                  fontSize="11"
-                  fill="var(--app-text-secondary)"
-                >
-                  {monthLabel(item.month)}
-                </text>
-              </g>
+                {monthLabel(item.month)}
+              </text>
             )
           })}
         </svg>
+      </div>
+    </div>
+  )
+}
+
+function FunnelChart({ data }: { data: ConversionHealth }) {
+  const proposalRate =
+    findMilestoneRate(data.milestones, ["تجاری"]) ||
+    findMilestoneRate(data.milestones, ["پیش‌فاکتور"]) ||
+    findMilestoneRate(data.milestones, ["پایلوت"])
+
+  const finalizeRate =
+    findMilestoneRate(data.milestones, ["تحویل"]) ||
+    findMilestoneRate(data.milestones, ["پذیرش"])
+
+  const phases = [
+    {
+      key: "lead",
+      label: "سرنخ",
+      rate: 100,
+      stages: ["سرنخ"],
+    },
+    {
+      key: "engagement",
+      label: "تعامل",
+      rate: findMilestoneRate(data.milestones, ["تعامل"]),
+      stages: ["تماس گرفته شده", "علاقه‌مند"],
+    },
+    {
+      key: "assessment",
+      label: "ارزیابی",
+      rate: findMilestoneRate(data.milestones, ["ارزیابی"]),
+      stages: ["واجد شرایط", "نیازسنجی"],
+    },
+    {
+      key: "proposal",
+      label: "پیشنهاد",
+      rate: proposalRate,
+      stages: [
+        "در انتظار تأیید پیش‌فاکتور",
+        "پایلوت زمان‌بندی شده",
+        "پایلوت در حال اجرا",
+        "در انتظار تأیید پایلوت",
+      ],
+    },
+    {
+      key: "finalize",
+      label: "نهایی‌سازی",
+      rate: finalizeRate,
+      stages: [
+        "در انتظار تأیید فاکتور پرداخت",
+        "نصب زمان‌بندی شده",
+        "نصب در حال اجرا",
+        "در انتظار پذیرش مشتری",
+      ],
+    },
+    {
+      key: "won",
+      label: "برنده",
+      rate: data.summary.leadToCustomer.current,
+      stages: ["انجام شده"],
+    },
+  ]
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+      <div className="space-y-3">
+        {phases.map((phase, index) => {
+          const visualWidth = Math.max(34, Math.min(100, 28 + phase.rate * 0.72))
+          const shade = Math.max(0.42, 0.96 - index * 0.08)
+          return (
+            <div key={phase.key} className="space-y-2">
+              <div
+                className="mx-auto flex h-16 items-center justify-between gap-4 px-5 text-white shadow-sm"
+                style={{
+                  width: `${visualWidth}%`,
+                  backgroundColor: `rgba(37, 99, 235, ${shade})`,
+                  clipPath: "polygon(7% 0, 100% 0, 93% 100%, 0 100%)",
+                }}
+              >
+                <span className="text-sm font-bold">{phase.label}</span>
+                <span className="text-lg font-black">{fa(phase.rate, 1)}٪</span>
+              </div>
+              <div className="text-center text-xs leading-6 text-muted-foreground">
+                {phase.stages.join(" • ")}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="rounded-[22px] border border-[var(--app-divider)] bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
+        <div className="mb-2 font-bold text-foreground">توضیح فانل</div>
+        <p>
+          این فانل بر اساس مسیر توافق‌شده نمایش داده می‌شود:
+          <span className="mx-1 font-medium text-foreground">
+            سرنخ ← تعامل ← ارزیابی ← پیشنهاد ← نهایی‌سازی ← برنده
+          </span>
+        </p>
+        <p className="mt-3">
+          وضعیت‌های «متوقف شده»، «بدون پاسخ» و «از دست رفته» خارج از فانل اصلی
+          هستند و در این نمودار نمایش داده نمی‌شوند.
+        </p>
       </div>
     </div>
   )
@@ -397,8 +409,8 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   }
 
   const width = 760
-  const height = 410
-  const padding = 66
+  const height = 430
+  const padding = 68
   const maxValue = Math.max(1, ...data.map((item) => item.pipelineValue))
 
   const averageRate =
@@ -406,15 +418,13 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
   const averageValue =
     data.reduce((sum, item) => sum + item.pipelineValue, 0) / data.length
 
-  const valueX =
-    padding + (averageValue / maxValue) * (width - padding * 2)
+  const valueX = padding + (averageValue / maxValue) * (width - padding * 2)
   const rateY =
     height -
     padding -
     (Math.min(100, averageRate) / 100) * (height - padding * 2)
 
-  const hovered =
-    data.find((item) => item.ownerId === hoveredOwnerId) ?? null
+  const hovered = data.find((item) => item.ownerId === hoveredOwnerId) ?? null
 
   const getStatus = (pipelineValue: number, conversionRate: number) => {
     const valueAbove = pipelineValue >= averageValue
@@ -431,14 +441,14 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
   return (
     <div className="relative">
-      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
         <span>
-          خط عمودی: میانگین ارزش فرصت‌های تیم{" "}
-          <strong className="text-foreground">{fa(averageValue)} ریال</strong>
+          خط عمودی: میانگین ارزش تیم
+          <strong className="ms-1 text-foreground">{fa(averageValue)} ریال</strong>
         </span>
         <span>
-          خط افقی: میانگین نرخ تبدیل تیم{" "}
-          <strong className="text-foreground">{fa(averageRate, 1)}٪</strong>
+          خط افقی: میانگین نرخ تبدیل تیم
+          <strong className="ms-1 text-foreground">{fa(averageRate, 1)}٪</strong>
         </span>
         <span>اندازه دایره: تعداد فرصت‌ها</span>
       </div>
@@ -450,7 +460,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
         return (
           <div
-            className="pointer-events-none absolute start-4 top-14 z-20 w-[330px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
+            className="pointer-events-none absolute start-4 top-14 z-20 w-[340px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
             dir="rtl"
           >
             <div className="flex items-start justify-between gap-3 border-b border-[var(--app-divider)] pb-3">
@@ -480,45 +490,49 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                 <span className="text-muted-foreground">نرخ تبدیل</span>
                 <strong>{fa(hovered.conversionRate, 1)}٪</strong>
               </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">میانگین نرخ تیم</span>
+                <strong>{fa(averageRate, 1)}٪</strong>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">میانگین ارزش تیم</span>
+                <strong>{fa(averageValue)} ریال</strong>
+              </div>
             </div>
 
             <div className="my-3 border-t border-[var(--app-divider)]" />
 
-            <div className="mb-2 font-bold">مقایسه با تیم</div>
+            <div className="mb-2 font-bold">اختلاف با تیم</div>
             <div className="grid gap-2">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">ارزش فرصت‌ها</span>
                 <strong>
-                  {fa(Math.abs(pipelineDiff), 1)}٪{" "}
-                  {pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                  {fa(Math.abs(pipelineDiff), 1)}٪
+                  <span className="ms-1">{pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}</span>
                 </strong>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span className="text-muted-foreground">نرخ تبدیل</span>
                 <strong>
-                  {fa(Math.abs(rateDiff), 1)} واحد درصد{" "}
-                  {rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                  {fa(Math.abs(rateDiff), 1)} واحد درصد
+                  <span className="ms-1">{rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}</span>
                 </strong>
               </div>
             </div>
 
             <div className="my-3 border-t border-[var(--app-divider)]" />
 
-            <div className="mb-2 font-bold">دلیل نتیجه</div>
-            <div className="grid gap-1.5 leading-5">
-              <div>
-                {hovered.pipelineValue >= averageValue ? "✓" : "•"} ارزش فرصت‌ها{" "}
-                {hovered.pipelineValue >= averageValue ? "بالاتر از" : "پایین‌تر از"} میانگین تیم است.
-              </div>
-              <div>
-                {hovered.conversionRate >= averageRate ? "✓" : "•"} نرخ تبدیل{" "}
-                {hovered.conversionRate >= averageRate ? "بالاتر از" : "پایین‌تر از"} میانگین تیم است.
-              </div>
-            </div>
-
-            <div className="mt-3 rounded-xl bg-muted/60 px-3 py-2">
-              <span className="text-muted-foreground">نتیجه: </span>
-              <strong>{status}</strong>
+            <div className="mb-2 font-bold">فرمول جایگاه</div>
+            <div className="space-y-1 leading-6 text-muted-foreground">
+              <p>
+                محور افقی = ارزش فرصت‌های کارشناس در مقایسه با میانگین تیم
+              </p>
+              <p>
+                محور عمودی = نرخ تبدیل کارشناس در مقایسه با میانگین تیم
+              </p>
+              <p>
+                نتیجه این کارشناس: <strong className="text-foreground">{status}</strong>
+              </p>
             </div>
           </div>
         )
@@ -527,7 +541,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
       <div className="overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[680px] w-full"
+          className="min-w-[700px] w-full"
           onMouseLeave={() => setHoveredOwnerId(null)}
         >
           <rect
@@ -535,7 +549,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={padding}
             width={Math.max(0, valueX - padding)}
             height={Math.max(0, rateY - padding)}
-            fill="var(--success)"
+            fill="#2E7D32"
             opacity="0.035"
           />
           <rect
@@ -543,23 +557,23 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={padding}
             width={Math.max(0, width - padding - valueX)}
             height={Math.max(0, rateY - padding)}
-            fill="var(--success)"
-            opacity="0.075"
+            fill="#2E7D32"
+            opacity="0.08"
           />
           <rect
             x={padding}
             y={rateY}
             width={Math.max(0, valueX - padding)}
             height={Math.max(0, height - padding - rateY)}
-            fill="var(--warning)"
-            opacity="0.035"
+            fill="#64748B"
+            opacity="0.04"
           />
           <rect
             x={valueX}
             y={rateY}
             width={Math.max(0, width - padding - valueX)}
             height={Math.max(0, height - padding - rateY)}
-            fill="var(--destructive)"
+            fill="#C62828"
             opacity="0.04"
           />
 
@@ -577,15 +591,14 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y2={height - padding}
             stroke="var(--app-divider)"
           />
-
           <line
             x1={valueX}
             x2={valueX}
             y1={padding}
             y2={height - padding}
             stroke="var(--app-text-secondary)"
-            strokeDasharray="6 6"
-            opacity="0.75"
+            strokeDasharray="7 7"
+            opacity="0.8"
           />
           <line
             x1={padding}
@@ -593,84 +606,71 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y1={rateY}
             y2={rateY}
             stroke="var(--app-text-secondary)"
-            strokeDasharray="6 6"
-            opacity="0.75"
+            strokeDasharray="7 7"
+            opacity="0.8"
           />
 
-          <text
-            x={padding + 12}
-            y={padding + 20}
-            fontSize="11"
-            fill="var(--success)"
-          >
+          <text x={padding + 12} y={padding + 22} fontSize="12" fill="#2E7D32">
             تبدیل خوب، فرصت کم
           </text>
           <text
             x={width - padding - 12}
-            y={padding + 20}
+            y={padding + 22}
             textAnchor="end"
-            fontSize="11"
-            fill="var(--success)"
+            fontSize="12"
+            fill="#2E7D32"
           >
             عملکرد برتر
           </text>
           <text
             x={padding + 12}
-            y={height - padding - 12}
-            fontSize="11"
-            fill="var(--app-text-secondary)"
+            y={height - padding - 16}
+            fontSize="12"
+            fill="#64748B"
           >
             نیازمند بررسی
           </text>
           <text
             x={width - padding - 12}
-            y={height - padding - 12}
+            y={height - padding - 16}
             textAnchor="end"
-            fontSize="11"
-            fill="var(--destructive)"
+            fontSize="12"
+            fill="#C62828"
           >
             فرصت زیاد، تبدیل پایین
           </text>
 
           <text
             x={width / 2}
-            y={height - 16}
+            y={height - 14}
             textAnchor="middle"
-            className="fill-muted-foreground text-[11px]"
+            className="fill-muted-foreground text-[12px]"
           >
             ارزش فرصت‌های فروش
           </text>
-
           <text
-            x={padding + 7}
-            y={rateY - 8}
-            fontSize="9"
-            fill="var(--app-text-secondary)"
+            x={20}
+            y={height / 2}
+            transform={`rotate(-90 20 ${height / 2})`}
+            textAnchor="middle"
+            className="fill-muted-foreground text-[12px]"
           >
+            نرخ تبدیل
+          </text>
+          <text x={valueX + 8} y={height - padding + 18} fontSize="10" fill="var(--app-text-secondary)">
+            میانگین ارزش تیم
+          </text>
+          <text x={padding + 8} y={rateY - 8} fontSize="10" fill="var(--app-text-secondary)">
             میانگین نرخ تبدیل
           </text>
 
-          <text
-            x={valueX + 6}
-            y={height - padding + 18}
-            fontSize="9"
-            fill="var(--app-text-secondary)"
-          >
-            میانگین ارزش فرصت‌ها
-          </text>
-
           {data.map((item) => {
-            const x =
-              padding +
-              (item.pipelineValue / maxValue) * (width - padding * 2)
-
+            const x = padding + (item.pipelineValue / maxValue) * (width - padding * 2)
             const y =
               height -
               padding -
-              (Math.min(100, item.conversionRate) / 100) *
-                (height - padding * 2)
-
-            const r = Math.max(8, Math.min(17, 7 + Math.sqrt(item.total)))
+              (Math.min(100, item.conversionRate) / 100) * (height - padding * 2)
+            const r = Math.max(9, Math.min(17, 7 + Math.sqrt(item.total)))
             const active = hoveredOwnerId === item.ownerId
 
             return (
@@ -684,7 +684,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                   cy={y}
                   r={active ? r + 2 : r}
                   fill="var(--app-primary)"
-                  fillOpacity={active ? 0.95 : 0.78}
+                  fillOpacity={active ? 0.96 : 0.78}
                   stroke="var(--app-surface)"
                   strokeWidth="3"
                 />
@@ -692,7 +692,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                   x={x}
                   y={y - r - 8}
                   textAnchor="middle"
-                  className="fill-foreground text-[10px] font-medium"
+                  className="fill-foreground text-[11px] font-bold"
                 >
                   {item.ownerName}
                 </text>
@@ -707,7 +707,6 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
 function InsightCards({ data }: { data: ConversionHealth }) {
   const leakage = data.biggestLeakage
-
   return (
     <section className="grid gap-4 lg:grid-cols-3">
       <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5">
@@ -717,16 +716,15 @@ function InsightCards({ data }: { data: ConversionHealth }) {
         </div>
         {leakage ? (
           <>
-            <p className="mt-4 text-2xl font-black">
-              {fa(leakage.dropRate, 1)}٪
-            </p>
-            <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              بیشترین افت بین «{leakage.fromLabel}» و «{leakage.toLabel}» است.
+            <p className="mt-4 text-2xl font-black">{fa(leakage.dropRate, 1)}٪</p>
+            <p className="mt-1 text-sm leading-7 text-muted-foreground">
+              بین «{leakage.fromLabel}» و «{leakage.toLabel}»؛
+              {" "}{fa(leakage.dropCount)} فرصت به مرحله بعد نرسیده‌اند.
             </p>
           </>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
-            داده کافی برای تشخیص ریزش وجود ندارد.
+            برای تشخیص نقطه ریزش داده کافی وجود ندارد.
           </p>
         )}
       </article>
@@ -734,13 +732,13 @@ function InsightCards({ data }: { data: ConversionHealth }) {
       <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5">
         <div className="flex items-center gap-2 text-[var(--app-primary)]">
           <Target className="size-5" />
-          <h3 className="font-bold">تبدیل سرنخ</h3>
+          <h3 className="font-bold">کیفیت تبدیل</h3>
         </div>
         <p className="mt-4 text-2xl font-black">
           {fa(data.summary.leadToCustomer.current, 1)}٪
         </p>
-        <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          این سهم از سرنخ‌ها در نهایت به مشتری تبدیل شده‌اند.
+        <p className="mt-1 text-sm leading-7 text-muted-foreground">
+          از سرنخ‌های بازه انتخابی، این درصد در نهایت به مشتری تبدیل شده‌اند.
         </p>
       </article>
 
@@ -750,8 +748,9 @@ function InsightCards({ data }: { data: ConversionHealth }) {
           <h3 className="font-bold">بازگشت از توقف</h3>
         </div>
         <p className="mt-4 text-2xl font-black">{fa(data.recovery.rate, 1)}٪</p>
-        <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          فرصت‌های متوقف‌شده‌ای که دوباره به چرخه فروش برگشته‌اند.
+        <p className="mt-1 text-sm leading-7 text-muted-foreground">
+          از فرصت‌هایی که وارد «متوقف شده» شده‌اند، این درصد دوباره به مسیر فروش
+          برگشته‌اند.
         </p>
       </article>
     </section>
@@ -759,17 +758,16 @@ function InsightCards({ data }: { data: ConversionHealth }) {
 }
 
 export function ReportsPage() {
-  const [fromDate, setFromDate] = useState<Date | undefined>()
-  const [toDate, setToDate] = useState<Date | undefined>()
+  const [dateRange, setDateRange] = useState<PersianDateRange | undefined>()
   const [scope, setScope] = useState<"all" | "mine">("all")
 
   const filters = useMemo<ReportFilters>(
     () => ({
-      startDate: fromDate?.toISOString(),
-      endDate: toDate?.toISOString(),
+      startDate: dateRange?.from?.toISOString(),
+      endDate: dateRange?.to?.toISOString(),
       ownershipScope: scope,
     }),
-    [fromDate, toDate, scope],
+    [dateRange, scope],
   )
 
   const query = useReportsAnalytics(filters)
@@ -777,15 +775,20 @@ export function ReportsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-5 shadow-[var(--app-shadow-card)] sm:px-6">
-        <div className="pointer-events-none absolute -end-16 -top-20 size-56 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-black tracking-tight">
-              تحلیل فروش
+      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
+        <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
+        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+              <TrendingUp className="size-4" />هوش فروش
+            </div>
+            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+              تحلیل فروش و سلامت مسیر
             </h1>
-            <p className="mt-1 truncate text-sm text-muted-foreground">
-              نمای کلی از تبدیل، ریزش و عملکرد تیم فروش
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
+              در این صفحه می‌بینید چند درصد سرنخ‌ها مشتری شده‌اند، فرصت‌ها در چه
+              وضعیتی هستند، تیم فروش چگونه عمل کرده و هر سرنخ در کدام فاز فانل قرار
+              می‌گیرد.
             </p>
           </div>
           <Button
@@ -801,20 +804,15 @@ export function ReportsPage() {
         </div>
       </section>
 
-      <section className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_auto] lg:items-center">
-          <PersianDatePicker
-            value={fromDate}
-            onChange={setFromDate}
-            placeholder="از تاریخ"
-            maxDate={toDate}
-          />
-          <PersianDatePicker
-            value={toDate}
-            onChange={setToDate}
-            placeholder="تا تاریخ"
-            minDate={fromDate}
-          />
+      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="min-w-0 flex-1">
+            <PersianDateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder="۹۰ روز اخیر"
+            />
+          </div>
           <div className="flex rounded-2xl bg-muted p-1">
             {(["all", "mine"] as const).map((value) => (
               <button
@@ -837,16 +835,16 @@ export function ReportsPage() {
 
       {query.isError ? (
         <ErrorState
-          title="دریافت گزارش با خطا مواجه شد"
-          description="دوباره تلاش کنید."
+          title="دریافت تحلیل فروش با خطا مواجه شد"
+          description="Endpoint مربوط به گزارش‌ها را در Backend بررسی کنید."
           retryLabel="تلاش مجدد"
           onRetry={() => void query.refetch()}
         />
       ) : null}
 
       {query.isLoading ? (
-        <div className="grid min-h-72 place-items-center rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">
-          در حال دریافت گزارش...
+        <div className="grid min-h-72 place-items-center rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">
+          در حال تحلیل داده‌های فروش...
         </div>
       ) : null}
 
@@ -854,43 +852,43 @@ export function ReportsPage() {
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              title="نرخ تبدیل"
+              title="تبدیل سرنخ به مشتری"
               value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
-              helper="سرنخ‌هایی که به مشتری تبدیل شده‌اند"
+              helper={`از ${fa(data.summary.totalLeads)} سرنخ در بازه انتخابی`}
               metric={data.summary.leadToCustomer}
               icon={Target}
             />
             <KpiCard
-              title="زمان تبدیل"
+              title="میانه زمان تبدیل"
               value={`${fa(data.summary.medianTimeToWinDays.current, 1)} روز`}
-              helper="میانه زمان تبدیل سرنخ به مشتری"
+              helper="از ایجاد سرنخ تا تبدیل به مشتری"
               metric={data.summary.medianTimeToWinDays}
               inverse
               suffix=" روز"
               icon={TimerReset}
             />
             <KpiCard
-              title="نرخ ریزش"
+              title="نرخ عدم موفقیت"
               value={`${fa(data.summary.lostRate.current, 1)}٪`}
-              helper="سرنخ‌های از دست‌رفته یا بدون پاسخ"
+              helper="سهم از دست رفته و بدون پاسخ از کل سرنخ‌ها"
               metric={data.summary.lostRate}
               inverse
               icon={CircleAlert}
             />
             <KpiCard
-              title="نرخ بازگشت"
+              title="بازگشت از توقف"
               value={`${fa(data.summary.recoveryRate.current, 1)}٪`}
-              helper="فرصت‌های برگشته از وضعیت توقف"
+              helper="فرصت‌هایی که از توقف دوباره فعال شده‌اند"
               metric={data.summary.recoveryRate}
               icon={RotateCcw}
             />
           </section>
 
           <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold">روند سرنخ‌ها</h2>
+            <div className="mb-5">
+              <h2 className="text-lg font-bold">روند جذب تا تبدیل</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                مقایسه ماهانه سرنخ‌های ایجادشده و تبدیل‌شده به مشتری
+                مقایسه تعداد سرنخ‌های ایجادشده با تعداد مشتری‌شده در طول بازه زمانی
               </p>
             </div>
             <TrendChart data={data.trend} />
@@ -901,20 +899,20 @@ export function ReportsPage() {
               <div className="mb-5">
                 <h2 className="text-lg font-bold">وضعیت سرنخ‌ها</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  وضعیت فعلی سرنخ‌های دوره انتخابی
+                  توزیع فعلی سرنخ‌ها در وضعیت‌های اصلی بازه انتخابی
                 </p>
               </div>
-              <OutcomeDonut data={data.outcomes} />
+              <LeadStatusChart data={data.outcomes} />
             </article>
 
             <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
               <div className="mb-5">
                 <h2 className="text-lg font-bold">پیشرفت در مسیر فروش</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  درصد سرنخ‌هایی که به هر مرحله اصلی رسیده‌اند
+                  نمایش فازهای فانل و استیج‌های هر فاز بر اساس مسیر توافق‌شده
                 </p>
               </div>
-              <ProgressChart data={data.milestones} />
+              <FunnelChart data={data} />
             </article>
           </section>
 
@@ -923,7 +921,8 @@ export function ReportsPage() {
               <div>
                 <h2 className="text-lg font-bold">عملکرد تیم فروش</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس
+                  هر دایره یک کارشناس است؛ محور افقی ارزش فرصت‌ها و محور عمودی نرخ
+                  تبدیل را نشان می‌دهد.
                 </p>
               </div>
               <UsersRound className="size-5 text-[var(--app-primary)]" />
@@ -937,5 +936,3 @@ export function ReportsPage() {
     </div>
   )
 }
-
-
