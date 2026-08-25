@@ -1,4 +1,4 @@
-﻿import { Navigate, createBrowserRouter } from "react-router-dom"
+import { Navigate, createBrowserRouter } from "react-router-dom"
 
 import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
@@ -18,6 +18,7 @@ import { OpportunityDetailPage } from "@/features/opportunities/pages/Opportunit
 import { OpportunityWorkspacePage } from "@/features/opportunities/pages/OpportunityWorkspacePage"
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 import { ReportsPage } from "@/features/reports/pages/ReportsPage"
+import { AdminUsersPage } from "@/features/admin/users/pages/AdminUsersPage"
 
 import { PermissionRoute } from "./PermissionRoute"
 import { ProtectedRoute } from "./ProtectedRoute"
@@ -35,7 +36,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/meetings" &&
       route.path !== "/opportunities" &&
       route.path !== "/pipeline" &&
-      route.path !== "/reports"
+      route.path !== "/reports" &&
+      route.path !== "/admin/users"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -218,6 +220,23 @@ export const router = createBrowserRouter([
           {
             path: "/account/profile",
             element: <AccountProfilePage />,
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: ["user:view"],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/admin/users",
+                element: <AdminUsersPage />,
+              },
+            ],
           },
           ...featureRoutes,
         ],
