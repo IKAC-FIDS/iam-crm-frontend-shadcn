@@ -21,6 +21,7 @@ import { ReportsPage } from "@/features/reports/pages/ReportsPage"
 import { AdminUsersPage } from "@/features/admin/users/pages/AdminUsersPage"
 import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
 import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/AdminExchangeRatesPage"
+import { AdminPermissionsPage } from "@/features/admin/permissions/pages/AdminPermissionsPage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
@@ -43,7 +44,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/reports" &&
       route.path !== "/admin/users" &&
       route.path !== "/admin/teams" &&
-      route.path !== "/admin/exchange-rates"
+      route.path !== "/admin/exchange-rates" &&
+      route.path !== "/admin/permissions"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -283,6 +285,28 @@ export const router = createBrowserRouter([
               {
                 path: "/admin/exchange-rates",
                 element: <AdminExchangeRatesPage />,
+              },
+            ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: [
+                    "permission:view",
+                    "permission:manage",
+                    "role:view",
+                    "role:manage",
+                  ],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/admin/permissions",
+                element: <AdminPermissionsPage />,
               },
             ],
           },
