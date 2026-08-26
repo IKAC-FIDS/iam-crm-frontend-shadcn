@@ -35,13 +35,51 @@ export type UserFilters = { page: number; limit: number; search?: string; role?:
 
 function rec(v: unknown): Record<string, unknown> | null { return v && typeof v === "object" ? v as Record<string, unknown> : null }
 function page<T>(value: unknown): { data: T[]; meta: PageMeta } {
-  const v = unwrapApiResponse<unknown>(value)
-  const r = rec(v)
-  if (r && Array.isArray(r.data) && r.meta && typeof r.meta === "object") return { data: r.data as T[], meta: r.meta as PageMeta }
-  if (Array.isArray(v)) return { data: v as T[], meta: { total: v.length, page: 1, limit: v.length || 20, totalPages: 1, hasNext: false, hasPrevious: false } }
-  return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0, hasNext: false, hasPrevious: false } }
-}
+  // Paginated backend responses arrive as:
+  // { success: true, data: [...], meta: {...}, requestId, timestamp }
+  // Read `meta` before unwrapApiResponse(), otherwise pagination totals are lost.
+  const raw = rec(value)
 
+  if (
+    raw &&
+    Array.isArray(raw.data) &&
+    raw.meta &&
+    typeof raw.meta === "object"
+  ) {
+    return {
+      data: raw.data as T[],
+      meta: raw.meta as PageMeta,
+    }
+  }
+
+  const v = unwrapApiResponse<unknown>(value)
+
+  if (Array.isArray(v)) {
+    return {
+      data: v as T[],
+      meta: {
+        total: v.length,
+        page: 1,
+        limit: v.length || 20,
+        totalPages: v.length ? 1 : 0,
+        hasNext: false,
+        hasPrevious: false,
+      },
+    }
+  }
+
+  return {
+    data: [],
+    meta: {
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+      hasNext: false,
+      hasPrevious: false,
+    },
+  }
+}
 export async function getUsers(filters: UserFilters) {
   const params: Record<string, string | number | boolean> = { page: filters.page, limit: filters.limit }
   if (filters.search?.trim()) params.search = filters.search.trim()
