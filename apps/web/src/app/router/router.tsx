@@ -19,6 +19,7 @@ import { OpportunityWorkspacePage } from "@/features/opportunities/pages/Opportu
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 import { ReportsPage } from "@/features/reports/pages/ReportsPage"
 import { AdminUsersPage } from "@/features/admin/users/pages/AdminUsersPage"
+import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
 import { PermissionRoute } from "./PermissionRoute"
 import { ProtectedRoute } from "./ProtectedRoute"
@@ -235,6 +236,10 @@ export const router = createBrowserRouter([
               {
                 path: "/admin/users",
                 element: <AdminUsersPage />,
+              },
+              {
+                path: "/admin/users/:userId",
+                element: <AdminUserDetailsPage />,
               },
             ],
           },
