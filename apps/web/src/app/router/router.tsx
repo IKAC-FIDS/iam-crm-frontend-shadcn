@@ -19,6 +19,8 @@ import { OpportunityWorkspacePage } from "@/features/opportunities/pages/Opportu
 import { FeaturePlaceholderPage } from "@/features/shared/pages/FeaturePlaceholderPage"
 import { ReportsPage } from "@/features/reports/pages/ReportsPage"
 import { AdminUsersPage } from "@/features/admin/users/pages/AdminUsersPage"
+import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
+import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
 import { PermissionRoute } from "./PermissionRoute"
@@ -38,7 +40,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/opportunities" &&
       route.path !== "/pipeline" &&
       route.path !== "/reports" &&
-      route.path !== "/admin/users"
+      route.path !== "/admin/users" &&
+      route.path !== "/admin/teams"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -240,6 +243,27 @@ export const router = createBrowserRouter([
               {
                 path: "/admin/users/:userId",
                 element: <AdminUserDetailsPage />,
+              },
+            ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: ["team:view", "team:manage"],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/admin/teams",
+                element: <AdminTeamsPage />,
+              },
+              {
+                path: "/admin/teams/:teamId",
+                element: <AdminTeamDetailsPage />,
               },
             ],
           },
