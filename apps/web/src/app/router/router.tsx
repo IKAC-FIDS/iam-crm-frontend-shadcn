@@ -24,6 +24,7 @@ import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/Ad
 import { AdminPermissionsPage } from "@/features/admin/permissions/pages/AdminPermissionsPage"
 import { AdminPipelinePage } from "@/features/admin/pipeline/pages/AdminPipelinePage"
 import { AdminAuditLogsPage } from "@/features/admin/audit-logs/pages/AdminAuditLogsPage"
+import { AdminLibrariesPage } from "@/features/admin/libraries/pages/AdminLibrariesPage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
@@ -49,7 +50,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/admin/exchange-rates" &&
       route.path !== "/admin/permissions" &&
       route.path !== "/admin/pipeline" &&
-      route.path !== "/admin/audit-logs"
+      route.path !== "/admin/audit-logs" &&
+      route.path !== "/admin/libraries"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -78,6 +80,12 @@ export const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <DashboardPage />,
+          },
+          {
+            element: (
+              <PermissionRoute policy={{ type: "permissions", mode: "any", permissions: ["library:industry:view", "library:industry:manage", "library:pain-point:view", "library:pain-point:manage", "library:use-case:view", "library:use-case:manage", "library:persona:view", "library:persona:manage", "library:lead-source:view", "library:lead-source:manage", "lookup:view", "lookup:manage", "library:university:view", "library:university:manage", "product:view", "product:manage"] }} />
+            ),
+            children: [{ path: "/admin/libraries", element: <AdminLibrariesPage /> }],
           },
           {
             element: (
