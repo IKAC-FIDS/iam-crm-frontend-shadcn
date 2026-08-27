@@ -3,19 +3,14 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
@@ -304,14 +299,11 @@ export function MeetingFormDialog({
           dir="rtl"
           className="max-h-[94vh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-[900px]"
         >
-          <DialogHeader className="border-b border-[var(--app-divider)] px-5 py-4 sm:px-6">
-            <DialogTitle className="text-base font-bold text-[var(--app-heading)]">
-              {meeting ? text.dialogs.editTitle : text.dialogs.createTitle}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-[var(--app-text-secondary)]">
-              {text.description}
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeroHeader
+            title={meeting ? text.dialogs.editTitle : text.dialogs.createTitle}
+            description={text.description}
+            onClose={() => onOpenChange(false)}
+          />
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
             <FormSection
               title={text.sections.context}

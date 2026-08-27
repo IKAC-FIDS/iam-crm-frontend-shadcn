@@ -19,7 +19,7 @@ export function FeaturePlaceholderPage() {
           <Construction className="size-6" />
         </div>
 
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-3 py-1 text-[11px] font-medium text-[var(--app-text-secondary)]">
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-3 py-1 text-xs font-medium text-[var(--app-text-secondary)]">
           <Sparkles className="size-3" />
           {uiText.placeholders.badge}
         </div>

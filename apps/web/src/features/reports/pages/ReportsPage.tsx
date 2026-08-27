@@ -282,7 +282,7 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
                 x={x}
                 y={height - 4}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[11px]"
+                className="fill-muted-foreground text-xs"
               >
                 {monthLabel(item.month)}
               </text>
@@ -388,7 +388,7 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
               <div className="text-base font-black text-foreground">
                 {hovered.label}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
+              <div className="mt-1 text-xs text-muted-foreground">
                 {hovered.helper}
               </div>
             </div>
@@ -396,7 +396,7 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
               <div className="text-2xl font-black text-[var(--app-primary)]">
                 {fa(hovered.rate, 1)}٪
               </div>
-              <div className="text-[11px] text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 حدود {fa(estimatedCount(hovered.rate))} سرنخ
               </div>
             </div>
@@ -439,7 +439,7 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
             >
               <div className="flex items-center justify-between gap-3 lg:block">
                 <div className="text-sm font-bold">{phase.label}</div>
-                <div className="mt-1 text-[11px] text-muted-foreground lg:hidden">
+                <div className="mt-1 text-xs text-muted-foreground lg:hidden">
                   {fa(phase.rate, 1)}٪
                 </div>
               </div>
@@ -462,14 +462,14 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
                   </div>
                 </div>
 
-                <div className="mt-1.5 truncate text-[11px] text-muted-foreground">
+                <div className="mt-1.5 truncate text-xs text-muted-foreground">
                   {phase.stages.join(" • ")}
                 </div>
               </div>
 
               <div className="hidden text-left lg:block">
                 <div className="text-lg font-black">{fa(phase.rate, 1)}٪</div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   {fa(count)} مورد
                 </div>
               </div>
@@ -543,7 +543,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 
   return (
     <div className="relative">
-      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+      <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <span>
           خط عمودی: میانگین ارزش تیم
           <strong className="ms-1 text-foreground">{fa(averageValue)} ریال</strong>
@@ -570,7 +570,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                 <div className="text-sm font-black text-foreground">
                   {hovered.ownerName}
                 </div>
-                <div className="mt-1 text-[11px] text-muted-foreground">
+                <div className="mt-1 text-xs text-muted-foreground">
                   جزئیات عملکرد کارشناس
                 </div>
               </div>
@@ -759,7 +759,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             x={width / 2}
             y={height - 18}
             textAnchor="middle"
-            className="fill-muted-foreground text-[11px]"
+            className="fill-muted-foreground text-xs"
           >
             ارزش فرصت‌های فروش
           </text>
@@ -768,7 +768,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={(plotTop + plotBottom) / 2}
             transform={`rotate(-90 30 ${(plotTop + plotBottom) / 2})`}
             textAnchor="middle"
-            className="fill-muted-foreground text-[11px]"
+            className="fill-muted-foreground text-xs"
           >
             نرخ تبدیل
           </text>
@@ -822,7 +822,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
                   x={x}
                   y={y - r - 9}
                   textAnchor="middle"
-                  className="fill-foreground text-[10px] font-bold"
+                  className="fill-foreground text-xs font-bold"
                 >
                   {item.ownerName}
                 </text>
@@ -909,10 +909,10 @@ export function ReportsPage() {
         <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
               <TrendingUp className="size-4" />هوش فروش
             </div>
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
+            <h1 className="ui-page-title">
               تحلیل فروش و سلامت مسیر
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">

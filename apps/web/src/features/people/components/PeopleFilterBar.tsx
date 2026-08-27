@@ -116,7 +116,7 @@ export function PeopleFilterBar({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--app-divider)] pt-3">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--app-text-secondary)]">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--app-text-secondary)]">
           <Filter className="size-3.5" />
           {text.filters.quickFilters}
         </span>
@@ -223,7 +223,7 @@ function FilterPill({
       type="button"
       onClick={onClick}
       className={[
-        "rounded-full border px-3 py-1.5 text-[10px] font-bold transition-colors",
+        "rounded-full border px-3 py-1.5 text-xs font-bold transition-colors",
         active
           ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
           : "border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-heading)]",

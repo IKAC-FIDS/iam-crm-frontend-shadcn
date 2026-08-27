@@ -1,14 +1,9 @@
-import { X } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
 import type {
@@ -95,7 +90,7 @@ export function PersonFormDialog({
     () =>
       Boolean(form.fullName.trim()) &&
       (mode === "edit" || Boolean(form.companyId)),
-    [form.companyId, form.fullName, mode],
+    [form.companyId, form.fullName, mode]
   )
 
   function patch(values: Partial<FormState>) {
@@ -125,30 +120,14 @@ export function PersonFormDialog({
         dir="rtl"
         className="max-h-[90vh] w-[min(900px,calc(100vw-24px))] max-w-none gap-0 overflow-hidden rounded-[30px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 shadow-[var(--app-shadow-elevated)] sm:max-w-none"
       >
-        <DialogHeader className="border-b border-[var(--app-divider)] bg-[linear-gradient(155deg,var(--app-primary-soft),var(--app-surface)_70%)] px-5 py-5 sm:px-7">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <DialogTitle className="text-lg font-bold text-[var(--app-heading)]">
-                {mode === "create"
-                  ? text.form.createTitle
-                  : text.form.editTitle}
-              </DialogTitle>
-              <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                {text.form.description}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="rounded-xl"
-              aria-label={text.actions.close}
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </DialogHeader>
+        <DialogHeroHeader
+          title={
+            mode === "create" ? text.form.createTitle : text.form.editTitle
+          }
+          description={text.form.description}
+          closeLabel={text.actions.close}
+          onClose={() => onOpenChange(false)}
+        />
 
         <form onSubmit={submit} className="min-h-0 overflow-y-auto p-5 sm:p-7">
           <div className="grid gap-5 lg:grid-cols-2">
@@ -249,7 +228,6 @@ export function PersonFormDialog({
                   onChange={(seniorityLevel) => patch({ seniorityLevel })}
                 />
               </Field>
-
             </FormSection>
           </div>
 
@@ -321,7 +299,7 @@ function FormSection({
   return (
     <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
       <h3 className="text-sm font-bold text-[var(--app-heading)]">{title}</h3>
-      <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-secondary)]">
+      <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">
         {description}
       </p>
       <div className="mt-4 grid gap-4">{children}</div>

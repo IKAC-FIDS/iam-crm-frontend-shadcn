@@ -149,7 +149,7 @@ export function PersianCalendar({
         {text.weekdays.map((weekday) => (
           <div
             key={weekday}
-            className="grid h-8 place-items-center text-[10px] font-bold text-[var(--app-text-secondary)]"
+            className="grid h-8 place-items-center text-xs font-bold text-[var(--app-text-secondary)]"
           >
             {weekday}
           </div>

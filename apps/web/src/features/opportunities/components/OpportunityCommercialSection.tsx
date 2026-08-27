@@ -237,7 +237,7 @@ export function OpportunityCommercialSection({
           <div className="w-full max-w-full min-w-0 overflow-x-auto">
             <table className="w-full min-w-[820px] text-start text-xs">
               <thead>
-                <tr className="border-b border-[var(--app-divider)] text-[10px] text-[var(--app-text-secondary)]">
+                <tr className="border-b border-[var(--app-divider)] text-xs text-[var(--app-text-secondary)]">
                   <th className="p-3 text-start">{text.fields.product}</th>
                   <th>{text.fields.quantity}</th>
                   <th>{text.fields.unit}</th>
@@ -260,11 +260,11 @@ export function OpportunityCommercialSection({
                           item.productNameSnapshot ||
                           text.fields.customItem}
                       </p>
-                      <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+                      <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                         {text.salesChannels[item.salesChannel]}
                       </p>
                       {item.description ? (
-                        <p className="mt-1 max-w-xs truncate text-[9px] text-[var(--app-text-secondary)]">
+                        <p className="mt-1 max-w-xs truncate text-xs text-[var(--app-text-secondary)]">
                           {item.description}
                         </p>
                       ) : null}
@@ -380,7 +380,7 @@ export function OpportunityCommercialSection({
                     <h3 className="mt-3 text-xs font-bold break-words text-[var(--app-heading)]">
                       {item.title}
                     </h3>
-                    <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+                    <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                       {item.number || uiText.common.notAvailable} ·{" "}
                       {formatJalaliDate(item.createdAt)}
                     </p>
@@ -408,7 +408,7 @@ export function OpportunityCommercialSection({
                     </div>
                   ) : null}
                 </div>
-                <div className="mt-3 flex items-center justify-between text-[10px]">
+                <div className="mt-3 flex items-center justify-between text-xs">
                   <span className="text-[var(--app-text-secondary)]">
                     {text.fields.amount}
                   </span>
@@ -417,14 +417,14 @@ export function OpportunityCommercialSection({
                   </span>
                 </div>
                 {Array.isArray(item.payments) && item.payments.length ? (
-                  <p className="mt-2 text-[9px] text-[var(--app-text-secondary)]">
+                  <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
                     {text.fields.relatedPayments}:{" "}
                     {item.payments.length.toLocaleString("fa-IR")}
                   </p>
                 ) : null}
                 {canManageDocuments ? (
                   <select
-                    className="mt-3 h-9 w-full rounded-xl border border-input bg-transparent px-2 text-[10px]"
+                    className="mt-3 h-9 w-full rounded-xl border border-input bg-transparent px-2 text-xs"
                     value={item.status}
                     onChange={(event) =>
                       void statusDocument
@@ -537,11 +537,11 @@ export function OpportunityCommercialSection({
                   </div>
                   <p className="mt-4 text-lg font-bold break-words text-[var(--app-heading)]">
                     {money(item.amount)}{" "}
-                    <span className="text-[10px] font-normal">
+                    <span className="text-xs font-normal">
                       {item.currency}
                     </span>
                   </p>
-                  <div className="mt-2 grid gap-1 text-[9px] text-[var(--app-text-secondary)]">
+                  <div className="mt-2 grid gap-1 text-xs text-[var(--app-text-secondary)]">
                     <p>
                       {text.fields.dueDate}:{" "}
                       {formatJalaliDate(item.dueDate) ||
@@ -576,7 +576,7 @@ export function OpportunityCommercialSection({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 flex-1 rounded-lg text-[9px]"
+                        className="h-8 flex-1 rounded-lg text-xs"
                         onClick={() =>
                           setActionTarget({ kind: "paymentPaid", id: item.id })
                         }
@@ -586,7 +586,7 @@ export function OpportunityCommercialSection({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-lg text-[9px]"
+                        className="h-8 rounded-lg text-xs"
                         onClick={() =>
                           setActionTarget({
                             kind: "paymentCancel",
@@ -703,7 +703,7 @@ function ResourceSection({
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
-            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[9px] text-[var(--app-primary)]">
+            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-xs text-[var(--app-primary)]">
               {count.toLocaleString("fa-IR")}
             </span>
           ) : null}
@@ -774,7 +774,7 @@ function CompactEmpty({ icon, title }: { icon: LucideIcon; title: string }) {
 function PaymentMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-xl bg-[var(--app-background)] p-3">
-      <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+      <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
       <p className="mt-1 text-xs font-bold break-words text-[var(--app-heading)]">
         {value}
       </p>

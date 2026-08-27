@@ -39,7 +39,7 @@ export function Company360ActionSection({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="ui-section-title">{title}</h2>
-              <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-0.5 text-[10px] font-bold text-[var(--app-text-secondary)]">
+              <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-0.5 text-xs font-bold text-[var(--app-text-secondary)]">
                 {count.toLocaleString("fa-IR")}
               </span>
             </div>

@@ -20,6 +20,8 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { MetricCard } from "@/components/shared/MetricCard"
+import { PageHero } from "@/components/shared/PageHero"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -112,35 +114,6 @@ function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   )
 }
 
-function Stat({
-  title,
-  value,
-  helper,
-  icon: Icon,
-}: {
-  title: string
-  value: string
-  helper: string
-  icon: typeof GitBranch
-}) {
-  return (
-    <article className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:rounded-[24px] sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="mt-2 text-2xl font-black">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            {helper}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
-          <Icon className="size-5" />
-        </div>
-      </div>
-    </article>
-  )
-}
-
 export function AdminPipelinePage() {
   const user = useAuthStore((state) => state.user)
   const permissions = user?.permissions ?? []
@@ -196,23 +169,12 @@ export function AdminPipelinePage() {
 
   return (
     <div className="grid min-w-0 gap-4 sm:gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-4 py-5 shadow-[var(--app-shadow-card)] sm:rounded-[30px] sm:px-7 sm:py-6">
-        <div className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
-              <Sparkles className="size-4" />
-              Pipeline Administration
-            </div>
-            <h1 className="text-xl font-black sm:text-3xl">
-              طراح پایپ‌لاین فروش
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین
-              مراحل را مدیریت کنید.
-            </p>
-          </div>
-
+      <PageHero
+        eyebrow="Pipeline Administration"
+        icon={Sparkles}
+        title="طراح پایپ‌لاین فروش"
+        description="مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین مراحل را مدیریت کنید."
+        actions={
           <Button
             className="w-full sm:w-auto"
             variant="outline"
@@ -221,30 +183,30 @@ export function AdminPipelinePage() {
             <RefreshCcw className="ms-2 size-4" />
             به‌روزرسانی
           </Button>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-        <Stat
-          title="کل مراحل"
+        <MetricCard
+          label="کل مراحل"
           value={fa(stages.length)}
           helper="شامل فعال و غیرفعال"
           icon={GitBranch}
         />
-        <Stat
-          title="مراحل فعال"
+        <MetricCard
+          label="مراحل فعال"
           value={fa(activeStages.length)}
           helper="قابل استفاده در فرصت‌ها"
           icon={ShieldCheck}
         />
-        <Stat
-          title="مراحل نهایی"
+        <MetricCard
+          label="مراحل نهایی"
           value={fa(terminalStages.length)}
           helper="Won / Lost / On Hold"
           icon={Trophy}
         />
-        <Stat
-          title="مرحله پیش‌فرض"
+        <MetricCard
+          label="مرحله پیش‌فرض"
           value={defaultStage?.label ?? "—"}
           helper={defaultStage?.code ?? "تعریف نشده"}
           icon={ShieldCheck}
@@ -490,7 +452,7 @@ function StagesDesigner({
                   <div className="min-w-0">
                     <div className="truncate font-black">{stage.label}</div>
                     <code
-                      className="mt-1 block truncate text-[11px] text-muted-foreground"
+                      className="mt-1 block truncate text-xs text-muted-foreground"
                       dir="ltr"
                     >
                       {stage.code}
@@ -504,13 +466,13 @@ function StagesDesigner({
 
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {stage.isDefault ? (
-                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-[11px] font-bold text-violet-700">
+                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">
                     پیش‌فرض
                   </span>
                 ) : null}
 
                 <span
-                  className={`rounded-full px-2 py-1 text-[11px] font-bold ${
+                  className={`rounded-full px-2 py-1 text-xs font-bold ${
                     stage.isActive
                       ? "bg-emerald-500/10 text-emerald-700"
                       : "bg-muted text-muted-foreground"
@@ -519,7 +481,7 @@ function StagesDesigner({
                   {stage.isActive ? "فعال" : "غیرفعال"}
                 </span>
 
-                <span className="rounded-full bg-muted px-2 py-1 text-[11px] font-bold text-muted-foreground">
+                <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-muted-foreground">
                   {TERMINAL_LABELS[stage.terminalType]}
                 </span>
               </div>

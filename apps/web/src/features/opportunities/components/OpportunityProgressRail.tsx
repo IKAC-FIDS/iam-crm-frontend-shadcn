@@ -23,7 +23,7 @@ export function OpportunityProgressRail({
         <h2 className="text-xs font-bold text-[var(--app-heading)]">
           {text.title}
         </h2>
-        <span className="text-[10px] text-[var(--app-text-secondary)]">
+        <span className="text-xs text-[var(--app-text-secondary)]">
           {opportunity.stage?.label}
         </span>
       </div>
@@ -64,8 +64,8 @@ export function OpportunityProgressRail({
                 <p
                   className={
                     current
-                      ? "mt-1.5 truncate text-[10px] font-bold text-[var(--app-heading)]"
-                      : "mt-1.5 truncate text-[9px] text-[var(--app-text-secondary)]"
+                      ? "mt-1.5 truncate text-xs font-bold text-[var(--app-heading)]"
+                      : "mt-1.5 truncate text-xs text-[var(--app-text-secondary)]"
                   }
                 >
                   {stage.label}

@@ -15,14 +15,14 @@ export function CompanyMetricCard({
     <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium text-[var(--app-text-secondary)]">
+          <p className="text-xs font-medium text-[var(--app-text-secondary)]">
             {label}
           </p>
           <p className="mt-2 text-xl font-bold tracking-tight text-[var(--app-heading)]">
             {value}
           </p>
           {hint ? (
-            <p className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
+            <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
               {hint}
             </p>
           ) : null}

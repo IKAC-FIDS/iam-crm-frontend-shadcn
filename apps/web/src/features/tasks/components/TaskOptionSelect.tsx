@@ -120,7 +120,7 @@ export function TaskOptionSelect({
                     {option.label}
                   </span>
                   {option.secondary ? (
-                    <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">
+                    <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">
                       {option.secondary}
                     </span>
                   ) : null}

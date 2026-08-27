@@ -1,20 +1,15 @@
-import { BriefcaseBusiness, Loader2, Save, X } from "lucide-react"
+import { BriefcaseBusiness, Loader2, Save } from "lucide-react"
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
 
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { CurrencyInput } from "@/components/shared/inputs"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { uiText } from "@/config/uiText"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
@@ -161,32 +156,14 @@ export function OpportunityFormDialog({
         dir="rtl"
         className="max-h-[92vh] w-full max-w-[calc(100%_-_1.5rem)] min-w-0 gap-0 overflow-hidden rounded-[26px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 sm:max-w-[860px]"
       >
-        <DialogHeader className="border-b border-[var(--app-divider)] px-5 py-5 sm:px-7">
-          <div className="flex items-start gap-3">
-            <div className="grid size-11 place-items-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-              <BriefcaseBusiness className="size-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-lg font-bold text-[var(--app-heading)]">
-                {editing ? text.form.editTitle : text.form.createTitle}
-              </DialogTitle>
-              <DialogDescription className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
-                {editing
-                  ? text.form.editDescription
-                  : text.form.createDescription}
-              </DialogDescription>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="rounded-xl"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        </DialogHeader>
+        <DialogHeroHeader
+          icon={BriefcaseBusiness}
+          title={editing ? text.form.editTitle : text.form.createTitle}
+          description={
+            editing ? text.form.editDescription : text.form.createDescription
+          }
+          onClose={() => onOpenChange(false)}
+        />
 
         <div className="min-h-0 max-w-full min-w-0 overflow-y-auto px-5 py-5 sm:px-7">
           <div className="grid min-w-0 gap-4 sm:grid-cols-2">
@@ -200,7 +177,7 @@ export function OpportunityFormDialog({
                 }
               />
               {lockCompany ? (
-                <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                   {text.form.lockedCompany}
                 </p>
               ) : null}
@@ -332,7 +309,7 @@ export function OpportunityFormDialog({
                 onChange={(event) => patch({ probability: event.target.value })}
                 className="h-11 rounded-xl"
               />
-              <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+              <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                 {text.fields.probabilityHint}
               </p>
             </Field>
@@ -414,7 +391,7 @@ function Field({
 
 function InlineMessage({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-1 text-[9px] leading-5 text-[var(--destructive)]">
+    <p className="mt-1 text-xs leading-5 text-[var(--destructive)]">
       {children}
     </p>
   )

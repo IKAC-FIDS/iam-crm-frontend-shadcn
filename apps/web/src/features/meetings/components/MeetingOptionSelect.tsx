@@ -66,7 +66,7 @@ function Options({
                 {option.label}
               </span>
               {option.secondary ? (
-                <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">
+                <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">
                   {option.secondary}
                 </span>
               ) : null}
@@ -251,7 +251,7 @@ export function MeetingMultiOptionSelect({
               onClick={() =>
                 onChange(value.filter((item) => item.id !== option.id))
               }
-              className="inline-flex max-w-full items-center gap-1 rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] text-[var(--app-on-primary-container)]"
+              className="inline-flex max-w-full items-center gap-1 rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs text-[var(--app-on-primary-container)]"
             >
               <span className="truncate">{option.label}</span>
               <X className="size-3 shrink-0" />

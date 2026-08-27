@@ -47,7 +47,7 @@ export function CurrencyInput({
           .filter(Boolean)
           .join(" ")}
       />
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[var(--app-text-secondary)]">
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[var(--app-text-secondary)]">
         {unit}
       </span>
     </div>

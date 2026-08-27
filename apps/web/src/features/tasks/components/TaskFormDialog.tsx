@@ -2,19 +2,14 @@ import { Loader2, Save } from "lucide-react"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
@@ -219,8 +214,7 @@ export function TaskFormDialog({
     return paymentOptions.filter((option) => {
       const item = payments.data?.data.find((row) => row.id === option.id)
       return (
-        !item?.commercialDocumentId ||
-        item.commercialDocumentId === document.id
+        !item?.commercialDocumentId || item.commercialDocumentId === document.id
       )
     })
   }, [document, paymentOptions, payments.data])
@@ -301,14 +295,11 @@ export function TaskFormDialog({
         dir="rtl"
         className="max-h-[94vh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-[920px]"
       >
-        <DialogHeader className="border-b border-[var(--app-divider)] px-5 py-4 sm:px-6">
-          <DialogTitle className="text-base font-bold text-[var(--app-heading)]">
-            {task ? text.dialogs.editTitle : text.dialogs.createTitle}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-[var(--app-text-secondary)]">
-            {text.dialogs.formDescription}
-          </DialogDescription>
-        </DialogHeader>
+        <DialogHeroHeader
+          title={task ? text.dialogs.editTitle : text.dialogs.createTitle}
+          description={text.dialogs.formDescription}
+          onClose={() => onOpenChange(false)}
+        />
 
         <div className="min-h-0 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
           <FormSection
@@ -341,13 +332,13 @@ export function TaskFormDialog({
                     }
                     className={selectClass}
                   >
-                    {(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map(
-                      (value) => (
-                        <option key={value} value={value}>
-                          {text.priorities[value]}
-                        </option>
-                      )
-                    )}
+                    {(
+                      ["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]
+                    ).map((value) => (
+                      <option key={value} value={value}>
+                        {text.priorities[value]}
+                      </option>
+                    ))}
                   </select>
                 </Field>
               </div>
@@ -489,7 +480,10 @@ export function TaskFormDialog({
                 <PersianDateTimePicker value={dueAt} onChange={setDueAt} />
               </Field>
               <Field label={text.fields.reminderAt}>
-                <PersianDateTimePicker value={reminderAt} onChange={setReminderAt} />
+                <PersianDateTimePicker
+                  value={reminderAt}
+                  onChange={setReminderAt}
+                />
               </Field>
             </div>
           </FormSection>
@@ -517,7 +511,11 @@ export function TaskFormDialog({
             disabled={Boolean(validation) || pending}
             onClick={() => void submit()}
           >
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
             {pending ? uiText.common.processing : text.actions.save}
           </Button>
         </div>
@@ -529,7 +527,7 @@ export function TaskFormDialog({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 gap-2">
-      <Label className="text-[11px] font-bold text-[var(--app-heading)]">
+      <Label className="text-xs font-bold text-[var(--app-heading)]">
         {label}
       </Label>
       {children}

@@ -1,4 +1,4 @@
-﻿import {
+import {
   CalendarDays,
   LayoutList,
   Plus,
@@ -327,12 +327,12 @@ export function MeetingsPage() {
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-[10px] font-bold text-[var(--app-primary)]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
               <CalendarDays className="size-3.5" />
               مرکز مدیریت جلسات
             </div>
 
-            <h1 className="text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">
+            <h1 className="ui-page-title">
               {text.title}
             </h1>
 
@@ -414,7 +414,7 @@ export function MeetingsPage() {
               type="button"
               onClick={() => changeQuick(item)}
               className={[
-                "inline-flex h-8 items-center rounded-lg px-3 text-[10px] font-bold transition",
+                "inline-flex h-8 items-center rounded-lg px-3 text-xs font-bold transition",
                 quick === item
                   ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
                   : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",

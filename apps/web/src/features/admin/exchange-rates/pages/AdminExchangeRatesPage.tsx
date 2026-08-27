@@ -269,12 +269,12 @@ export function AdminExchangeRatesPage() {
 
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
               <Sparkles className="size-4" />
               مرکز مدیریت نرخ ارز
             </div>
 
-            <h1 className="text-2xl font-black sm:text-3xl">نرخ دلار</h1>
+            <h1 className="ui-page-title">نرخ دلار</h1>
 
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
               نرخ مبنای تبدیل قیمت محصولات دلاری به ریال و تاریخچه تغییرات آن
@@ -628,7 +628,7 @@ export function AdminExchangeRatesPage() {
               placeholder="دلیل یا منبع تغییر نرخ..."
             />
 
-            <div className="mt-1 text-left text-[11px] text-muted-foreground">
+            <div className="mt-1 text-left text-xs text-muted-foreground">
               {faNumber(note.length)} / ۵۰۰
             </div>
           </div>
@@ -641,7 +641,7 @@ export function AdminExchangeRatesPage() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     نرخ فعلی
                   </div>
                   <div className="mt-1 font-bold">
@@ -650,7 +650,7 @@ export function AdminExchangeRatesPage() {
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     نرخ جدید
                   </div>
                   <div className="mt-1 font-bold">
@@ -659,7 +659,7 @@ export function AdminExchangeRatesPage() {
                 </div>
 
                 <div>
-                  <div className="text-[11px] text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     درصد تغییر
                   </div>
                   <div

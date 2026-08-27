@@ -1,4 +1,4 @@
-﻿import { Check, ChevronsUpDown, Loader2, Search, X } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Search, X } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -97,7 +97,7 @@ export function ActivityOptionSelect({
                 <span className="min-w-0">
                   <span className="block truncate text-xs font-bold text-[var(--app-heading)]">{option.label}</span>
                   {option.secondary ? (
-                    <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">{option.secondary}</span>
+                    <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">{option.secondary}</span>
                   ) : null}
                 </span>
                 {selected?.id === option.id ? <Check className="size-4 shrink-0 text-[var(--app-primary)]" /> : null}

@@ -157,7 +157,7 @@ export function PersonEmploymentSection({
                 <article className="min-w-0 flex-1 rounded-[18px] border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold text-[var(--app-primary)]">
+                      <p className="text-xs font-bold text-[var(--app-primary)]">
                         {[start || text.notSpecified, end || text.notSpecified].join(
                           " — ",
                         )}
@@ -167,7 +167,7 @@ export function PersonEmploymentSection({
                       </p>
                       {position ? (
                         <div className="mt-2">
-                          <p className="text-[9px] font-bold text-[var(--app-text-secondary)]">
+                          <p className="text-xs font-bold text-[var(--app-text-secondary)]">
                             {text.career.position}
                           </p>
                           <div className="mt-0.5 flex flex-wrap items-center gap-2">
@@ -182,7 +182,7 @@ export function PersonEmploymentSection({
                           </div>
                         </div>
                       ) : (
-                        <p className="mt-2 text-[10px] text-[var(--app-text-secondary)]">
+                        <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
                           {text.career.noPositions}
                         </p>
                       )}
@@ -202,14 +202,14 @@ export function PersonEmploymentSection({
 
                   {position?.description ? (
                     <p
-                      className="mt-2 line-clamp-2 text-[10px] leading-5 text-[var(--app-text-secondary)]"
+                      className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]"
                       title={position.description}
                     >
                       {position.description}
                     </p>
                   ) : employment.description ? (
                     <p
-                      className="mt-2 line-clamp-2 text-[10px] leading-5 text-[var(--app-text-secondary)]"
+                      className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]"
                       title={employment.description}
                     >
                       {employment.description}
@@ -222,7 +222,7 @@ export function PersonEmploymentSection({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-8 rounded-lg text-[10px] text-[var(--app-primary)]"
+                        className="h-8 rounded-lg text-xs text-[var(--app-primary)]"
                         onClick={() =>
                           setEditingPosition({ employment, position: null })
                         }

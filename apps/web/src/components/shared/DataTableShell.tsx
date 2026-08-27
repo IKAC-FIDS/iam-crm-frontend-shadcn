@@ -35,8 +35,8 @@ export function DataTableShell<Row>({
   }
 
   return (
-    <div className="overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]">
-      <Table>
+    <div className="min-w-0 overflow-x-auto rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]">
+      <Table className="min-w-max">
         <TableHeader className="bg-[var(--app-background)]/70">
           <TableRow className="hover:bg-transparent">
             {columns.map((column) => (

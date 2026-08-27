@@ -17,68 +17,68 @@
 :root {
   --app-font-family: "BYekan", Tahoma, Arial, sans-serif;
 
-  --primary: #0053B2;
-  --primary-foreground: #FFFFFF;
-  --primary-hover: #004A9F;
-  --primary-active: #003F88;
-  --primary-alt: #55677F;
-  --primary-soft: #D6E3FF;
-  --on-primary-container: #001B3D;
+  --primary: #0053b2;
+  --primary-foreground: #ffffff;
+  --primary-hover: #004a9f;
+  --primary-active: #003f88;
+  --primary-alt: #55677f;
+  --primary-soft: #d6e3ff;
+  --on-primary-container: #001b3d;
 
-  --background: #EFF5FA;
-  --foreground: #0F172A;
-  --card: #FCFCFF;
-  --card-foreground: #0F172A;
-  --popover: #FCFCFF;
-  --popover-foreground: #0F172A;
-  --surface: #FCFCFF;
-  --surface-soft: #F7FAFD;
-  --surface-muted: #EFF5FA;
+  --background: #eff5fa;
+  --foreground: #0f172a;
+  --card: #fcfcff;
+  --card-foreground: #0f172a;
+  --popover: #fcfcff;
+  --popover-foreground: #0f172a;
+  --surface: #fcfcff;
+  --surface-soft: #f7fafd;
+  --surface-muted: #eff5fa;
 
-  --secondary: #E4EAF3;
-  --secondary-foreground: #0F172A;
-  --muted: #E4EAF3;
-  --muted-foreground: #64748B;
-  --border: #E4EAF3;
-  --input: #E4EAF3;
-  --outline: #C2CAD6;
-  --ring: #0053B2;
+  --secondary: #e4eaf3;
+  --secondary-foreground: #0f172a;
+  --muted: #e4eaf3;
+  --muted-foreground: #64748b;
+  --border: #e4eaf3;
+  --input: #e4eaf3;
+  --outline: #c2cad6;
+  --ring: #0053b2;
 
-  --accent: #D6E3FF;
-  --accent-foreground: #001B3D;
-  --destructive: #BA1A1A;
-  --destructive-soft: #FFDAD6;
-  --success: #048A3B;
-  --success-light: #E6F9EE;
-  --warning: #F59E0B;
-  --warning-light: #FFF4E0;
-  --info: #1371D3;
-  --info-light: #D0E5FB;
-  --brand-accent: #E91E63;
+  --accent: #d6e3ff;
+  --accent-foreground: #001b3d;
+  --destructive: #ba1a1a;
+  --destructive-soft: #ffdad6;
+  --success: #048a3b;
+  --success-light: #e6f9ee;
+  --warning: #f59e0b;
+  --warning-light: #fff4e0;
+  --info: #1371d3;
+  --info-light: #d0e5fb;
+  --brand-accent: #e91e63;
 
-  --app-primary: #0053B2;
-  --app-primary-hover: #004A9F;
-  --app-primary-active: #003F88;
-  --app-primary-alt: #55677F;
-  --app-primary-soft: #D6E3FF;
-  --app-on-primary: #FFFFFF;
-  --app-on-primary-container: #001B3D;
+  --app-primary: #0053b2;
+  --app-primary-hover: #004a9f;
+  --app-primary-active: #003f88;
+  --app-primary-alt: #55677f;
+  --app-primary-soft: #d6e3ff;
+  --app-on-primary: #ffffff;
+  --app-on-primary-container: #001b3d;
 
-  --app-heading: #0F172A;
-  --app-on-surface: #0F172A;
-  --app-text-secondary: #64748B;
-  --app-icon-muted: #64748B;
-  --app-background: #EFF5FA;
-  --app-surface: #FCFCFF;
-  --app-surface-soft: #F7FAFD;
-  --app-divider: #E4EAF3;
-  --app-outline: #C2CAD6;
-  --app-accent: #E91E63;
+  --app-heading: #0f172a;
+  --app-on-surface: #0f172a;
+  --app-text-secondary: #64748b;
+  --app-icon-muted: #64748b;
+  --app-background: #eff5fa;
+  --app-surface: #fcfcff;
+  --app-surface-soft: #f7fafd;
+  --app-divider: #e4eaf3;
+  --app-outline: #c2cad6;
+  --app-accent: #e91e63;
 
-  --app-chart-1: #0053B2;
-  --app-chart-2: #55677F;
-  --app-chart-3: #1371D3;
-  --app-chart-4: #64748B;
+  --app-chart-1: #0053b2;
+  --app-chart-2: #55677f;
+  --app-chart-3: #1371d3;
+  --app-chart-4: #64748b;
 
   --app-drawer-width: 260px;
   --app-content-max-width: 1680px;
@@ -135,10 +135,28 @@ body {
 .ui-page-title {
   color: var(--app-heading);
   font-family: var(--app-font-family);
-  font-size: 1.5rem;
+  font-size: 1.875rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.5;
+}
+
+.ui-eyebrow {
+  border: 1px solid var(--app-divider);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--app-background) 70%, transparent);
+  color: var(--app-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.5;
+  padding: 0.375rem 0.75rem;
+}
+
+.ui-metric {
+  color: var(--app-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .ui-section-title {
@@ -198,9 +216,32 @@ body {
   outline-offset: 2px;
 }
 
+/* Consistent visual baseline for every Radix/Base UI dialog header. */
+[data-slot="dialog-header"] {
+  border-color: var(--app-divider);
+  background-image: linear-gradient(
+    155deg,
+    var(--app-primary-soft),
+    var(--app-surface) 70%
+  );
+}
+
+[data-slot="dialog-title"] {
+  color: var(--app-heading);
+  font-family: var(--app-font-family);
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+[data-slot="dialog-description"] {
+  color: var(--app-text-secondary);
+  font-family: var(--app-font-family);
+  line-height: 1.75;
+}
+
 @media (max-width: 639px) {
   .ui-page-title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
   }
 
   .ui-section-title {

@@ -6,24 +6,18 @@ import {
   MapPin,
   Save,
   Sparkles,
-  X,
 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useMemo } from "react"
 import { Controller, useForm } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { PersianDatePicker } from "@/components/shared/date"
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { CurrencyInput, NumberInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -91,14 +85,10 @@ export function CompanyFormDialog({
 }: CompanyFormDialogProps) {
   const text = uiText.companies.form
   const defaultValues = useMemo(() => toFormValues(company), [company])
-  const {
-    data: leadSources = [],
-    isPending: isLeadSourcesPending,
-  } = useLeadSources(open)
-  const {
-    data: industries = [],
-    isPending: isIndustriesPending,
-  } = useIndustries(open)
+  const { data: leadSources = [], isPending: isLeadSourcesPending } =
+    useLeadSources(open)
+  const { data: industries = [], isPending: isIndustriesPending } =
+    useIndustries(open)
 
   const sourceOptions = useMemo(() => {
     const current = company?.sourceRef
@@ -177,10 +167,10 @@ export function CompanyFormDialog({
               <Building2 className="size-5" />
             </div>
 
-            <p className="mt-5 text-[11px] font-bold text-[var(--app-primary)]">
+            <p className="mt-5 text-xs font-bold text-[var(--app-primary)]">
               {text.sideBadge}
             </p>
-            <h3 className="mt-2 text-lg font-bold leading-8 text-[var(--app-heading)]">
+            <h3 className="mt-2 text-lg leading-8 font-bold text-[var(--app-heading)]">
               {brandName?.trim() || legalName?.trim() || text.previewFallback}
             </h3>
             <p className="mt-2 text-xs leading-6 text-[var(--app-text-secondary)]">
@@ -206,40 +196,23 @@ export function CompanyFormDialog({
             </div>
 
             <div className="mt-auto rounded-2xl border border-[var(--app-primary)]/10 bg-[var(--app-surface)]/70 p-4">
-              <div className="flex items-center gap-2 text-[11px] font-bold text-[var(--app-heading)]">
+              <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
                 <CheckCircle2 className="size-4 text-[var(--success)]" />
                 {text.qualityTitle}
               </div>
-              <p className="mt-2 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+              <p className="mt-2 text-xs leading-5 text-[var(--app-text-secondary)]">
                 {text.qualityDescription}
               </p>
             </div>
           </aside>
 
           <div className="flex min-h-0 flex-col">
-            <DialogHeader className="border-b border-[var(--app-divider)] px-5 py-5 sm:px-7">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <DialogTitle className="text-xl font-bold text-[var(--app-heading)]">
-                    {title}
-                  </DialogTitle>
-                  <DialogDescription className="mt-1.5 leading-6 text-[var(--app-text-secondary)]">
-                    {description}
-                  </DialogDescription>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 rounded-xl"
-                  aria-label={text.close}
-                  onClick={() => onOpenChange(false)}
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            </DialogHeader>
+            <DialogHeroHeader
+              title={title}
+              description={description}
+              closeLabel={text.close}
+              onClose={() => onOpenChange(false)}
+            />
 
             <form
               onSubmit={handleSubmit(submit)}
@@ -438,7 +411,11 @@ export function CompanyFormDialog({
                         name="establishmentDate"
                         render={({ field }) => (
                           <PersianDatePicker
-                            value={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
+                            value={
+                              field.value
+                                ? new Date(`${field.value}T00:00:00`)
+                                : undefined
+                            }
                             onChange={(date) =>
                               field.onChange(date ? toApiDate(date) : "")
                             }
@@ -491,7 +468,7 @@ export function CompanyFormDialog({
               </div>
 
               <div className="flex flex-col-reverse gap-2 border-t border-[var(--app-divider)] bg-[var(--app-background)]/65 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-                <p className="text-[10px] text-[var(--app-text-secondary)]">
+                <p className="text-xs text-[var(--app-text-secondary)]">
                   {isDirty ? text.unsavedHint : text.savedStateHint}
                 </p>
                 <div className="flex items-center gap-2">
@@ -540,12 +517,14 @@ function FormSectionBlock({
   return (
     <section className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
       <div className="mb-5 flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[11px] font-bold text-[var(--app-primary)]">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
           {number}
         </span>
         <div>
-          <h3 className="text-sm font-bold text-[var(--app-heading)]">{title}</h3>
-          <p className="mt-1 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+          <h3 className="text-sm font-bold text-[var(--app-heading)]">
+            {title}
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">
             {description}
           </p>
         </div>
@@ -576,7 +555,7 @@ function Field({
       </Label>
       {children}
       {error ? (
-        <p className="text-[10px] text-[var(--destructive)]">{error}</p>
+        <p className="text-xs text-[var(--destructive)]">{error}</p>
       ) : null}
     </div>
   )
@@ -597,8 +576,8 @@ function FormJourneyItem({
         <Icon className="size-4" />
       </div>
       <div>
-        <p className="text-[11px] font-bold text-[var(--app-heading)]">{title}</p>
-        <p className="mt-1 text-[9px] leading-4 text-[var(--app-text-secondary)]">
+        <p className="text-xs font-bold text-[var(--app-heading)]">{title}</p>
+        <p className="mt-1 text-xs leading-4 text-[var(--app-text-secondary)]">
           {description}
         </p>
       </div>

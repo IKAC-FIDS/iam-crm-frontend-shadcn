@@ -13,7 +13,7 @@ export function FormSection({
 }) {
   return (
     <section className="overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-      <div className="flex flex-col gap-3 border-b border-[var(--app-divider)] px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[var(--app-divider)] px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div className="min-w-0">
           <h2 className="ui-card-title">{title}</h2>
           {description ? (
@@ -30,7 +30,7 @@ export function FormSection({
         ) : null}
       </div>
 
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </section>
   )
 }

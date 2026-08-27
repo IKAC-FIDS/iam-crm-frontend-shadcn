@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -293,7 +293,7 @@ function SimpleDialog({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid gap-2">
-      <Label className="text-[11px] font-bold">{label}</Label>
+      <Label className="text-xs font-bold">{label}</Label>
       {children}
     </div>
   )

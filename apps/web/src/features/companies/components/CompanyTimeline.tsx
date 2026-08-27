@@ -33,11 +33,11 @@ export function CompanyTimeline({ activities }: { activities: CompanyActivity[] 
                 {item.title || item.type || text.fallbackTitle}
               </p>
               {item.description ? (
-                <p className="mt-1 line-clamp-2 text-[11px] leading-6 text-[var(--app-text-secondary)]">
+                <p className="mt-1 line-clamp-2 text-xs leading-6 text-[var(--app-text-secondary)]">
                   {item.description}
                 </p>
               ) : null}
-              <p className="mt-2 inline-flex items-center gap-1 text-[10px] text-[var(--app-text-secondary)]">
+              <p className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--app-text-secondary)]">
                 <Clock3 className="size-3" />
                 {formatCompanyDateTime(
                   item.occurredAt || item.activityDate || item.createdAt,

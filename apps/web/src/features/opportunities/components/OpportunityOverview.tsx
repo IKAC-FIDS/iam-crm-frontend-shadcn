@@ -191,7 +191,7 @@ export function OpportunityOverview({
                     {index === 0 ||
                     formatJalaliDate(recent[index - 1]?.occurredAt) !==
                       formatJalaliDate(item.occurredAt) ? (
-                      <p className="mb-2 text-[9px] font-bold text-[var(--app-text-secondary)]">
+                      <p className="mb-2 text-xs font-bold text-[var(--app-text-secondary)]">
                         {formatJalaliDate(item.occurredAt)}
                       </p>
                     ) : null}
@@ -204,7 +204,7 @@ export function OpportunityOverview({
                       >
                         {activityLabel(item.type)}
                       </StatusBadge>
-                      <time className="text-[9px] text-[var(--app-text-secondary)]">
+                      <time className="text-xs text-[var(--app-text-secondary)]">
                         {formatJalaliDateTime(item.occurredAt)}
                       </time>
                     </div>
@@ -214,7 +214,7 @@ export function OpportunityOverview({
                       </p>
                     ) : null}
                     {item.notes ? (
-                      <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                      <p className="mt-1 text-xs leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
                         {item.notes}
                       </p>
                     ) : null}
@@ -240,7 +240,7 @@ export function OpportunityOverview({
               <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
                 {opportunityCompanyName(opportunity)}
               </p>
-              <p className="mt-1 text-[10px] break-words text-[var(--app-text-secondary)]">
+              <p className="mt-1 text-xs break-words text-[var(--app-text-secondary)]">
                 {opportunity.company?.industry || uiText.common.notAvailable}
               </p>
             </div>
@@ -249,7 +249,7 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-3 h-8 w-full rounded-lg text-[10px]"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
               onClick={onCompany}
             >
               <ExternalLink className="size-3.5" />
@@ -271,7 +271,7 @@ export function OpportunityOverview({
                   <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
                     {opportunity.primaryContact.fullName}
                   </p>
-                  <p className="mt-1 text-[10px] break-words text-[var(--app-text-secondary)]">
+                  <p className="mt-1 text-xs break-words text-[var(--app-text-secondary)]">
                     {[
                       opportunity.primaryContact.title,
                       opportunity.primaryContact.department,
@@ -279,14 +279,14 @@ export function OpportunityOverview({
                       .filter(Boolean)
                       .join(" · ") || uiText.common.notAvailable}
                   </p>
-                  <p className="mt-2 text-[10px] break-all text-[var(--app-text-secondary)]">
+                  <p className="mt-2 text-xs break-all text-[var(--app-text-secondary)]">
                     {opportunity.primaryContact.email ||
                       opportunity.primaryContact.phone ||
                       uiText.common.notAvailable}
                   </p>
                 </>
               ) : (
-                <p className="mt-2 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+                <p className="mt-2 text-xs leading-5 text-[var(--app-text-secondary)]">
                   {text.empty.contact}
                 </p>
               )}
@@ -296,7 +296,7 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-3 h-8 w-full rounded-lg text-[10px]"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
               onClick={onPerson}
             >
               <UserRound className="size-3.5" />
@@ -306,7 +306,7 @@ export function OpportunityOverview({
             <Button
               variant="outline"
               size="sm"
-              className="mt-3 h-8 w-full rounded-lg text-[10px]"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
               onClick={onEdit}
             >
               {uiText.opportunities.actions.edit}
@@ -358,7 +358,7 @@ function SummaryCard({
 }
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-[10px]">
+    <div className="flex items-center justify-between gap-3 text-xs">
       <span className="text-[var(--app-text-secondary)]">{label}</span>
       <span className="min-w-0 text-end font-bold break-words text-[var(--app-heading)]">
         {value}
@@ -377,7 +377,7 @@ function Info({
 }) {
   return (
     <div className="min-w-0 rounded-xl bg-[var(--app-background)]/65 p-2.5">
-      <p className="flex items-center gap-1 text-[9px] font-bold text-[var(--app-text-secondary)] [&_svg]:size-3">
+      <p className="flex items-center gap-1 text-xs font-bold text-[var(--app-text-secondary)] [&_svg]:size-3">
         {icon}
         {label}
       </p>

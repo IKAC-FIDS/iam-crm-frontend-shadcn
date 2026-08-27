@@ -54,7 +54,7 @@ export function MeetingList({
         <div className="min-w-0">
           <p className="truncate text-xs font-bold">{meeting.title}</p>
           {meeting.opportunity ? (
-            <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
+            <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
               {meeting.opportunity.title}
             </p>
           ) : null}
@@ -76,7 +76,7 @@ export function MeetingList({
           <p className="text-xs">{formatJalaliDate(meeting.startAt)}</p>
           <p
             dir="ltr"
-            className="mt-1 text-left text-[10px] text-[var(--app-text-secondary)] tabular-nums"
+            className="mt-1 text-left text-xs text-[var(--app-text-secondary)] tabular-nums"
           >
             {meetingTimeRange(meeting)}
           </p>

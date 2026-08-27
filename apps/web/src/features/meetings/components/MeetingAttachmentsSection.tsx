@@ -99,7 +99,7 @@ export function MeetingAttachmentsSection({
           <h2 className="text-sm font-bold text-[var(--app-heading)]">
             {text.sections.attachments}
           </h2>
-          <p className="mt-1 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+          <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">
             {meeting.status === "COMPLETED"
               ? text.attachments.completedHint
               : meeting.status === "CANCELLED"
@@ -163,12 +163,12 @@ export function MeetingAttachmentsSection({
                     >
                       {item.originalFileName}
                     </h3>
-                    <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+                    <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                       {formatBytes(item.sizeBytes)} ·{" "}
                       {formatJalaliDateTime(item.createdAt)}
                     </p>
                     {item.description ? (
-                      <p className="mt-2 line-clamp-2 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
                         {item.description}
                       </p>
                     ) : null}
@@ -176,7 +176,7 @@ export function MeetingAttachmentsSection({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-lg text-[10px]"
+                        className="h-8 rounded-lg text-xs"
                         onClick={() => void downloadFile(item)}
                       >
                         <Download className="size-3.5" />
@@ -314,7 +314,7 @@ function AttachmentUploadDialog({
               disabled={pending}
               onChange={(event) => setFile(event.target.files?.[0])}
             />
-            <p className="text-[10px] leading-5 text-[var(--app-text-secondary)]">
+            <p className="text-xs leading-5 text-[var(--app-text-secondary)]">
               {text.attachments.fileHint}
             </p>
           </div>

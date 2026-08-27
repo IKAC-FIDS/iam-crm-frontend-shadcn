@@ -88,7 +88,7 @@ export function ChangeCompanyOwnerDialog({
 
         <div className="grid gap-4 p-5 sm:p-6">
           <div className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4">
-            <p className="text-[10px] font-bold text-[var(--app-text-secondary)]">
+            <p className="text-xs font-bold text-[var(--app-text-secondary)]">
               {text.fields.owner}
             </p>
             <p className="mt-2 text-sm font-bold text-[var(--app-heading)]">

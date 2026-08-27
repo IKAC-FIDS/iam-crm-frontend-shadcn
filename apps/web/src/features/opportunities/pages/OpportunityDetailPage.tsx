@@ -258,7 +258,7 @@ export function OpportunityDetailPage() {
             <h1 className="mt-2 max-w-full text-xl font-bold break-words text-[var(--app-heading)] sm:text-2xl">
               {opportunity.title}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--app-text-secondary)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--app-text-secondary)]">
               <span className="flex max-w-full min-w-0 items-center gap-1.5">
                 <Building2 className="size-3.5 shrink-0" />
                 <span className="min-w-0 break-words">
@@ -273,7 +273,7 @@ export function OpportunityDetailPage() {
               </span>
             </div>
             {archived && opportunity.archiveReason ? (
-              <p className="mt-2 rounded-lg bg-[var(--warning-light)] px-3 py-1.5 text-[10px] text-[var(--app-text-secondary)]">
+              <p className="mt-2 rounded-lg bg-[var(--warning-light)] px-3 py-1.5 text-xs text-[var(--app-text-secondary)]">
                 {opportunity.archiveReason}
               </p>
             ) : null}

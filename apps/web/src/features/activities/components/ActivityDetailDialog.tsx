@@ -1,4 +1,4 @@
-﻿import {
+import {
   Building2,
   CalendarClock,
   Pencil,
@@ -90,7 +90,7 @@ export function ActivityDetailDialog({
           <section className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-background)]/55 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <span className="inline-flex rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--app-primary)]">
+                <span className="inline-flex rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">
                   {typeLabel(activity)}
                 </span>
                 <h3 className="mt-3 text-base font-bold text-[var(--app-heading)]">
@@ -102,7 +102,7 @@ export function ActivityDetailDialog({
 
               <span
                 className={[
-                  "rounded-full px-2.5 py-1 text-[10px] font-bold",
+                  "rounded-full px-2.5 py-1 text-xs font-bold",
                   activity.status === "COMPLETED"
                     ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                     : "bg-slate-500/10 text-slate-700 dark:text-slate-300",
@@ -217,7 +217,7 @@ function Info({
 }) {
   return (
     <div className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3">
-      <div className="flex items-center gap-2 text-[10px] text-[var(--app-text-secondary)]">
+      <div className="flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
         {icon}
         {label}
       </div>

@@ -124,12 +124,12 @@ export function OpportunityFilesHistorySection({
                   <h3 className="truncate text-xs font-bold text-[var(--app-heading)]">
                     {item.originalFileName}
                   </h3>
-                  <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+                  <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                     {formatBytes(item.sizeBytes)} ·{" "}
                     {formatJalaliDateTime(item.createdAt)}
                   </p>
                   {item.description ? (
-                    <p className="mt-2 line-clamp-2 text-[9px] text-[var(--app-text-secondary)]">
+                    <p className="mt-2 line-clamp-2 text-xs text-[var(--app-text-secondary)]">
                       {item.description}
                     </p>
                   ) : null}
@@ -137,7 +137,7 @@ export function OpportunityFilesHistorySection({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-8 rounded-lg text-[9px]"
+                      className="h-8 rounded-lg text-xs"
                       onClick={() => void downloadFile(item)}
                     >
                       <Download className="size-3" />
@@ -199,21 +199,21 @@ export function OpportunityFilesHistorySection({
                     <StatusBadge tone="neutral">
                       {history.fromStage?.label || uiText.common.notAvailable}
                     </StatusBadge>
-                    <span className="text-[10px] text-[var(--app-text-secondary)]">
+                    <span className="text-xs text-[var(--app-text-secondary)]">
                       ←
                     </span>
                     <StatusBadge tone="primary">
                       {history.toStage?.label || uiText.common.notAvailable}
                     </StatusBadge>
                   </div>
-                  <p className="mt-2 text-[9px] text-[var(--app-text-secondary)]">
+                  <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
                     {formatJalaliDateTime(history.changedAt)}
                     {history.changedBy?.fullName
                       ? ` · ${history.changedBy.fullName}`
                       : ""}
                   </p>
                   {history.note ? (
-                    <p className="mt-2 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-heading)]">
+                    <p className="mt-2 text-xs leading-5 break-words whitespace-pre-wrap text-[var(--app-heading)]">
                       {history.note}
                     </p>
                   ) : null}
@@ -237,7 +237,7 @@ export function OpportunityFilesHistorySection({
                     <StatusBadge tone="neutral">
                       {activityLabel(item.type)}
                     </StatusBadge>
-                    <time className="text-[9px] text-[var(--app-text-secondary)]">
+                    <time className="text-xs text-[var(--app-text-secondary)]">
                       {formatJalaliDateTime(item.occurredAt)}
                     </time>
                   </div>
@@ -247,7 +247,7 @@ export function OpportunityFilesHistorySection({
                     </p>
                   ) : null}
                   {item.notes ? (
-                    <p className="mt-1 text-[10px] leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                    <p className="mt-1 text-xs leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
                       {item.notes}
                     </p>
                   ) : null}
@@ -303,7 +303,7 @@ function Section({
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
-            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[9px] text-[var(--app-primary)]">
+            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-xs text-[var(--app-primary)]">
               {count.toLocaleString("fa-IR")}
             </span>
           ) : null}

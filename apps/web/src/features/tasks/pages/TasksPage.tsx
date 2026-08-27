@@ -1,4 +1,4 @@
-﻿import {
+import {
   AlertTriangle,
   Filter,
   List,
@@ -208,12 +208,12 @@ export function TasksPage() {
 
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-[10px] font-bold text-[var(--app-primary)]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
               <ListChecks className="size-3.5" />
               مرکز مدیریت کارها
             </div>
 
-            <h1 className="text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">
+            <h1 className="ui-page-title">
               {text.title}
             </h1>
 
@@ -319,7 +319,7 @@ export function TasksPage() {
               <SlidersHorizontal className="size-4" />
               {text.actions.filters}
               {advancedCount ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-[9px] text-[var(--app-primary)]">
+                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
                   {advancedCount.toLocaleString("fa-IR")}
                 </span>
               ) : null}
@@ -386,7 +386,7 @@ export function TasksPage() {
                 />
 
                 <div className="grid gap-1">
-                  <span className="text-[9px] text-[var(--app-text-secondary)]">
+                  <span className="text-xs text-[var(--app-text-secondary)]">
                     {text.filters.dueFrom}
                   </span>
                   <PersianDateTimePicker
@@ -401,7 +401,7 @@ export function TasksPage() {
                 </div>
 
                 <div className="grid gap-1">
-                  <span className="text-[9px] text-[var(--app-text-secondary)]">
+                  <span className="text-xs text-[var(--app-text-secondary)]">
                     {text.filters.dueTo}
                   </span>
                   <PersianDateTimePicker
@@ -427,7 +427,7 @@ export function TasksPage() {
                 type="button"
                 onClick={() => setQuick(item.value)}
                 className={[
-                  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[10px] font-bold transition",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition",
                   quick === item.value
                     ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
                     : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",

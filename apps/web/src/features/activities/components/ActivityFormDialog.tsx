@@ -2,18 +2,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
 import {
@@ -32,8 +27,10 @@ import {
 } from "../types/activity.types"
 import { ActivityOptionSelect } from "./ActivityOptionSelect"
 
-const selectClass = "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-const textareaClass = "w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+const selectClass =
+  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+const textareaClass =
+  "w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
 
 function useDebounced(value: string) {
   const [debounced, setDebounced] = useState(value)
@@ -50,7 +47,11 @@ function safeDate(value?: string | null) {
   return Number.isNaN(date.getTime()) ? undefined : date
 }
 
-export function ActivityFormDialog({ open, onOpenChange, activity }: {
+export function ActivityFormDialog({
+  open,
+  onOpenChange,
+  activity,
+}: {
   open: boolean
   onOpenChange: (open: boolean) => void
   activity?: Activity | null
@@ -77,27 +78,55 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
     const existingPersonId = activity?.personId || activity?.person?.id || ""
 
     setCompanyId(existingCompanyId)
-    setPerson(existingPersonId ? {
-      id: existingPersonId,
-      label: activity?.person?.fullName || existingPersonId,
-      secondary: activity?.person?.title || activity?.person?.department || undefined,
-    } : undefined)
+    setPerson(
+      existingPersonId
+        ? {
+            id: existingPersonId,
+            label: activity?.person?.fullName || existingPersonId,
+            secondary:
+              activity?.person?.title ||
+              activity?.person?.department ||
+              undefined,
+          }
+        : undefined
+    )
     setOpportunity(undefined)
-    setType(activity?.type && activity.type !== "STAGE_CHANGE" ? activity.type : "CALL")
+    setType(
+      activity?.type && activity.type !== "STAGE_CHANGE"
+        ? activity.type
+        : "CALL"
+    )
     setNotes(activity?.notes || "")
     setOutcome(activity?.outcome || "")
-    setOccurredAt(safeDate(activity?.occurredAt || activity?.activityDate) || (activity ? undefined : new Date()))
+    setOccurredAt(
+      safeDate(activity?.occurredAt || activity?.activityDate) ||
+        (activity ? undefined : new Date())
+    )
     setNextActionDate(undefined)
     setPersonSearch("")
     setOpportunitySearch("")
   }, [activity, open])
 
-  const people = useActivityPeopleOptions(companyId, useDebounced(personSearch), open && Boolean(companyId))
-  const opportunities = useActivityOpportunityOptions(companyId, useDebounced(opportunitySearch), open && !editing && Boolean(companyId))
-  const validation = useMemo(() => !companyId ? "انتخاب شرکت الزامی است." : "", [companyId])
+  const people = useActivityPeopleOptions(
+    companyId,
+    useDebounced(personSearch),
+    open && Boolean(companyId)
+  )
+  const opportunities = useActivityOpportunityOptions(
+    companyId,
+    useDebounced(opportunitySearch),
+    open && !editing && Boolean(companyId)
+  )
+  const validation = useMemo(
+    () => (!companyId ? "انتخاب شرکت الزامی است." : ""),
+    [companyId]
+  )
 
   async function submit() {
-    if (validation) { toast.error(validation); return }
+    if (validation) {
+      toast.error(validation)
+      return
+    }
     try {
       if (activity) {
         const payload: UpdateActivityPayload = {
@@ -125,24 +154,37 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
       }
       onOpenChange(false)
     } catch (error) {
-      toast.error(getApiErrorMessage(error, editing ? "ویرایش فعالیت ناموفق بود." : "ثبت فعالیت ناموفق بود."))
+      toast.error(
+        getApiErrorMessage(
+          error,
+          editing ? "ویرایش فعالیت ناموفق بود." : "ثبت فعالیت ناموفق بود."
+        )
+      )
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showCloseButton={false} dir="rtl" className="max-h-[94vh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-[820px]">
-        <DialogHeader className="border-b border-[var(--app-divider)] px-5 py-4 sm:px-6">
-          <DialogTitle className="text-base font-bold text-[var(--app-heading)]">{editing ? "ویرایش فعالیت" : "ثبت فعالیت جدید"}</DialogTitle>
-          <DialogDescription className="text-xs text-[var(--app-text-secondary)]">
-            {editing
+      <DialogContent
+        showCloseButton={false}
+        dir="rtl"
+        className="max-h-[94vh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[26px] p-0 sm:max-w-[820px]"
+      >
+        <DialogHeroHeader
+          title={editing ? "ویرایش فعالیت" : "ثبت فعالیت جدید"}
+          description={
+            editing
               ? "اطلاعات پایه فعالیت را ویرایش کنید. ارتباط فرصت فروش و زمان پیگیری موجود دست‌نخورده باقی می‌ماند."
-              : "تعامل انجام‌شده را ثبت کنید و در صورت نیاز زمان پیگیری بعدی را مشخص کنید."}
-          </DialogDescription>
-        </DialogHeader>
+              : "تعامل انجام‌شده را ثبت کنید و در صورت نیاز زمان پیگیری بعدی را مشخص کنید."
+          }
+          onClose={() => onOpenChange(false)}
+        />
 
         <div className="min-h-0 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
-          <FormSection title="اطلاعات فعالیت" description="نوع، زمان، نتیجه و توضیحات فعالیت">
+          <FormSection
+            title="اطلاعات فعالیت"
+            description="نوع، زمان، نتیجه و توضیحات فعالیت"
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="شرکت *">
                 <SearchableCompanySelect
@@ -160,8 +202,18 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
               </Field>
 
               <Field label="نوع فعالیت *">
-                <select value={type} onChange={(event) => setType(event.target.value as ManualActivityType)} className={selectClass}>
-                  {MANUAL_ACTIVITY_TYPE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                <select
+                  value={type}
+                  onChange={(event) =>
+                    setType(event.target.value as ManualActivityType)
+                  }
+                  className={selectClass}
+                >
+                  {MANUAL_ACTIVITY_TYPE_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
 
@@ -173,7 +225,9 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
                   onChange={setPerson}
                   search={personSearch}
                   onSearchChange={setPersonSearch}
-                  placeholder={companyId ? "انتخاب شخص" : "ابتدا شرکت را انتخاب کنید"}
+                  placeholder={
+                    companyId ? "انتخاب شخص" : "ابتدا شرکت را انتخاب کنید"
+                  }
                   loading={people.isLoading}
                   disabled={!companyId}
                 />
@@ -188,31 +242,73 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
                     onChange={setOpportunity}
                     search={opportunitySearch}
                     onSearchChange={setOpportunitySearch}
-                    placeholder={companyId ? "انتخاب فرصت فروش" : "ابتدا شرکت را انتخاب کنید"}
+                    placeholder={
+                      companyId
+                        ? "انتخاب فرصت فروش"
+                        : "ابتدا شرکت را انتخاب کنید"
+                    }
                     loading={opportunities.isLoading}
                     disabled={!companyId}
                   />
                 </Field>
               ) : null}
 
-              <Field label="زمان فعالیت"><PersianDateTimePicker value={occurredAt} onChange={setOccurredAt} /></Field>
-              {!editing ? <Field label="پیگیری بعدی"><PersianDateTimePicker value={nextActionDate} onChange={setNextActionDate} /></Field> : null}
+              <Field label="زمان فعالیت">
+                <PersianDateTimePicker
+                  value={occurredAt}
+                  onChange={setOccurredAt}
+                />
+              </Field>
+              {!editing ? (
+                <Field label="پیگیری بعدی">
+                  <PersianDateTimePicker
+                    value={nextActionDate}
+                    onChange={setNextActionDate}
+                  />
+                </Field>
+              ) : null}
 
               <Field label="نتیجه" className={!editing ? "sm:col-span-2" : ""}>
-                <Input value={outcome} onChange={(event) => setOutcome(event.target.value)} placeholder="نتیجه فعالیت" className="h-11 rounded-xl" />
+                <Input
+                  value={outcome}
+                  onChange={(event) => setOutcome(event.target.value)}
+                  placeholder="نتیجه فعالیت"
+                  className="h-11 rounded-xl"
+                />
               </Field>
 
               <Field label="یادداشت" className="sm:col-span-2">
-                <textarea rows={5} value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="توضیحات و نکات مرتبط با فعالیت" className={textareaClass} />
+                <textarea
+                  rows={5}
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder="توضیحات و نکات مرتبط با فعالیت"
+                  className={textareaClass}
+                />
               </Field>
             </div>
           </FormSection>
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-4 sm:px-6">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>انصراف</Button>
-          <Button type="button" disabled={pending || Boolean(validation)} onClick={() => void submit()}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={pending}
+          >
+            انصراف
+          </Button>
+          <Button
+            type="button"
+            disabled={pending || Boolean(validation)}
+            onClick={() => void submit()}
+          >
+            {pending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Save className="size-4" />
+            )}
             {pending ? "در حال ذخیره..." : "ذخیره"}
           </Button>
         </div>
@@ -221,10 +317,20 @@ export function ActivityFormDialog({ open, onOpenChange, activity }: {
   )
 }
 
-function Field({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}) {
   return (
     <label className={`grid gap-2 ${className}`}>
-      <span className="text-xs font-bold text-[var(--app-heading)]">{label}</span>
+      <span className="text-xs font-bold text-[var(--app-heading)]">
+        {label}
+      </span>
       {children}
     </label>
   )

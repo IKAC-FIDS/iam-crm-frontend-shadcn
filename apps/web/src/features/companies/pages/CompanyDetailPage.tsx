@@ -1,4 +1,4 @@
-﻿import {
+import {
   Archive,
   ArrowRight,
   Building2,
@@ -222,7 +222,7 @@ export function CompanyDetailPage() {
                   )}
                   <CompanyPriorityBadge priority={company.priority} />
                 </div>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-[var(--app-text-secondary)]">
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
                   <span className="inline-flex items-center gap-1.5">
                     <Building2 className="size-3.5" />
                     {company.industryRef?.name ||
@@ -605,7 +605,7 @@ export function CompanyDetailPage() {
                         <p className="truncate text-xs font-bold text-[var(--app-heading)]">
                           {person.fullName}
                         </p>
-                        <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
+                        <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
                           {person.jobTitle ||
                             person.title ||
                             person.department ||
@@ -996,14 +996,14 @@ function EntityRow({
           {badge ? (
             <span
               style={badgeStyle}
-              className="shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold"
+              className="shrink-0 rounded-full border px-2 py-0.5 text-xs font-bold"
             >
               {badge}
             </span>
           ) : null}
         </div>
         {subtitle ? (
-          <p className="mt-1 truncate text-[10px] text-[var(--app-text-secondary)]">
+          <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
             {subtitle}
           </p>
         ) : null}
@@ -1011,7 +1011,7 @@ function EntityRow({
       {meta ? (
         <span
           dir="auto"
-          className="max-w-36 shrink-0 truncate text-[10px] text-[var(--app-text-secondary)]"
+          className="max-w-36 shrink-0 truncate text-xs text-[var(--app-text-secondary)]"
         >
           {meta}
         </span>

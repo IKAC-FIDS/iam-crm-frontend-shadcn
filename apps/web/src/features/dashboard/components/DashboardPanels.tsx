@@ -98,7 +98,7 @@ export function AttentionPanel({
                   <p className="truncate text-xs font-bold text-[var(--app-heading)]">
                     {item.title}
                   </p>
-                  <p className="mt-1 truncate text-[11px] font-normal text-[var(--app-text-secondary)]">
+                  <p className="mt-1 truncate text-xs font-normal text-[var(--app-text-secondary)]">
                     {item.meta}
                   </p>
                 </div>
@@ -156,12 +156,12 @@ export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) 
                   <p className="min-w-0 flex-1 truncate text-xs font-bold text-[var(--app-heading)]">
                     {item.title}
                   </p>
-                  <time className="text-[10px] text-[var(--app-text-secondary)]">
+                  <time className="text-xs text-[var(--app-text-secondary)]">
                     {formatPersianDateTime(item.activityDate)}
                   </time>
                 </div>
 
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-[var(--app-text-secondary)]">
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--app-text-secondary)]">
                   {item.company ? (
                     <span className="inline-flex items-center gap-1.5">
                       <Building2 className="size-3" />

@@ -209,7 +209,7 @@ export function OpportunityTrendChart({
 
       <div className="relative mt-5 overflow-hidden rounded-[20px] border border-[var(--app-divider)]/80 bg-[linear-gradient(180deg,var(--app-background),var(--app-surface))] p-3">
         <div className="mb-3 grid gap-2 rounded-xl bg-[var(--app-surface)]/88 px-3 py-2.5 shadow-sm lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[11px]">
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
             <span className="inline-flex items-center gap-1.5 text-[var(--app-text-secondary)]">
               <i className="size-2 rounded-full bg-[var(--app-primary)]" />
               {text.series.created}
@@ -225,7 +225,7 @@ export function OpportunityTrendChart({
           </div>
 
           <div className="text-start lg:text-end">
-            <span className="block text-[10px] text-[var(--app-text-secondary)]">
+            <span className="block text-xs text-[var(--app-text-secondary)]">
               {activeSummary.title}
             </span>
             <strong className="mt-0.5 block text-xs text-[var(--app-heading)]">
@@ -235,7 +235,7 @@ export function OpportunityTrendChart({
         </div>
 
         <div className="relative">
-          <div className="mb-1 flex items-center justify-start ps-1 text-[10px] font-medium text-[var(--app-text-secondary)]">
+          <div className="mb-1 flex items-center justify-start ps-1 text-xs font-medium text-[var(--app-text-secondary)]">
             {mode === "count" ? text.axis.count : text.axis.value}
           </div>
 
@@ -244,7 +244,7 @@ export function OpportunityTrendChart({
               <div className="pointer-events-none absolute end-4 top-3 z-10 min-w-44 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-3 text-xs shadow-[var(--app-shadow-popover)] backdrop-blur">
                 <strong className="text-[var(--app-heading)]">{hovered.label}</strong>
 
-                <div className="mt-2 grid gap-1.5 text-[11px] text-[var(--app-text-secondary)]">
+                <div className="mt-2 grid gap-1.5 text-xs text-[var(--app-text-secondary)]">
                   <div className="flex items-center justify-between gap-5">
                     <span>{text.series.created}</span>
                     <strong className="text-[var(--app-heading)]">
@@ -406,7 +406,7 @@ export function OpportunityTrendChart({
         </div>
 
         {mode === "value" ? (
-          <div className="mt-1 text-[10px] text-[var(--app-text-secondary)]">
+          <div className="mt-1 text-xs text-[var(--app-text-secondary)]">
             {text.axis.valueHint}
           </div>
         ) : null}
@@ -475,11 +475,11 @@ export function OpportunityStatusDonut({
             <strong className="block text-xs text-[var(--app-heading)]">
               {hovered.label}
             </strong>
-            <span className="mt-1 block text-[11px] text-[var(--app-text-secondary)]">
+            <span className="mt-1 block text-xs text-[var(--app-text-secondary)]">
               {text.legend.countLabel}: {formatCount(hovered.count)}{" "}
               {uiText.dashboard.units.opportunity}
             </span>
-            <span className="mt-1 block text-[11px] text-[var(--app-text-secondary)]">
+            <span className="mt-1 block text-xs text-[var(--app-text-secondary)]">
               {text.legend.shareLabel}: {formatPercent(hovered.percentage)}
             </span>
           </div>
@@ -529,7 +529,7 @@ export function OpportunityStatusDonut({
               <strong className="block text-3xl font-bold text-[var(--app-heading)]">
                 {formatCount(portfolio.total.count)}
               </strong>
-              <span className="mt-1 block text-[11px] text-[var(--app-text-secondary)]">
+              <span className="mt-1 block text-xs text-[var(--app-text-secondary)]">
                 {text.total}
               </span>
             </div>
@@ -556,7 +556,7 @@ export function OpportunityStatusDonut({
             </span>
 
             <span className="text-center">
-              <span className="block text-[10px] leading-5 text-[var(--app-text-secondary)]">
+              <span className="block text-xs leading-5 text-[var(--app-text-secondary)]">
                 {text.legend.countLabel}
               </span>
               <strong className="block text-xs leading-5 text-[var(--app-heading)]">
@@ -565,7 +565,7 @@ export function OpportunityStatusDonut({
             </span>
 
             <span className="text-center">
-              <span className="block text-[10px] leading-5 text-[var(--app-text-secondary)]">
+              <span className="block text-xs leading-5 text-[var(--app-text-secondary)]">
                 {text.legend.shareLabel}
               </span>
               <strong className="block text-xs leading-5 text-[var(--app-heading)]">

@@ -124,7 +124,7 @@ export function MeetingAgenda({
                       <span className="my-1 h-4 w-px bg-[var(--app-divider)]" />
                       <span
                         dir="ltr"
-                        className="text-[10px] text-[var(--app-text-secondary)] tabular-nums"
+                        className="text-xs text-[var(--app-text-secondary)] tabular-nums"
                       >
                         {meetingTimeRange(meeting).split("–")[1]}
                       </span>
@@ -136,7 +136,7 @@ export function MeetingAgenda({
                           <h3 className="truncate text-sm font-bold text-[var(--app-heading)]">
                             {meeting.title}
                           </h3>
-                          <p className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-[10px] text-[var(--app-text-secondary)]">
+                          <p className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
                             <Building2 className="size-3.5" />
                             <span>{meetingCompanyName(meeting)}</span>
                             {meeting.opportunity ? (
@@ -165,7 +165,7 @@ export function MeetingAgenda({
                         </div>
                       </div>
 
-                      <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-[10px] text-[var(--app-text-secondary)]">
+                      <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--app-text-secondary)]">
                         <span className="inline-flex items-center gap-1.5">
                           <ModeIcon className="size-3.5" />
                           {meetingModeLabel(meeting.mode)}

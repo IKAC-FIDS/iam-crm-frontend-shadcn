@@ -1,4 +1,4 @@
-﻿import { ListChecks } from "lucide-react"
+import { ListChecks } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import {
@@ -57,7 +57,7 @@ export function TaskList({
       cell: (task) => (
         <div className="min-w-0">
           <p className="truncate text-xs font-bold">{task.title}</p>
-          <p className="mt-1 truncate text-[9px] text-[var(--app-text-secondary)]">
+          <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
             {taskContextLabel(task)}
           </p>
         </div>

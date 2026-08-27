@@ -1,4 +1,4 @@
-﻿import {
+import {
   Activity as ActivityIcon,
   Filter,
   Plus,
@@ -15,6 +15,7 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
+import { PageHero } from "@/components/shared/PageHero"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -80,17 +81,12 @@ function formatDate(value?: string | null) {
 
 function activityTypeLabel(type: ActivityType) {
   return (
-    ACTIVITY_TYPE_OPTIONS.find((item) => item.value === type)?.label ||
-    type
+    ACTIVITY_TYPE_OPTIONS.find((item) => item.value === type)?.label || type
   )
 }
 
 function companyName(activity: Activity) {
-  return (
-    activity.company?.brandName ||
-    activity.company?.legalName ||
-    "—"
-  )
+  return activity.company?.brandName || activity.company?.legalName || "—"
 }
 
 export function ActivitiesPage() {
@@ -104,22 +100,17 @@ export function ActivitiesPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
   const [scope, setScope] = useState<QuickScope>("all")
-  const [activityType, setActivityType] =
-    useState<"" | ActivityType>("")
-  const [status, setStatus] =
-    useState<"" | ActivityStatus>("")
+  const [activityType, setActivityType] = useState<"" | ActivityType>("")
+  const [status, setStatus] = useState<"" | ActivityStatus>("")
   const [companyId, setCompanyId] = useState("")
   const [person, setPerson] = useState<ActivityOption>()
   const [personSearch, setPersonSearch] = useState("")
   const [ownerId, setOwnerId] = useState("")
   const [team, setTeam] = useState("")
-  const [dateRange, setDateRange] =
-    useState<ActivityPersianDateRange>()
+  const [dateRange, setDateRange] = useState<ActivityPersianDateRange>()
   const [createOpen, setCreateOpen] = useState(false)
-  const [editActivity, setEditActivity] =
-    useState<Activity | null>(null)
-  const [detailActivity, setDetailActivity] =
-    useState<Activity | null>(null)
+  const [editActivity, setEditActivity] = useState<Activity | null>(null)
+  const [detailActivity, setDetailActivity] = useState<Activity | null>(null)
 
   const debouncedSearch = useDebounced(search)
   const debouncedPersonSearch = useDebounced(personSearch)
@@ -186,10 +177,7 @@ export function ActivitiesPage() {
       status: status || undefined,
       companyId: companyId || undefined,
       personId: person?.id,
-      ownerId:
-        scope === "mine"
-          ? undefined
-          : ownerId || undefined,
+      ownerId: scope === "mine" ? undefined : ownerId || undefined,
       team: team || undefined,
       mine: scope === "mine" ? true : undefined,
       ownershipScope: scope === "team" ? "team" : "all",
@@ -213,12 +201,9 @@ export function ActivitiesPage() {
 
   const activities = useActivities(query, canView)
 
-  const activeAdvanced = [
-    companyId,
-    person?.id,
-    ownerId,
-    team,
-  ].filter(Boolean).length
+  const activeAdvanced = [companyId, person?.id, ownerId, team].filter(
+    Boolean
+  ).length
 
   function resetPage() {
     setPage(1)
@@ -246,13 +231,11 @@ export function ActivitiesPage() {
         cell: (item) => (
           <div className="max-w-[280px]">
             <span className="font-bold">
-              {item.title ||
-                item.outcome ||
-                activityTypeLabel(item.type)}
+              {item.title || item.outcome || activityTypeLabel(item.type)}
             </span>
 
             {item.description || item.notes ? (
-              <p className="mt-1 line-clamp-1 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+              <p className="mt-1 line-clamp-1 text-xs leading-5 text-[var(--app-text-secondary)]">
                 {item.description || item.notes}
               </p>
             ) : null}
@@ -263,7 +246,7 @@ export function ActivitiesPage() {
         id: "type",
         header: "نوع",
         cell: (item) => (
-          <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-[10px] font-bold text-[var(--app-primary)]">
+          <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">
             {activityTypeLabel(item.type)}
           </span>
         ),
@@ -281,10 +264,7 @@ export function ActivitiesPage() {
       {
         id: "creator",
         header: "ایجادکننده",
-        cell: (item) =>
-          item.createdBy?.fullName ||
-          item.user?.fullName ||
-          "—",
+        cell: (item) => item.createdBy?.fullName || item.user?.fullName || "—",
       },
       {
         id: "status",
@@ -297,17 +277,14 @@ export function ActivitiesPage() {
                 : "text-[var(--app-text-secondary)]"
             }
           >
-            {item.status === "COMPLETED"
-              ? "تکمیل‌شده"
-              : "ثبت‌شده"}
+            {item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}
           </span>
         ),
       },
       {
         id: "activityDate",
         header: "تاریخ فعالیت",
-        cell: (item) =>
-          formatDate(item.activityDate || item.occurredAt),
+        cell: (item) => formatDate(item.activityDate || item.occurredAt),
         className: "whitespace-nowrap",
       },
       {
@@ -344,28 +321,13 @@ export function ActivitiesPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-[10px] font-bold text-[var(--app-primary)]">
-              <ActivityIcon className="size-3.5" />
-              مرکز تعاملات مشتری
-            </div>
-
-            <h1 className="text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">
-              فعالیت‌ها
-            </h1>
-
-            <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">
-              تماس‌ها، جلسات، ایمیل‌ها، یادداشت‌ها و سایر
-              تعاملات انجام‌شده با مشتریان را در یک نمای
-              متمرکز مشاهده و مدیریت کنید.
-            </p>
-          </div>
-
-          {canCreate ? (
+      <PageHero
+        eyebrow="مرکز تعاملات مشتری"
+        icon={ActivityIcon}
+        title="فعالیت‌ها"
+        description="تماس‌ها، جلسات، ایمیل‌ها، یادداشت‌ها و سایر تعاملات انجام‌شده با مشتریان را در یک نمای متمرکز مشاهده و مدیریت کنید."
+        actions={
+          canCreate ? (
             <Button
               type="button"
               className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
@@ -374,9 +336,9 @@ export function ActivitiesPage() {
               <Plus className="size-4" />
               ثبت فعالیت
             </Button>
-          ) : null}
-        </div>
-      </section>
+          ) : null
+        }
+      />
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
         <div className="grid gap-3 xl:grid-cols-[minmax(220px,1.35fr)_auto_minmax(155px,.8fr)_minmax(145px,.72fr)_minmax(210px,1fr)_auto] xl:items-center">
@@ -394,40 +356,36 @@ export function ActivitiesPage() {
           </div>
 
           <div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-            {(["all", "mine", "team"] as const).map(
-              (value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => {
-                    setScope(value)
-                    if (value === "mine") setOwnerId("")
-                    resetPage()
-                  }}
-                  className={[
-                    "rounded-lg px-3 py-2 text-[11px] font-bold transition",
-                    scope === value
-                      ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                      : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-                  ].join(" ")}
-                >
-                  {value === "all"
-                    ? "همه"
-                    : value === "mine"
-                      ? "فعالیت‌های من"
-                      : "تیم من"}
-                </button>
-              )
-            )}
+            {(["all", "mine", "team"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  setScope(value)
+                  if (value === "mine") setOwnerId("")
+                  resetPage()
+                }}
+                className={[
+                  "rounded-lg px-3 py-2 text-xs font-bold transition",
+                  scope === value
+                    ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
+                    : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+                ].join(" ")}
+              >
+                {value === "all"
+                  ? "همه"
+                  : value === "mine"
+                    ? "فعالیت‌های من"
+                    : "تیم من"}
+              </button>
+            ))}
           </div>
 
           <select
             className={selectClass}
             value={activityType}
             onChange={(event) => {
-              setActivityType(
-                event.target.value as "" | ActivityType
-              )
+              setActivityType(event.target.value as "" | ActivityType)
               resetPage()
             }}
           >
@@ -443,9 +401,7 @@ export function ActivitiesPage() {
             className={selectClass}
             value={status}
             onChange={(event) => {
-              setStatus(
-                event.target.value as "" | ActivityStatus
-              )
+              setStatus(event.target.value as "" | ActivityStatus)
               resetPage()
             }}
           >
@@ -475,7 +431,7 @@ export function ActivitiesPage() {
               <SlidersHorizontal className="size-4" />
               فیلترهای بیشتر
               {activeAdvanced ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-[9px] text-[var(--app-primary)]">
+                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
                   {activeAdvanced.toLocaleString("fa-IR")}
                 </span>
               ) : null}
@@ -579,9 +535,7 @@ export function ActivitiesPage() {
         <div className="grid gap-3">
           <DataTableShell
             rows={
-              Array.isArray(activities.data.data)
-                ? activities.data.data
-                : []
+              Array.isArray(activities.data.data) ? activities.data.data : []
             }
             columns={columns}
             getRowKey={(item) => item.id}
@@ -597,19 +551,13 @@ export function ActivitiesPage() {
 
           <div className="flex flex-col items-center justify-between gap-3 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row">
             <p className="text-xs text-[var(--app-text-secondary)]">
-              صفحه{" "}
-              {activities.data.meta.page.toLocaleString("fa-IR")}{" "}
-              از{" "}
-              {Math.max(
-                activities.data.meta.totalPages,
-                1
-              ).toLocaleString("fa-IR")}
+              صفحه {activities.data.meta.page.toLocaleString("fa-IR")} از{" "}
+              {Math.max(activities.data.meta.totalPages, 1).toLocaleString(
+                "fa-IR"
+              )}
               {" · "}
-              {activities.data.meta.total.toLocaleString("fa-IR")}{" "}
-              فعالیت
-              {activities.isFetching
-                ? " · در حال بروزرسانی..."
-                : ""}
+              {activities.data.meta.total.toLocaleString("fa-IR")} فعالیت
+              {activities.isFetching ? " · در حال بروزرسانی..." : ""}
             </p>
 
             <div className="flex gap-2">
@@ -619,14 +567,9 @@ export function ActivitiesPage() {
                 size="sm"
                 className="rounded-xl"
                 disabled={
-                  activities.isFetching ||
-                  !activities.data.meta.hasPrevious
+                  activities.isFetching || !activities.data.meta.hasPrevious
                 }
-                onClick={() =>
-                  setPage((value) =>
-                    Math.max(1, value - 1)
-                  )
-                }
+                onClick={() => setPage((value) => Math.max(1, value - 1))}
               >
                 قبلی
               </Button>
@@ -637,12 +580,9 @@ export function ActivitiesPage() {
                 size="sm"
                 className="rounded-xl"
                 disabled={
-                  activities.isFetching ||
-                  !activities.data.meta.hasNext
+                  activities.isFetching || !activities.data.meta.hasNext
                 }
-                onClick={() =>
-                  setPage((value) => value + 1)
-                }
+                onClick={() => setPage((value) => value + 1)}
               >
                 بعدی
               </Button>
@@ -665,10 +605,7 @@ export function ActivitiesPage() {
         }}
       />
 
-      <ActivityFormDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-      />
+      <ActivityFormDialog open={createOpen} onOpenChange={setCreateOpen} />
 
       <ActivityFormDialog
         open={Boolean(editActivity)}

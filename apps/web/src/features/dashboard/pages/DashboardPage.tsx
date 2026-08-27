@@ -77,7 +77,7 @@ export function DashboardPage() {
 
         <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--app-on-primary)]/15 bg-[var(--app-on-primary)]/10 px-3 py-1.5 text-[11px] font-medium text-[var(--app-on-primary)]/90 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--app-on-primary)]/15 bg-[var(--app-on-primary)]/10 px-3 py-1.5 text-xs font-medium text-[var(--app-on-primary)]/90 backdrop-blur">
               <Sparkles className="size-3.5" />
               {text.hero.badge}
             </div>
@@ -128,7 +128,7 @@ export function DashboardPage() {
                 <strong className="mt-4 block text-xl font-bold">
                   {formatPercent(summary.periodPerformance.opportunities.winRate)}
                 </strong>
-                <span className="mt-1 block text-[10px] text-[var(--app-on-primary)]/65">
+                <span className="mt-1 block text-xs text-[var(--app-on-primary)]/65">
                   {text.hero.stats.winRate}
                 </span>
               </div>
@@ -138,7 +138,7 @@ export function DashboardPage() {
                 <strong className="mt-4 block text-xl font-bold">
                   {formatCount(summary.current.activeOpportunities.count)}
                 </strong>
-                <span className="mt-1 block text-[10px] text-[var(--app-on-primary)]/65">
+                <span className="mt-1 block text-xs text-[var(--app-on-primary)]/65">
                   {text.hero.stats.activeCount}
                 </span>
               </div>

@@ -130,7 +130,7 @@ export function AppSidebar() {
                 <span className="truncate text-sm font-bold text-[var(--app-heading)]">
                   {uiText.app.name}
                 </span>
-                <span className="mt-1 truncate text-[11px] text-[var(--app-text-secondary)]">
+                <span className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
                   {uiText.app.tagline}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export function AppSidebar() {
               {user?.fullName}
             </span>
 
-            <span className="truncate text-[11px] text-[var(--app-primary-alt)]">
+            <span className="truncate text-xs text-[var(--app-primary-alt)]">
               {user?.roleName || user?.role}
             </span>
           </div>

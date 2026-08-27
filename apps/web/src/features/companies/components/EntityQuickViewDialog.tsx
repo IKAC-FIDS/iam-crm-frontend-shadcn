@@ -89,7 +89,7 @@ export function EntityQuickViewDialog({
                 ].join(" ")}
               >
                 {field.label ? (
-                  <p className="text-[10px] font-bold text-[var(--app-text-secondary)]">
+                  <p className="text-xs font-bold text-[var(--app-text-secondary)]">
                     {field.label}
                   </p>
                 ) : null}

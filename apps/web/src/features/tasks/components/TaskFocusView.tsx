@@ -1,4 +1,4 @@
-﻿import {
+import {
   AlertTriangle,
   Building2,
   CalendarClock,
@@ -176,7 +176,7 @@ function TaskGroup({
           {icon}
         </span>
         <h2 className="text-sm font-bold text-[var(--app-heading)]">{title}</h2>
-        <span className="rounded-full bg-[var(--app-background)] px-2 py-0.5 text-[9px] text-[var(--app-text-secondary)]">
+        <span className="rounded-full bg-[var(--app-background)] px-2 py-0.5 text-xs text-[var(--app-text-secondary)]">
           {tasks.length.toLocaleString("fa-IR")}
         </span>
       </div>
@@ -258,7 +258,7 @@ function TaskFocusRow({
               {taskPriorityLabel(task.priority)}
             </StatusBadge>
             {overdue ? (
-              <span className="rounded-full bg-[var(--destructive-soft)] px-2 py-1 text-[9px] font-bold text-[var(--destructive)]">
+              <span className="rounded-full bg-[var(--destructive-soft)] px-2 py-1 text-xs font-bold text-[var(--destructive)]">
                 {uiText.tasks.labels.overdue}
               </span>
             ) : null}
@@ -267,7 +267,7 @@ function TaskFocusRow({
             {task.title}
           </h3>
           {task.description ? (
-            <p className="mt-1 line-clamp-2 text-[10px] leading-5 text-[var(--app-text-secondary)]">
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
               {task.description}
             </p>
           ) : null}
@@ -289,7 +289,7 @@ function TaskFocusRow({
         </div>
       </div>
 
-      <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-[10px] text-[var(--app-text-secondary)]">
+      <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--app-text-secondary)]">
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Building2 className="size-3.5 shrink-0" />
           <span className="truncate">{taskContextLabel(task)}</span>

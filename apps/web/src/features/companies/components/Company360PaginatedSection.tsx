@@ -41,7 +41,7 @@ export function Company360PaginatedSection({
 
         {totalPages > 1 ? (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-[var(--app-text-secondary)]">
+            <span className="text-xs text-[var(--app-text-secondary)]">
               {pagination.page} {page.toLocaleString("fa-IR")} {pagination.of}{" "}
               {totalPages.toLocaleString("fa-IR")}
             </span>

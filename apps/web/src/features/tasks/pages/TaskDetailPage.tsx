@@ -247,7 +247,7 @@ function TaskHero({ task }: { task: Task }) {
               {taskPriorityLabel(task.priority)}
             </StatusBadge>
             {overdue ? (
-              <span className="rounded-full bg-[var(--destructive-soft)] px-2.5 py-1 text-[9px] font-bold text-[var(--destructive)]">
+              <span className="rounded-full bg-[var(--destructive-soft)] px-2.5 py-1 text-xs font-bold text-[var(--destructive)]">
                 {uiText.tasks.labels.overdue}
               </span>
             ) : null}
@@ -280,7 +280,7 @@ function TaskHero({ task }: { task: Task }) {
         </div>
 
         <div className="min-w-0 rounded-2xl bg-[var(--app-background)] px-4 py-3">
-          <p className="text-[9px] text-[var(--app-text-secondary)]">
+          <p className="text-xs text-[var(--app-text-secondary)]">
             {detail.labels.assignee}
           </p>
           <p className="mt-1 truncate text-xs font-bold text-[var(--app-heading)]">
@@ -314,7 +314,7 @@ function ScheduleCard({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 rounded-xl text-[10px]"
+              className="h-8 rounded-xl text-xs"
               onClick={onReschedule}
             >
               <RefreshCcw className="size-3.5" />
@@ -590,10 +590,10 @@ function LifecycleCard({ task }: { task: Task }) {
             className="relative border-s border-[var(--app-divider)] ps-5 pb-5 last:pb-0"
           >
             <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
-            <p className="text-[9px] text-[var(--app-text-secondary)]">
+            <p className="text-xs text-[var(--app-text-secondary)]">
               {item.label}
             </p>
-            <p className="mt-1 text-[11px] leading-5 font-bold text-[var(--app-heading)]">
+            <p className="mt-1 text-xs leading-5 font-bold text-[var(--app-heading)]">
               {item.value}
             </p>
           </div>
@@ -639,7 +639,7 @@ function InfoBox({
       <div className="flex items-start gap-3">
         <span className="mt-0.5 shrink-0 text-[var(--app-primary)]">{icon}</span>
         <div className="min-w-0">
-          <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+          <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
           <p className="mt-1 break-words text-xs font-bold text-[var(--app-heading)]">
             {value}
           </p>
@@ -666,7 +666,7 @@ function ContextLink({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+        <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
         <p className="mt-1 truncate text-xs font-bold text-[var(--app-heading)]">
           {value}
         </p>
@@ -707,7 +707,7 @@ function ContextButton({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+        <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
         <p className="mt-1 truncate text-xs font-bold text-[var(--app-heading)]">
           {value}
         </p>

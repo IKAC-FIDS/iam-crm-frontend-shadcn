@@ -37,7 +37,7 @@ export function OpportunityListView({ filters, permissions, onView, onEdit, onCh
     { id: "stage", header: text.table.stage, cell: (item) => item.stage?.label || uiText.common.notAvailable },
     { id: "value", header: text.table.estimatedValue, cell: (item) => `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}`, className: "whitespace-nowrap" },
     { id: "probability", header: text.table.probability, cell: (item) => item.probability === null || item.probability === undefined ? uiText.common.notAvailable : `${item.probability.toLocaleString("fa-IR")}%` },
-    { id: "priority", header: text.table.priority, cell: (item) => <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-[10px] font-bold text-[var(--app-primary)]">{priorityLabel(item.priority)}</span> },
+    { id: "priority", header: text.table.priority, cell: (item) => <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{priorityLabel(item.priority)}</span> },
     { id: "owner", header: text.table.owner, cell: (item) => item.owner?.fullName || text.fields.noOwner },
     { id: "close", header: text.table.closeDate, cell: (item) => formatOpportunityDate(item.expectedCloseDate), className: "whitespace-nowrap" },
     { id: "status", header: text.table.status, cell: (item) => <span className={item.archivedAt ? "text-[var(--app-text-secondary)]" : "text-[var(--success)]"}>{item.archivedAt ? text.status.archived : text.status.active}</span> },

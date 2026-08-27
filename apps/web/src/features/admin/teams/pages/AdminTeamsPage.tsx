@@ -214,11 +214,11 @@ export function AdminTeamsPage() {
         <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
               <Sparkles className="size-4" />
               مرکز مدیریت تیم‌ها
             </div>
-            <h1 className="text-2xl font-black sm:text-3xl">مدیریت تیم‌ها</h1>
+            <h1 className="ui-page-title">مدیریت تیم‌ها</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
               ساختار تیم‌ها، مدیران، اعضا و وضعیت فعالیت را از یک فضای واحد مدیریت کنید.
             </p>
@@ -316,11 +316,11 @@ export function AdminTeamsPage() {
 
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-muted/35 p-3">
-                  <div className="text-[11px] text-muted-foreground">مدیر تیم</div>
+                  <div className="text-xs text-muted-foreground">مدیر تیم</div>
                   <div className="mt-1 truncate text-sm font-bold">{team.manager?.fullName || "بدون مدیر"}</div>
                 </div>
                 <div className="rounded-2xl bg-muted/35 p-3">
-                  <div className="text-[11px] text-muted-foreground">اعضا</div>
+                  <div className="text-xs text-muted-foreground">اعضا</div>
                   <div className="mt-1 text-sm font-bold">{fa(team.memberCount)} نفر</div>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChevronLeft,
   LogOut,
   Settings,
@@ -79,7 +79,7 @@ export function AppHeader() {
             </nav>
           </div>
 
-          <p className="mt-1 hidden text-[11px] text-[var(--app-text-secondary)] lg:block">
+          <p className="mt-1 hidden text-xs text-[var(--app-text-secondary)] lg:block">
             {uiText.app.workspaceSubtitle}
           </p>
         </div>
@@ -105,7 +105,7 @@ export function AppHeader() {
               <span className="max-w-40 truncate text-sm font-semibold text-[var(--app-heading)]">
                 {user?.fullName}
               </span>
-              <span className="max-w-40 truncate text-[11px] text-[var(--app-text-secondary)]">
+              <span className="max-w-40 truncate text-xs text-[var(--app-text-secondary)]">
                 {user?.roleName || user?.role}
               </span>
             </div>

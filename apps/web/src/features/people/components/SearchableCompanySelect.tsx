@@ -136,7 +136,7 @@ export function SearchableCompanySelect({
                       {label}
                     </span>
                     {company.brandName && company.brandName !== company.legalName ? (
-                      <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">
+                      <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">
                         {company.legalName}
                       </span>
                     ) : null}
@@ -156,7 +156,7 @@ export function SearchableCompanySelect({
 
         {optionsQuery.data?.meta.total &&
         optionsQuery.data.meta.total > options.length ? (
-          <p className="border-t border-[var(--app-divider)] px-3 pt-2 text-[9px] text-[var(--app-text-secondary)]">
+          <p className="border-t border-[var(--app-divider)] px-3 pt-2 text-xs text-[var(--app-text-secondary)]">
             {text.firstTenHint}
           </p>
         ) : null}

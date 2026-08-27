@@ -1,4 +1,4 @@
-﻿import {
+import {
   Filter,
   RotateCcw,
   Search,
@@ -234,7 +234,7 @@ export function MeetingFilters({
             <SlidersHorizontal className="size-4" />
             {text.actions.filters}
             {activeAdvanced ? (
-              <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-[9px] text-[var(--app-primary)]">
+              <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
                 {activeAdvanced.toLocaleString("fa-IR")}
               </span>
             ) : null}

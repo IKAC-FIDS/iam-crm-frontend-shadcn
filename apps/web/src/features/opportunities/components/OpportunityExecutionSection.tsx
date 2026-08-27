@@ -1,4 +1,4 @@
-﻿import {
+import {
   CalendarDays,
   CheckCircle2,
   ListChecks,
@@ -224,11 +224,11 @@ export function OpportunityExecutionSection({
                   {item.title}
                 </h3>
                 {item.description ? (
-                  <p className="mt-2 line-clamp-2 text-[10px] leading-5 break-words text-[var(--app-text-secondary)]">
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 break-words text-[var(--app-text-secondary)]">
                     {item.description}
                   </p>
                 ) : null}
-                <div className="mt-3 flex items-center justify-between text-[9px] text-[var(--app-text-secondary)]">
+                <div className="mt-3 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
                   <span>{uiText.opportunities.priorities[item.priority]}</span>
                   <span>
                     {formatJalaliDateTime(item.dueAt) ||
@@ -241,7 +241,7 @@ export function OpportunityExecutionSection({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="mt-3 h-8 w-full rounded-lg text-[9px]"
+                    className="mt-3 h-8 w-full rounded-lg text-xs"
                     onClick={() =>
                       setActionTarget({ kind: "taskComplete", id: item.id })
                     }
@@ -343,12 +343,12 @@ export function OpportunityExecutionSection({
                 <h3 className="mt-3 text-xs font-bold break-words text-[var(--app-heading)]">
                   {item.title}
                 </h3>
-                <p className="mt-2 text-[10px] text-[var(--app-text-secondary)]">
+                <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
                   {text.meetingModes[item.mode]} ·{" "}
                   {formatJalaliDateTime(item.startAt)}
                 </p>
                 {item.location ? (
-                  <p className="mt-1 truncate text-[9px] text-[var(--app-text-secondary)]">
+                  <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
                     {item.location}
                   </p>
                 ) : null}
@@ -358,7 +358,7 @@ export function OpportunityExecutionSection({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 flex-1 rounded-lg text-[9px]"
+                        className="h-8 flex-1 rounded-lg text-xs"
                         onClick={(event) => {
                           event.stopPropagation()
                           setActionTarget({
@@ -375,7 +375,7 @@ export function OpportunityExecutionSection({
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 rounded-lg text-[9px]"
+                        className="h-8 rounded-lg text-xs"
                         onClick={(event) => {
                           event.stopPropagation()
                           setActionTarget({
@@ -480,7 +480,7 @@ function Section({
         <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold break-words text-[var(--app-heading)]">
           {title}
           {count !== undefined ? (
-            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[9px] text-[var(--app-primary)]">
+            <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-xs text-[var(--app-primary)]">
               {count.toLocaleString("fa-IR")}
             </span>
           ) : null}

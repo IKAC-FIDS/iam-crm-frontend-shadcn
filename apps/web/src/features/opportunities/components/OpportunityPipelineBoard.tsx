@@ -148,9 +148,9 @@ function PipelineLane({
             <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />
             <h2 className="truncate text-sm font-bold text-[var(--app-heading)]">{stage.label}</h2>
           </div>
-          <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-1 text-[9px] font-bold text-[var(--app-primary)]">{total.toLocaleString("fa-IR")} {text.count}</span>
+          <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{total.toLocaleString("fa-IR")} {text.count}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between text-[9px] text-[var(--app-text-secondary)]">
+        <div className="mt-2 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
           <span>{text.loadedValue}</span>
           <span className="font-bold text-[var(--app-heading)]">{formatOpportunityValue(loadedValue)} {uiText.opportunities.fields.valueUnit}</span>
         </div>

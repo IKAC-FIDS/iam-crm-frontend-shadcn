@@ -78,7 +78,7 @@ export function PersonCard({
 
           {display.department ? (
             <MetaRow
-              icon={<span className="text-[10px] font-bold">D</span>}
+              icon={<span className="text-xs font-bold">D</span>}
               value={display.department}
             />
           ) : null}
@@ -86,12 +86,12 @@ export function PersonCard({
           {display.personaRole || display.seniorityLevel ? (
             <div className="flex flex-wrap gap-1.5">
               {display.personaRole ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--app-on-primary-container)]">
+                <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-on-primary-container)]">
                   {display.personaRole}
                 </span>
               ) : null}
               {display.seniorityLevel ? (
-                <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2.5 py-1 text-[10px] text-[var(--app-text-secondary)]">
+                <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
                   {display.seniorityLevel}
                 </span>
               ) : null}
@@ -99,7 +99,7 @@ export function PersonCard({
           ) : null}
         </div>
 
-        <div className="mt-5 flex min-h-8 flex-wrap items-center gap-2 border-t border-[var(--app-divider)] pt-4 text-[10px] text-[var(--app-text-secondary)]">
+        <div className="mt-5 flex min-h-8 flex-wrap items-center gap-2 border-t border-[var(--app-divider)] pt-4 text-xs text-[var(--app-text-secondary)]">
           {person.phoneSummary || person.phone ? (
             <span className="inline-flex max-w-full items-center gap-1.5 truncate">
               <Phone className="size-3.5 text-[var(--app-primary)]" />
@@ -128,7 +128,7 @@ function MetaRow({
   value: string
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 text-[11px] text-[var(--app-text-secondary)]">
+    <div className="flex min-w-0 items-center gap-2 text-xs text-[var(--app-text-secondary)]">
       <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[var(--app-background)] text-[var(--app-primary)]">
         {icon}
       </span>

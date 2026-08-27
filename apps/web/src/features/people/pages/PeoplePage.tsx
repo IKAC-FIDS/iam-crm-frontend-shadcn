@@ -82,11 +82,11 @@ export function PeoplePage() {
 
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-[10px] font-bold text-[var(--app-primary)]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
               <Network className="size-3.5" />
               {text.hero.badge}
             </div>
-            <h1 className="text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">
+            <h1 className="ui-page-title">
               {text.hero.title}
             </h1>
             <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">
@@ -245,7 +245,7 @@ function Metric({
   const text = uiText.people
   return (
     <div className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)]/85 p-4 backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--app-text-secondary)]">
+      <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-text-secondary)]">
         <span className="grid size-8 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
           {icon}
         </span>
@@ -255,7 +255,7 @@ function Metric({
         {value.toLocaleString("fa-IR")}
       </p>
       {!exact ? (
-        <p className="mt-1 text-[9px] text-[var(--app-text-secondary)]">
+        <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
           {text.metrics.currentPageHint}
         </p>
       ) : null}

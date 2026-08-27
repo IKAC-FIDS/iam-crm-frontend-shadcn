@@ -351,7 +351,7 @@ function ScheduleCard({ meeting }: { meeting: Meeting }) {
                 <div className="flex items-start gap-3">
                   <Video className="mt-0.5 size-4 shrink-0 text-[var(--app-primary)]" />
                   <div className="min-w-0">
-                    <p className="text-[9px] text-[var(--app-text-secondary)]">
+                    <p className="text-xs text-[var(--app-text-secondary)]">
                       {text.labels.meetingUrl}
                     </p>
                     <a
@@ -504,10 +504,10 @@ function LifecycleCard({ meeting }: { meeting: Meeting }) {
             className="relative border-s border-[var(--app-divider)] ps-5 pb-5 last:pb-0"
           >
             <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
-            <p className="text-[9px] text-[var(--app-text-secondary)]">
+            <p className="text-xs text-[var(--app-text-secondary)]">
               {item.label}
             </p>
-            <p className="mt-1 text-[11px] leading-5 font-bold text-[var(--app-heading)]">
+            <p className="mt-1 text-xs leading-5 font-bold text-[var(--app-heading)]">
               {item.value}
             </p>
           </div>
@@ -627,7 +627,7 @@ function Metric({
     <div className="min-w-0 rounded-2xl bg-[var(--app-background)] p-3">
       <div className="flex items-center gap-2 text-[var(--app-primary)]">
         {icon}
-        <span className="text-[9px] text-[var(--app-text-secondary)]">
+        <span className="text-xs text-[var(--app-text-secondary)]">
           {label}
         </span>
       </div>
@@ -654,7 +654,7 @@ function InfoRow({
           {icon}
         </span>
         <div className="min-w-0">
-          <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+          <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
           <p className="mt-1 break-words text-xs font-bold text-[var(--app-heading)]">
             {value}
           </p>
@@ -681,7 +681,7 @@ function ContextLink({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[9px] text-[var(--app-text-secondary)]">{label}</p>
+        <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
         <p className="mt-1 truncate text-xs font-bold text-[var(--app-heading)]">
           {value}
         </p>
@@ -715,7 +715,7 @@ function PersonBlock({
 }) {
   return (
     <div>
-      <p className="text-[9px] font-bold text-[var(--app-text-secondary)]">
+      <p className="text-xs font-bold text-[var(--app-text-secondary)]">
         {label}
       </p>
       <div className="mt-2 grid gap-2">
@@ -728,7 +728,7 @@ function PersonBlock({
             />
           ))
         ) : (
-          <p className="text-[10px] text-[var(--app-text-secondary)]">
+          <p className="text-xs text-[var(--app-text-secondary)]">
             {uiText.common.notAvailable}
           </p>
         )}
@@ -750,7 +750,7 @@ function AttendeeBlock({
 }) {
   return (
     <div>
-      <p className="text-[9px] font-bold text-[var(--app-text-secondary)]">
+      <p className="text-xs font-bold text-[var(--app-text-secondary)]">
         {label}
       </p>
       <div className="mt-2 grid gap-2">
@@ -777,7 +777,7 @@ function AttendeeBlock({
             )
           )
         ) : (
-          <p className="text-[10px] text-[var(--app-text-secondary)]">
+          <p className="text-xs text-[var(--app-text-secondary)]">
             {uiText.common.notAvailable}
           </p>
         )}
@@ -799,11 +799,11 @@ function PersonRow({
         <UserRound className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[11px] font-bold text-[var(--app-heading)]">
+        <p className="truncate text-xs font-bold text-[var(--app-heading)]">
           {name}
         </p>
         {secondary ? (
-          <p className="mt-0.5 truncate text-[9px] text-[var(--app-text-secondary)]">
+          <p className="mt-0.5 truncate text-xs text-[var(--app-text-secondary)]">
             {secondary}
           </p>
         ) : null}

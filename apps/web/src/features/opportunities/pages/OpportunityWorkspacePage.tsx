@@ -181,8 +181,8 @@ export function OpportunityWorkspacePage() {
         <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
         <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-[10px] font-bold text-[var(--app-primary)]"><BriefcaseBusiness className="size-3.5" />{text.hero.badge}</div>
-            <h1 className="text-2xl font-bold text-[var(--app-heading)] sm:text-3xl">{text.hero.title}</h1>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]"><BriefcaseBusiness className="size-3.5" />{text.hero.badge}</div>
+            <h1 className="ui-page-title">{text.hero.title}</h1>
             <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">{text.hero.description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

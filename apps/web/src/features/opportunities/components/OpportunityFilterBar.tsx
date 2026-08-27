@@ -61,7 +61,7 @@ export function OpportunityFilterBar({
               key={scope}
               type="button"
               onClick={() => onChange({ ownershipScope: scope })}
-              className={["rounded-lg px-3 py-2 text-[11px] font-bold transition", filters.ownershipScope === scope ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm" : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]"].join(" ")}
+              className={["rounded-lg px-3 py-2 text-xs font-bold transition", filters.ownershipScope === scope ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm" : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]"].join(" ")}
             >
               {scope === "all" ? text.filters.all : scope === "mine" ? text.filters.mine : text.filters.teamMine}
             </button>
@@ -88,7 +88,7 @@ export function OpportunityFilterBar({
           <PopoverTrigger render={<Button type="button" variant="outline" className="h-11 rounded-xl" />}>
             <SlidersHorizontal className="size-4" />
             {text.filters.more}
-            {activeAdvanced ? <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-[9px] text-[var(--app-primary)]">{activeAdvanced.toLocaleString("fa-IR")}</span> : null}
+            {activeAdvanced ? <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">{activeAdvanced.toLocaleString("fa-IR")}</span> : null}
           </PopoverTrigger>
           <PopoverContent align="end" className="w-[min(680px,calc(100vw-24px))] rounded-2xl p-4" dir="rtl">
             <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">

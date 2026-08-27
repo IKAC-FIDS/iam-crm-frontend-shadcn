@@ -247,11 +247,11 @@ export function AdminPermissionsPage() {
         <div className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
               <Sparkles className="size-4" />
               RBAC Administration
             </div>
-            <h1 className="text-2xl font-black sm:text-3xl">نقش‌ها و مجوزهای دسترسی</h1>
+            <h1 className="ui-page-title">نقش‌ها و مجوزهای دسترسی</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
               مدیریت کاتالوگ مجوزها، نقش‌های سازمانی و ماتریس دسترسی هر نقش
             </p>
@@ -491,14 +491,14 @@ function PermissionsCatalog({
                       <div className="flex flex-wrap items-center gap-2">
                         <code className="rounded-lg bg-muted px-2 py-1 text-xs" dir="ltr">{item.action}</code>
                         {item.isSystem ? (
-                          <span className="rounded-full bg-violet-500/10 px-2 py-1 text-[11px] font-bold text-violet-700">سیستمی</span>
+                          <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">سیستمی</span>
                         ) : (
-                          <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[11px] font-bold text-sky-700">سفارشی</span>
+                          <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">سفارشی</span>
                         )}
                         {isCritical(item) ? (
-                          <span className="rounded-full bg-amber-500/10 px-2 py-1 text-[11px] font-bold text-amber-700">حیاتی</span>
+                          <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-bold text-amber-700">حیاتی</span>
                         ) : null}
-                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${item.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${item.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
                           {item.isActive ? "فعال" : "غیرفعال"}
                         </span>
                       </div>
@@ -566,9 +566,9 @@ function RolesWorkspace({
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-black">{role.name}</h2>
                 {role.isSystem || role.scope === "SYSTEM" ? (
-                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-[11px] font-bold text-violet-700">سیستمی</span>
+                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">سیستمی</span>
                 ) : (
-                  <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[11px] font-bold text-sky-700">سفارشی</span>
+                  <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">سفارشی</span>
                 )}
               </div>
               <code className="mt-2 inline-block text-xs text-muted-foreground" dir="ltr">{role.normalizedCode || role.code}</code>
@@ -584,15 +584,15 @@ function RolesWorkspace({
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-muted/35 p-3">
-              <div className="text-[11px] text-muted-foreground">نقش پایه</div>
+              <div className="text-xs text-muted-foreground">نقش پایه</div>
               <div className="mt-1 text-xs font-bold">{ROLE_LABELS[role.baseRole]}</div>
             </div>
             <div className="rounded-2xl bg-muted/35 p-3">
-              <div className="text-[11px] text-muted-foreground">کاربران</div>
+              <div className="text-xs text-muted-foreground">کاربران</div>
               <div className="mt-1 text-sm font-black">{fa(role._count?.users ?? 0)}</div>
             </div>
             <div className="rounded-2xl bg-muted/35 p-3">
-              <div className="text-[11px] text-muted-foreground">مجوزها</div>
+              <div className="text-xs text-muted-foreground">مجوزها</div>
               <div className="mt-1 text-sm font-black">{fa(role._count?.permissions ?? 0)}</div>
             </div>
           </div>
@@ -983,7 +983,7 @@ function RoleCreateModal({
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
                         <div>
                           <div className="font-bold">{group}</div>
-                          <div className="mt-1 text-[11px] text-muted-foreground">
+                          <div className="mt-1 text-xs text-muted-foreground">
                             {fa(selectedCount)} از {fa(items.length)} انتخاب شده
                           </div>
                         </div>
@@ -1042,7 +1042,7 @@ function RoleCreateModal({
                                   {permission.name || actionVerb(permission)}
                                 </span>
                                 <code
-                                  className="mt-1 block truncate text-[11px] text-muted-foreground"
+                                  className="mt-1 block truncate text-xs text-muted-foreground"
                                   dir="ltr"
                                 >
                                   {permission.action}
@@ -1307,7 +1307,7 @@ function RoleMatrixModal({
                               {checked ? <Check className="size-4 text-[var(--app-primary)]" /> : <X className="size-4 text-muted-foreground" />}
                               {permission.name || actionVerb(permission)}
                             </span>
-                            <code className="mt-1 block truncate text-[11px] text-muted-foreground" dir="ltr">{permission.action}</code>
+                            <code className="mt-1 block truncate text-xs text-muted-foreground" dir="ltr">{permission.action}</code>
                           </span>
                         </label>
                       )
