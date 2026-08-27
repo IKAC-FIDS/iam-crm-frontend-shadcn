@@ -52,7 +52,9 @@ import {
 } from "../api/adminLibrariesApi"
 
 type Section = {
-  id: LibraryKind | "products"
+  id: string
+  kind: LibraryKind | "products"
+  group?: LookupGroup
   label: string
   description: string
   icon: typeof BookOpen
@@ -62,6 +64,7 @@ type Section = {
 const sections: Section[] = [
   {
     id: "industries",
+    kind: "industries",
     label: "صنایع",
     description: "طبقه‌بندی شرکت‌ها و بازارها",
     icon: Building2,
@@ -70,6 +73,7 @@ const sections: Section[] = [
   },
   {
     id: "leadSources",
+    kind: "leadSources",
     label: "منابع جذب",
     description: "کانال‌های ورود سرنخ و شرکت",
     icon: Sparkles,
@@ -78,6 +82,7 @@ const sections: Section[] = [
   },
   {
     id: "painPoints",
+    kind: "painPoints",
     label: "نقاط درد",
     description: "مسائل و نیازهای مشتریان",
     icon: HeartPulse,
@@ -86,6 +91,7 @@ const sections: Section[] = [
   },
   {
     id: "useCases",
+    kind: "useCases",
     label: "کاربردها",
     description: "سناریوهای کاربرد محصول",
     icon: BriefcaseBusiness,
@@ -94,22 +100,29 @@ const sections: Section[] = [
   },
   {
     id: "personas",
+    kind: "personas",
     label: "پرسوناها",
     description: "الگوهای نقش و پیشنهاد فروش",
     icon: UserRound,
     view: "library:persona:view",
     manage: "library:persona:manage",
   },
-  {
-    id: "lookupOptions",
-    label: "گزینه‌های پایه",
-    description: "گزینه‌های مشترک فرم‌ها",
+  ...lookupGroups.map(([group, label]) => ({
+    id: `lookup:${group}`,
+    kind: "lookupOptions" as const,
+    group,
+    label: group === "teams" ? "گزینه‌های تیم" : label,
+    description:
+      group === "teams"
+        ? "گزینه‌های تیم در فرم‌های پایه"
+        : `مدیریت گزینه‌های ${label}`,
     icon: Settings2,
     view: "lookup:view",
     manage: "lookup:manage",
-  },
+  })),
   {
     id: "universities",
+    kind: "universities",
     label: "دانشگاه‌ها",
     description: "مراجع سوابق تحصیلی افراد",
     icon: GraduationCap,
@@ -118,6 +131,7 @@ const sections: Section[] = [
   },
   {
     id: "products",
+    kind: "products",
     label: "محصولات",
     description: "کاتالوگ، قیمت و کانال فروش",
     icon: Package,
@@ -144,7 +158,7 @@ function LibraryForm({
   onClose: () => void
 }) {
   const client = useQueryClient()
-  const kind = section.id as LibraryKind
+  const kind = section.kind as LibraryKind
   const [form, setForm] = useState<LibraryPayload>({
     primary: item?.label ?? "",
     code: item?.code ?? "",
@@ -429,11 +443,10 @@ export function AdminLibrariesPage() {
   const available = sections.filter(
     (s) => permissions.includes(s.view) || permissions.includes(s.manage)
   )
-  const [activeId, setActiveId] = useState<Section["id"]>(
+  const [activeId, setActiveId] = useState<string>(
     available[0]?.id ?? "industries"
   )
   const section = available.find((s) => s.id === activeId) ?? available[0]
-  const [group, setGroup] = useState<LookupGroup>("departments")
   const [search, setSearch] = useState("")
   const [editing, setEditing] = useState<LibraryItem | null | undefined>()
   const [productEditing, setProductEditing] = useState<
@@ -443,13 +456,14 @@ export function AdminLibrariesPage() {
   const [status, setStatus] = useState("ALL")
   const client = useQueryClient()
   const canManage = Boolean(section && permissions.includes(section.manage))
-  const kind = section?.id !== "products" ? section?.id : undefined
+  const kind = section?.kind !== "products" ? section?.kind : undefined
+  const group = section?.group
   const items = useQuery({
     queryKey: ["admin-library", kind, group],
     queryFn: () =>
       getLibraryItems(
         kind as LibraryKind,
-        kind === "lookupOptions" ? group : undefined
+        group
       ),
     enabled: Boolean(kind),
   })
@@ -462,7 +476,7 @@ export function AdminLibrariesPage() {
   const products = useQuery({
     queryKey: ["admin-products", productParams],
     queryFn: () => getProducts(productParams),
-    enabled: section?.id === "products",
+    enabled: section?.kind === "products",
   })
   const filtered = useMemo(
     () =>
@@ -480,7 +494,7 @@ export function AdminLibrariesPage() {
       removeLibraryItem(
         kind as LibraryKind,
         item.id,
-        kind === "lookupOptions" ? group : undefined
+        group
       ),
     onSuccess: async () => {
       toast.success("آیتم غیرفعال یا حذف شد.")
@@ -694,7 +708,7 @@ export function AdminLibrariesPage() {
             {canManage ? (
               <Button
                 onClick={() =>
-                  section.id === "products"
+                  section.kind === "products"
                     ? setProductEditing(null)
                     : setEditing(null)
                 }
@@ -716,7 +730,7 @@ export function AdminLibrariesPage() {
         <MetricCard
           label={`آیتم‌های ${section.label}`}
           value={fa(
-            section.id === "products"
+            section.kind === "products"
               ? (products.data?.meta.total ?? 0)
               : (items.data?.length ?? 0)
           )}
@@ -727,12 +741,12 @@ export function AdminLibrariesPage() {
         <MetricCard
           label="آیتم‌های فعال"
           value={fa(
-            section.id === "products"
+            section.kind === "products"
               ? (products.data?.data.filter((i) => i.isActive).length ?? 0)
               : (items.data?.filter((i) => i.isActive).length ?? 0)
           )}
           helper={
-            section.id === "products" ? "در صفحه جاری" : "در این کتابخانه"
+            section.kind === "products" ? "در صفحه جاری" : "در این کتابخانه"
           }
           icon={Tag}
           tone="success"
@@ -776,21 +790,6 @@ export function AdminLibrariesPage() {
                 {section.description}
               </p>
             </div>
-            {section.id === "lookupOptions" ? (
-              <div className="mb-3 flex gap-2 overflow-x-auto pb-2">
-                {lookupGroups.map(([id, label]) => (
-                  <Button
-                    key={id}
-                    className="shrink-0 rounded-xl"
-                    variant={group === id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setGroup(id)}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
-            ) : null}
             <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px]">
               <div className="relative">
                 <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
@@ -818,7 +817,7 @@ export function AdminLibrariesPage() {
               </select>
             </div>
           </section>
-          {section.id === "products" ? (
+          {section.kind === "products" ? (
             <>
               <DataTableShell
                 rows={products.data?.data ?? []}
@@ -849,7 +848,7 @@ export function AdminLibrariesPage() {
         <LibraryForm
           key={editing?.id ?? `new-${kind}-${group}`}
           section={section}
-          group={kind === "lookupOptions" ? group : undefined}
+          group={group}
           item={editing ?? undefined}
           onClose={() => setEditing(undefined)}
         />
