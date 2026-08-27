@@ -11,6 +11,7 @@ import type {
   MeetingPage,
   MeetingPayload,
   MeetingQuery,
+  MeetingTypeOption,
 } from "../types/meeting.types"
 
 function clean<T extends object>(value: T) {
@@ -33,6 +34,12 @@ export async function getMeetings(query: MeetingQuery) {
 export async function getMeeting(id: string) {
   const response = await api.get(`/meetings/${id}`)
   return unwrapApiResponse<Meeting>(response.data)
+}
+
+export async function getMeetingTypes() {
+  const response = await api.get("/meetings/types/options")
+  const data = unwrapApiResponse<MeetingTypeOption[]>(response.data)
+  return Array.isArray(data) ? data : []
 }
 
 export async function createMeeting(payload: MeetingPayload) {

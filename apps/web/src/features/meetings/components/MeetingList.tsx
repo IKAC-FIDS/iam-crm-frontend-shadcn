@@ -18,6 +18,7 @@ import {
   meetingStatusLabel,
   meetingStatusTone,
   meetingTimeRange,
+  meetingTypeLabel,
 } from "../utils/meetingFormatters"
 import { MeetingActionsMenu } from "./MeetingActionsMenu"
 
@@ -82,6 +83,12 @@ export function MeetingList({
           </p>
         </div>
       ),
+    },
+    {
+      id: "type",
+      header: text.table.type,
+      className: "min-w-36",
+      cell: (meeting) => <StatusBadge tone="primary" dot={false}>{meetingTypeLabel(meeting.type)}</StatusBadge>,
     },
     {
       id: "mode",

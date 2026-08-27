@@ -6,6 +6,7 @@ export const lookupGroups = [
   ["seniority-levels", "سطح ارشدیت"], ["persona-roles", "نقش‌های فروش"],
   ["opportunity-sources", "منابع ایجاد فرصت"], ["contact-types", "انواع تماس"],
   ["person-social-platforms", "شبکه‌های اجتماعی"], ["company-sources", "منابع شرکت"],
+  ["meeting-types", "انواع جلسه"],
 ] as const
 export type LookupGroup = (typeof lookupGroups)[number][0]
 export type LibraryKind = "industries" | "leadSources" | "painPoints" | "useCases" | "personas" | "universities" | "lookupOptions"

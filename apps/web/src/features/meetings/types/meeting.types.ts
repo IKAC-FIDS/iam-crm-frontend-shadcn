@@ -1,5 +1,6 @@
 export type MeetingStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED"
 export type MeetingMode = "IN_PERSON" | "ONLINE" | "HYBRID"
+export interface MeetingTypeOption { id: string; code: string; label: string; description?: string | null; sortOrder: number; isActive: boolean }
 
 export interface MeetingUser {
   id: string
@@ -23,6 +24,8 @@ export interface Meeting {
   companyId: string
   opportunityId?: string | null
   title: string
+  meetingTypeId: string
+  type: MeetingTypeOption
   agenda?: string | null
   description?: string | null
   mode: MeetingMode
@@ -67,6 +70,7 @@ export interface MeetingQuery {
   attendeePersonId?: string
   status?: MeetingStatus
   mode?: MeetingMode
+  meetingTypeId?: string
   dateFrom?: string
   dateTo?: string
   upcoming?: boolean
@@ -79,6 +83,7 @@ export interface MeetingPayload {
   companyId: string
   opportunityId?: string
   title: string
+  meetingTypeId?: string
   agenda?: string
   description?: string
   mode: MeetingMode

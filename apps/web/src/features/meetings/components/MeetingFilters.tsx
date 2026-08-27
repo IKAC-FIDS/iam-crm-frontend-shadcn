@@ -21,6 +21,7 @@ import {
   useMeetingAssignees,
   useMeetingOpportunityOptions,
   useMeetingPeopleOptions,
+  useMeetingTypes,
 } from "../hooks/useMeetings"
 import type {
   MeetingMode,
@@ -34,6 +35,7 @@ type FilterValues = {
   opportunityId?: string
   status?: MeetingStatus
   mode?: MeetingMode
+  meetingTypeId?: string
   dateFrom?: string
   dateTo?: string
   organizerId?: string
@@ -86,6 +88,7 @@ export function MeetingFilters({
     useDebounced(attendeeSearch),
     true
   )
+  const meetingTypes = useMeetingTypes()
 
   const opportunityOptions =
     opportunities.data?.pages
@@ -133,7 +136,7 @@ export function MeetingFilters({
 
   return (
     <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-      <div className="grid gap-3 xl:grid-cols-[minmax(220px,1.3fr)_minmax(190px,1fr)_150px_150px_minmax(260px,1.25fr)_auto] xl:items-center">
+      <div className="grid gap-3 xl:grid-cols-[minmax(210px,1.3fr)_minmax(180px,1fr)_150px_150px_150px_minmax(230px,1.1fr)_auto] xl:items-center">
         <div className="relative min-w-0">
           <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
           <Input
@@ -156,6 +159,15 @@ export function MeetingFilters({
             })
           }
         />
+
+        <select
+          value={values.meetingTypeId || ""}
+          onChange={(event) => onChange({ meetingTypeId: event.target.value || undefined })}
+          className={selectClass}
+        >
+          <option value="">{text.fields.type}: همه</option>
+          {(meetingTypes.data ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+        </select>
 
         <select
           value={values.status || ""}

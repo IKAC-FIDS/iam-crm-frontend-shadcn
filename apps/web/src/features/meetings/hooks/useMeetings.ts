@@ -17,6 +17,7 @@ import {
   getMeetingOpportunities,
   getMeetingPeople,
   getMeetings,
+  getMeetingTypes,
   updateMeeting,
   uploadMeetingAttachment,
 } from "../api/meetings.api"
@@ -32,6 +33,7 @@ export const meetingKeys = {
   list: (query: MeetingQuery) => [...meetingKeys.lists(), query] as const,
   details: () => [...meetingKeys.all, "detail"] as const,
   detail: (id: string) => [...meetingKeys.details(), id] as const,
+  types: () => [...meetingKeys.all, "types"] as const,
   attachments: (id: string) =>
     [...meetingKeys.detail(id), "attachments"] as const,
   attachmentList: (id: string, page: number) =>
@@ -59,6 +61,10 @@ export function useMeeting(id: string, enabled = true) {
     queryFn: () => getMeeting(id),
     enabled: enabled && Boolean(id),
   })
+}
+
+export function useMeetingTypes(enabled = true) {
+  return useQuery({ queryKey: meetingKeys.types(), queryFn: getMeetingTypes, enabled, staleTime: 5 * 60_000 })
 }
 
 function useInvalidateMeeting() {

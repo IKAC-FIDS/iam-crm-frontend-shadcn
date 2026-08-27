@@ -60,6 +60,7 @@ const filterKeys = [
   "opportunityId",
   "status",
   "mode",
+  "meetingTypeId",
   "dateFrom",
   "dateTo",
   "organizerId",
@@ -181,6 +182,7 @@ export function MeetingsPage() {
     ].includes(modeParam || "")
       ? (modeParam as MeetingMode)
       : undefined,
+    meetingTypeId: searchParams.get("meetingTypeId") || undefined,
     dateFrom:
       searchParams.get("dateFrom") || undefined,
     dateTo:
@@ -211,6 +213,7 @@ export function MeetingsPage() {
         filterValues.attendeePersonId,
       status: filterValues.status,
       mode: filterValues.mode,
+      meetingTypeId: filterValues.meetingTypeId,
       dateFrom:
         quick === "today"
           ? today.dateFrom

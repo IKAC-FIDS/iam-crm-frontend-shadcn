@@ -21,6 +21,7 @@ import {
   meetingModeLabel,
   meetingStatusLabel,
   meetingStatusTone,
+  meetingTypeLabel,
   meetingTimeRange,
 } from "../utils/meetingFormatters"
 import { MeetingActionsMenu } from "./MeetingActionsMenu"
@@ -152,6 +153,9 @@ export function MeetingAgenda({
                         >
                           <StatusBadge tone={meetingStatusTone(meeting.status)}>
                             {meetingStatusLabel(meeting.status)}
+                          </StatusBadge>
+                          <StatusBadge tone="primary" dot={false}>
+                            {meetingTypeLabel(meeting.type)}
                           </StatusBadge>
                           <MeetingActionsMenu
                             meeting={meeting}

@@ -10,6 +10,7 @@ import type {
   Meeting,
   MeetingMode,
   MeetingStatus,
+  MeetingTypeOption,
 } from "../types/meeting.types"
 
 export function meetingCompanyName(meeting: Meeting) {
@@ -26,6 +27,10 @@ export function meetingStatusLabel(status: MeetingStatus) {
 
 export function meetingModeLabel(mode: MeetingMode) {
   return uiText.meetings.modes[mode]
+}
+
+export function meetingTypeLabel(type: MeetingTypeOption) {
+  return type.label
 }
 
 export function meetingTimeRange(meeting: Pick<Meeting, "startAt" | "endAt">) {

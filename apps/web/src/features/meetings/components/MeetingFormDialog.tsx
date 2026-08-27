@@ -19,6 +19,7 @@ import {
   useMeetingAssignees,
   useMeetingOpportunityOptions,
   useMeetingPeopleOptions,
+  useMeetingTypes,
   useUpdateMeeting,
 } from "../hooks/useMeetings"
 import type {
@@ -93,6 +94,7 @@ export function MeetingFormDialog({
   const [agenda, setAgenda] = useState("")
   const [description, setDescription] = useState("")
   const [mode, setMode] = useState<MeetingMode>("IN_PERSON")
+  const [meetingTypeId, setMeetingTypeId] = useState("")
   const [location, setLocation] = useState("")
   const [meetingUrl, setMeetingUrl] = useState("")
   const [startAt, setStartAt] = useState<Date>()
@@ -122,6 +124,7 @@ export function MeetingFormDialog({
     setAgenda(meeting?.agenda || "")
     setDescription(meeting?.description || "")
     setMode(meeting?.mode || "IN_PERSON")
+    setMeetingTypeId(meeting?.meetingTypeId || meeting?.type?.id || "")
     setLocation(meeting?.location || "")
     setMeetingUrl(meeting?.meetingUrl || "")
     setStartAt(meeting?.startAt ? new Date(meeting.startAt) : schedule.start)
@@ -165,6 +168,7 @@ export function MeetingFormDialog({
   )
   const assigneeQuery = useMeetingAssignees(debouncedAssignee, open)
   const people = useMeetingPeopleOptions(companyId, debouncedAttendee, open)
+  const meetingTypes = useMeetingTypes(open)
 
   const opportunityOptions = useMemo(
     () =>
@@ -264,6 +268,7 @@ export function MeetingFormDialog({
       companyId,
       opportunityId: opportunity?.id,
       title: title.trim(),
+      meetingTypeId: meetingTypeId || undefined,
       agenda: agenda.trim() || undefined,
       description: description.trim() || undefined,
       mode,
@@ -357,6 +362,12 @@ export function MeetingFormDialog({
                     onChange={(event) => setTitle(event.target.value)}
                     className="h-11 rounded-xl"
                   />
+                </Field>
+                <Field label={text.fields.type}>
+                  <select value={meetingTypeId} onChange={(event) => setMeetingTypeId(event.target.value)} className={selectClass}>
+                    <option value="">{text.placeholders.select}</option>
+                    {(meetingTypes.data ?? []).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  </select>
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={text.fields.agenda}>

@@ -47,6 +47,7 @@ import {
   meetingStatusLabel,
   meetingStatusTone,
   meetingTimeRange,
+  meetingTypeLabel,
 } from "../utils/meetingFormatters"
 
 export function MeetingDetailPage() {
@@ -248,6 +249,9 @@ function MeetingHero({ meeting }: { meeting: Meeting }) {
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={meetingStatusTone(meeting.status)}>
               {meetingStatusLabel(meeting.status)}
+            </StatusBadge>
+            <StatusBadge tone="primary" dot={false}>
+              {meetingTypeLabel(meeting.type)}
             </StatusBadge>
             <StatusBadge tone="neutral" dot={false}>
               {meetingModeLabel(meeting.mode)}
