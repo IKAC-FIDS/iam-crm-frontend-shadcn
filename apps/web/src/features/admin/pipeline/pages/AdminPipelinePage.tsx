@@ -317,6 +317,7 @@ function StagesDesigner({
     useState<PipelineStage | null>(null)
   const [replacementStageId, setReplacementStageId] = useState("")
   const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
   const [ordered, setOrdered] = useState<PipelineStage[] | null>(null)
 
   const displayed = ordered ?? stages
@@ -361,14 +362,12 @@ function StagesDesigner({
   const startDrag = (event: DragEvent<HTMLElement>, id: string) => {
     if (!canManage) return
     setDraggedId(id)
+    setDragOverId(id)
     event.dataTransfer.effectAllowed = "move"
     event.dataTransfer.setData("text/plain", id)
   }
 
-  const dropOn = (event: DragEvent<HTMLElement>, targetId: string) => {
-    event.preventDefault()
-    const sourceId = draggedId || event.dataTransfer.getData("text/plain")
-    setDraggedId(null)
+  const moveStage = (sourceId: string, targetId: string) => {
     if (!sourceId || sourceId === targetId) return
 
     const copy = [...displayed]
@@ -381,6 +380,23 @@ function StagesDesigner({
     copy.splice(from, 1)
     copy.splice(to, 0, moved)
     setOrdered(copy)
+  }
+
+  const dragOverStage = (event: DragEvent<HTMLElement>, targetId: string) => {
+    if (!canManage) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = "move"
+
+    const sourceId = draggedId || event.dataTransfer.getData("text/plain")
+    if (!sourceId || dragOverId === targetId) return
+
+    setDragOverId(targetId)
+    moveStage(sourceId, targetId)
+  }
+
+  const finishDrag = () => {
+    setDraggedId(null)
+    setDragOverId(null)
   }
 
   if (loading) {
@@ -449,10 +465,21 @@ function StagesDesigner({
               key={stage.id}
               draggable={canManage}
               onDragStart={(event) => startDrag(event, stage.id)}
-              onDragOver={(event) => canManage && event.preventDefault()}
-              onDrop={(event) => dropOn(event, stage.id)}
-              className={`min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-sm ${
-                draggedId === stage.id ? "opacity-50" : ""
+              onDragEnter={(event) => dragOverStage(event, stage.id)}
+              onDragOver={(event) => dragOverStage(event, stage.id)}
+              onDrop={(event) => {
+                event.preventDefault()
+                finishDrag()
+              }}
+              onDragEnd={finishDrag}
+              className={`min-w-0 rounded-[22px] border bg-[var(--app-surface)] p-4 shadow-sm transition-[transform,opacity,border-color,box-shadow] duration-150 ${
+                canManage ? "cursor-grab active:cursor-grabbing" : ""
+              } ${
+                draggedId === stage.id
+                  ? "scale-[0.98] border-[var(--app-primary)] opacity-45"
+                  : dragOverId === stage.id
+                    ? "border-[var(--app-primary)] shadow-md ring-2 ring-[var(--app-primary)]/15"
+                    : "border-[var(--app-divider)]"
               }`}
             >
               <div className="flex items-start justify-between gap-3">
