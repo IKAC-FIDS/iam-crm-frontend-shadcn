@@ -16,12 +16,12 @@ export type LibraryItem = {
 }
 export type LibraryPayload = { primary: string; code?: string; description?: string; category?: string; sortOrder?: number; isActive?: boolean; defaultPainPoint?: string; defaultUseCase?: string }
 export type Product = {
-  id: string; code: string; name: string; description?: string | null; category?: string | null; unit?: string | null
+  id: string; code: string; digikalaCode?: string | null; digikalaUrl?: string | null; name: string; description?: string | null; category?: string | null; unit?: string | null
   pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string | number; digikalaInputPrice: string | number
   inPersonProfitPercent?: string | number | null; digikalaProfitPercent?: string | number | null
   inPersonPriceIrr: string | number; digikalaPriceIrr: string | number; isActive: boolean; sortOrder: number
 }
-export type ProductPayload = { code: string; name: string; description?: string; category?: string; unit?: string; pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string; digikalaInputPrice: string; inPersonProfitPercent?: string; digikalaProfitPercent?: string; isActive: boolean; sortOrder: number }
+export type ProductPayload = { code: string; digikalaCode?: string | null; digikalaUrl?: string | null; name: string; description?: string; category?: string; unit?: string; pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string; digikalaInputPrice: string; inPersonProfitPercent?: string; digikalaProfitPercent?: string; isActive: boolean; sortOrder: number }
 export type ProductPriceHistory = { id: string; pricingCurrency: "IRR" | "USD"; inPersonPriceIrr: string | number; digikalaPriceIrr: string | number; reason: string; validFrom: string; changedBy?: { fullName: string } | null }
 export type PageMeta = { total: number; page: number; limit: number; totalPages: number }
 
@@ -70,6 +70,6 @@ export async function getProducts(params: { page: number; limit: number; search?
   }
   return unwrapApiResponse<{ data: Product[]; meta: PageMeta }>(value)
 }
-export async function saveProduct(payload: ProductPayload, id?: string) { const response = id ? await api.patch(`/product-catalog/${id}`, payload) : await api.post("/product-catalog", payload); return unwrapApiResponse<Product>(response.data) }
+export async function saveProduct(payload: ProductPayload, id?: string) { const body = { ...payload, digikalaCode: payload.digikalaCode?.trim() || null, digikalaUrl: payload.digikalaUrl?.trim() || null }; const response = id ? await api.patch(`/product-catalog/${id}`, body) : await api.post("/product-catalog", body); return unwrapApiResponse<Product>(response.data) }
 export async function toggleProduct(item: Product) { const response = await api.patch(`/product-catalog/${item.id}/${item.isActive ? "deactivate" : "activate"}`); return unwrapApiResponse<Product>(response.data) }
 export async function getProductPriceHistory(id: string) { const response = await api.get(`/product-catalog/${id}/price-history`, { params: { page: 1, limit: 50 } }); return unwrapApiResponse<{ data: ProductPriceHistory[]; meta: PageMeta }>(response.data) }

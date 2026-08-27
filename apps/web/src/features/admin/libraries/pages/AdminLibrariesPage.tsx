@@ -10,6 +10,7 @@ import {
   CircleOff,
   GraduationCap,
   HeartPulse,
+  ShoppingBag,
   LibraryBig,
   Package,
   Pencil,
@@ -145,6 +146,17 @@ const selectClass =
 const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n)
 const money = (value: string | number) =>
   `${new Intl.NumberFormat("fa-IR").format(Number(value || 0))} ریال`
+const safeExternalUrl = (value?: string | null) => {
+  if (!value) return undefined
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.toString()
+      : undefined
+  } catch {
+    return undefined
+  }
+}
 
 function LibraryForm({
   section,
@@ -327,6 +339,8 @@ function ProductForm({
   const client = useQueryClient()
   const [form, setForm] = useState<ProductPayload>({
     code: item?.code ?? "",
+    digikalaCode: item?.digikalaCode ?? "",
+    digikalaUrl: item?.digikalaUrl ?? "",
     name: item?.name ?? "",
     description: item?.description ?? "",
     category: item?.category ?? "",
@@ -378,7 +392,10 @@ function ProductForm({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           {field("نام محصول", "name")}
-          {field("کد محصول", "code")} {field("دسته‌بندی", "category")}
+          {field("کد محصول", "code")}
+          {field("کد دیجی‌کالا", "digikalaCode")}
+          {field("صفحه دیجی‌کالا", "digikalaUrl", "url")}
+          {field("دسته‌بندی", "category")}
           {field("واحد", "unit")}
         </div>
         <label className="grid gap-2 text-sm font-bold">
@@ -615,6 +632,15 @@ export function AdminLibrariesPage() {
     },
     { id: "category", header: "دسته‌بندی", cell: (r) => r.category || "—" },
     {
+      id: "digikalaCode",
+      header: "کد دیجی‌کالا",
+      cell: (r) => (
+        <code className="whitespace-nowrap" dir="ltr">
+          {r.digikalaCode || "—"}
+        </code>
+      ),
+    },
+    {
       id: "in",
       header: "قیمت حضوری",
       cell: (r) => (
@@ -648,6 +674,29 @@ export function AdminLibrariesPage() {
       header: "عملیات",
       cell: (r) => (
         <div className="flex">
+          {safeExternalUrl(r.digikalaUrl) ? (
+            <a
+              href={safeExternalUrl(r.digikalaUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex size-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-accent hover:text-rose-700"
+              onClick={(e) => e.stopPropagation()}
+              aria-label="مشاهده صفحه محصول در دیجی‌کالا"
+              title="رفتن به صفحه دیجی‌کالا"
+            >
+              <ShoppingBag className="size-4" />
+            </a>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled
+              aria-label="صفحه دیجی‌کالا ثبت نشده است"
+              title="صفحه دیجی‌کالا ثبت نشده است"
+            >
+              <ShoppingBag className="size-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
