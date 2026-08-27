@@ -173,7 +173,10 @@ export function AdminUserDetailsPage() {
     </section>
 
     <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-      <div className="mb-5 flex items-center gap-2"><Clock3 className="size-5 text-[var(--app-primary)]" /><h2 className="font-bold">تاریخچه مدیریتی</h2></div>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2"><Clock3 className="size-5 text-[var(--app-primary)]" /><h2 className="font-bold">تاریخچه مدیریتی</h2></div>
+        {canViewAudit ? <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={() => navigate(`/admin/audit-logs?entityType=user&entityId=${encodeURIComponent(user.id)}`)}>مشاهده همه رویدادها</Button> : null}
+      </div>
       {!canViewAudit ? <p className="text-sm text-muted-foreground">مجوز مشاهده Audit Log موجود نیست.</p> : audit.isLoading ? <p className="text-sm text-muted-foreground">در حال دریافت تاریخچه...</p> : !(audit.data ?? []).length ? <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p> : <div className="grid gap-3">{(audit.data ?? []).map((a) => <div key={a.id} className="flex items-start gap-3 rounded-2xl bg-muted/30 p-4"><span className="mt-1 size-2 rounded-full bg-[var(--app-primary)]" /><div><div className="font-bold">{auditLabel(a.action)}</div><div className="mt-1 text-xs text-muted-foreground">{formatDate(a.createdAt)}</div></div></div>)}</div>}
     </section>
   </div>

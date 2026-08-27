@@ -75,7 +75,6 @@ import {
   formatCompanyNumber,
 } from "../utils/companyFormatters"
 
-const SECTION_PAGE_SIZE = 12
 
 type QuickViewState =
   | { kind: "task"; item: CompanyTask }
@@ -101,6 +100,25 @@ export function CompanyDetailPage() {
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false)
   const [quickView, setQuickView] = useState<QuickViewState>(null)
 
+  const [sectionPaging, setSectionPaging] = useState({
+    opportunities: { page: 1, pageSize: 10 },
+    activities: { page: 1, pageSize: 10 },
+    documents: { page: 1, pageSize: 10 },
+    people: { page: 1, pageSize: 10 },
+    tasks: { page: 1, pageSize: 10 },
+    meetings: { page: 1, pageSize: 10 },
+    branches: { page: 1, pageSize: 10 },
+    social: { page: 1, pageSize: 10 },
+  })
+
+  type SectionKey = keyof typeof sectionPaging
+  function setSectionPage(section: SectionKey, page: number) {
+    setSectionPaging((current) => ({ ...current, [section]: { ...current[section], page } }))
+  }
+  function setSectionPageSize(section: SectionKey, pageSize: number) {
+    setSectionPaging((current) => ({ ...current, [section]: { page: 1, pageSize } }))
+  }
+
   const canViewPeople = permissions.includes("person:view")
   const canCreatePerson = permissions.includes("person:create")
   const canViewOpportunities = permissions.includes("opportunity:view")
@@ -115,40 +133,48 @@ export function CompanyDetailPage() {
 
   const peopleQuery = useCompanyPeople(
     companyId,
-    1,
-    SECTION_PAGE_SIZE,
+    sectionPaging.people.page,
+    sectionPaging.people.pageSize,
     canViewPeople
   )
   const opportunitiesQuery = useCompanyOpportunities(
     companyId,
-    1,
-    SECTION_PAGE_SIZE,
+    sectionPaging.opportunities.page,
+    sectionPaging.opportunities.pageSize,
     canViewOpportunities
   )
   const tasksQuery = useCompanyTasks(
     companyId,
-    1,
-    SECTION_PAGE_SIZE,
+    sectionPaging.tasks.page,
+    sectionPaging.tasks.pageSize,
     canViewTasks
   )
   const meetingsQuery = useCompanyMeetings(
     companyId,
-    1,
-    SECTION_PAGE_SIZE,
+    sectionPaging.meetings.page,
+    sectionPaging.meetings.pageSize,
     canViewMeetings
   )
   const activitiesQuery = useCompanyActivities(
     companyId,
-    1,
-    SECTION_PAGE_SIZE,
+    sectionPaging.activities.page,
+    sectionPaging.activities.pageSize,
     canViewActivities
   )
-  const branchesQuery = useCompanyBranches(companyId, 1, SECTION_PAGE_SIZE)
-  const socialQuery = useCompanySocialChannels(companyId, 1, SECTION_PAGE_SIZE)
+  const branchesQuery = useCompanyBranches(
+    companyId,
+    sectionPaging.branches.page,
+    sectionPaging.branches.pageSize
+  )
+  const socialQuery = useCompanySocialChannels(
+    companyId,
+    sectionPaging.social.page,
+    sectionPaging.social.pageSize
+  )
   const documentsQuery = useCompanyLegalDocuments(
     companyId,
-    1,
-    SECTION_PAGE_SIZE
+    sectionPaging.documents.page,
+    sectionPaging.documents.pageSize
   )
 
   if (query.isLoading) return <LoadingState />
@@ -455,6 +481,13 @@ export function CompanyDetailPage() {
               title={text.sections.opportunities}
               description={text.sections.opportunitiesDescription}
               count={opportunitiesQuery.data?.meta.total ?? 0}
+              page={opportunitiesQuery.data?.meta.page ?? sectionPaging.opportunities.page}
+              pageCount={opportunitiesQuery.data?.meta.totalPages ?? 1}
+              pageSize={sectionPaging.opportunities.pageSize}
+              total={opportunitiesQuery.data?.meta.total ?? 0}
+              isFetching={opportunitiesQuery.isFetching}
+              onPageChange={(page) => setSectionPage("opportunities", page)}
+              onPageSizeChange={(pageSize) => setSectionPageSize("opportunities", pageSize)}
               icon={<CircleDollarSign className="size-5" />}
               onViewAll={() => goToModule("/opportunities")}
             >
@@ -496,6 +529,13 @@ export function CompanyDetailPage() {
             <Company360ActionSection
               title={uiText.navigation.activities}
               count={activitiesQuery.data?.meta.total ?? 0}
+              page={activitiesQuery.data?.meta.page ?? sectionPaging.activities.page}
+              pageCount={activitiesQuery.data?.meta.totalPages ?? 1}
+              pageSize={sectionPaging.activities.pageSize}
+              total={activitiesQuery.data?.meta.total ?? 0}
+              isFetching={activitiesQuery.isFetching}
+              onPageChange={(page) => setSectionPage("activities", page)}
+              onPageSizeChange={(pageSize) => setSectionPageSize("activities", pageSize)}
               icon={<CalendarClock className="size-5" />}
               contentClassName="max-h-[476px]"
               onViewAll={() => goToModule("/activities")}
@@ -539,6 +579,13 @@ export function CompanyDetailPage() {
           <Company360ActionSection
             title={text.ecosystem.legalDocuments}
             count={documentsQuery.data?.meta.total ?? 0}
+            page={documentsQuery.data?.meta.page ?? sectionPaging.documents.page}
+            pageCount={documentsQuery.data?.meta.totalPages ?? 1}
+            pageSize={sectionPaging.documents.pageSize}
+            total={documentsQuery.data?.meta.total ?? 0}
+            isFetching={documentsQuery.isFetching}
+            onPageChange={(page) => setSectionPage("documents", page)}
+            onPageSizeChange={(pageSize) => setSectionPageSize("documents", pageSize)}
             icon={<FileText className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
@@ -580,6 +627,13 @@ export function CompanyDetailPage() {
               title={text.sections.people}
               description={text.sections.peopleDescription}
               count={peopleQuery.data?.meta.total ?? 0}
+              page={peopleQuery.data?.meta.page ?? sectionPaging.people.page}
+              pageCount={peopleQuery.data?.meta.totalPages ?? 1}
+              pageSize={sectionPaging.people.pageSize}
+              total={peopleQuery.data?.meta.total ?? 0}
+              isFetching={peopleQuery.isFetching}
+              onPageChange={(page) => setSectionPage("people", page)}
+              onPageSizeChange={(pageSize) => setSectionPageSize("people", pageSize)}
               icon={<UsersRound className="size-5" />}
               onCreate={
                 canCreatePerson ? () => setCreatePersonOpen(true) : undefined
@@ -634,6 +688,13 @@ export function CompanyDetailPage() {
             <Company360ActionSection
               title={uiText.navigation.tasks}
               count={tasksQuery.data?.meta.total ?? 0}
+              page={tasksQuery.data?.meta.page ?? sectionPaging.tasks.page}
+              pageCount={tasksQuery.data?.meta.totalPages ?? 1}
+              pageSize={sectionPaging.tasks.pageSize}
+              total={tasksQuery.data?.meta.total ?? 0}
+              isFetching={tasksQuery.isFetching}
+              onPageChange={(page) => setSectionPage("tasks", page)}
+              onPageSizeChange={(pageSize) => setSectionPageSize("tasks", pageSize)}
               icon={<ListTodo className="size-5" />}
               onViewAll={() => goToModule("/tasks")}
             >
@@ -673,6 +734,13 @@ export function CompanyDetailPage() {
             <Company360ActionSection
               title={uiText.navigation.meetings}
               count={meetingsQuery.data?.meta.total ?? 0}
+              page={meetingsQuery.data?.meta.page ?? sectionPaging.meetings.page}
+              pageCount={meetingsQuery.data?.meta.totalPages ?? 1}
+              pageSize={sectionPaging.meetings.pageSize}
+              total={meetingsQuery.data?.meta.total ?? 0}
+              isFetching={meetingsQuery.isFetching}
+              onPageChange={(page) => setSectionPage("meetings", page)}
+              onPageSizeChange={(pageSize) => setSectionPageSize("meetings", pageSize)}
               icon={<CalendarClock className="size-5" />}
               onCreate={
                 canCreateMeeting ? () => setCreateMeetingOpen(true) : undefined
@@ -715,6 +783,13 @@ export function CompanyDetailPage() {
           <Company360ActionSection
             title={text.ecosystem.branches}
             count={branchesQuery.data?.meta.total ?? 0}
+            page={branchesQuery.data?.meta.page ?? sectionPaging.branches.page}
+            pageCount={branchesQuery.data?.meta.totalPages ?? 1}
+            pageSize={sectionPaging.branches.pageSize}
+            total={branchesQuery.data?.meta.total ?? 0}
+            isFetching={branchesQuery.isFetching}
+            onPageChange={(page) => setSectionPage("branches", page)}
+            onPageSizeChange={(pageSize) => setSectionPageSize("branches", pageSize)}
             icon={<MapPin className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
@@ -748,6 +823,13 @@ export function CompanyDetailPage() {
           <Company360ActionSection
             title={text.ecosystem.social}
             count={socialQuery.data?.meta.total ?? 0}
+            page={socialQuery.data?.meta.page ?? sectionPaging.social.page}
+            pageCount={socialQuery.data?.meta.totalPages ?? 1}
+            pageSize={sectionPaging.social.pageSize}
+            total={socialQuery.data?.meta.total ?? 0}
+            isFetching={socialQuery.isFetching}
+            onPageChange={(page) => setSectionPage("social", page)}
+            onPageSizeChange={(pageSize) => setSectionPageSize("social", pageSize)}
             icon={<Share2 className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Activity, Braces, Clock3, Copy, Download, Eye, Filter, History, RefreshCcw, RotateCcw, Search, ShieldCheck, UserRoundCheck } from "lucide-react"
@@ -25,6 +26,11 @@ const ALL = "ALL"
 type Filters = { search: string; actorId: string; entityType: string; action: string; method: string; source: string; result: string; entityId: string; requestId: string; path: string; ip: string; dates?: DateRangeValue }
 const emptyFilters: Filters = { search: "", actorId: ALL, entityType: ALL, action: ALL, method: ALL, source: ALL, result: ALL, entityId: "", requestId: "", path: "", ip: "" }
 
+function filtersFromSearchParams(params: URLSearchParams): Filters {
+  const value = (key: string) => params.get(key)?.trim() || ""
+  return { ...emptyFilters, search: value("search"), actorId: value("actorId") || ALL, entityType: value("entityType") || ALL, action: value("action") || ALL, entityId: value("entityId"), requestId: value("requestId"), path: value("path"), ip: value("ip") }
+}
+
 function toParams(filters: Filters): AuditLogParams {
   const value = (item: string) => item && item !== ALL ? item : undefined
   return { search: value(filters.search.trim()), actorId: value(filters.actorId), entityType: value(filters.entityType), action: value(filters.action), requestMethod: value(filters.method), source: value(filters.source), result: value(filters.result), entityId: value(filters.entityId.trim()), requestId: value(filters.requestId.trim()), requestPath: value(filters.path.trim()), ipAddress: value(filters.ip.trim()), startDate: filters.dates?.from?.toISOString(), endDate: filters.dates?.to?.toISOString() }
@@ -39,10 +45,11 @@ function JsonPanel({ title, value }: { title: string; value: unknown }) {
 }
 
 export function AdminAuditLogsPage() {
+  const [searchParams] = useSearchParams()
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
-  const [draft, setDraft] = useState<Filters>(emptyFilters)
-  const [filters, setFilters] = useState<Filters>(emptyFilters)
+  const [draft, setDraft] = useState<Filters>(() => filtersFromSearchParams(searchParams))
+  const [filters, setFilters] = useState<Filters>(() => filtersFromSearchParams(searchParams))
   const [advanced, setAdvanced] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)

@@ -16,6 +16,7 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -121,6 +122,8 @@ export function AdminTeamDetailsPage() {
   const [description, setDescription] = useState("")
   const [managerId, setManagerId] = useState("")
   const [newMemberId, setNewMemberId] = useState("")
+  const [memberPage, setMemberPage] = useState(1)
+  const [memberPageSize, setMemberPageSize] = useState(20)
 
   useEffect(() => {
     if (!team) return
@@ -208,6 +211,12 @@ export function AdminTeamDetailsPage() {
 
   const activeMembers = members.filter((member) => member.isActive).length
   const inactiveMembers = members.length - activeMembers
+  const memberPageCount = Math.max(1, Math.ceil(members.length / memberPageSize))
+  const safeMemberPage = Math.min(memberPage, memberPageCount)
+  const visibleMembers = members.slice(
+    (safeMemberPage - 1) * memberPageSize,
+    safeMemberPage * memberPageSize,
+  )
 
   return (
     <div className="grid gap-5" dir="rtl">
@@ -363,7 +372,7 @@ export function AdminTeamDetailsPage() {
                 </tr>
               </thead>
               <tbody>
-                {members.map((member) => (
+                {visibleMembers.map((member) => (
                   <tr key={member.id} className="border-t border-[var(--app-divider)] hover:bg-muted/25">
                     <td className="px-5 py-4">
                       <button className="text-right" onClick={() => navigate(`/admin/users/${member.id}`)}>
@@ -386,12 +395,46 @@ export function AdminTeamDetailsPage() {
             </table>
           </div>
         )}
+      
+        {members.length ? (
+          <div className="border-t border-[var(--app-divider)] p-3">
+            <PaginationControls
+              page={safeMemberPage}
+              pageCount={memberPageCount}
+              pageSize={memberPageSize}
+              total={members.length}
+              disabled={membersQuery.isFetching}
+              onPageChange={setMemberPage}
+              onPageSizeChange={(value) => {
+                setMemberPageSize(value)
+                setMemberPage(1)
+              }}
+            />
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-        <div className="mb-5 flex items-center gap-2">
-          <Clock3 className="size-5 text-[var(--app-primary)]" />
-          <h2 className="font-bold">تاریخچه مدیریتی</h2>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Clock3 className="size-5 text-[var(--app-primary)]" />
+            <h2 className="font-bold">تاریخچه مدیریتی</h2>
+          </div>
+          {canViewAudit ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() =>
+                navigate(
+                  `/admin/audit-logs?entityType=team&entityId=${encodeURIComponent(team.id)}`,
+                )
+              }
+            >
+              مشاهده همه رویدادها
+            </Button>
+          ) : null}
         </div>
 
         {!canViewAudit ? (
