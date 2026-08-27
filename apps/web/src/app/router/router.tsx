@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from "react-router-dom"
 import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
 import { AccountProfilePage } from "@/features/account/pages/AccountProfilePage"
+import { AccountSecurityPage } from "@/features/account/pages/AccountSecurityPage"
 import { AttentionCenterPage } from "@/features/attention/pages/AttentionCenterPage"
 import { ActivitiesPage } from "@/features/activities/pages/ActivitiesPage"
 import { LoginPage } from "@/features/auth/pages/LoginPage"
@@ -246,6 +247,10 @@ export const router = createBrowserRouter([
           {
             path: "/account/profile",
             element: <AccountProfilePage />,
+          },
+          {
+            path: "/account/security",
+            element: <AccountSecurityPage />,
           },
           {
             element: (
