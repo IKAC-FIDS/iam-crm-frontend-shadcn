@@ -7,6 +7,7 @@ import {
   Settings2,
   ShieldCheck,
   UserRound,
+  Wrench,
 } from "lucide-react"
 
 import {
@@ -38,12 +39,14 @@ import { useAuthStore } from "@/store/authStore"
 
 const groupIcons = {
   sales: BriefcaseBusiness,
+  technical: Wrench,
   management: Settings2,
   account: UserRound,
 } satisfies Record<NavigationGroupKey, typeof BriefcaseBusiness>
 
 const defaultOpenGroups: Record<NavigationGroupKey, boolean> = {
   sales: true,
+  technical: false,
   management: false,
   account: false,
 }

@@ -24,6 +24,7 @@ import {
   UserRound,
 } from "lucide-react"
 import { useAuthStore } from "@/store/authStore"
+import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { PageHero } from "@/components/shared/PageHero"
 import { MetricCard } from "@/components/shared/MetricCard"
@@ -50,6 +51,7 @@ import {
   type LookupGroup,
   type Product,
   type ProductPayload,
+  type ProductType,
 } from "../api/adminLibrariesApi"
 
 type Section = {
@@ -339,7 +341,8 @@ function ProductForm({
   onClose: () => void
 }) {
   const client = useQueryClient()
-  const [form, setForm] = useState<ProductPayload>({
+  const [form, setForm] = useState<Omit<ProductPayload, "type"> & { type: ProductType | "" }>({
+    type: item?.type ?? "",
     code: item?.code ?? "",
     digikalaCode: item?.digikalaCode ?? "",
     digikalaUrl: item?.digikalaUrl ?? "",
@@ -356,7 +359,17 @@ function ProductForm({
     sortOrder: item?.sortOrder ?? 0,
   })
   const mutation = useMutation({
-    mutationFn: () => saveProduct(form, item?.id),
+    mutationFn: () => {
+      if (!form.type) throw new Error(uiText.products.chooseType)
+      return saveProduct({
+        ...form,
+        type: form.type,
+        inPersonInputPrice: form.inPersonInputPrice || "0",
+        digikalaInputPrice: form.digikalaInputPrice || "0",
+        inPersonProfitPercent: form.pricingCurrency === "USD" ? form.inPersonProfitPercent || "0" : undefined,
+        digikalaProfitPercent: form.pricingCurrency === "USD" ? form.digikalaProfitPercent || "0" : undefined,
+      }, item?.id)
+    },
     onSuccess: async () => {
       toast.success(item ? "محصول ویرایش شد." : "محصول ایجاد شد.")
       await client.invalidateQueries({ queryKey: ["admin-products"] })
@@ -395,6 +408,14 @@ function ProductForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {field("نام محصول", "name")}
           {field("کد محصول", "code")}
+          <label className="grid gap-2 text-sm font-bold">
+            {uiText.products.type} *
+            <select required className={selectClass} value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value as ProductType })}>
+              <option value="" disabled>{uiText.products.chooseType}</option>
+              {Object.entries(uiText.products.types).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
           {field("کد دیجی‌کالا", "digikalaCode")}
           {field("صفحه دیجی‌کالا", "digikalaUrl", "url")}
           {field("دسته‌بندی", "category")}
@@ -427,9 +448,9 @@ function ProductForm({
           </label>
           {field("ترتیب نمایش", "sortOrder", "number")}
           {field("قیمت ورودی حضوری", "inPersonInputPrice", "number")}
-          {field("درصد سود حضوری", "inPersonProfitPercent", "number")}
+          {form.pricingCurrency === "USD" && field("درصد سود حضوری", "inPersonProfitPercent", "number")}
           {field("قیمت ورودی دیجی‌کالا", "digikalaInputPrice", "number")}
-          {field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
+          {form.pricingCurrency === "USD" && field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -446,7 +467,7 @@ function ProductForm({
           <Button
             type="submit"
             disabled={
-              mutation.isPending || !form.name.trim() || !form.code.trim()
+              mutation.isPending || !form.name.trim() || !form.code.trim() || !form.type
             }
           >
             ذخیره
@@ -474,6 +495,7 @@ export function AdminLibrariesPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [status, setStatus] = useState("ALL")
+  const [productType, setProductType] = useState<ProductType | "ALL">("ALL")
   const client = useQueryClient()
   const canManage = Boolean(section && permissions.includes(section.manage))
   const kind = section?.kind !== "products" ? section?.kind : undefined
@@ -488,6 +510,7 @@ export function AdminLibrariesPage() {
     enabled: Boolean(kind),
   })
   const productParams = {
+    type: productType === "ALL" ? undefined : productType,
     page,
     limit: pageSize,
     search: search.trim() || undefined,
@@ -622,6 +645,11 @@ export function AdminLibrariesPage() {
     },
   ]
   const productCols: DataTableColumn<Product>[] = [
+    {
+      id: "type",
+      header: uiText.products.type,
+      cell: (r) => <Badge variant="outline">{uiText.products.types[r.type] ?? "—"}</Badge>,
+    },
     {
       id: "name",
       header: "محصول",
@@ -818,6 +846,7 @@ export function AdminLibrariesPage() {
                   setActiveId(s.id)
                   setSearch("")
                   setStatus("ALL")
+                  setProductType("ALL")
                   setPage(1)
                 }}
                 className={`flex items-center gap-3 rounded-2xl p-3 text-start transition ${s.id === section.id ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]" : "hover:bg-[var(--app-background)]"}`}
@@ -843,7 +872,14 @@ export function AdminLibrariesPage() {
                 {section.description}
               </p>
             </div>
-            <div className="grid gap-3 md:grid-cols-[minmax(220px,1fr)_180px]">
+            <div className={`grid gap-3 ${section.kind === "products" ? "md:grid-cols-2" : "md:grid-cols-[minmax(220px,1fr)_180px]"}`}>
+              {section.kind === "products" && (
+                <select aria-label={uiText.products.type} className={selectClass} value={productType}
+                  onChange={(e) => { setProductType(e.target.value as ProductType | "ALL"); setPage(1) }}>
+                  <option value="ALL">{uiText.products.allTypes}</option>
+                  {Object.entries(uiText.products.types).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              )}
               <div className="relative">
                 <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
                 <Input

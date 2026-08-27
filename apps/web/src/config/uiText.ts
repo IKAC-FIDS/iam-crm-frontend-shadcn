@@ -37,6 +37,7 @@
   navigation: {
     groups: {
       sales: "عملیات فروش",
+      technical: "مرکز فنی",
       management: "مدیریت",
       account: "حساب",
     },
@@ -60,6 +61,22 @@
     auditLogs: "رویدادهای ممیزی",
     accountSecurity: "امنیت حساب",
     usageAndQuota: "مصرف و سهمیه",
+  },
+
+  technicalCenter: {
+    comingSoon: "این بخش در حال آماده‌سازی است.",
+    releases: { title: "نسخه‌ها و انتشارها", description: "فضای نسخه‌ها و انتشارهای محصولات نرم‌افزاری" },
+    knowledgeBase: { title: "پایگاه دانش", description: "مرجع دانش، راهنماها و تجربه‌های فنی تیم" },
+    tenders: { title: "مناقصات", description: "فضای اطلاعات و پیگیری فنی مناقصات" },
+    documents: { title: "مستندات فنی", description: "مرجع مستندات و راهنماهای فنی محصولات" },
+    resources: { title: "منابع و فایل‌ها", description: "فضای منابع و فایل‌های موردنیاز تیم فنی" },
+  },
+
+  products: {
+    type: "نوع محصول",
+    chooseType: "نوع محصول را انتخاب کنید",
+    allTypes: "همه محصولات",
+    types: { HARDWARE: "سخت‌افزاری", SOFTWARE: "نرم‌افزاری" },
   },
 
   auth: {

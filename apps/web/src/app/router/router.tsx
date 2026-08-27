@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from "react-router-dom"
 
 import { AppShell } from "@/app/layout/AppShell"
 import { appMenuRoutes } from "@/app/navigation/routeRegistry"
+import { TechnicalReleasesPage, TechnicalKnowledgeBasePage, TechnicalTendersPage, TechnicalDocumentsPage, TechnicalResourcesPage } from "@/features/technical/pages/TechnicalPages"
 import { AccountProfilePage } from "@/features/account/pages/AccountProfilePage"
 import { AccountSecurityPage } from "@/features/account/pages/AccountSecurityPage"
 import { AccountUsagePage } from "@/features/account/pages/AccountUsagePage"
@@ -34,6 +35,14 @@ import { PermissionRoute } from "./PermissionRoute"
 import { ProtectedRoute } from "./ProtectedRoute"
 import { RouteErrorPage } from "./RouteErrorPage"
 
+const technicalPages = {
+  "technical-releases": <TechnicalReleasesPage />,
+  "technical-knowledge-base": <TechnicalKnowledgeBasePage />,
+  "technical-tenders": <TechnicalTendersPage />,
+  "technical-documents": <TechnicalDocumentsPage />,
+  "technical-resources": <TechnicalResourcesPage />,
+}
+
 const featureRoutes = appMenuRoutes
   .filter(
     (route) =>
@@ -60,7 +69,7 @@ const featureRoutes = appMenuRoutes
     children: [
       {
         path: route.path,
-        element: <FeaturePlaceholderPage />,
+        element: technicalPages[route.id as keyof typeof technicalPages] ?? <FeaturePlaceholderPage />,
       },
     ],
   }))

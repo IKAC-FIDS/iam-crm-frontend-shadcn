@@ -16,13 +16,15 @@ export type LibraryItem = {
   raw: Record<string, unknown>
 }
 export type LibraryPayload = { primary: string; code?: string; description?: string; category?: string; sortOrder?: number; isActive?: boolean; defaultPainPoint?: string; defaultUseCase?: string }
+export type ProductType = "HARDWARE" | "SOFTWARE"
 export type Product = {
+  type: ProductType
   id: string; code: string; digikalaCode?: string | null; digikalaUrl?: string | null; name: string; description?: string | null; category?: string | null; unit?: string | null
   pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string | number; digikalaInputPrice: string | number
   inPersonProfitPercent?: string | number | null; digikalaProfitPercent?: string | number | null
   inPersonPriceIrr: string | number; digikalaPriceIrr: string | number; isActive: boolean; sortOrder: number
 }
-export type ProductPayload = { code: string; digikalaCode?: string | null; digikalaUrl?: string | null; name: string; description?: string; category?: string; unit?: string; pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string; digikalaInputPrice: string; inPersonProfitPercent?: string; digikalaProfitPercent?: string; isActive: boolean; sortOrder: number }
+export type ProductPayload = { type: ProductType; code: string; digikalaCode?: string | null; digikalaUrl?: string | null; name: string; description?: string; category?: string; unit?: string; pricingCurrency: "IRR" | "USD"; inPersonInputPrice: string; digikalaInputPrice: string; inPersonProfitPercent?: string; digikalaProfitPercent?: string; isActive: boolean; sortOrder: number }
 export type ProductPriceHistory = { id: string; pricingCurrency: "IRR" | "USD"; inPersonPriceIrr: string | number; digikalaPriceIrr: string | number; reason: string; validFrom: string; changedBy?: { fullName: string } | null }
 export type PageMeta = { total: number; page: number; limit: number; totalPages: number }
 
@@ -63,7 +65,7 @@ export async function saveLibraryItem(kind: LibraryKind, payload: LibraryPayload
   return normalize(unwrapApiResponse(response.data))
 }
 export async function removeLibraryItem(kind: LibraryKind, id: string, group?: LookupGroup) { await api.delete(`${endpoint(kind, group)}/${id}`) }
-export async function getProducts(params: { page: number; limit: number; search?: string; category?: string; active?: string }) {
+export async function getProducts(params: { page: number; limit: number; search?: string; category?: string; active?: string; type?: ProductType }) {
   const response = await api.get("/product-catalog", { params })
   const value = response.data as unknown
   if (value && typeof value === "object" && Array.isArray((value as { data?: unknown }).data) && (value as { meta?: unknown }).meta) {

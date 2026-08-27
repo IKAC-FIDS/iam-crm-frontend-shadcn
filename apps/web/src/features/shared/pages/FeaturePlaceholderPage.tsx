@@ -1,4 +1,4 @@
-import { Construction, Sparkles } from "lucide-react"
+import { Construction, Sparkles, type LucideIcon } from "lucide-react"
 import { useLocation } from "react-router-dom"
 
 import { Card, CardContent } from "@workspace/ui/components/card"
@@ -6,7 +6,12 @@ import { Card, CardContent } from "@workspace/ui/components/card"
 import { getRoutePresentation } from "@/app/navigation/routeNavigation"
 import { uiText } from "@/config/uiText"
 
-export function FeaturePlaceholderPage() {
+export function FeaturePlaceholderPage({ title: pageTitle, description, icon: Icon = Construction, message }: {
+  title?: string
+  description?: string
+  icon?: LucideIcon
+  message?: string
+} = {}) {
   const location = useLocation()
   const { title } = getRoutePresentation(location.pathname)
 
@@ -16,7 +21,7 @@ export function FeaturePlaceholderPage() {
 
       <CardContent className="relative flex min-h-[360px] flex-col items-center justify-center p-8 text-center">
         <div className="mb-5 grid size-14 place-items-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-          <Construction className="size-6" />
+          <Icon className="size-6" />
         </div>
 
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-3 py-1 text-xs font-medium text-[var(--app-text-secondary)]">
@@ -24,11 +29,12 @@ export function FeaturePlaceholderPage() {
           {uiText.placeholders.badge}
         </div>
 
-        <h2 className="text-xl font-bold text-[var(--app-heading)]">{title}</h2>
+        <h2 className="text-xl font-bold text-[var(--app-heading)]">{pageTitle ?? title}</h2>
 
         <p className="mt-3 max-w-lg text-sm leading-7 text-[var(--app-text-secondary)]">
-          {uiText.placeholders.description}
+          {description ?? uiText.placeholders.description}
         </p>
+        {message && <p className="mt-5 text-sm font-medium text-[var(--app-text-secondary)]">{message}</p>}
       </CardContent>
     </Card>
   )
