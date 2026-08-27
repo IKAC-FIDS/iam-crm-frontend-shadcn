@@ -19,6 +19,8 @@ import {
   ACTIVITY_TYPE_OPTIONS,
   type Activity,
 } from "../types/activity.types"
+import type { OpportunityStage } from "@/features/opportunities/types/opportunity.types"
+import { localizeStageChangeText } from "../utils/activityDisplay"
 
 function formatDate(value?: string | null) {
   if (!value) return "—"
@@ -53,12 +55,14 @@ function companyLabel(activity: Activity) {
 
 export function ActivityDetailDialog({
   activity,
+  stages = [],
   open,
   onOpenChange,
   canUpdate,
   onEdit,
 }: {
   activity: Activity | null
+  stages?: OpportunityStage[]
   open: boolean
   onOpenChange: (open: boolean) => void
   canUpdate: boolean
@@ -94,8 +98,8 @@ export function ActivityDetailDialog({
                   {typeLabel(activity)}
                 </span>
                 <h3 className="mt-3 text-base font-bold text-[var(--app-heading)]">
-                  {activity.title ||
-                    activity.outcome ||
+                  {localizeStageChangeText(activity.title, stages) ||
+                    localizeStageChangeText(activity.outcome, stages) ||
                     typeLabel(activity)}
                 </h3>
               </div>
@@ -157,7 +161,7 @@ export function ActivityDetailDialog({
               نتیجه فعالیت
             </h4>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[var(--app-text-secondary)]">
-              {activity.outcome?.trim() || "نتیجه‌ای ثبت نشده است."}
+              {localizeStageChangeText(activity.outcome?.trim(), stages) || "نتیجه‌ای ثبت نشده است."}
             </p>
           </section>
 
@@ -166,8 +170,8 @@ export function ActivityDetailDialog({
               یادداشت‌ها
             </h4>
             <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[var(--app-text-secondary)]">
-              {activity.notes?.trim() ||
-                activity.description?.trim() ||
+              {localizeStageChangeText(activity.notes?.trim(), stages) ||
+                localizeStageChangeText(activity.description?.trim(), stages) ||
                 "یادداشتی ثبت نشده است."}
             </p>
           </section>

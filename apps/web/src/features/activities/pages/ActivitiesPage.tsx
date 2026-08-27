@@ -18,6 +18,7 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { PageHero } from "@/components/shared/PageHero"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
+import { usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -34,6 +35,7 @@ import {
   type ActivityPersianDateRange,
 } from "../components/ActivityPersianDateRangePicker"
 import { ActivityFormDialog } from "../components/ActivityFormDialog"
+import { localizeStageChangeText } from "../utils/activityDisplay"
 import { ActivityOptionSelect } from "../components/ActivityOptionSelect"
 import {
   useActivities,
@@ -203,6 +205,8 @@ export function ActivitiesPage() {
   ])
 
   const activities = useActivities(query, canView)
+  const stages = usePipelineStages(canView)
+  const stageItems = stages.data ?? []
 
   const activeAdvanced = [companyId, person?.id, ownerId, team].filter(
     Boolean
@@ -234,12 +238,12 @@ export function ActivitiesPage() {
         cell: (item) => (
           <div className="max-w-[280px]">
             <span className="font-bold">
-              {item.title || item.outcome || activityTypeLabel(item.type)}
+              {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.title || item.outcome, stageItems) || activityTypeLabel(item.type) : item.title || item.outcome || activityTypeLabel(item.type)}
             </span>
 
             {item.description || item.notes ? (
               <p className="mt-1 line-clamp-1 text-xs leading-5 text-[var(--app-text-secondary)]">
-                {item.description || item.notes}
+                {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.description || item.notes, stageItems) : item.description || item.notes}
               </p>
             ) : null}
           </div>
@@ -310,7 +314,7 @@ export function ActivitiesPage() {
         ),
       },
     ],
-    [canUpdate]
+    [canUpdate, stageItems]
   )
 
   if (!canView) {
@@ -558,6 +562,7 @@ export function ActivitiesPage() {
 
       <ActivityDetailDialog
         activity={detailActivity}
+        stages={stageItems}
         open={Boolean(detailActivity)}
         onOpenChange={(open) => {
           if (!open) setDetailActivity(null)
