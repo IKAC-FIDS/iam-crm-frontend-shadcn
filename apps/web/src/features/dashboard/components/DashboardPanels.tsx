@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@workspace/ui/components/button"
 
 import { uiText } from "@/config/uiText"
+import { localizeStageChangeText } from "@/features/activities/utils/activityDisplay"
+import { usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
 
 import type {
   DashboardLatestActivity,
@@ -118,6 +120,7 @@ export function AttentionPanel({
 export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) {
   const text = uiText.dashboard.recentActivities
   const navigate = useNavigate()
+  const stages = usePipelineStages(data.some((item) => item.type === "STAGE_CHANGE"))
 
   return (
     <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
@@ -154,7 +157,9 @@ export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <p className="min-w-0 flex-1 truncate text-xs font-bold text-[var(--app-heading)]">
-                    {item.title}
+                    {item.type === "STAGE_CHANGE"
+                      ? localizeStageChangeText(item.title, stages.data)
+                      : item.title}
                   </p>
                   <time className="text-xs text-[var(--app-text-secondary)]">
                     {formatPersianDateTime(item.activityDate)}
