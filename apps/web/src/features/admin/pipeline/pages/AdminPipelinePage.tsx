@@ -443,7 +443,7 @@ function StagesDesigner({
           </div>
         </div>
 
-        <div className="-mx-3 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:px-0">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {displayed.map((stage, index) => (
             <article
               key={stage.id}
@@ -451,7 +451,7 @@ function StagesDesigner({
               onDragStart={(event) => startDrag(event, stage.id)}
               onDragOver={(event) => canManage && event.preventDefault()}
               onDrop={(event) => dropOn(event, stage.id)}
-              className={`w-[calc(100vw-3.5rem)] max-w-[320px] min-w-[calc(100vw-3.5rem)] snap-start rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-sm sm:w-[240px] sm:max-w-[240px] sm:min-w-[240px] ${
+              className={`min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-sm ${
                 draggedId === stage.id ? "opacity-50" : ""
               }`}
             >
