@@ -22,6 +22,7 @@ import { AdminUsersPage } from "@/features/admin/users/pages/AdminUsersPage"
 import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
 import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/AdminExchangeRatesPage"
 import { AdminPermissionsPage } from "@/features/admin/permissions/pages/AdminPermissionsPage"
+import { AdminPipelinePage } from "@/features/admin/pipeline/pages/AdminPipelinePage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
@@ -45,7 +46,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/admin/users" &&
       route.path !== "/admin/teams" &&
       route.path !== "/admin/exchange-rates" &&
-      route.path !== "/admin/permissions"
+      route.path !== "/admin/permissions" &&
+      route.path !== "/admin/pipeline"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -307,6 +309,28 @@ export const router = createBrowserRouter([
               {
                 path: "/admin/permissions",
                 element: <AdminPermissionsPage />,
+              },
+            ],
+          },
+          {
+            element: (
+              <PermissionRoute
+                policy={{
+                  type: "permissions",
+                  mode: "any",
+                  permissions: [
+                    "pipeline:config:view",
+                    "pipeline:config:manage",
+                    "pipeline:transition:view",
+                    "pipeline:transition:manage",
+                  ],
+                }}
+              />
+            ),
+            children: [
+              {
+                path: "/admin/pipeline",
+                element: <AdminPipelinePage />,
               },
             ],
           },
