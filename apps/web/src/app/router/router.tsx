@@ -23,6 +23,7 @@ import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
 import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/AdminExchangeRatesPage"
 import { AdminPermissionsPage } from "@/features/admin/permissions/pages/AdminPermissionsPage"
 import { AdminPipelinePage } from "@/features/admin/pipeline/pages/AdminPipelinePage"
+import { AdminAuditLogsPage } from "@/features/admin/audit-logs/pages/AdminAuditLogsPage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminUserDetailsPage } from "@/features/admin/users/pages/AdminUserDetailsPage"
 
@@ -47,7 +48,8 @@ const featureRoutes = appMenuRoutes
       route.path !== "/admin/teams" &&
       route.path !== "/admin/exchange-rates" &&
       route.path !== "/admin/permissions" &&
-      route.path !== "/admin/pipeline"
+      route.path !== "/admin/pipeline" &&
+      route.path !== "/admin/audit-logs"
   )
   .map((route) => ({
     element: <PermissionRoute policy={route.access} />,
@@ -76,6 +78,12 @@ export const router = createBrowserRouter([
           {
             path: "/dashboard",
             element: <DashboardPage />,
+          },
+          {
+            element: (
+              <PermissionRoute policy={{ type: "permissions", mode: "any", permissions: ["audit-log:view"] }} />
+            ),
+            children: [{ path: "/admin/audit-logs", element: <AdminAuditLogsPage /> }],
           },
           {
             element: (
