@@ -23,7 +23,6 @@ import { activityLabel, dt, dueLabel, dueStatus } from "@/features/followUps/uti
 import { useArchive, useDeleteNotification, useMarkRead, useMarkUnread, useNotifications, useReadAll, useUnarchive, useUnreadCount } from "@/features/notifications/hooks/useNotifications"
 import type { Notification, NotificationPriority } from "@/features/notifications/types/notification.types"
 
-const PAGE_SIZE = 20
 type NotificationQuick = "all" | "unread" | "important" | "archived"
 
 export function AttentionCenterPage() {
@@ -40,8 +39,9 @@ export function AttentionCenterPage() {
   const tab = params.get("tab") === "notifications" && canNotifications ? "notifications" : canFollow ? "follow-ups" : "notifications"
   const quick = normalizeFollowFilter(params.get("quick"))
   const page = Math.max(1, Number(params.get("page") || 1))
+  const pageSize = [10, 20, 50, 100].includes(Number(params.get("limit"))) ? Number(params.get("limit")) : 20
 
-  const followUps = useDueFollowUps(page, PAGE_SIZE, canFollow)
+  const followUps = useDueFollowUps(page, pageSize, canFollow)
   const preview = useDueFollowUps(1, 50, canFollow)
   const unread = useUnreadCount(canNotifications)
 
@@ -94,7 +94,7 @@ export function AttentionCenterPage() {
       </section>
 
       {tab === "follow-ups" ? (
-        <FollowUpList items={followUps.data?.data ?? []} loading={followUps.isLoading} error={followUps.isError} fetching={followUps.isFetching} page={followUps.data?.meta.page ?? page} pageCount={followUps.data?.meta.totalPages ?? 1} filter={quick} canComplete={canComplete} canReschedule={canReschedule} onRetry={() => void followUps.refetch()} onPage={(next) => patch({page:String(next)})} onFilter={(value) => patch({quick:value === "ALL" ? null : value,page:"1"})} onCompany={(id) => navigate(`/companies/${id}`)} />
+        <FollowUpList items={followUps.data?.data ?? []} loading={followUps.isLoading} error={followUps.isError} fetching={followUps.isFetching} page={followUps.data?.meta.page ?? page} pageCount={followUps.data?.meta.totalPages ?? 1} pageSize={pageSize} total={followUps.data?.meta.total} filter={quick} canComplete={canComplete} canReschedule={canReschedule} onRetry={() => void followUps.refetch()} onPage={(next) => patch({page:String(next)})} onPageSize={(value) => patch({limit:String(value),page:"1"})} onFilter={(value) => patch({quick:value === "ALL" ? null : value,page:"1"})} onCompany={(id) => navigate(`/companies/${id}`)} />
       ) : (
         <NotificationList canManage={canManageNotifications} navigate={navigate} />
       )}
@@ -108,7 +108,7 @@ function Kpi({title,number,icon,active,onClick}:{title:string;number:number;icon
 
 function normalizeFollowFilter(value:string|null):FollowUpFilter { return value === "OVERDUE" || value === "TODAY" || value === "UPCOMING" ? value : "ALL" }
 
-function FollowUpList({items,loading,error,fetching,page,pageCount,filter,canComplete,canReschedule,onRetry,onPage,onFilter,onCompany}:{items:FollowUpActivity[];loading:boolean;error:boolean;fetching:boolean;page:number;pageCount:number;filter:FollowUpFilter;canComplete:boolean;canReschedule:boolean;onRetry:()=>void;onPage:(page:number)=>void;onFilter:(value:FollowUpFilter)=>void;onCompany:(id:string)=>void}) {
+function FollowUpList({items,loading,error,fetching,page,pageCount,pageSize,total,filter,canComplete,canReschedule,onRetry,onPage,onPageSize,onFilter,onCompany}:{items:FollowUpActivity[];loading:boolean;error:boolean;fetching:boolean;page:number;pageCount:number;pageSize:number;total?:number;filter:FollowUpFilter;canComplete:boolean;canReschedule:boolean;onRetry:()=>void;onPage:(page:number)=>void;onPageSize:(value:number)=>void;onFilter:(value:FollowUpFilter)=>void;onCompany:(id:string)=>void}) {
   const [selected,setSelected] = useState<FollowUpActivity|null>(null)
   const [mode,setMode] = useState<"complete"|"reschedule"|null>(null)
   const shown = filter === "ALL" ? items : items.filter((item) => dueStatus(item.nextActionDate) === filter.toLowerCase())
@@ -127,7 +127,7 @@ function FollowUpList({items,loading,error,fetching,page,pageCount,filter,canCom
   return <div className="grid min-w-0 gap-4">
     <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]"><div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div className="flex min-w-0 flex-wrap gap-1.5">{(["ALL","OVERDUE","TODAY","UPCOMING"] as FollowUpFilter[]).map((value)=><button key={value} type="button" onClick={()=>onFilter(value)} className={["inline-flex h-8 items-center rounded-lg px-3 text-xs font-bold transition",filter===value ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm" : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]"].join(" ")}>{followUpFilterLabel(value)}</button>)}</div>{filter!=="ALL" ? <Button type="button" variant="ghost" size="sm" className="shrink-0 rounded-xl text-[var(--app-text-secondary)]" onClick={()=>onFilter("ALL")}><RotateCcw className="size-3.5"/>پاک کردن فیلتر</Button> : null}</div></section>
 
-    {loading ? <LoadingState rows={6}/> : error ? <ErrorState title="دریافت پیگیری‌ها ناموفق بود" description="اطلاعات پیگیری‌ها دریافت نشد." retryLabel="تلاش مجدد" onRetry={onRetry}/> : <><div className="w-full max-w-full overflow-x-auto"><div className="min-w-[1050px]"><DataTableShell rows={shown} columns={columns} getRowKey={(item)=>item.id} emptyState={<EmptyState icon={ClipboardCheck} title="پیگیری‌ای وجود ندارد" description="در این فیلتر موردی برای نمایش وجود ندارد."/>}/></div></div>{pageCount>1 ? <PaginationControls page={page} pageCount={pageCount} disabled={fetching} onPageChange={onPage}/> : null}</>}
+    {loading ? <LoadingState rows={6}/> : error ? <ErrorState title="دریافت پیگیری‌ها ناموفق بود" description="اطلاعات پیگیری‌ها دریافت نشد." retryLabel="تلاش مجدد" onRetry={onRetry}/> : <><div className="w-full max-w-full overflow-x-auto"><div className="min-w-[1050px]"><DataTableShell rows={shown} columns={columns} getRowKey={(item)=>item.id} emptyState={<EmptyState icon={ClipboardCheck} title="پیگیری‌ای وجود ندارد" description="در این فیلتر موردی برای نمایش وجود ندارد."/>}/></div></div><PaginationControls page={page} pageCount={pageCount} pageSize={pageSize} total={total} disabled={fetching} onPageChange={onPage} onPageSizeChange={onPageSize}/></>}
 
     <FollowUpActionDialog item={selected} mode={mode} onClose={()=>{setSelected(null);setMode(null)}}/>
   </div>
@@ -148,7 +148,8 @@ function NotificationList({canManage,navigate}:{canManage:boolean;navigate:(path
   const [search,setSearch]=useState("")
   const [quick,setQuick]=useState<NotificationQuick>("all")
   const [page,setPage]=useState(1)
-  const query=useNotifications({page,limit:PAGE_SIZE,search:search.trim()||undefined,status:quick==="unread"?"unread":"all",priority:quick==="important"?"HIGH":undefined,archivedOnly:quick==="archived"?true:undefined})
+  const [pageSize,setPageSize]=useState(20)
+  const query=useNotifications({page,limit:pageSize,search:search.trim()||undefined,status:quick==="unread"?"unread":"all",priority:quick==="important"?"HIGH":undefined,archivedOnly:quick==="archived"?true:undefined})
   const readAll=useReadAll(), markRead=useMarkRead(), markUnread=useMarkUnread(), archive=useArchive(), unarchive=useUnarchive(), remove=useDeleteNotification()
 
   async function openNotification(notification:Notification){if(canManage&&!notification.readAt)await markRead.mutateAsync(notification.id);if(notification.actionUrl?.startsWith("/")&&!notification.actionUrl.startsWith("//"))navigate(notification.actionUrl)}
@@ -166,7 +167,7 @@ function NotificationList({canManage,navigate}:{canManage:boolean;navigate:(path
   return <div className="grid min-w-0 gap-4">
     <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]"><div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_auto_auto] lg:items-center"><div className="relative min-w-0"><Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]"/><Input value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1)}} placeholder="جستجو در اعلان‌ها..." className="h-11 rounded-xl pe-9"/></div><div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">{(["all","unread","important","archived"] as NotificationQuick[]).map((value)=><button key={value} type="button" onClick={()=>{setQuick(value);setPage(1)}} className={["rounded-lg px-3 py-2 text-xs font-bold transition",quick===value?"bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm":"text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]"].join(" ")}>{notificationFilterLabel(value)}</button>)}</div>{canManage?<Button type="button" variant="outline" className="h-11 rounded-xl" onClick={()=>void readAll.mutateAsync()} disabled={readAll.isPending}>خواندن همه</Button>:null}</div>{search||quick!=="all"?<div className="mt-3 flex justify-end border-t border-[var(--app-divider)] pt-3"><Button type="button" variant="ghost" size="sm" className="rounded-xl text-[var(--app-text-secondary)]" onClick={()=>{setSearch("");setQuick("all");setPage(1)}}><RotateCcw className="size-3.5"/>پاک کردن فیلترها</Button></div>:null}</section>
 
-    {query.isLoading?<LoadingState rows={6}/>:query.isError?<ErrorState title="دریافت اعلان‌ها ناموفق بود" description="اطلاعات اعلان‌ها دریافت نشد." retryLabel="تلاش مجدد" onRetry={()=>void query.refetch()}/>:<><div className="w-full max-w-full overflow-x-auto"><div className="min-w-[1050px]"><DataTableShell rows={query.data?.data??[]} columns={columns} getRowKey={(n)=>n.id} onRowClick={(n)=>void openNotification(n)} emptyState={<EmptyState icon={Bell} title="اعلانی وجود ندارد" description="در این فیلتر اعلانی برای نمایش وجود ندارد."/>}/></div></div>{(query.data?.meta.totalPages??1)>1?<PaginationControls page={query.data?.meta.page??page} pageCount={query.data?.meta.totalPages??1} disabled={query.isFetching} onPageChange={setPage}/>:null}</>}
+    {query.isLoading?<LoadingState rows={6}/>:query.isError?<ErrorState title="دریافت اعلان‌ها ناموفق بود" description="اطلاعات اعلان‌ها دریافت نشد." retryLabel="تلاش مجدد" onRetry={()=>void query.refetch()}/>:<><div className="w-full max-w-full overflow-x-auto"><div className="min-w-[1050px]"><DataTableShell rows={query.data?.data??[]} columns={columns} getRowKey={(n)=>n.id} onRowClick={(n)=>void openNotification(n)} emptyState={<EmptyState icon={Bell} title="اعلانی وجود ندارد" description="در این فیلتر اعلانی برای نمایش وجود ندارد."/>}/></div></div><PaginationControls page={query.data?.meta.page??page} pageCount={query.data?.meta.totalPages??1} pageSize={pageSize} total={query.data?.meta.total} disabled={query.isFetching} onPageChange={setPage} onPageSizeChange={(value)=>{setPageSize(value);setPage(1)}}/></>}
   </div>
 }
 

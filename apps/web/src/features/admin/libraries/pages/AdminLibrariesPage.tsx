@@ -470,6 +470,7 @@ export function AdminLibrariesPage() {
     Product | null | undefined
   >()
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [status, setStatus] = useState("ALL")
   const client = useQueryClient()
   const canManage = Boolean(section && permissions.includes(section.manage))
@@ -486,7 +487,7 @@ export function AdminLibrariesPage() {
   })
   const productParams = {
     page,
-    limit: 20,
+    limit: pageSize,
     search: search.trim() || undefined,
     active: status === "ALL" ? undefined : String(status === "ACTIVE"),
   }
@@ -879,6 +880,9 @@ export function AdminLibrariesPage() {
                 page={page}
                 pageCount={products.data?.meta.totalPages ?? 1}
                 onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
+                total={products.data?.meta.total}
                 disabled={products.isFetching}
               />
             </>

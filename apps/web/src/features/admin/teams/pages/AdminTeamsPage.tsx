@@ -101,6 +101,7 @@ export function AdminTeamsPage() {
   const canManage = can(permissions, "team:manage")
 
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [searchInput, setSearchInput] = useState("")
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState<StatusFilter>("ALL")
@@ -120,13 +121,13 @@ export function AdminTeamsPage() {
   const filters = useMemo(
     () => ({
       page,
-      limit: 20,
+      limit: pageSize,
       search: search || undefined,
       managerId: managerId === "ALL" ? undefined : managerId,
       includeInactive: status === "ALL",
       isActive: status === "ALL" ? undefined : status === "ACTIVE",
     }),
-    [page, search, managerId, status]
+    [page, pageSize, search, managerId, status]
   )
 
   const teamsQuery = useQuery({
@@ -473,6 +474,9 @@ export function AdminTeamsPage() {
         page={teamsQuery.data?.meta.page ?? page}
         pageCount={teamsQuery.data?.meta.totalPages ?? 1}
         onPageChange={setPage}
+        pageSize={pageSize}
+        onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
+        total={teamsQuery.data?.meta.total}
         disabled={teamsQuery.isFetching}
       />
 

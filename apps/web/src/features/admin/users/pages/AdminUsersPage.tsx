@@ -1,7 +1,5 @@
 import {
   Ban,
-  ChevronLeft,
-  ChevronRight,
   CircleGauge,
   Eye,
   Filter,
@@ -28,6 +26,7 @@ import { useNavigate } from "react-router-dom"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -137,6 +136,7 @@ export function AdminUsersPage() {
   const canViewRoles = can(permissions, "role:view")
 
   const [page, setPage] = useState(1),
+    [pageSize, setPageSize] = useState(20),
     [searchInput, setSearchInput] = useState(""),
     [search, setSearch] = useState(""),
     [role, setRole] = useState<UserRole | "ALL">("ALL"),
@@ -154,13 +154,13 @@ export function AdminUsersPage() {
   const filters = useMemo(
     () => ({
       page,
-      limit: 20,
+      limit: pageSize,
       search: search || undefined,
       role: role === "ALL" ? undefined : role,
       teamId: teamId === "ALL" ? undefined : teamId,
       isActive: status === "ALL" ? undefined : status === "ACTIVE",
     }),
-    [page, search, role, teamId, status]
+    [page, pageSize, search, role, teamId, status]
   )
 
   const users = useQuery({
@@ -496,30 +496,7 @@ export function AdminUsersPage() {
             </table>
           </div>
         )}
-        <div className="flex items-center justify-between gap-3 border-t border-[var(--app-divider)] px-5 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!users.data?.meta.hasPrevious}
-            onClick={() => setPage((v) => Math.max(1, v - 1))}
-          >
-            <ChevronRight className="ms-1 size-4" />
-            قبلی
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            نمایش {fa(users.data?.data.length ?? 0)} از{" "}
-            {fa(users.data?.meta.total ?? 0)} کاربر
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!users.data?.meta.hasNext}
-            onClick={() => setPage((v) => v + 1)}
-          >
-            بعدی
-            <ChevronLeft className="me-1 size-4" />
-          </Button>
-        </div>
+        <div className="border-t border-[var(--app-divider)] p-3"><PaginationControls page={users.data?.meta.page ?? page} pageCount={users.data?.meta.totalPages ?? 1} pageSize={pageSize} total={users.data?.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value); setPage(1) }} disabled={users.isFetching} /></div>
       </section>
 
       <CreateUserModal

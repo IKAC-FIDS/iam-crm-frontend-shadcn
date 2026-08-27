@@ -32,8 +32,6 @@ import {
   formatCompanyDate,
 } from "../utils/companyFormatters"
 
-const pageSize = 20
-
 export function CompaniesPage() {
   const text = uiText.companies.list
   const navigate = useNavigate()
@@ -42,6 +40,7 @@ export function CompaniesPage() {
   const createMutation = useCreateCompany()
 
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const [createOpen, setCreateOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [priority, setPriority] = useState<CompanyPriority | "">("")
@@ -288,6 +287,9 @@ export function CompaniesPage() {
             page={query.data?.meta.page ?? page}
             pageCount={query.data?.meta.totalPages ?? 1}
             onPageChange={setPage}
+            pageSize={pageSize}
+            onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
+            total={query.data?.meta.total}
             disabled={query.isFetching}
           />
         </>

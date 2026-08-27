@@ -55,8 +55,6 @@ type QuickFilter =
   | "mine"
   | "created"
 
-const pageSize = 20
-
 export function TasksPage() {
   const text = uiText.tasks
   const [params, setParams] = useSearchParams()
@@ -73,6 +71,7 @@ export function TasksPage() {
   const view = (params.get("view") === "list" ? "list" : "focus") as ViewMode
   const quick = normalizeQuick(params.get("quick"))
   const page = Math.max(1, Number(params.get("page") || 1))
+  const pageSize = [10, 20, 50, 100].includes(Number(params.get("limit"))) ? Number(params.get("limit")) : 20
   const search = params.get("search") || ""
   const companyId = params.get("companyId") || ""
   const opportunityId = params.get("opportunityId") || ""
@@ -497,6 +496,11 @@ export function TasksPage() {
             updateParam("page", String(next))
           }
           disabled={tasks.isFetching}
+          pageSize={pageSize}
+          total={tasks.data.meta.total}
+          onPageSizeChange={(value) => {
+            setParams((current) => { const next = new URLSearchParams(current); next.set("limit", String(value)); next.set("page", "1"); return next })
+          }}
         />
       ) : null}
 

@@ -500,14 +500,16 @@ export function MeetingsPage() {
         </div>
       </section>
 
-      {meetings.data &&
-      meetings.data.meta.totalPages > 1 ? (
+      {meetings.data ? (
         <PaginationControls
           page={page}
           pageCount={
             meetings.data.meta.totalPages
           }
           disabled={meetings.isFetching}
+          pageSize={limit}
+          total={meetings.data.meta.total}
+          onPageSizeChange={(nextLimit) => patchParams({ limit: String(nextLimit), page: "1" }, false)}
           onPageChange={(nextPage) =>
             patchParams(
               {

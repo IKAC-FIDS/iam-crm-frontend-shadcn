@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 
 import { useOpportunityList } from "../hooks/useOpportunities"
 import type { Opportunity, OpportunityFilters } from "../types/opportunity.types"
@@ -26,9 +26,10 @@ export function OpportunityListView({ filters, permissions, onView, onEdit, onCh
 }) {
   const text = uiText.opportunities
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
   const fingerprint = JSON.stringify(filters)
   useEffect(() => setPage(1), [fingerprint])
-  const query = useOpportunityList({ ...filters, page, limit: 20 })
+  const query = useOpportunityList({ ...filters, page, limit: pageSize })
   const rows = Array.isArray(query.data?.data) ? query.data.data : []
 
   const columns: DataTableColumn<Opportunity>[] = [
@@ -51,13 +52,7 @@ export function OpportunityListView({ filters, permissions, onView, onEdit, onCh
     <div className="grid gap-3">
       <DataTableShell rows={rows} columns={columns} getRowKey={(item) => item.id} onRowClick={onView} emptyState={<EmptyState icon={BriefcaseBusiness} title={text.empty.listTitle} description={text.empty.listDescription} />} />
       {query.data ? (
-        <div className="flex flex-col items-center justify-between gap-3 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row">
-          <p className="text-xs text-[var(--app-text-secondary)]">{uiText.common.pagination.page} {query.data.meta.page.toLocaleString("fa-IR")} {uiText.common.pagination.of} {Math.max(query.data.meta.totalPages, 1).toLocaleString("fa-IR")}</p>
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" className="rounded-xl" disabled={!query.data.meta.hasPrevious} onClick={() => setPage((value) => Math.max(1, value - 1))}>{uiText.common.pagination.previous}</Button>
-            <Button type="button" variant="outline" size="sm" className="rounded-xl" disabled={!query.data.meta.hasNext} onClick={() => setPage((value) => value + 1)}>{uiText.common.pagination.next}</Button>
-          </div>
-        </div>
+        <PaginationControls page={query.data.meta.page} pageCount={query.data.meta.totalPages} pageSize={pageSize} total={query.data.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value); setPage(1) }} disabled={query.isFetching} />
       ) : null}
     </div>
   )

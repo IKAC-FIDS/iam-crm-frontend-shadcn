@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { PageHero } from "@/components/shared/PageHero"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -98,6 +99,7 @@ export function ActivitiesPage() {
   const canUpdate = permissions.includes("activity:update")
 
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<10 | 20 | 50 | 100>(20)
   const [search, setSearch] = useState("")
   const [scope, setScope] = useState<QuickScope>("all")
   const [activityType, setActivityType] = useState<"" | ActivityType>("")
@@ -171,7 +173,7 @@ export function ActivitiesPage() {
 
     return {
       page,
-      limit: 20,
+      limit: pageSize,
       search: debouncedSearch.trim() || undefined,
       activityType: activityType || undefined,
       status: status || undefined,
@@ -193,6 +195,7 @@ export function ActivitiesPage() {
     debouncedSearch,
     ownerId,
     page,
+    pageSize,
     person?.id,
     scope,
     status,
@@ -549,45 +552,7 @@ export function ActivitiesPage() {
             }
           />
 
-          <div className="flex flex-col items-center justify-between gap-3 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row">
-            <p className="text-xs text-[var(--app-text-secondary)]">
-              صفحه {activities.data.meta.page.toLocaleString("fa-IR")} از{" "}
-              {Math.max(activities.data.meta.totalPages, 1).toLocaleString(
-                "fa-IR"
-              )}
-              {" · "}
-              {activities.data.meta.total.toLocaleString("fa-IR")} فعالیت
-              {activities.isFetching ? " · در حال بروزرسانی..." : ""}
-            </p>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={
-                  activities.isFetching || !activities.data.meta.hasPrevious
-                }
-                onClick={() => setPage((value) => Math.max(1, value - 1))}
-              >
-                قبلی
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={
-                  activities.isFetching || !activities.data.meta.hasNext
-                }
-                onClick={() => setPage((value) => value + 1)}
-              >
-                بعدی
-              </Button>
-            </div>
-          </div>
+          <PaginationControls page={activities.data.meta.page} pageCount={activities.data.meta.totalPages} pageSize={pageSize} total={activities.data.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value as 10 | 20 | 50 | 100); setPage(1) }} disabled={activities.isFetching} />
         </div>
       ) : null}
 

@@ -3,8 +3,6 @@ import {
   ArrowUpRight,
   Banknote,
   CalendarClock,
-  ChevronLeft,
-  ChevronRight,
   CircleDollarSign,
   History,
   RefreshCcw,
@@ -18,6 +16,7 @@ import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -375,19 +374,6 @@ export function AdminExchangeRatesPage() {
             </p>
           </div>
 
-          <select
-            value={pageSize}
-            onChange={(event) => {
-              setPageSize(Number(event.target.value))
-              setPage(1)
-            }}
-            className="h-9 rounded-xl border border-input bg-background px-3 text-xs"
-          >
-            <option value={10}>۱۰ رکورد</option>
-            <option value={20}>۲۰ رکورد</option>
-            <option value={50}>۵۰ رکورد</option>
-            <option value={100}>۱۰۰ رکورد</option>
-          </select>
         </div>
 
         {historyQuery.isLoading ? (
@@ -497,32 +483,7 @@ export function AdminExchangeRatesPage() {
           </div>
         )}
 
-        <div className="flex items-center justify-between border-t border-[var(--app-divider)] px-5 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!historyQuery.data?.meta.hasPrevious}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            <ChevronRight className="ms-1 size-4" />
-            قبلی
-          </Button>
-
-          <span className="text-xs text-muted-foreground">
-            صفحه {faNumber(historyQuery.data?.meta.page ?? page)} از{" "}
-            {faNumber(Math.max(1, historyQuery.data?.meta.totalPages ?? 1))}
-          </span>
-
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={!historyQuery.data?.meta.hasNext}
-            onClick={() => setPage((value) => value + 1)}
-          >
-            بعدی
-            <ChevronLeft className="me-1 size-4" />
-          </Button>
-        </div>
+        <div className="border-t border-[var(--app-divider)] p-3"><PaginationControls page={historyQuery.data?.meta.page ?? page} pageCount={historyQuery.data?.meta.totalPages ?? 1} pageSize={pageSize} total={historyQuery.data?.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value); setPage(1) }} disabled={historyQuery.isFetching} /></div>
       </section>
 
       <Modal

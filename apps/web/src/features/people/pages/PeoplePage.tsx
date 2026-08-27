@@ -12,6 +12,7 @@ import { useSearchParams } from "react-router-dom"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -25,7 +26,7 @@ import type { PeopleDirectoryQuery } from "../types/person.types"
 
 const initialQuery: PeopleDirectoryQuery = {
   page: 1,
-  limit: 12,
+  limit: 20,
 }
 
 export function PeoplePage() {
@@ -167,41 +168,7 @@ export function PeoplePage() {
             ))}
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-3 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row">
-            <p className="text-xs text-[var(--app-text-secondary)]">
-              {uiText.common.pagination.page}{" "}
-              {directory.data.meta.page.toLocaleString("fa-IR")}{" "}
-              {uiText.common.pagination.of}{" "}
-              {Math.max(directory.data.meta.totalPages, 1).toLocaleString(
-                "fa-IR",
-              )}
-            </p>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={!directory.data.meta.hasPrevious}
-                onClick={() =>
-                  patchQuery({ page: Math.max(1, query.page - 1) })
-                }
-              >
-                {uiText.common.pagination.previous}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                disabled={!directory.data.meta.hasNext}
-                onClick={() => patchQuery({ page: query.page + 1 })}
-              >
-                {uiText.common.pagination.next}
-              </Button>
-            </div>
-          </div>
+          <PaginationControls page={directory.data.meta.page} pageCount={directory.data.meta.totalPages} pageSize={query.limit} total={directory.data.meta.total} onPageChange={(page) => patchQuery({ page })} onPageSizeChange={(limit) => patchQuery({ limit, page: 1 })} disabled={directory.isFetching} />
         </>
       ) : (
         <EmptyState
