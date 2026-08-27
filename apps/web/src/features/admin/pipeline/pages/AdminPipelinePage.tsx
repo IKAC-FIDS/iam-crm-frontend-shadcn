@@ -80,7 +80,7 @@ function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] grid place-items-center bg-black/25 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[100] grid place-items-end bg-black/25 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
       dir="rtl"
     >
       <button
@@ -89,7 +89,7 @@ function Modal({
         aria-label="بستن"
       />
       <section
-        className={`relative z-10 max-h-[92vh] w-full ${width} overflow-y-auto rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-2xl`}
+        className={`relative z-10 max-h-[calc(100dvh-1rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-t-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[92vh] sm:rounded-[28px] sm:p-5`}
       >
         <h2 className="text-xl font-black">{title}</h2>
         {description ? (
@@ -124,12 +124,14 @@ function Stat({
   icon: typeof GitBranch
 }) {
   return (
-    <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+    <article className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:rounded-[24px] sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <p className="mt-2 text-2xl font-black">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">{helper}</p>
+          <p className="mt-1 text-xs leading-6 text-muted-foreground">
+            {helper}
+          </p>
         </div>
         <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
           <Icon className="size-5" />
@@ -153,11 +155,11 @@ export function AdminPipelinePage() {
     hasPermission(permissions, "pipeline:transition:manage")
   const canManageTransitions = hasPermission(
     permissions,
-    "pipeline:transition:manage",
+    "pipeline:transition:manage"
   )
 
   const [tab, setTab] = useState<"stages" | "transitions">(
-    canViewStages ? "stages" : "transitions",
+    canViewStages ? "stages" : "transitions"
   )
 
   const stagesQuery = useQuery({
@@ -193,8 +195,8 @@ export function AdminPipelinePage() {
   }
 
   return (
-    <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
+    <div className="grid min-w-0 gap-4 sm:gap-5" dir="rtl">
+      <section className="relative overflow-hidden rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-4 py-5 shadow-[var(--app-shadow-card)] sm:rounded-[30px] sm:px-7 sm:py-6">
         <div className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
         <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -202,20 +204,27 @@ export function AdminPipelinePage() {
               <Sparkles className="size-4" />
               Pipeline Administration
             </div>
-            <h1 className="text-2xl font-black sm:text-3xl">طراح پایپ‌لاین فروش</h1>
+            <h1 className="text-xl font-black sm:text-3xl">
+              طراح پایپ‌لاین فروش
+            </h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین مراحل را مدیریت کنید.
+              مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین
+              مراحل را مدیریت کنید.
             </p>
           </div>
 
-          <Button variant="outline" onClick={() => void refresh()}>
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            onClick={() => void refresh()}
+          >
             <RefreshCcw className="ms-2 size-4" />
             به‌روزرسانی
           </Button>
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <Stat
           title="کل مراحل"
           value={fa(stages.length)}
@@ -243,9 +252,10 @@ export function AdminPipelinePage() {
       </section>
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           {canViewStages ? (
             <Button
+              className="min-w-0 px-2 sm:px-4"
               variant={tab === "stages" ? "default" : "ghost"}
               onClick={() => setTab("stages")}
             >
@@ -256,6 +266,7 @@ export function AdminPipelinePage() {
 
           {canViewTransitions ? (
             <Button
+              className="min-w-0 px-2 sm:px-4"
               variant={tab === "transitions" ? "default" : "ghost"}
               onClick={() => setTab("transitions")}
             >
@@ -313,7 +324,7 @@ function StagesDesigner({
   const reorderMutation = useMutation({
     mutationFn: (items: PipelineStage[]) =>
       reorderPipelineStages(
-        items.map((item, index) => ({ id: item.id, sortOrder: index })),
+        items.map((item, index) => ({ id: item.id, sortOrder: index }))
       ),
     onSuccess: async () => {
       toast.success("ترتیب مراحل ذخیره شد.")
@@ -329,7 +340,7 @@ function StagesDesigner({
       if (!deactivateTarget) return
       return deactivatePipelineStage(
         deactivateTarget.id,
-        replacementStageId || undefined,
+        replacementStageId || undefined
       )
     },
     onSuccess: async () => {
@@ -342,8 +353,8 @@ function StagesDesigner({
       toast.error(
         getApiErrorMessage(
           error,
-          "غیرفعال‌سازی انجام نشد. اگر مرحله در فرصت‌های فعال استفاده می‌شود، مرحله جایگزین را انتخاب کنید.",
-        ),
+          "غیرفعال‌سازی انجام نشد. اگر مرحله در فرصت‌های فعال استفاده می‌شود، مرحله جایگزین را انتخاب کنید."
+        )
       ),
   })
 
@@ -390,7 +401,7 @@ function StagesDesigner({
 
   return (
     <>
-      <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
+      <section className="min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] sm:rounded-[26px] sm:p-4">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="font-black">جریان مراحل</h2>
@@ -399,13 +410,18 @@ function StagesDesigner({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {ordered ? (
               <>
-                <Button variant="outline" onClick={() => setOrdered(null)}>
+                <Button
+                  className="w-full sm:w-auto"
+                  variant="outline"
+                  onClick={() => setOrdered(null)}
+                >
                   انصراف
                 </Button>
                 <Button
+                  className="w-full sm:w-auto"
                   onClick={() => reorderMutation.mutate(ordered)}
                   disabled={reorderMutation.isPending}
                 >
@@ -416,7 +432,10 @@ function StagesDesigner({
             ) : null}
 
             {canManage ? (
-              <Button onClick={() => setEditor("NEW")}>
+              <Button
+                className="col-span-2 w-full sm:w-auto"
+                onClick={() => setEditor("NEW")}
+              >
                 <Plus className="ms-2 size-4" />
                 ایجاد مرحله
               </Button>
@@ -424,7 +443,7 @@ function StagesDesigner({
           </div>
         </div>
 
-        <div className="flex min-w-0 gap-3 overflow-x-auto pb-3">
+        <div className="-mx-3 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 sm:mx-0 sm:px-0">
           {displayed.map((stage, index) => (
             <article
               key={stage.id}
@@ -432,7 +451,7 @@ function StagesDesigner({
               onDragStart={(event) => startDrag(event, stage.id)}
               onDragOver={(event) => canManage && event.preventDefault()}
               onDrop={(event) => dropOn(event, stage.id)}
-              className={`min-w-[240px] max-w-[240px] rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-sm ${
+              className={`w-[calc(100vw-3.5rem)] max-w-[320px] min-w-[calc(100vw-3.5rem)] snap-start rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-sm sm:w-[240px] sm:max-w-[240px] sm:min-w-[240px] ${
                 draggedId === stage.id ? "opacity-50" : ""
               }`}
             >
@@ -495,8 +514,12 @@ function StagesDesigner({
               ) : null}
 
               {canManage ? (
-                <div className="mt-4 flex gap-2 border-t border-[var(--app-divider)] pt-3">
-                  <Button size="sm" variant="outline" onClick={() => setEditor(stage)}>
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-[var(--app-divider)] pt-3 sm:flex">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setEditor(stage)}
+                  >
                     <Pencil className="ms-2 size-4" />
                     ویرایش
                   </Button>
@@ -538,7 +561,8 @@ function StagesDesigner({
       >
         <div className="grid gap-4">
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-7 text-amber-900 dark:text-amber-200">
-            این عملیات حذف فیزیکی نیست. اگر Stage در فرصت‌های فعال استفاده شود، Backend آن فرصت‌ها را به Stage جایگزین منتقل می‌کند.
+            این عملیات حذف فیزیکی نیست. اگر Stage در فرصت‌های فعال استفاده شود،
+            Backend آن فرصت‌ها را به Stage جایگزین منتقل می‌کند.
           </div>
 
           <NativeSelect
@@ -548,8 +572,7 @@ function StagesDesigner({
             <option value="">بدون جایگزین</option>
             {stages
               .filter(
-                (stage) =>
-                  stage.isActive && stage.id !== deactivateTarget?.id,
+                (stage) => stage.isActive && stage.id !== deactivateTarget?.id
               )
               .map((stage) => (
                 <option key={stage.id} value={stage.id}>
@@ -558,11 +581,16 @@ function StagesDesigner({
               ))}
           </NativeSelect>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeactivateTarget(null)}>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <Button
+              className="w-full sm:w-auto"
+              variant="outline"
+              onClick={() => setDeactivateTarget(null)}
+            >
               انصراف
             </Button>
             <Button
+              className="w-full sm:w-auto"
               onClick={() => deactivateMutation.mutate()}
               disabled={deactivateMutation.isPending}
             >
@@ -596,7 +624,7 @@ function StageEditor({
   const [color, setColor] = useState(item?.color ?? "#64748B")
   const [isActive, setIsActive] = useState(item?.isActive ?? true)
   const [terminalType, setTerminalType] = useState<TerminalType>(
-    item?.terminalType ?? "NONE",
+    item?.terminalType ?? "NONE"
   )
   const [isDefault, setIsDefault] = useState(item?.isDefault ?? false)
 
@@ -689,7 +717,9 @@ function StageEditor({
 
         <NativeSelect
           value={terminalType}
-          onChange={(event) => setTerminalType(event.target.value as TerminalType)}
+          onChange={(event) =>
+            setTerminalType(event.target.value as TerminalType)
+          }
         >
           <option value="NONE">مرحله عادی</option>
           <option value="WON">برنده</option>
@@ -718,11 +748,19 @@ function StageEditor({
           </label>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            onClick={onClose}
+          >
             انصراف
           </Button>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
             ذخیره
           </Button>
         </div>
@@ -747,10 +785,13 @@ function TransitionDesigner({
   onRefresh: () => Promise<void>
 }) {
   const [view, setView] = useState<"matrix" | "list">("matrix")
-  const [roleFilter, setRoleFilter] = useState<PipelineRole | "GENERAL">("GENERAL")
+  const [roleFilter, setRoleFilter] = useState<PipelineRole | "GENERAL">(
+    "GENERAL"
+  )
   const [editor, setEditor] = useState<PipelineTransition | "NEW" | null>(null)
-  const [deleteTarget, setDeleteTarget] =
-    useState<PipelineTransition | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<PipelineTransition | null>(
+    null
+  )
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePipelineTransition(id),
@@ -768,7 +809,7 @@ function TransitionDesigner({
       roleFilter === "GENERAL"
         ? transitions.filter((rule) => rule.role == null)
         : transitions.filter((rule) => rule.role === roleFilter),
-    [transitions, roleFilter],
+    [transitions, roleFilter]
   )
 
   const activeStages = stages.filter((stage) => stage.isActive)
@@ -799,7 +840,7 @@ function TransitionDesigner({
 
   return (
     <>
-      <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
+      <section className="min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] sm:rounded-[26px] sm:p-4">
         <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <h2 className="font-black">قوانین انتقال</h2>
@@ -808,13 +849,13 @@ function TransitionDesigner({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             <NativeSelect
               value={roleFilter}
               onChange={(event) =>
                 setRoleFilter(event.target.value as PipelineRole | "GENERAL")
               }
-              className="min-w-[180px]"
+              className="col-span-2 min-w-0 sm:w-auto sm:min-w-[180px]"
             >
               <option value="GENERAL">قانون عمومی</option>
               {Object.entries(ROLE_LABELS).map(([value, label]) => (
@@ -825,12 +866,14 @@ function TransitionDesigner({
             </NativeSelect>
 
             <Button
+              className="w-full sm:w-auto"
               variant={view === "matrix" ? "default" : "outline"}
               onClick={() => setView("matrix")}
             >
               ماتریس
             </Button>
             <Button
+              className="w-full sm:w-auto"
               variant={view === "list" ? "default" : "outline"}
               onClick={() => setView("list")}
             >
@@ -838,7 +881,10 @@ function TransitionDesigner({
             </Button>
 
             {canManage ? (
-              <Button onClick={() => setEditor("NEW")}>
+              <Button
+                className="col-span-2 w-full sm:w-auto"
+                onClick={() => setEditor("NEW")}
+              >
                 <Plus className="ms-2 size-4" />
                 ایجاد قانون
               </Button>
@@ -847,11 +893,11 @@ function TransitionDesigner({
         </div>
 
         {view === "matrix" ? (
-          <div className="overflow-x-auto rounded-2xl border border-[var(--app-divider)]">
+          <div className="-mx-3 overflow-x-auto rounded-none border-y border-[var(--app-divider)] sm:mx-0 sm:rounded-2xl sm:border">
             <table className="w-full min-w-[900px] border-collapse text-sm">
               <thead>
                 <tr className="bg-muted/30">
-                  <th className="min-w-[170px] border-b border-l border-[var(--app-divider)] p-3 text-right">
+                  <th className="sticky right-0 z-20 min-w-[140px] border-b border-l border-[var(--app-divider)] bg-muted p-3 text-right sm:min-w-[170px]">
                     از \ به
                   </th>
                   {activeStages.map((stage) => (
@@ -867,7 +913,7 @@ function TransitionDesigner({
               <tbody>
                 {activeStages.map((from) => (
                   <tr key={from.id}>
-                    <td className="border-b border-l border-[var(--app-divider)] p-3 font-bold">
+                    <td className="sticky right-0 z-10 border-b border-l border-[var(--app-divider)] bg-[var(--app-surface)] p-3 font-bold">
                       {from.label}
                     </td>
                     {activeStages.map((to) => {
@@ -929,7 +975,7 @@ function TransitionDesigner({
                   </div>
 
                   {canManage ? (
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
                       <Button
                         size="sm"
                         variant="outline"
@@ -976,12 +1022,19 @@ function TransitionDesigner({
         onClose={() => setDeleteTarget(null)}
         title="حذف قانون انتقال"
       >
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            onClick={() => setDeleteTarget(null)}
+          >
             انصراف
           </Button>
           <Button
-            onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+            className="w-full sm:w-auto"
+            onClick={() =>
+              deleteTarget && deleteMutation.mutate(deleteTarget.id)
+            }
             disabled={deleteMutation.isPending}
           >
             حذف قانون
@@ -1013,7 +1066,7 @@ function TransitionEditor({
   const [fromStageId, setFromStageId] = useState(rule?.fromStageId ?? "")
   const [toStageId, setToStageId] = useState(rule?.toStageId ?? "")
   const [role, setRole] = useState<PipelineRole | "">(
-    rule?.role ?? initialRole ?? "",
+    rule?.role ?? initialRole ?? ""
   )
   const [isAllowed, setIsAllowed] = useState(rule?.isAllowed ?? true)
 
@@ -1042,8 +1095,8 @@ function TransitionEditor({
       toast.error(
         getApiErrorMessage(
           error,
-          "ذخیره قانون انجام نشد. ممکن است Rule مشابه از قبل وجود داشته باشد.",
-        ),
+          "ذخیره قانون انجام نشد. ممکن است Rule مشابه از قبل وجود داشته باشد."
+        )
       ),
   })
 
@@ -1105,14 +1158,23 @@ function TransitionEditor({
         </NativeSelect>
 
         <div className="rounded-2xl bg-muted/35 p-4 text-xs leading-6 text-muted-foreground">
-          Backend فعلی برای Transition فقط Base Roleهای ADMIN / MANAGER / REP / BOARDS را می‌پذیرد.
+          Backend فعلی برای Transition فقط Base Roleهای ADMIN / MANAGER / REP /
+          BOARDS را می‌پذیرد.
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            variant="outline"
+            onClick={onClose}
+          >
             انصراف
           </Button>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
             ذخیره قانون
           </Button>
         </div>
