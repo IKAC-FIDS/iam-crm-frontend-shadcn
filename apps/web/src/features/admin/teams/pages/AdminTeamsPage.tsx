@@ -1,8 +1,6 @@
 import {
   Activity,
   BadgeCheck,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   LayoutGrid,
   List,
@@ -20,6 +18,7 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -470,30 +469,12 @@ export function AdminTeamsPage() {
         </section>
       )}
 
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!teamsQuery.data?.meta.hasPrevious}
-          onClick={() => setPage((value) => Math.max(1, value - 1))}
-        >
-          <ChevronRight className="ms-1 size-4" />
-          قبلی
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          صفحه {fa(teamsQuery.data?.meta.page ?? page)} از{" "}
-          {fa(Math.max(1, teamsQuery.data?.meta.totalPages ?? 1))}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!teamsQuery.data?.meta.hasNext}
-          onClick={() => setPage((value) => value + 1)}
-        >
-          بعدی
-          <ChevronLeft className="me-1 size-4" />
-        </Button>
-      </div>
+      <PaginationControls
+        page={teamsQuery.data?.meta.page ?? page}
+        pageCount={teamsQuery.data?.meta.totalPages ?? 1}
+        onPageChange={setPage}
+        disabled={teamsQuery.isFetching}
+      />
 
       <CreateTeamModal
         open={createOpen}
