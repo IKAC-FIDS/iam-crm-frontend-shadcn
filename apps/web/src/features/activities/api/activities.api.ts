@@ -8,6 +8,7 @@ import { unwrapApiResponse } from "@/lib/apiResponse"
 
 import type {
   Activity,
+  ActivityTypeOption,
   ActivityListQuery,
   ActivityOption,
   ActivityOwnerOption,
@@ -20,6 +21,12 @@ function clean(value: object) {
   return Object.fromEntries(
     Object.entries(value).filter(([, item]) => item !== undefined && item !== "")
   )
+}
+
+export async function getActivityTypes() {
+  const response = await api.get("/activities/types/options")
+  const data = unwrapApiResponse<ActivityTypeOption[]>(response.data)
+  return Array.isArray(data) ? data : []
 }
 
 type Envelope = {

@@ -21,6 +21,7 @@ import {
 } from "../types/activity.types"
 import type { OpportunityStage } from "@/features/opportunities/types/opportunity.types"
 import { localizeStageChangeText } from "../utils/activityDisplay"
+import { useActivityTypes } from "../hooks/useActivities"
 
 function formatDate(value?: string | null) {
   if (!value) return "—"
@@ -69,6 +70,8 @@ export function ActivityDetailDialog({
   onEdit: () => void
 }) {
   const navigate = useNavigate()
+  const types = useActivityTypes(open)
+  const activityLabel = (item: Activity) => types.data?.find((option) => option.code === item.type)?.label || typeLabel(item)
 
   if (!activity) return null
 
@@ -95,12 +98,12 @@ export function ActivityDetailDialog({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <span className="inline-flex rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">
-                  {typeLabel(activity)}
+                  {activityLabel(activity)}
                 </span>
                 <h3 className="mt-3 text-base font-bold text-[var(--app-heading)]">
-                  {localizeStageChangeText(activity.title, stages) ||
+                  {(activity.title !== activity.type && localizeStageChangeText(activity.title, stages)) ||
                     localizeStageChangeText(activity.outcome, stages) ||
-                    typeLabel(activity)}
+                    activityLabel(activity)}
                 </h3>
               </div>
 

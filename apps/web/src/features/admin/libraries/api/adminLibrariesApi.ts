@@ -4,7 +4,7 @@ import { unwrapApiResponse } from "@/lib/apiResponse"
 export const lookupGroups = [
   ["teams", "تیم‌ها"], ["departments", "دپارتمان‌ها"], ["job-titles", "سمت‌ها"],
   ["seniority-levels", "سطح ارشدیت"], ["persona-roles", "نقش‌های فروش"],
-  ["opportunity-sources", "منابع ایجاد فرصت"], ["contact-types", "انواع تماس"],
+  ["opportunity-sources", "منابع ایجاد فرصت"], ["activity-types", "انواع فعالیت"],
   ["person-social-platforms", "شبکه‌های اجتماعی"], ["company-sources", "منابع شرکت"],
   ["meeting-types", "انواع جلسه"],
 ] as const

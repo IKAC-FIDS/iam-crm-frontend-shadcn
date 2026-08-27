@@ -196,6 +196,7 @@ function LibraryForm({
     onSuccess: async () => {
       toast.success(item ? "آیتم ویرایش شد." : "آیتم جدید اضافه شد.")
       await client.invalidateQueries({ queryKey: ["admin-library"] })
+      if (group === "activity-types") await client.invalidateQueries({ queryKey: ["activities"] })
       onClose()
     },
     onError: (error) =>
@@ -239,6 +240,7 @@ function LibraryForm({
               className={inputClass}
               dir="ltr"
               value={form.code}
+              disabled={group === "activity-types" && Boolean(item)}
               onChange={(e) => setForm({ ...form, code: e.target.value })}
             />
           </label>
@@ -517,6 +519,7 @@ export function AdminLibrariesPage() {
     onSuccess: async () => {
       toast.success("آیتم غیرفعال یا حذف شد.")
       await client.invalidateQueries({ queryKey: ["admin-library"] })
+      if (group === "activity-types") await client.invalidateQueries({ queryKey: ["activities"] })
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "حذف آیتم انجام نشد.")),
   })

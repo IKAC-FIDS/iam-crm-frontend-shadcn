@@ -16,9 +16,9 @@ import {
   useActivityPeopleOptions,
   useCreateActivity,
   useUpdateActivity,
+  useActivityTypes,
 } from "../hooks/useActivities"
 import {
-  MANUAL_ACTIVITY_TYPE_OPTIONS,
   type Activity,
   type ActivityOption,
   type CreateActivityPayload,
@@ -60,11 +60,12 @@ export function ActivityFormDialog({
   const create = useCreateActivity()
   const update = useUpdateActivity()
   const pending = create.isPending || update.isPending
+  const activityTypes = useActivityTypes(open)
 
   const [companyId, setCompanyId] = useState("")
   const [person, setPerson] = useState<ActivityOption>()
   const [opportunity, setOpportunity] = useState<ActivityOption>()
-  const [type, setType] = useState<ManualActivityType>("CALL")
+  const [type, setType] = useState<ManualActivityType>("")
   const [notes, setNotes] = useState("")
   const [outcome, setOutcome] = useState("")
   const [occurredAt, setOccurredAt] = useState<Date>()
@@ -94,7 +95,7 @@ export function ActivityFormDialog({
     setType(
       activity?.type && activity.type !== "STAGE_CHANGE"
         ? activity.type
-        : "CALL"
+        : ""
     )
     setNotes(activity?.notes || "")
     setOutcome(activity?.outcome || "")
@@ -118,8 +119,8 @@ export function ActivityFormDialog({
     open && !editing && Boolean(companyId)
   )
   const validation = useMemo(
-    () => (!companyId ? "انتخاب شرکت الزامی است." : ""),
-    [companyId]
+    () => !companyId ? "انتخاب شرکت الزامی است." : !type ? "انتخاب نوع فعالیت الزامی است." : activityTypes.isError ? "دریافت انواع فعالیت ناموفق بود؛ فرم را دوباره باز کنید." : "",
+    [companyId, type, activityTypes.isError]
   )
 
   async function submit() {
@@ -209,8 +210,9 @@ export function ActivityFormDialog({
                   }
                   className={selectClass}
                 >
-                  {MANUAL_ACTIVITY_TYPE_OPTIONS.map((item) => (
-                    <option key={item.value} value={item.value}>
+                  <option value="">{activityTypes.isLoading ? "در حال دریافت..." : "انتخاب نوع فعالیت"}</option>
+                  {(activityTypes.data ?? []).filter((item) => item.isActive || item.code === activity?.type).map((item) => (
+                    <option key={item.id} value={item.code} disabled={!item.isActive && item.code !== activity?.type}>
                       {item.label}
                     </option>
                   ))}

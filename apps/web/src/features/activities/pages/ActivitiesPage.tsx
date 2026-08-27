@@ -41,6 +41,7 @@ import {
   useActivities,
   useActivityOwnerOptions,
   useActivityPeopleOptions,
+  useActivityTypes,
 } from "../hooks/useActivities"
 import {
   ACTIVITY_TYPE_OPTIONS,
@@ -82,9 +83,9 @@ function formatDate(value?: string | null) {
   }).format(date)
 }
 
-function activityTypeLabel(type: ActivityType) {
+function activityTypeLabel(type: ActivityType, options: readonly { value: string; label: string }[] = ACTIVITY_TYPE_OPTIONS) {
   return (
-    ACTIVITY_TYPE_OPTIONS.find((item) => item.value === type)?.label || type
+    options.find((item) => item.value === type)?.label || type
   )
 }
 
@@ -99,6 +100,10 @@ export function ActivitiesPage() {
   const canView = permissions.includes("activity:view")
   const canCreate = permissions.includes("activity:create")
   const canUpdate = permissions.includes("activity:update")
+  const typeQuery = useActivityTypes(canView)
+  const typeOptions = useMemo(() => typeQuery.data
+    ? [...typeQuery.data.map((item) => ({ value: item.code, label: item.label })), { value: "STAGE_CHANGE", label: "تغییر مرحله" }]
+    : [...ACTIVITY_TYPE_OPTIONS], [typeQuery.data])
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<10 | 20 | 50 | 100>(20)
@@ -238,7 +243,7 @@ export function ActivitiesPage() {
         cell: (item) => (
           <div className="max-w-[280px]">
             <span className="font-bold">
-              {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.title || item.outcome, stageItems) || activityTypeLabel(item.type) : item.title || item.outcome || activityTypeLabel(item.type)}
+              {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.title || item.outcome, stageItems) || activityTypeLabel(item.type, typeOptions) : (item.title && item.title !== item.type ? item.title : item.outcome) || activityTypeLabel(item.type, typeOptions)}
             </span>
 
             {item.description || item.notes ? (
@@ -254,7 +259,7 @@ export function ActivitiesPage() {
         header: "نوع",
         cell: (item) => (
           <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">
-            {activityTypeLabel(item.type)}
+            {activityTypeLabel(item.type, typeOptions)}
           </span>
         ),
       },
@@ -314,7 +319,7 @@ export function ActivitiesPage() {
         ),
       },
     ],
-    [canUpdate, stageItems]
+    [canUpdate, stageItems, typeOptions]
   )
 
   if (!canView) {
@@ -397,7 +402,7 @@ export function ActivitiesPage() {
             }}
           >
             <option value="">نوع: همه</option>
-            {ACTIVITY_TYPE_OPTIONS.map((item) => (
+            {typeOptions.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
               </option>

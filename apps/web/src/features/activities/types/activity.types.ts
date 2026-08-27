@@ -12,8 +12,9 @@ export const MANUAL_ACTIVITY_TYPE_OPTIONS = ACTIVITY_TYPE_OPTIONS.filter(
   (item) => item.value !== "STAGE_CHANGE"
 )
 
-export type ActivityType = (typeof ACTIVITY_TYPE_OPTIONS)[number]["value"]
-export type ManualActivityType = Exclude<ActivityType, "STAGE_CHANGE">
+export type ActivityType = string
+export type ManualActivityType = string
+export interface ActivityTypeOption { id: string; code: string; label: string; isActive: boolean; sortOrder: number }
 export type ActivityStatus = "RECORDED" | "COMPLETED"
 
 export interface ActivityPerson {

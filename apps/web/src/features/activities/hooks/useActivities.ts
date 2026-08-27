@@ -8,6 +8,7 @@
 import {
   createActivity,
   getActivities,
+  getActivityTypes,
   getActivityOpportunityOptions,
   getActivityOwnerOptions,
   getActivityPeopleOptions,
@@ -22,6 +23,10 @@ import type {
 export const activityQueryKeys = {
   all: ["activities"] as const,
   list: (query: ActivityListQuery) => ["activities", "list", query] as const,
+}
+
+export function useActivityTypes(enabled = true) {
+  return useQuery({ queryKey: ["activities", "type-options"], queryFn: getActivityTypes, enabled })
 }
 
 export function useActivities(query: ActivityListQuery, enabled = true) {
