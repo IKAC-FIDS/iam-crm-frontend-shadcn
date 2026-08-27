@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  Fingerprint,
   LockKeyhole,
   Mail,
   ShieldCheck,
@@ -20,6 +21,7 @@ import { Label } from "@workspace/ui/components/label"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuth } from "../hooks/useAuth"
+import { usePasskeyLogin } from "../hooks/usePasskeyLogin"
 
 const loginText = uiText.auth.login
 
@@ -32,6 +34,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginPage() {
   const { login, isLoading } = useAuth()
+  const { loginWithPasskey, isPasskeyLoading } = usePasskeyLogin()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -49,6 +52,15 @@ export function LoginPage() {
       await login(data)
     } catch (err: unknown) {
       setError(getApiErrorMessage(err, loginText.errors.loginFailed))
+    }
+  }
+
+  const onPasskeyLogin = async () => {
+    try {
+      setError(null)
+      await loginWithPasskey()
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, err instanceof Error ? err.message : "ورود با Passkey انجام نشد."))
     }
   }
 
@@ -180,7 +192,7 @@ export function LoginPage() {
                 type="submit"
                 size="lg"
                 className="h-12 w-full rounded-xl bg-[#0053B2] font-semibold text-white shadow-lg shadow-[#0053B2]/20 transition hover:bg-[#004A9F] active:bg-[#003F88]"
-                disabled={isLoading}
+                disabled={isLoading || isPasskeyLoading}
               >
                 <span>
                   {isLoading ? loginText.submitting : loginText.submit}
@@ -189,8 +201,26 @@ export function LoginPage() {
                 {!isLoading ? <ArrowLeft className="size-4" /> : null}
               </Button>
 
+              <div className="flex items-center gap-3 text-xs text-[#94A3B8]">
+                <span className="h-px flex-1 bg-[#E4EAF3]" />
+                یا
+                <span className="h-px flex-1 bg-[#E4EAF3]" />
+              </div>
+
+              <Button
+                type="button"
+                size="lg"
+                variant="outline"
+                className="h-12 w-full rounded-xl border-[#B8C7DA] bg-white font-semibold text-[#0053B2] hover:bg-[#EFF5FA]"
+                disabled={isLoading || isPasskeyLoading}
+                onClick={() => void onPasskeyLogin()}
+              >
+                <Fingerprint className={`size-5 ${isPasskeyLoading ? "animate-pulse" : ""}`} />
+                {isPasskeyLoading ? "در حال بررسی Passkey..." : "ورود با Passkey"}
+              </Button>
+
               <div className="rounded-xl border border-[#E4EAF3] bg-[#EFF5FA]/70 px-4 py-3 text-center text-xs leading-5 text-[#64748B]">
-                {loginText.passkeyNotice}
+                برای ورود، Passkey ذخیره‌شده روی همین دستگاه یا حساب ابری خود را انتخاب کنید.
               </div>
             </form>
           </div>
