@@ -208,6 +208,36 @@ export function AdminTeamsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className={
+                  view === "CARDS"
+                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                    : "rounded-lg"
+                }
+                onClick={() => setView("CARDS")}
+                aria-label="نمای کارت"
+              >
+                <LayoutGrid className="size-4" />
+                کارت‌ها
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className={
+                  view === "TABLE"
+                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                    : "rounded-lg"
+                }
+                onClick={() => setView("TABLE")}
+                aria-label="نمای جدول"
+              >
+                <List className="size-4" />
+                جدول
+              </Button>
+            </div>
             <Button variant="outline" onClick={() => void refreshAll()}>
               <RefreshCcw className="ms-2 size-4" />
               به‌روزرسانی
@@ -287,25 +317,6 @@ export function AdminTeamsPage() {
             <option value="ACTIVE">فعال</option>
             <option value="INACTIVE">غیرفعال</option>
           </NativeSelect>
-
-          <div className="flex rounded-xl border border-input p-1">
-            <Button
-              size="icon-sm"
-              variant={view === "CARDS" ? "default" : "ghost"}
-              onClick={() => setView("CARDS")}
-              aria-label="نمای کارت"
-            >
-              <LayoutGrid className="size-4" />
-            </Button>
-            <Button
-              size="icon-sm"
-              variant={view === "TABLE" ? "default" : "ghost"}
-              onClick={() => setView("TABLE")}
-              aria-label="نمای جدول"
-            >
-              <List className="size-4" />
-            </Button>
-          </div>
         </div>
       </section>
 
