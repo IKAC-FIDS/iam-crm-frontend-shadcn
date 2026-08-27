@@ -18,6 +18,7 @@ export type ManagedPermission = {
 export type ManagedRole = {
   id: string
   code: string
+  normalizedCode?: string | null
   name: string
   description?: string | null
   baseRole: UserRole
@@ -82,15 +83,25 @@ export async function deletePermission(id: string) {
 }
 
 export async function getRoles() {
-  const response = await api.get("/roles")
+  const response = await api.get("/organization/roles")
   return unwrapApiResponse<ManagedRole[]>(response.data)
 }
 
 export async function getRole(id: string) {
-  const response = await api.get(`/roles/${id}`)
+  const response = await api.get(`/organization/roles/${id}`)
   return unwrapApiResponse<ManagedRole>(response.data)
 }
 
+export async function createTenantRole(payload: {
+  code: string
+  name: string
+  description?: string
+  baseRole?: UserRole
+  isActive?: boolean
+}) {
+  const response = await api.post("/organization/roles", payload)
+  return unwrapApiResponse<ManagedRole>(response.data)
+}
 export async function updateRole(
   id: string,
   payload: {
@@ -100,21 +111,21 @@ export async function updateRole(
     isActive?: boolean
   },
 ) {
-  const response = await api.patch(`/roles/${id}`, payload)
+  const response = await api.patch(`/organization/roles/${id}`, payload)
   return unwrapApiResponse<ManagedRole>(response.data)
 }
 
 export async function deleteRole(id: string) {
-  const response = await api.delete(`/roles/${id}`)
+  const response = await api.delete(`/organization/roles/${id}`)
   return unwrapApiResponse<ManagedRole>(response.data)
 }
 
 export async function getRolePermissions(id: string) {
-  const response = await api.get(`/roles/${id}/permissions`)
+  const response = await api.get(`/organization/roles/${id}/permissions`)
   return unwrapApiResponse<RolePermissions>(response.data)
 }
 
 export async function replaceRolePermissions(id: string, permissionIds: string[]) {
-  const response = await api.put(`/roles/${id}/permissions`, { permissionIds })
+  const response = await api.put(`/organization/roles/${id}/permissions`, { permissionIds })
   return unwrapApiResponse<RolePermissions>(response.data)
 }

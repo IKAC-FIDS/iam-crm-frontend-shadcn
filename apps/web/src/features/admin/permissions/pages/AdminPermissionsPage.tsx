@@ -26,6 +26,7 @@ import { Input } from "@workspace/ui/components/input"
 
 import {
   createPermission,
+  createTenantRole,
   deletePermission,
   deleteRole,
   getPermissions,
@@ -152,6 +153,7 @@ export function AdminPermissionsPage() {
   const [permissionKind, setPermissionKind] = useState<"ALL" | "SYSTEM" | "CUSTOM">("ALL")
   const [permissionEditor, setPermissionEditor] = useState<ManagedPermission | "NEW" | null>(null)
   const [permissionDeleteTarget, setPermissionDeleteTarget] = useState<ManagedPermission | null>(null)
+  const [roleCreateOpen, setRoleCreateOpen] = useState(false)
   const [roleEditor, setRoleEditor] = useState<ManagedRole | null>(null)
   const [roleDeleteTarget, setRoleDeleteTarget] = useState<ManagedRole | null>(null)
   const [roleMatrixTarget, setRoleMatrixTarget] = useState<ManagedRole | null>(null)
@@ -267,6 +269,12 @@ export function AdminPermissionsPage() {
                 ایجاد مجوز
               </Button>
             ) : null}
+            {tab === "roles" && canManageRoles ? (
+              <Button onClick={() => setRoleCreateOpen(true)}>
+                <Plus className="ms-2 size-4" />
+                ایجاد نقش
+              </Button>
+            ) : null}
           </div>
         </div>
       </section>
@@ -353,6 +361,14 @@ export function AdminPermissionsPage() {
         onClose={() => setPermissionEditor(null)}
         onSaved={async () => {
           setPermissionEditor(null)
+          await refresh()
+        }}
+      />
+      <RoleCreateModal
+        open={roleCreateOpen}
+        onClose={() => setRoleCreateOpen(false)}
+        onSaved={async () => {
+          setRoleCreateOpen(false)
           await refresh()
         }}
       />
@@ -555,7 +571,7 @@ function RolesWorkspace({
                   <span className="rounded-full bg-sky-500/10 px-2 py-1 text-[11px] font-bold text-sky-700">سفارشی</span>
                 )}
               </div>
-              <code className="mt-2 inline-block text-xs text-muted-foreground" dir="ltr">{role.code}</code>
+              <code className="mt-2 inline-block text-xs text-muted-foreground" dir="ltr">{role.normalizedCode || role.code}</code>
             </div>
             <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${role.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
               {role.isActive ? "فعال" : "غیرفعال"}
@@ -607,9 +623,9 @@ function RolesWorkspace({
         <article className="grid min-h-64 place-items-center rounded-[24px] border border-dashed border-[var(--app-divider)] bg-[var(--app-surface)] p-6 text-center">
           <div>
             <LockKeyhole className="mx-auto size-8 text-muted-foreground" />
-            <h3 className="mt-3 font-black">ایجاد Role از این API غیرفعال است</h3>
+            <h3 className="mt-3 font-black">نقش سفارشی جدید</h3>
             <p className="mt-2 max-w-sm text-xs leading-6 text-muted-foreground">
-              Backend فعلی ایجاد Role را به Tenant-scoped Role API ارجاع می‌دهد. برای جلوگیری از خطای قطعی، دکمه ایجاد نقش در این نسخه نمایش داده نمی‌شود.
+              برای ساخت نقش جدید از دکمه «ایجاد نقش» بالای صفحه استفاده کنید و دسترسی‌های اولیه را همان‌جا انتخاب کنید.
             </p>
           </div>
         </article>
@@ -720,6 +736,360 @@ function PermissionEditorModal({
   )
 }
 
+function RoleCreateModal({
+  open,
+  onClose,
+  onSaved,
+}: {
+  open: boolean
+  onClose: () => void
+  onSaved: () => Promise<void>
+}) {
+  const permissionsQuery = useQuery({
+    queryKey: ["rbac-permissions"],
+    queryFn: getPermissions,
+    enabled: open,
+  })
+
+  const [code, setCode] = useState("")
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [baseRole, setBaseRole] = useState<UserRole>("REP")
+  const [isActive, setIsActive] = useState(true)
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([])
+  const [permissionSearch, setPermissionSearch] = useState("")
+
+  const filtered = useMemo(() => {
+    const needle = permissionSearch.trim().toLocaleLowerCase("fa")
+
+    return (permissionsQuery.data ?? []).filter(
+      (permission) =>
+        permission.isActive &&
+        (
+          !needle ||
+          [permission.action, permission.name, permission.group, permission.description]
+            .filter(Boolean)
+            .some((value) =>
+              String(value).toLocaleLowerCase("fa").includes(needle),
+            )
+        ),
+    )
+  }, [permissionsQuery.data, permissionSearch])
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, ManagedPermission[]>()
+
+    for (const permission of filtered) {
+      const key = groupName(permission)
+      const items = map.get(key) ?? []
+      items.push(permission)
+      map.set(key, items)
+    }
+
+    return [...map.entries()].sort(([a], [b]) => a.localeCompare(b, "fa"))
+  }, [filtered])
+
+  const toggle = (permissionId: string, checked: boolean) => {
+    setSelectedPermissionIds((current) =>
+      checked
+        ? Array.from(new Set([...current, permissionId]))
+        : current.filter((id) => id !== permissionId),
+    )
+  }
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      if (!code.trim()) throw new Error("کد نقش الزامی است.")
+      if (!name.trim()) throw new Error("نام نقش الزامی است.")
+
+      const normalizedCode = code
+        .trim()
+        .toUpperCase()
+        .replace(/[\s-]+/g, "_")
+
+      if (!/^[A-Z][A-Z0-9_]*$/.test(normalizedCode)) {
+        throw new Error(
+          "کد نقش باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد و _ باشد.",
+        )
+      }
+
+      const created = await createTenantRole({
+        code: normalizedCode,
+        name: name.trim(),
+        description: description.trim() || undefined,
+        baseRole,
+        isActive,
+      })
+
+      if (selectedPermissionIds.length) {
+        await replaceRolePermissions(created.id, selectedPermissionIds)
+      }
+
+      return created
+    },
+    onSuccess: async () => {
+      toast.success("نقش جدید و دسترسی‌های آن با موفقیت ایجاد شد.")
+      setCode("")
+      setName("")
+      setDescription("")
+      setBaseRole("REP")
+      setIsActive(true)
+      setSelectedPermissionIds([])
+      setPermissionSearch("")
+      await onSaved()
+    },
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "ایجاد نقش انجام نشد.")),
+  })
+
+  if (!open) return null
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="ایجاد نقش جدید"
+      description="مشخصات نقش را تعریف کنید و مجوزهای اولیه آن را انتخاب کنید."
+      width="max-w-5xl"
+    >
+      <div className="grid gap-5">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              نام نقش
+            </label>
+            <Input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="مثلاً سرپرست فروش"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              کد نقش
+            </label>
+            <Input
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              dir="ltr"
+              placeholder="SALES_SUPERVISOR"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              نقش پایه
+            </label>
+            <NativeSelect
+              value={baseRole}
+              onChange={(event) => setBaseRole(event.target.value as UserRole)}
+            >
+              {Object.entries(ROLE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
+
+          <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
+            <input
+              type="checkbox"
+              checked={isActive}
+              onChange={(event) => setIsActive(event.target.checked)}
+            />
+            <span className="font-bold">نقش فعال باشد</span>
+          </label>
+
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              توضیحات
+            </label>
+            <textarea
+              value={description}
+              maxLength={1000}
+              onChange={(event) => setDescription(event.target.value)}
+              className="min-h-24 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+              placeholder="کاربرد و سطح مسئولیت این نقش..."
+            />
+          </div>
+        </div>
+
+        <section className="rounded-2xl border border-[var(--app-divider)]">
+          <div className="border-b border-[var(--app-divider)] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="font-black">دسترسی‌های اولیه</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {fa(selectedPermissionIds.length)} مجوز انتخاب شده است.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setSelectedPermissionIds(
+                      (permissionsQuery.data ?? [])
+                        .filter((item) => item.isActive)
+                        .map((item) => item.id),
+                    )
+                  }
+                >
+                  انتخاب همه
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedPermissionIds([])}
+                >
+                  پاک کردن همه
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative mt-3">
+              <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={permissionSearch}
+                onChange={(event) => setPermissionSearch(event.target.value)}
+                placeholder="جستجو در مجوزها"
+                className="pe-10"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-[430px] overflow-y-auto p-4">
+            {permissionsQuery.isLoading ? (
+              <div className="grid min-h-40 place-items-center text-sm text-muted-foreground">
+                در حال دریافت مجوزها...
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {grouped.map(([group, items]) => {
+                  const groupIds = items.map((item) => item.id)
+                  const selectedCount = groupIds.filter((id) =>
+                    selectedPermissionIds.includes(id),
+                  ).length
+
+                  return (
+                    <section
+                      key={group}
+                      className="rounded-2xl border border-[var(--app-divider)]"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--app-divider)] px-4 py-3">
+                        <div>
+                          <div className="font-bold">{group}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">
+                            {fa(selectedCount)} از {fa(items.length)} انتخاب شده
+                          </div>
+                        </div>
+
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setSelectedPermissionIds((current) =>
+                                Array.from(new Set([...current, ...groupIds])),
+                              )
+                            }
+                          >
+                            انتخاب گروه
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setSelectedPermissionIds((current) =>
+                                current.filter((id) => !groupIds.includes(id)),
+                              )
+                            }
+                          >
+                            پاک کردن گروه
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 p-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {items.map((permission) => {
+                          const checked = selectedPermissionIds.includes(
+                            permission.id,
+                          )
+
+                          return (
+                            <label
+                              key={permission.id}
+                              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${
+                                checked
+                                  ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]"
+                                  : "border-[var(--app-divider)]"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(event) =>
+                                  toggle(permission.id, event.target.checked)
+                                }
+                              />
+                              <span className="min-w-0">
+                                <span className="block text-sm font-bold">
+                                  {permission.name || actionVerb(permission)}
+                                </span>
+                                <code
+                                  className="mt-1 block truncate text-[11px] text-muted-foreground"
+                                  dir="ltr"
+                                >
+                                  {permission.action}
+                                </code>
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {baseRole === "ADMIN" ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-7 text-amber-900 dark:text-amber-200">
+            نقش مبتنی بر ADMIN باید مجوزهای حیاتی
+            <code className="mx-1" dir="ltr">permission:manage</code>
+            و
+            <code className="mx-1" dir="ltr">role:manage</code>
+            را حفظ کند.
+          </div>
+        ) : null}
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={mutation.isPending}
+          >
+            انصراف
+          </Button>
+
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            ایجاد نقش و ذخیره دسترسی‌ها
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
 function RoleEditorModal({
   role,
   open,
