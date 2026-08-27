@@ -159,10 +159,10 @@ export function CompanyFormDialog({
       <DialogContent
         showCloseButton={false}
         dir="rtl"
-        className="max-h-[92vh] w-[min(1120px,calc(100vw-24px))] max-w-none gap-0 overflow-hidden rounded-[28px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 shadow-[var(--app-shadow-elevated)] sm:max-w-none"
+        className="h-[min(92dvh,900px)] max-h-[calc(100dvh-1rem)] w-[min(1120px,calc(100vw-16px))] max-w-none gap-0 overflow-hidden rounded-[28px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 shadow-[var(--app-shadow-elevated)] sm:w-[min(1120px,calc(100vw-24px))] sm:max-w-none"
       >
-        <div className="grid min-h-0 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="hidden border-e border-[var(--app-divider)] bg-[linear-gradient(160deg,var(--app-primary-soft),var(--app-background)_72%)] p-6 lg:flex lg:flex-col">
+        <div className="grid h-full min-h-0 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)]">
+          <aside className="hidden overflow-y-auto border-e border-[var(--app-divider)] bg-[linear-gradient(160deg,var(--app-primary-soft),var(--app-background)_72%)] p-6 lg:flex lg:flex-col">
             <div className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
               <Building2 className="size-5" />
             </div>

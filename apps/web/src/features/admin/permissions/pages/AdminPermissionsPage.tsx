@@ -15,12 +15,13 @@ import {
   UsersRound,
   X,
 } from "lucide-react"
-import { useMemo, useState, type ReactNode } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -69,37 +70,6 @@ function isCritical(permission: ManagedPermission) {
   return CRITICAL_PERMISSIONS.has(permission.action)
 }
 
-function Modal({
-  open,
-  onClose,
-  title,
-  description,
-  children,
-  width = "max-w-2xl",
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  description?: string
-  children: ReactNode
-  width?: string
-}) {
-  if (!open) return null
-
-  return (
-    <div className="fixed inset-0 z-[90] grid place-items-center bg-black/25 p-4 backdrop-blur-[2px]" dir="rtl">
-      <button className="absolute inset-0 cursor-default" onClick={onClose} aria-label="بستن" />
-      <section className={`relative z-10 max-h-[92vh] w-full ${width} overflow-y-auto rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-2xl`}>
-        <div className="mb-5">
-          <h2 className="text-xl font-black">{title}</h2>
-          {description ? <p className="mt-1 text-sm leading-7 text-muted-foreground">{description}</p> : null}
-        </div>
-        {children}
-      </section>
-    </div>
-  )
-}
-
 function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
@@ -126,7 +96,9 @@ function StatCard({
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <p className="mt-2 text-3xl font-black">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">{helper}</p>
+          <p className="mt-1 text-xs leading-6 text-muted-foreground">
+            {helper}
+          </p>
         </div>
         <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
           <Icon className="size-5" />
@@ -149,14 +121,25 @@ export function AdminPermissionsPage() {
   const initialTab = canViewPermissions ? "permissions" : "roles"
   const [tab, setTab] = useState<"permissions" | "roles">(initialTab)
   const [search, setSearch] = useState("")
-  const [permissionStatus, setPermissionStatus] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL")
-  const [permissionKind, setPermissionKind] = useState<"ALL" | "SYSTEM" | "CUSTOM">("ALL")
-  const [permissionEditor, setPermissionEditor] = useState<ManagedPermission | "NEW" | null>(null)
-  const [permissionDeleteTarget, setPermissionDeleteTarget] = useState<ManagedPermission | null>(null)
+  const [permissionStatus, setPermissionStatus] = useState<
+    "ALL" | "ACTIVE" | "INACTIVE"
+  >("ALL")
+  const [permissionKind, setPermissionKind] = useState<
+    "ALL" | "SYSTEM" | "CUSTOM"
+  >("ALL")
+  const [permissionEditor, setPermissionEditor] = useState<
+    ManagedPermission | "NEW" | null
+  >(null)
+  const [permissionDeleteTarget, setPermissionDeleteTarget] =
+    useState<ManagedPermission | null>(null)
   const [roleCreateOpen, setRoleCreateOpen] = useState(false)
   const [roleEditor, setRoleEditor] = useState<ManagedRole | null>(null)
-  const [roleDeleteTarget, setRoleDeleteTarget] = useState<ManagedRole | null>(null)
-  const [roleMatrixTarget, setRoleMatrixTarget] = useState<ManagedRole | null>(null)
+  const [roleDeleteTarget, setRoleDeleteTarget] = useState<ManagedRole | null>(
+    null
+  )
+  const [roleMatrixTarget, setRoleMatrixTarget] = useState<ManagedRole | null>(
+    null
+  )
 
   const permissionsQuery = useQuery({
     queryKey: ["rbac-permissions"],
@@ -173,10 +156,20 @@ export function AdminPermissionsPage() {
   const permissionRows = permissionsQuery.data ?? []
   const roleRows = rolesQuery.data ?? []
 
-  const groups = useMemo(() => new Set(permissionRows.map(groupName)), [permissionRows])
-  const activePermissionCount = permissionRows.filter((item) => item.isActive).length
-  const systemPermissionCount = permissionRows.filter((item) => item.isSystem).length
-  const totalAssignedUsers = roleRows.reduce((sum, role) => sum + (role._count?.users ?? 0), 0)
+  const groups = useMemo(
+    () => new Set(permissionRows.map(groupName)),
+    [permissionRows]
+  )
+  const activePermissionCount = permissionRows.filter(
+    (item) => item.isActive
+  ).length
+  const systemPermissionCount = permissionRows.filter(
+    (item) => item.isSystem
+  ).length
+  const totalAssignedUsers = roleRows.reduce(
+    (sum, role) => sum + (role._count?.users ?? 0),
+    0
+  )
 
   const filteredPermissions = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase("fa")
@@ -190,7 +183,9 @@ export function AdminPermissionsPage() {
         !needle ||
         [item.action, item.name, item.group, item.description]
           .filter(Boolean)
-          .some((value) => String(value).toLocaleLowerCase("fa").includes(needle))
+          .some((value) =>
+            String(value).toLocaleLowerCase("fa").includes(needle)
+          )
       )
     })
   }, [permissionRows, permissionStatus, permissionKind, search])
@@ -208,11 +203,14 @@ export function AdminPermissionsPage() {
 
   const filteredRoles = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase("fa")
-    return roleRows.filter((item) =>
-      !needle ||
-      [item.code, item.name, item.description, item.baseRole]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase("fa").includes(needle)),
+    return roleRows.filter(
+      (item) =>
+        !needle ||
+        [item.code, item.name, item.description, item.baseRole]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLocaleLowerCase("fa").includes(needle)
+          )
     )
   }, [roleRows, search])
 
@@ -228,7 +226,8 @@ export function AdminPermissionsPage() {
       setPermissionDeleteTarget(null)
       await refresh()
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "حذف مجوز انجام نشد.")),
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "حذف مجوز انجام نشد.")),
   })
 
   const deleteRoleMutation = useMutation({
@@ -238,7 +237,8 @@ export function AdminPermissionsPage() {
       setRoleDeleteTarget(null)
       await refresh()
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "حذف نقش انجام نشد.")),
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "حذف نقش انجام نشد.")),
   })
 
   return (
@@ -280,23 +280,49 @@ export function AdminPermissionsPage() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="کل مجوزها" value={fa(permissionRows.length)} helper="تمام Permissionهای ثبت‌شده" icon={KeyRound} />
-        <StatCard title="مجوزهای فعال" value={fa(activePermissionCount)} helper="قابل استفاده در نقش‌ها" icon={ShieldCheck} />
-        <StatCard title="مجوزهای سیستمی" value={fa(systemPermissionCount)} helper="محافظت‌شده توسط Backend" icon={LockKeyhole} />
-        <StatCard title="کاربران متصل به نقش‌ها" value={fa(totalAssignedUsers)} helper={`${fa(groups.size)} گروه دسترسی`} icon={UsersRound} />
+        <StatCard
+          title="کل مجوزها"
+          value={fa(permissionRows.length)}
+          helper="تمام Permissionهای ثبت‌شده"
+          icon={KeyRound}
+        />
+        <StatCard
+          title="مجوزهای فعال"
+          value={fa(activePermissionCount)}
+          helper="قابل استفاده در نقش‌ها"
+          icon={ShieldCheck}
+        />
+        <StatCard
+          title="مجوزهای سیستمی"
+          value={fa(systemPermissionCount)}
+          helper="محافظت‌شده توسط Backend"
+          icon={LockKeyhole}
+        />
+        <StatCard
+          title="کاربران متصل به نقش‌ها"
+          value={fa(totalAssignedUsers)}
+          helper={`${fa(groups.size)} گروه دسترسی`}
+          icon={UsersRound}
+        />
       </section>
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-wrap gap-2">
           {canViewPermissions ? (
-            <Button variant={tab === "permissions" ? "default" : "ghost"} onClick={() => setTab("permissions")}>
+            <Button
+              variant={tab === "permissions" ? "default" : "ghost"}
+              onClick={() => setTab("permissions")}
+            >
               <KeyRound className="ms-2 size-4" />
               کاتالوگ مجوزها
             </Button>
           ) : null}
 
           {canViewRoles ? (
-            <Button variant={tab === "roles" ? "default" : "ghost"} onClick={() => setTab("roles")}>
+            <Button
+              variant={tab === "roles" ? "default" : "ghost"}
+              onClick={() => setTab("roles")}
+            >
               <UserCog className="ms-2 size-4" />
               نقش‌ها و ماتریس دسترسی
             </Button>
@@ -305,26 +331,44 @@ export function AdminPermissionsPage() {
       </section>
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
-        <div className={`grid gap-3 ${tab === "permissions" ? "xl:grid-cols-[minmax(280px,1.3fr)_180px_180px]" : "xl:grid-cols-[minmax(280px,1fr)]"}`}>
+        <div
+          className={`grid gap-3 ${tab === "permissions" ? "xl:grid-cols-[minmax(280px,1.3fr)_180px_180px]" : "xl:grid-cols-[minmax(280px,1fr)]"}`}
+        >
           <div className="relative">
             <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={tab === "permissions" ? "جستجو در کد، نام، گروه یا توضیحات مجوز" : "جستجو در نقش‌ها"}
+              placeholder={
+                tab === "permissions"
+                  ? "جستجو در کد، نام، گروه یا توضیحات مجوز"
+                  : "جستجو در نقش‌ها"
+              }
               className="pe-10"
             />
           </div>
 
           {tab === "permissions" ? (
             <>
-              <NativeSelect value={permissionStatus} onChange={(event) => setPermissionStatus(event.target.value as typeof permissionStatus)}>
+              <NativeSelect
+                value={permissionStatus}
+                onChange={(event) =>
+                  setPermissionStatus(
+                    event.target.value as typeof permissionStatus
+                  )
+                }
+              >
                 <option value="ALL">همه وضعیت‌ها</option>
                 <option value="ACTIVE">فعال</option>
                 <option value="INACTIVE">غیرفعال</option>
               </NativeSelect>
 
-              <NativeSelect value={permissionKind} onChange={(event) => setPermissionKind(event.target.value as typeof permissionKind)}>
+              <NativeSelect
+                value={permissionKind}
+                onChange={(event) =>
+                  setPermissionKind(event.target.value as typeof permissionKind)
+                }
+              >
                 <option value="ALL">همه انواع</option>
                 <option value="SYSTEM">سیستمی</option>
                 <option value="CUSTOM">سفارشی</option>
@@ -400,12 +444,22 @@ export function AdminPermissionsPage() {
         description="مجوزهای سیستمی و مجوزهای متصل به Role از Backend قابل حذف نیستند."
       >
         <div className="rounded-2xl bg-muted/40 p-4 text-sm leading-7 text-muted-foreground">
-          آیا از حذف «{permissionDeleteTarget?.name || permissionDeleteTarget?.action}» مطمئن هستید؟
+          آیا از حذف «
+          {permissionDeleteTarget?.name || permissionDeleteTarget?.action}»
+          مطمئن هستید؟
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setPermissionDeleteTarget(null)}>انصراف</Button>
           <Button
-            onClick={() => permissionDeleteTarget && deletePermissionMutation.mutate(permissionDeleteTarget.id)}
+            variant="outline"
+            onClick={() => setPermissionDeleteTarget(null)}
+          >
+            انصراف
+          </Button>
+          <Button
+            onClick={() =>
+              permissionDeleteTarget &&
+              deletePermissionMutation.mutate(permissionDeleteTarget.id)
+            }
             disabled={deletePermissionMutation.isPending}
           >
             حذف مجوز
@@ -423,9 +477,13 @@ export function AdminPermissionsPage() {
           آیا از حذف نقش «{roleDeleteTarget?.name}» مطمئن هستید؟
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setRoleDeleteTarget(null)}>انصراف</Button>
+          <Button variant="outline" onClick={() => setRoleDeleteTarget(null)}>
+            انصراف
+          </Button>
           <Button
-            onClick={() => roleDeleteTarget && deleteRoleMutation.mutate(roleDeleteTarget.id)}
+            onClick={() =>
+              roleDeleteTarget && deleteRoleMutation.mutate(roleDeleteTarget.id)
+            }
             disabled={deleteRoleMutation.isPending}
           >
             حذف نقش
@@ -454,15 +512,27 @@ function PermissionsCatalog({
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
   if (loading) {
-    return <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">در حال دریافت مجوزها...</div>
+    return (
+      <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">
+        در حال دریافت مجوزها...
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">دریافت مجوزها با خطا مواجه شد.</div>
+    return (
+      <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">
+        دریافت مجوزها با خطا مواجه شد.
+      </div>
+    )
   }
 
   if (!groups.length) {
-    return <div className="grid min-h-64 place-items-center rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">مجوزی پیدا نشد.</div>
+    return (
+      <div className="grid min-h-64 place-items-center rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">
+        مجوزی پیدا نشد.
+      </div>
+    )
   }
 
   return (
@@ -471,38 +541,67 @@ function PermissionsCatalog({
         const isCollapsed = collapsed[group] ?? false
 
         return (
-          <article key={group} className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
+          <article
+            key={group}
+            className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]"
+          >
             <button
               className="flex w-full items-center justify-between gap-4 px-5 py-4 text-right"
-              onClick={() => setCollapsed((prev) => ({ ...prev, [group]: !isCollapsed }))}
+              onClick={() =>
+                setCollapsed((prev) => ({ ...prev, [group]: !isCollapsed }))
+              }
             >
               <div>
                 <div className="font-black">{group}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{fa(items.length)} مجوز</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {fa(items.length)} مجوز
+                </div>
               </div>
-              {isCollapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              {isCollapsed ? (
+                <ChevronDown className="size-4" />
+              ) : (
+                <ChevronUp className="size-4" />
+              )}
             </button>
 
             {!isCollapsed ? (
               <div className="border-t border-[var(--app-divider)]">
                 {items.map((item) => (
-                  <div key={item.id} className="grid gap-3 border-t border-[var(--app-divider)] px-5 py-4 first:border-t-0 lg:grid-cols-[minmax(220px,1fr)_minmax(180px,.8fr)_auto] lg:items-center">
+                  <div
+                    key={item.id}
+                    className="grid gap-3 border-t border-[var(--app-divider)] px-5 py-4 first:border-t-0 lg:grid-cols-[minmax(220px,1fr)_minmax(180px,.8fr)_auto] lg:items-center"
+                  >
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <code className="rounded-lg bg-muted px-2 py-1 text-xs" dir="ltr">{item.action}</code>
+                        <code
+                          className="rounded-lg bg-muted px-2 py-1 text-xs"
+                          dir="ltr"
+                        >
+                          {item.action}
+                        </code>
                         {item.isSystem ? (
-                          <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">سیستمی</span>
+                          <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">
+                            سیستمی
+                          </span>
                         ) : (
-                          <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">سفارشی</span>
+                          <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">
+                            سفارشی
+                          </span>
                         )}
                         {isCritical(item) ? (
-                          <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-bold text-amber-700">حیاتی</span>
+                          <span className="rounded-full bg-amber-500/10 px-2 py-1 text-xs font-bold text-amber-700">
+                            حیاتی
+                          </span>
                         ) : null}
-                        <span className={`rounded-full px-2 py-1 text-xs font-bold ${item.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-bold ${item.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
+                        >
                           {item.isActive ? "فعال" : "غیرفعال"}
                         </span>
                       </div>
-                      <div className="mt-2 font-bold">{item.name || actionVerb(item)}</div>
+                      <div className="mt-2 font-bold">
+                        {item.name || actionVerb(item)}
+                      </div>
                     </div>
 
                     <div className="text-xs leading-6 text-muted-foreground">
@@ -511,11 +610,21 @@ function PermissionsCatalog({
 
                     {canManage ? (
                       <div className="flex justify-end gap-1">
-                        <Button size="icon-sm" variant="ghost" onClick={() => onEdit(item)} aria-label="ویرایش">
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => onEdit(item)}
+                          aria-label="ویرایش"
+                        >
                           <Pencil className="size-4" />
                         </Button>
                         {!item.isSystem ? (
-                          <Button size="icon-sm" variant="ghost" onClick={() => onDelete(item)} aria-label="حذف">
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() => onDelete(item)}
+                            aria-label="حذف"
+                          >
                             <Trash2 className="size-4 text-red-600" />
                           </Button>
                         ) : null}
@@ -550,30 +659,52 @@ function RolesWorkspace({
   onPermissions: (role: ManagedRole) => void
 }) {
   if (loading) {
-    return <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">در حال دریافت نقش‌ها...</div>
+    return (
+      <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">
+        در حال دریافت نقش‌ها...
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">دریافت نقش‌ها با خطا مواجه شد.</div>
+    return (
+      <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">
+        دریافت نقش‌ها با خطا مواجه شد.
+      </div>
+    )
   }
 
   return (
     <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
       {roles.map((role) => (
-        <article key={role.id} className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+        <article
+          key={role.id}
+          className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-black">{role.name}</h2>
                 {role.isSystem || role.scope === "SYSTEM" ? (
-                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">سیستمی</span>
+                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">
+                    سیستمی
+                  </span>
                 ) : (
-                  <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">سفارشی</span>
+                  <span className="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-bold text-sky-700">
+                    سفارشی
+                  </span>
                 )}
               </div>
-              <code className="mt-2 inline-block text-xs text-muted-foreground" dir="ltr">{role.normalizedCode || role.code}</code>
+              <code
+                className="mt-2 inline-block text-xs text-muted-foreground"
+                dir="ltr"
+              >
+                {role.normalizedCode || role.code}
+              </code>
             </div>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${role.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${role.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
+            >
               {role.isActive ? "فعال" : "غیرفعال"}
             </span>
           </div>
@@ -585,20 +716,30 @@ function RolesWorkspace({
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-2xl bg-muted/35 p-3">
               <div className="text-xs text-muted-foreground">نقش پایه</div>
-              <div className="mt-1 text-xs font-bold">{ROLE_LABELS[role.baseRole]}</div>
+              <div className="mt-1 text-xs font-bold">
+                {ROLE_LABELS[role.baseRole]}
+              </div>
             </div>
             <div className="rounded-2xl bg-muted/35 p-3">
               <div className="text-xs text-muted-foreground">کاربران</div>
-              <div className="mt-1 text-sm font-black">{fa(role._count?.users ?? 0)}</div>
+              <div className="mt-1 text-sm font-black">
+                {fa(role._count?.users ?? 0)}
+              </div>
             </div>
             <div className="rounded-2xl bg-muted/35 p-3">
               <div className="text-xs text-muted-foreground">مجوزها</div>
-              <div className="mt-1 text-sm font-black">{fa(role._count?.permissions ?? 0)}</div>
+              <div className="mt-1 text-sm font-black">
+                {fa(role._count?.permissions ?? 0)}
+              </div>
             </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => onPermissions(role)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPermissions(role)}
+            >
               <ShieldCheck className="ms-2 size-4" />
               مشاهده دسترسی‌ها
             </Button>
@@ -609,7 +750,11 @@ function RolesWorkspace({
                   <Pencil className="ms-2 size-4" />
                   ویرایش
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => onDelete(role)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(role)}
+                >
                   <Trash2 className="ms-2 size-4 text-red-600" />
                   حذف
                 </Button>
@@ -625,7 +770,8 @@ function RolesWorkspace({
             <LockKeyhole className="mx-auto size-8 text-muted-foreground" />
             <h3 className="mt-3 font-black">نقش سفارشی جدید</h3>
             <p className="mt-2 max-w-sm text-xs leading-6 text-muted-foreground">
-              برای ساخت نقش جدید از دکمه «ایجاد نقش» بالای صفحه استفاده کنید و دسترسی‌های اولیه را همان‌جا انتخاب کنید.
+              برای ساخت نقش جدید از دکمه «ایجاد نقش» بالای صفحه استفاده کنید و
+              دسترسی‌های اولیه را همان‌جا انتخاب کنید.
             </p>
           </div>
         </article>
@@ -669,39 +815,70 @@ function PermissionEditorModal({
         isActive,
       }
 
-      return permission ? updatePermission(permission.id, payload) : createPermission(payload)
+      return permission
+        ? updatePermission(permission.id, payload)
+        : createPermission(payload)
     },
     onSuccess: async () => {
       toast.success(permission ? "مجوز بروزرسانی شد." : "مجوز ایجاد شد.")
       await onSaved()
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "ذخیره مجوز انجام نشد.")),
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "ذخیره مجوز انجام نشد.")),
   })
 
   if (!open) return null
 
   return (
-    <Modal open={open} onClose={onClose} title={permission ? "ویرایش مجوز" : "ایجاد مجوز"}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={permission ? "ویرایش مجوز" : "ایجاد مجوز"}
+    >
       <div className="grid gap-4">
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">کد مجوز</label>
-          <Input value={action} onChange={(event) => setAction(event.target.value)} disabled={Boolean(permission?.isSystem)} dir="ltr" placeholder="module:action" />
-          {permission?.isSystem ? <p className="mt-1 text-xs text-muted-foreground">Action مجوز سیستمی قابل تغییر نیست.</p> : null}
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            کد مجوز
+          </label>
+          <Input
+            value={action}
+            onChange={(event) => setAction(event.target.value)}
+            disabled={Boolean(permission?.isSystem)}
+            dir="ltr"
+            placeholder="module:action"
+          />
+          {permission?.isSystem ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Action مجوز سیستمی قابل تغییر نیست.
+            </p>
+          ) : null}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">نام نمایشی</label>
-            <Input value={name ?? ""} onChange={(event) => setName(event.target.value)} />
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              نام نمایشی
+            </label>
+            <Input
+              value={name ?? ""}
+              onChange={(event) => setName(event.target.value)}
+            />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">گروه</label>
-            <Input value={group ?? ""} onChange={(event) => setGroup(event.target.value)} />
+            <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+              گروه
+            </label>
+            <Input
+              value={group ?? ""}
+              onChange={(event) => setGroup(event.target.value)}
+            />
           </div>
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">توضیحات</label>
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            توضیحات
+          </label>
           <textarea
             className="min-h-28 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
             value={description ?? ""}
@@ -728,8 +905,15 @@ function PermissionEditorModal({
         </label>
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>انصراف</Button>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>ذخیره</Button>
+          <Button variant="outline" onClick={onClose}>
+            انصراف
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            ذخیره
+          </Button>
         </div>
       </div>
     </Modal>
@@ -756,7 +940,9 @@ function RoleCreateModal({
   const [description, setDescription] = useState("")
   const [baseRole, setBaseRole] = useState<UserRole>("REP")
   const [isActive, setIsActive] = useState(true)
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([])
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>(
+    []
+  )
   const [permissionSearch, setPermissionSearch] = useState("")
 
   const filtered = useMemo(() => {
@@ -765,14 +951,17 @@ function RoleCreateModal({
     return (permissionsQuery.data ?? []).filter(
       (permission) =>
         permission.isActive &&
-        (
-          !needle ||
-          [permission.action, permission.name, permission.group, permission.description]
+        (!needle ||
+          [
+            permission.action,
+            permission.name,
+            permission.group,
+            permission.description,
+          ]
             .filter(Boolean)
             .some((value) =>
-              String(value).toLocaleLowerCase("fa").includes(needle),
-            )
-        ),
+              String(value).toLocaleLowerCase("fa").includes(needle)
+            ))
     )
   }, [permissionsQuery.data, permissionSearch])
 
@@ -793,7 +982,7 @@ function RoleCreateModal({
     setSelectedPermissionIds((current) =>
       checked
         ? Array.from(new Set([...current, permissionId]))
-        : current.filter((id) => id !== permissionId),
+        : current.filter((id) => id !== permissionId)
     )
   }
 
@@ -809,7 +998,7 @@ function RoleCreateModal({
 
       if (!/^[A-Z][A-Z0-9_]*$/.test(normalizedCode)) {
         throw new Error(
-          "کد نقش باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد و _ باشد.",
+          "کد نقش باید با حرف انگلیسی شروع شود و فقط شامل حروف، عدد و _ باشد."
         )
       }
 
@@ -934,7 +1123,7 @@ function RoleCreateModal({
                     setSelectedPermissionIds(
                       (permissionsQuery.data ?? [])
                         .filter((item) => item.isActive)
-                        .map((item) => item.id),
+                        .map((item) => item.id)
                     )
                   }
                 >
@@ -972,7 +1161,7 @@ function RoleCreateModal({
                 {grouped.map(([group, items]) => {
                   const groupIds = items.map((item) => item.id)
                   const selectedCount = groupIds.filter((id) =>
-                    selectedPermissionIds.includes(id),
+                    selectedPermissionIds.includes(id)
                   ).length
 
                   return (
@@ -994,7 +1183,7 @@ function RoleCreateModal({
                             variant="ghost"
                             onClick={() =>
                               setSelectedPermissionIds((current) =>
-                                Array.from(new Set([...current, ...groupIds])),
+                                Array.from(new Set([...current, ...groupIds]))
                               )
                             }
                           >
@@ -1006,7 +1195,7 @@ function RoleCreateModal({
                             variant="ghost"
                             onClick={() =>
                               setSelectedPermissionIds((current) =>
-                                current.filter((id) => !groupIds.includes(id)),
+                                current.filter((id) => !groupIds.includes(id))
                               )
                             }
                           >
@@ -1018,7 +1207,7 @@ function RoleCreateModal({
                       <div className="grid gap-2 p-3 sm:grid-cols-2 xl:grid-cols-3">
                         {items.map((permission) => {
                           const checked = selectedPermissionIds.includes(
-                            permission.id,
+                            permission.id
                           )
 
                           return (
@@ -1063,9 +1252,13 @@ function RoleCreateModal({
         {baseRole === "ADMIN" ? (
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-7 text-amber-900 dark:text-amber-200">
             نقش مبتنی بر ADMIN باید مجوزهای حیاتی
-            <code className="mx-1" dir="ltr">permission:manage</code>
+            <code className="mx-1" dir="ltr">
+              permission:manage
+            </code>
             و
-            <code className="mx-1" dir="ltr">role:manage</code>
+            <code className="mx-1" dir="ltr">
+              role:manage
+            </code>
             را حفظ کند.
           </div>
         ) : null}
@@ -1122,7 +1315,8 @@ function RoleEditorModal({
       toast.success("نقش بروزرسانی شد.")
       await onSaved()
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "ویرایش نقش انجام نشد.")),
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "ویرایش نقش انجام نشد.")),
   })
 
   if (!open || !role) return null
@@ -1131,21 +1325,39 @@ function RoleEditorModal({
     <Modal open={open} onClose={onClose} title={`ویرایش نقش — ${role.name}`}>
       <div className="grid gap-4">
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">کد نقش</label>
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            کد نقش
+          </label>
           <Input value={role.code} disabled dir="ltr" />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">نام نقش</label>
-          <Input value={name} onChange={(event) => setName(event.target.value)} />
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            نام نقش
+          </label>
+          <Input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">نقش پایه</label>
-          <NativeSelect value={baseRole} onChange={(event) => setBaseRole(event.target.value as UserRole)}>
-            {Object.entries(ROLE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            نقش پایه
+          </label>
+          <NativeSelect
+            value={baseRole}
+            onChange={(event) => setBaseRole(event.target.value as UserRole)}
+          >
+            {Object.entries(ROLE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </NativeSelect>
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">توضیحات</label>
+          <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
+            توضیحات
+          </label>
           <textarea
             className="min-h-28 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
             value={description ?? ""}
@@ -1154,12 +1366,23 @@ function RoleEditorModal({
           />
         </div>
         <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-          <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(event) => setIsActive(event.target.checked)}
+          />
           <span className="font-bold">نقش فعال باشد</span>
         </label>
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>انصراف</Button>
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>ذخیره تغییرات</Button>
+          <Button variant="outline" onClick={onClose}>
+            انصراف
+          </Button>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
+            ذخیره تغییرات
+          </Button>
         </div>
       </div>
     </Modal>
@@ -1179,7 +1402,9 @@ function RoleMatrixModal({
 }) {
   const user = useAuthStore((state) => state.user)
   const canManageRoles = can(user?.permissions, "role:manage")
-  const isSystemRole = Boolean(role && (role.isSystem || role.scope === "SYSTEM"))
+  const isSystemRole = Boolean(
+    role && (role.isSystem || role.scope === "SYSTEM")
+  )
   const editable = canManageRoles && !isSystemRole
 
   const query = useQuery({
@@ -1195,11 +1420,19 @@ function RoleMatrixModal({
 
   const filteredPermissions = useMemo(() => {
     const needle = matrixSearch.trim().toLocaleLowerCase("fa")
-    return (query.data?.permissions ?? []).filter((permission) =>
-      !needle ||
-      [permission.action, permission.name, permission.group, permission.description]
-        .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase("fa").includes(needle)),
+    return (query.data?.permissions ?? []).filter(
+      (permission) =>
+        !needle ||
+        [
+          permission.action,
+          permission.name,
+          permission.group,
+          permission.description,
+        ]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLocaleLowerCase("fa").includes(needle)
+          )
     )
   }, [query.data?.permissions, matrixSearch])
 
@@ -1223,7 +1456,8 @@ function RoleMatrixModal({
       toast.success("ماتریس دسترسی نقش ذخیره شد.")
       await onSaved()
     },
-    onError: (error) => toast.error(getApiErrorMessage(error, "ذخیره مجوزهای نقش انجام نشد.")),
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, "ذخیره مجوزهای نقش انجام نشد.")),
   })
 
   const toggle = (permissionId: string, checked: boolean) => {
@@ -1231,7 +1465,7 @@ function RoleMatrixModal({
     setSelected(
       checked
         ? Array.from(new Set([...selectedIds, permissionId]))
-        : selectedIds.filter((id) => id !== permissionId),
+        : selectedIds.filter((id) => id !== permissionId)
     )
   }
 
@@ -1242,13 +1476,22 @@ function RoleMatrixModal({
       open={open}
       onClose={onClose}
       title={`ماتریس دسترسی — ${role.name}`}
-      description={isSystemRole ? "این Role سیستمی است؛ دسترسی‌ها فقط برای مشاهده نمایش داده می‌شوند." : "Permissionهای مورد نیاز این نقش را به تفکیک گروه مدیریت کنید."}
+      description={
+        isSystemRole
+          ? "این Role سیستمی است؛ دسترسی‌ها فقط برای مشاهده نمایش داده می‌شوند."
+          : "Permissionهای مورد نیاز این نقش را به تفکیک گروه مدیریت کنید."
+      }
       width="max-w-5xl"
     >
       <div className="grid gap-4">
         <div className="relative">
           <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={matrixSearch} onChange={(event) => setMatrixSearch(event.target.value)} placeholder="جستجو در مجوزهای این Role" className="pe-10" />
+          <Input
+            value={matrixSearch}
+            onChange={(event) => setMatrixSearch(event.target.value)}
+            placeholder="جستجو در مجوزهای این Role"
+            className="pe-10"
+          />
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -1257,33 +1500,81 @@ function RoleMatrixModal({
           </span>
           {editable ? (
             <>
-              <Button size="sm" variant="outline" onClick={() => setSelected((query.data?.permissions ?? []).map((item) => item.id))}>انتخاب همه</Button>
-              <Button size="sm" variant="outline" onClick={() => setSelected([])}>پاک کردن همه</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setSelected(
+                    (query.data?.permissions ?? []).map((item) => item.id)
+                  )
+                }
+              >
+                انتخاب همه
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelected([])}
+              >
+                پاک کردن همه
+              </Button>
             </>
           ) : null}
         </div>
 
         {query.isLoading ? (
-          <div className="grid min-h-56 place-items-center text-sm text-muted-foreground">در حال دریافت ماتریس دسترسی...</div>
+          <div className="grid min-h-56 place-items-center text-sm text-muted-foreground">
+            در حال دریافت ماتریس دسترسی...
+          </div>
         ) : query.isError ? (
-          <div className="rounded-2xl bg-red-500/10 p-4 text-sm text-red-700">دریافت دسترسی‌های Role با خطا مواجه شد.</div>
+          <div className="rounded-2xl bg-red-500/10 p-4 text-sm text-red-700">
+            دریافت دسترسی‌های Role با خطا مواجه شد.
+          </div>
         ) : (
           <div className="grid gap-4">
             {matrixGroups.map(([group, items]) => {
               const groupIds = items.map((item) => item.id)
-              const selectedInGroup = groupIds.filter((id) => selectedIds.includes(id)).length
+              const selectedInGroup = groupIds.filter((id) =>
+                selectedIds.includes(id)
+              ).length
 
               return (
-                <section key={group} className="rounded-2xl border border-[var(--app-divider)]">
+                <section
+                  key={group}
+                  className="rounded-2xl border border-[var(--app-divider)]"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] px-4 py-3">
                     <div>
                       <div className="font-black">{group}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{fa(selectedInGroup)} از {fa(items.length)} فعال برای این نقش</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {fa(selectedInGroup)} از {fa(items.length)} فعال برای
+                        این نقش
+                      </div>
                     </div>
                     {editable ? (
                       <div className="flex gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(Array.from(new Set([...selectedIds, ...groupIds])))}>انتخاب گروه</Button>
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(selectedIds.filter((id) => !groupIds.includes(id)))}>پاک کردن گروه</Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setSelected(
+                              Array.from(new Set([...selectedIds, ...groupIds]))
+                            )
+                          }
+                        >
+                          انتخاب گروه
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setSelected(
+                              selectedIds.filter((id) => !groupIds.includes(id))
+                            )
+                          }
+                        >
+                          پاک کردن گروه
+                        </Button>
                       </div>
                     ) : null}
                   </div>
@@ -1300,14 +1591,25 @@ function RoleMatrixModal({
                             type="checkbox"
                             checked={checked}
                             disabled={!editable}
-                            onChange={(event) => toggle(permission.id, event.target.checked)}
+                            onChange={(event) =>
+                              toggle(permission.id, event.target.checked)
+                            }
                           />
                           <span className="min-w-0">
                             <span className="flex items-center gap-1 text-sm font-bold">
-                              {checked ? <Check className="size-4 text-[var(--app-primary)]" /> : <X className="size-4 text-muted-foreground" />}
+                              {checked ? (
+                                <Check className="size-4 text-[var(--app-primary)]" />
+                              ) : (
+                                <X className="size-4 text-muted-foreground" />
+                              )}
                               {permission.name || actionVerb(permission)}
                             </span>
-                            <code className="mt-1 block truncate text-xs text-muted-foreground" dir="ltr">{permission.action}</code>
+                            <code
+                              className="mt-1 block truncate text-xs text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {permission.action}
+                            </code>
                           </span>
                         </label>
                       )
@@ -1320,9 +1622,14 @@ function RoleMatrixModal({
         )}
 
         <div className="flex justify-end gap-2 border-t border-[var(--app-divider)] pt-4">
-          <Button variant="outline" onClick={onClose}>بستن</Button>
+          <Button variant="outline" onClick={onClose}>
+            بستن
+          </Button>
           {editable ? (
-            <Button onClick={() => mutation.mutate()} disabled={query.isLoading || query.isError || mutation.isPending}>
+            <Button
+              onClick={() => mutation.mutate()}
+              disabled={query.isLoading || query.isError || mutation.isPending}
+            >
               ذخیره ماتریس دسترسی
             </Button>
           ) : null}

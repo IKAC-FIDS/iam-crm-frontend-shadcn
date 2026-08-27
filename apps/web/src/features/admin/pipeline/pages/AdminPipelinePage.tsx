@@ -14,7 +14,7 @@ import {
   Trophy,
   X,
 } from "lucide-react"
-import { useMemo, useState, type DragEvent, type ReactNode } from "react"
+import { useMemo, useState, type DragEvent } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -22,6 +22,7 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
+import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -61,48 +62,6 @@ function hasPermission(permissions: string[] | undefined, permission: string) {
 
 function fa(value: number) {
   return new Intl.NumberFormat("fa-IR").format(value)
-}
-
-function Modal({
-  open,
-  onClose,
-  title,
-  description,
-  children,
-  width = "max-w-2xl",
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  description?: string
-  children: ReactNode
-  width?: string
-}) {
-  if (!open) return null
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] grid place-items-end bg-black/25 p-0 backdrop-blur-[2px] sm:place-items-center sm:p-4"
-      dir="rtl"
-    >
-      <button
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-        aria-label="بستن"
-      />
-      <section
-        className={`relative z-10 max-h-[calc(100dvh-1rem)] w-full ${width} overflow-y-auto overscroll-contain rounded-t-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[92vh] sm:rounded-[28px] sm:p-5`}
-      >
-        <h2 className="text-xl font-black">{title}</h2>
-        {description ? (
-          <p className="mt-1 text-sm leading-7 text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-        <div className="mt-5">{children}</div>
-      </section>
-    </div>
-  )
 }
 
 function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {

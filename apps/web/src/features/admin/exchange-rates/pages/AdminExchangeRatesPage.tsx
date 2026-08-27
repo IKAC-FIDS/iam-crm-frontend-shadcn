@@ -17,6 +17,7 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -113,46 +114,6 @@ function RateChangeBadge({
   )
 }
 
-function Modal({
-  open,
-  onClose,
-  title,
-  description,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title: string
-  description?: string
-  children: React.ReactNode
-}) {
-  if (!open) return null
-
-  return (
-    <div
-      className="fixed inset-0 z-[80] grid place-items-center bg-black/20 p-4 backdrop-blur-[2px]"
-      dir="rtl"
-    >
-      <button
-        className="absolute inset-0 cursor-default"
-        onClick={onClose}
-        aria-label="بستن"
-      />
-      <section className="relative z-10 max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-2xl">
-        <div className="mb-5">
-          <h2 className="text-xl font-black">{title}</h2>
-          {description ? (
-            <p className="mt-1 text-sm leading-7 text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
-        </div>
-        {children}
-      </section>
-    </div>
-  )
-}
-
 export function AdminExchangeRatesPage() {
   const currentUser = useAuthStore((state) => state.user)
   const permissions = currentUser?.permissions ?? []
@@ -182,7 +143,9 @@ export function AdminExchangeRatesPage() {
     const activeId = currentQuery.data?.id
 
     return (
-      rows.find((item) => item.id !== activeId && item.status === "HISTORICAL") ??
+      rows.find(
+        (item) => item.id !== activeId && item.status === "HISTORICAL"
+      ) ??
       rows.find((item) => item.id !== activeId) ??
       null
     )
@@ -203,8 +166,8 @@ export function AdminExchangeRatesPage() {
     onSuccess: async (result) => {
       toast.success(
         `نرخ جدید ثبت شد و قیمت ${faNumber(
-          result.recalculatedProductCount,
-        )} محصول دلاری مجدداً محاسبه شد.`,
+          result.recalculatedProductCount
+        )} محصول دلاری مجدداً محاسبه شد.`
       )
 
       setRateInput("")
@@ -315,7 +278,7 @@ export function AdminExchangeRatesPage() {
       ) : currentQuery.data ? (
         <section className="grid gap-4 xl:grid-cols-[1.4fr_.8fr_.8fr]">
           <article className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-card)]">
-            <div className="absolute -bottom-20 -start-20 size-52 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
+            <div className="absolute -start-20 -bottom-20 size-52 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
 
             <div className="relative">
               <div className="flex items-center justify-between gap-3">
@@ -484,13 +447,13 @@ export function AdminExchangeRatesPage() {
 
                       <td className="px-4 py-4">
                         {change == null ? (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
                         ) : (
                           <span
                             className={`text-xs font-bold ${
-                              change >= 0
-                                ? "text-rose-600"
-                                : "text-emerald-600"
+                              change >= 0 ? "text-rose-600" : "text-emerald-600"
                             }`}
                           >
                             {change >= 0 ? "+" : ""}
@@ -524,9 +487,7 @@ export function AdminExchangeRatesPage() {
                       </td>
 
                       <td className="max-w-[280px] px-4 py-4 text-xs leading-6 text-muted-foreground">
-                        <span className="line-clamp-2">
-                          {item.note || "—"}
-                        </span>
+                        <span className="line-clamp-2">{item.note || "—"}</span>
                       </td>
                     </tr>
                   )
@@ -641,18 +602,14 @@ export function AdminExchangeRatesPage() {
 
               <div className="mt-3 grid gap-3 sm:grid-cols-3">
                 <div>
-                  <div className="text-xs text-muted-foreground">
-                    نرخ فعلی
-                  </div>
+                  <div className="text-xs text-muted-foreground">نرخ فعلی</div>
                   <div className="mt-1 font-bold">
                     {formatIrr(currentValue)}
                   </div>
                 </div>
 
                 <div>
-                  <div className="text-xs text-muted-foreground">
-                    نرخ جدید
-                  </div>
+                  <div className="text-xs text-muted-foreground">نرخ جدید</div>
                   <div className="mt-1 font-bold">
                     {formatIrr(previewValue)}
                   </div>
@@ -705,9 +662,8 @@ export function AdminExchangeRatesPage() {
         description="این عملیات روی قیمت محصولات دلاری اثر مستقیم دارد."
       >
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-8 text-amber-900 dark:text-amber-200">
-          با ثبت نرخ جدید، بازه نرخ فعلی بسته می‌شود و قیمت ریالی تمام
-          محصولات دلاری مجدداً محاسبه خواهد شد. قیمت فروش‌ها و اسناد قبلی
-          تغییر نمی‌کند.
+          با ثبت نرخ جدید، بازه نرخ فعلی بسته می‌شود و قیمت ریالی تمام محصولات
+          دلاری مجدداً محاسبه خواهد شد. قیمت فروش‌ها و اسناد قبلی تغییر نمی‌کند.
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
