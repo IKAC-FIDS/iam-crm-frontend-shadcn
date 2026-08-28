@@ -1,4 +1,7 @@
-import {uiText} from "@/config/uiText"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { uiText } from "@/config/uiText"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { useListQueryState, enumParam } from "@/lib/listQuery"
 import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
@@ -254,39 +257,36 @@ export function ActivitiesPage() {
         id: "activity",
         header: "فعالیت",
         cell: (item) => (
-          <div className="max-w-[280px]">
-            <span className="font-bold">
-              {item.type === "STAGE_CHANGE"
+          <EntityTableCell
+            avatar={<ActivityIcon className="size-5" />}
+            title={
+              item.type === "STAGE_CHANGE"
                 ? localizeStageChangeText(
                     item.title || item.outcome,
                     stageItems
                   ) || activityTypeLabel(item.type, typeOptions)
                 : (item.title && item.title !== item.type
                     ? item.title
-                    : item.outcome) ||
-                  activityTypeLabel(item.type, typeOptions)}
-            </span>
-
-            {item.description || item.notes ? (
-              <p className="mt-1 line-clamp-1 text-xs leading-5 text-[var(--app-text-secondary)]">
-                {item.type === "STAGE_CHANGE"
-                  ? localizeStageChangeText(
-                      item.description || item.notes,
-                      stageItems
-                    )
-                  : item.description || item.notes}
-              </p>
-            ) : null}
-          </div>
+                    : item.outcome) || activityTypeLabel(item.type, typeOptions)
+            }
+            subtitle={
+              item.type === "STAGE_CHANGE"
+                ? localizeStageChangeText(
+                    item.description || item.notes,
+                    stageItems
+                  )
+                : item.description || item.notes
+            }
+          />
         ),
       },
       {
         id: "type",
         header: "نوع",
         cell: (item) => (
-          <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">
+          <StatusBadge tone="primary" dot={false}>
             {activityTypeLabel(item.type, typeOptions)}
-          </span>
+          </StatusBadge>
         ),
       },
       {
@@ -308,15 +308,11 @@ export function ActivitiesPage() {
         id: "status",
         header: "وضعیت",
         cell: (item) => (
-          <span
-            className={
-              item.status === "COMPLETED"
-                ? "text-[var(--success)]"
-                : "text-[var(--app-text-secondary)]"
-            }
+          <StatusBadge
+            tone={item.status === "COMPLETED" ? "success" : "neutral"}
           >
             {item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}
-          </span>
+          </StatusBadge>
         ),
       },
       {
@@ -338,6 +334,7 @@ export function ActivitiesPage() {
         className: "text-center",
         cell: (item) => (
           <ActivityActionsMenu
+            onView={() => setDetailActivity(item)}
             activity={item}
             canUpdate={canUpdate}
             onEdit={() => setEditActivity(item)}
@@ -358,7 +355,7 @@ export function ActivitiesPage() {
   }
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         eyebrow="مرکز تعاملات مشتری"
         icon={ActivityIcon}
@@ -600,6 +597,6 @@ export function ActivitiesPage() {
         }}
         activity={editActivity}
       />
-    </div>
+    </EntityListPage>
   )
 }

@@ -1,3 +1,7 @@
+import {
+  FormDialogBody,
+  FormDialogFooter,
+} from "@/components/shared/FormDialogLayout"
 import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
 import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -408,7 +412,7 @@ export function MeetingFormDialog({
             onClose={() => onOpenChange(false)}
           />
           <form className="contents" noValidate onSubmit={handleSubmit(submit)}>
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
+            <FormDialogBody>
               {errors.root?.server?.message ? (
                 <p role="alert" className="text-sm text-destructive">
                   {errors.root.server.message}
@@ -698,14 +702,14 @@ export function MeetingFormDialog({
                   {validation}
                 </p>
               ) : null}
-            </div>
-            <div className="border-t border-[var(--app-divider)] px-5 py-4">
+            </FormDialogBody>
+            <FormDialogFooter>
               <FormActions
                 onCancel={() => onOpenChange(false)}
                 pending={pending}
                 disabled={Boolean(validation)}
               />
-            </div>
+            </FormDialogFooter>
           </form>
         </DialogContent>
       </Dialog>

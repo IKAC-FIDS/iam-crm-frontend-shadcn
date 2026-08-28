@@ -1,67 +1,46 @@
-﻿import { Building2, MoreHorizontal, Pencil } from "lucide-react"
+import { Building2, Pencil, Eye } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-
-import { Button } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
-
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { uiText } from "@/config/uiText"
 import type { Activity } from "../types/activity.types"
-
 export function ActivityActionsMenu({
   activity,
   canUpdate,
   onEdit,
+  onView,
 }: {
   activity: Activity
   canUpdate: boolean
   onEdit: () => void
+  onView?: () => void
 }) {
   const navigate = useNavigate()
   const companyId = activity.companyId || activity.company?.id || ""
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 rounded-lg"
-            aria-label="عملیات بیشتر"
-            onClick={(event) => event.stopPropagation()}
-          />
-        }
-      >
-        <MoreHorizontal className="size-4" />
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent
-        align="end"
-        className="min-w-44 rounded-xl"
-        dir="rtl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        {companyId ? (
-          <DropdownMenuItem
-            onClick={() => navigate(`/companies/${companyId}`)}
-          >
-            <Building2 />
-            مشاهده شرکت
-          </DropdownMenuItem>
-        ) : null}
-
-        {canUpdate && activity.type !== "STAGE_CHANGE" ? (
-          <DropdownMenuItem onClick={onEdit}>
-            <Pencil />
-            ویرایش فعالیت
-          </DropdownMenuItem>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <EntityRowActions
+      actions={[
+        {
+          id: "view",
+          label: uiText.common.view,
+          icon: Eye,
+          onClick: () => onView?.(),
+          enabled: Boolean(onView),
+        },
+        {
+          id: "edit",
+          label: "ویرایش فعالیت",
+          icon: Pencil,
+          onClick: onEdit,
+          enabled: canUpdate && activity.type !== "STAGE_CHANGE",
+        },
+        {
+          id: "company",
+          label: "مشاهده شرکت",
+          icon: Building2,
+          onClick: () => navigate(`/companies/${companyId}`),
+          enabled: Boolean(companyId),
+        },
+      ]}
+    />
   )
 }

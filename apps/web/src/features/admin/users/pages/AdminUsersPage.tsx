@@ -1,3 +1,4 @@
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { PageHero } from "@/components/shared/PageHero"
@@ -210,22 +211,16 @@ export function AdminUsersPage() {
           <EntityRowActions
             label="مشاهده جزئیات کاربر"
             onView={() => navigate(`/admin/users/${u.id}`)}
-          >
-            {canChangeRole ? (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                aria-label="عملیات کاربر"
-                title="عملیات"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  navigate(`/admin/users/${u.id}`)
-                }}
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            ) : null}
-          </EntityRowActions>
+            actions={[
+              {
+                id: "manage",
+                label: "عملیات کاربر",
+                icon: MoreHorizontal,
+                onClick: () => navigate(`/admin/users/${u.id}`),
+                enabled: canChangeRole,
+              },
+            ]}
+          />
         ),
       },
     ],
@@ -233,7 +228,7 @@ export function AdminUsersPage() {
   )
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title={uiText.adminUsers.title}
         eyebrow="مرکز مدیریت کاربران"
@@ -411,6 +406,6 @@ export function AdminUsersPage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </EntityListPage>
   )
 }

@@ -1,16 +1,15 @@
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { Eye, Archive, Trash2, CalendarClock } from "lucide-react"
+import { PageHero } from "@/components/shared/PageHero"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { useListQueryState, enumParam } from "@/lib/listQuery"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import {
-  AlertTriangle,
-  Bell,
-  CheckCircle2,
-  ClipboardCheck,
-  MoreHorizontal,
-  RotateCcw,
-} from "lucide-react"
-import { useMemo, useState, type ReactNode } from "react"
+import { AlertTriangle, Bell, CheckCircle2, ClipboardCheck } from "lucide-react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -32,13 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
 
 import {
   useCompleteFollowUp,
@@ -128,20 +120,13 @@ export function AttentionCenterPage() {
   }
 
   return (
-    <div className="grid min-w-0 gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
-              <Bell className="size-3.5" /> مرکز توجه و پیگیری
-            </div>
-            <h1 className="ui-page-title">مرکز پیگیری و اعلان‌ها</h1>
-            <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">
-              موارد نیازمند اقدام، پیگیری و اعلان‌های مهم را در یک نمای متمرکز
-              مدیریت کنید.
-            </p>
-          </div>
+    <EntityListPage>
+      <PageHero
+        title="مرکز پیگیری و اعلان‌ها"
+        eyebrow="مرکز توجه و پیگیری"
+        icon={Bell}
+        description="موارد نیازمند اقدام، پیگیری و اعلان‌های مهم را در یک نمای متمرکز مدیریت کنید."
+        actions={
           <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
             {canFollow ? (
               <Button
@@ -185,25 +170,25 @@ export function AttentionCenterPage() {
               </Button>
             ) : null}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-3">
         {canFollow ? (
           <>
-            <Kpi
-              title="عقب‌افتاده"
-              number={stats.overdue}
-              icon={<AlertTriangle className="size-4" />}
+            <MetricCard
+              label="عقب‌افتاده"
+              value={stats.overdue.toLocaleString("fa-IR")}
+              icon={AlertTriangle}
               active={tab === "follow-ups" && quick === "OVERDUE"}
               onClick={() =>
                 patch({ tab: "follow-ups", quick: "OVERDUE", page: "1" })
               }
             />
-            <Kpi
-              title="پیگیری امروز"
-              number={stats.today}
-              icon={<ClipboardCheck className="size-4" />}
+            <MetricCard
+              label="پیگیری امروز"
+              value={stats.today.toLocaleString("fa-IR")}
+              icon={ClipboardCheck}
               active={tab === "follow-ups" && quick === "TODAY"}
               onClick={() =>
                 patch({ tab: "follow-ups", quick: "TODAY", page: "1" })
@@ -212,10 +197,10 @@ export function AttentionCenterPage() {
           </>
         ) : null}
         {canNotifications ? (
-          <Kpi
-            title="اعلان خوانده‌نشده"
-            number={stats.unread}
-            icon={<Bell className="size-4" />}
+          <MetricCard
+            label="اعلان خوانده‌نشده"
+            value={stats.unread.toLocaleString("fa-IR")}
+            icon={Bell}
             active={tab === "notifications"}
             onClick={() =>
               patch({ tab: "notifications", quick: null, page: "1" })
@@ -252,42 +237,7 @@ export function AttentionCenterPage() {
           navigate={navigate}
         />
       )}
-    </div>
-  )
-}
-
-function Kpi({
-  title,
-  number,
-  icon,
-  active,
-  onClick,
-}: {
-  title: string
-  number: number
-  icon: ReactNode
-  active?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "rounded-[20px] border p-4 text-start transition",
-        active
-          ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]"
-          : "border-[var(--app-divider)] bg-[var(--app-surface)] hover:border-[var(--app-primary)]/40",
-      ].join(" ")}
-    >
-      <div className="flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
-        <span className="text-[var(--app-primary)]">{icon}</span>
-        {title}
-      </div>
-      <div className="mt-2 text-2xl font-bold text-[var(--app-heading)]">
-        {number.toLocaleString("fa-IR")}
-      </div>
-    </button>
+    </EntityListPage>
   )
 }
 
@@ -349,14 +299,11 @@ function FollowUpList({
       header: "پیگیری",
       className: "min-w-60",
       cell: (item) => (
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold text-[var(--app-heading)]">
-            {item.outcome || activityLabel(item.type)}
-          </p>
-          <p className="mt-1 line-clamp-1 text-xs text-[var(--app-text-secondary)]">
-            {item.notes || "بدون یادداشت"}
-          </p>
-        </div>
+        <EntityTableCell
+          title={item.outcome || activityLabel(item.type)}
+          subtitle={item.notes}
+          avatar={<ClipboardCheck className="size-5" />}
+        />
       ),
     },
     {
@@ -417,61 +364,47 @@ function FollowUpList({
       header: "عملیات",
       className: "w-16",
       cell: (item) => (
-        <div
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="rounded-xl"
-                  aria-label="عملیات"
-                />
-              }
-            >
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl">
-              {item.companyId ? (
-                <DropdownMenuItem onClick={() => onCompany(item.companyId)}>
-                  مشاهده شرکت
-                </DropdownMenuItem>
-              ) : null}
-              {canReschedule ? (
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelected(item)
-                    setMode("reschedule")
-                  }}
-                >
-                  زمان‌بندی مجدد
-                </DropdownMenuItem>
-              ) : null}
-              {canComplete ? (
-                <DropdownMenuItem
-                  onClick={() => {
-                    setSelected(item)
-                    setMode("complete")
-                  }}
-                >
-                  انجام شد
-                </DropdownMenuItem>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <EntityRowActions
+          actions={[
+            {
+              id: "view",
+              label: "مشاهده شرکت",
+              icon: Eye,
+              onClick: () => onCompany(item.companyId),
+              enabled: Boolean(item.companyId),
+            },
+            {
+              id: "reschedule",
+              label: "زمان‌بندی مجدد",
+              icon: CalendarClock,
+              onClick: () => {
+                setSelected(item)
+                setMode("reschedule")
+              },
+              enabled: canReschedule,
+            },
+            {
+              id: "complete",
+              label: "انجام شد",
+              icon: CheckCircle2,
+              onClick: () => {
+                setSelected(item)
+                setMode("complete")
+              },
+              enabled: canComplete,
+            },
+          ]}
+        />
       ),
     },
   ]
 
   return (
     <div className="grid min-w-0 gap-4">
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <DataTableToolbar
+        hasActiveFilters={filter !== "ALL"}
+        onClearFilters={() => onFilter("ALL")}
+        filters={
           <div className="flex min-w-0 flex-wrap gap-1.5">
             {(["ALL", "OVERDUE", "TODAY", "UPCOMING"] as FollowUpFilter[]).map(
               (value) => (
@@ -491,41 +424,24 @@ function FollowUpList({
               )
             )}
           </div>
-          {filter !== "ALL" ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="shrink-0 rounded-xl text-[var(--app-text-secondary)]"
-              onClick={() => onFilter("ALL")}
-            >
-              <RotateCcw className="size-3.5" />
-              پاک کردن فیلتر
-            </Button>
-          ) : null}
-        </div>
-      </section>
-
+        }
+      />
       <QueryContent
         query={{ isLoading: loading, isError, error, refetch: onRetry }}
         errorTitle="دریافت پیگیری‌ها ناموفق بود"
       >
-        <div className="w-full max-w-full overflow-x-auto">
-          <div className="min-w-[1050px]">
-            <DataTableShell
-              rows={shown}
-              columns={columns}
-              getRowKey={(item) => item.id}
-              emptyState={
-                <EmptyState
-                  icon={ClipboardCheck}
-                  title="پیگیری‌ای وجود ندارد"
-                  description="در این فیلتر موردی برای نمایش وجود ندارد."
-                />
-              }
+        <DataTableShell
+          rows={shown}
+          columns={columns}
+          getRowKey={(item) => item.id}
+          emptyState={
+            <EmptyState
+              icon={ClipboardCheck}
+              title="پیگیری‌ای وجود ندارد"
+              description="در این فیلتر موردی برای نمایش وجود ندارد."
             />
-          </div>
-        </div>
+          }
+        />
         <PaginationControls
           page={page}
           pageCount={pageCount}
@@ -536,7 +452,6 @@ function FollowUpList({
           onPageSizeChange={onPageSize}
         />
       </QueryContent>
-
       <FollowUpActionDialog
         item={selected}
         mode={mode}
@@ -705,19 +620,11 @@ function NotificationList({
       header: "اعلان",
       className: "min-w-72",
       cell: (n) => (
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            {!n.readAt ? (
-              <span className="size-2 shrink-0 rounded-full bg-[var(--app-primary)]" />
-            ) : null}
-            <p className="truncate text-xs font-bold text-[var(--app-heading)]">
-              {n.title}
-            </p>
-          </div>
-          <p className="mt-1 line-clamp-1 text-xs text-[var(--app-text-secondary)]">
-            {n.body || "بدون توضیح"}
-          </p>
-        </div>
+        <EntityTableCell
+          title={n.title}
+          subtitle={n.body}
+          avatar={<Bell className="size-5" />}
+        />
       ),
     },
     {
@@ -763,66 +670,51 @@ function NotificationList({
       header: "عملیات",
       className: "w-16",
       cell: (n) => (
-        <div
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="rounded-xl"
-                  aria-label="عملیات"
-                />
-              }
-            >
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" dir="rtl">
-              {n.actionUrl ? (
-                <DropdownMenuItem onClick={() => void openNotification(n)}>
-                  مشاهده
-                </DropdownMenuItem>
-              ) : null}
-              {canManage ? (
-                <>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      void (!n.readAt
-                        ? markRead.mutateAsync(n.id)
-                        : markUnread.mutateAsync(n.id))
-                    }
-                  >
-                    {!n.readAt
-                      ? "علامت‌گذاری به‌عنوان خوانده‌شده"
-                      : "علامت‌گذاری به‌عنوان خوانده‌نشده"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      void (n.archivedAt
-                        ? unarchive.mutateAsync(n.id)
-                        : archive.mutateAsync(n.id))
-                    }
-                  >
-                    {n.archivedAt ? "خروج از بایگانی" : "بایگانی"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => {
-                      if (window.confirm("این اعلان حذف شود؟"))
-                        void remove.mutateAsync(n.id)
-                    }}
-                  >
-                    حذف
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <EntityRowActions
+          actions={[
+            {
+              id: "view",
+              label: "مشاهده",
+              icon: Eye,
+              onClick: () => openNotification(n),
+              enabled: Boolean(n.actionUrl),
+            },
+            {
+              id: "read",
+              label: n.readAt
+                ? "علامت‌گذاری به‌عنوان خوانده‌نشده"
+                : "علامت‌گذاری به‌عنوان خوانده‌شده",
+              icon: CheckCircle2,
+              onClick: () =>
+                n.readAt
+                  ? markUnread.mutateAsync(n.id)
+                  : markRead.mutateAsync(n.id),
+              enabled: canManage,
+            },
+            {
+              id: "archive",
+              label: n.archivedAt ? "خروج از بایگانی" : "بایگانی",
+              icon: Archive,
+              onClick: () =>
+                n.archivedAt
+                  ? unarchive.mutateAsync(n.id)
+                  : archive.mutateAsync(n.id),
+              enabled: canManage,
+            },
+            {
+              id: "delete",
+              label: "حذف",
+              icon: Trash2,
+              onClick: () => remove.mutateAsync(n.id),
+              enabled: canManage,
+              tone: "danger",
+              confirmation: {
+                title: "حذف اعلان",
+                description: "این اعلان حذف شود؟",
+              },
+            },
+          ]}
+        />
       ),
     },
   ]
@@ -870,23 +762,19 @@ function NotificationList({
       />
 
       <QueryContent query={query} errorTitle="دریافت اعلان‌ها ناموفق بود">
-        <div className="w-full max-w-full overflow-x-auto">
-          <div className="min-w-[1050px]">
-            <DataTableShell
-              rows={query.data?.data ?? []}
-              columns={columns}
-              getRowKey={(n) => n.id}
-              onRowClick={(n) => void openNotification(n)}
-              emptyState={
-                <EmptyState
-                  icon={Bell}
-                  title="اعلانی وجود ندارد"
-                  description="در این فیلتر اعلانی برای نمایش وجود ندارد."
-                />
-              }
+        <DataTableShell
+          rows={query.data?.data ?? []}
+          columns={columns}
+          getRowKey={(n) => n.id}
+          onRowClick={(n) => void openNotification(n)}
+          emptyState={
+            <EmptyState
+              icon={Bell}
+              title="اعلانی وجود ندارد"
+              description="در این فیلتر اعلانی برای نمایش وجود ندارد."
             />
-          </div>
-        </div>
+          }
+        />
         <PaginationControls
           page={query.data?.meta.page ?? page}
           pageCount={query.data?.meta.totalPages ?? 1}

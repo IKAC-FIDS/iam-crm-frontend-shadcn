@@ -1,3 +1,5 @@
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useAuditQueries } from "../hooks/useAuditLogs"
 import { useListQueryState } from "@/lib/listQuery"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -11,7 +13,6 @@ import {
   Clock3,
   Copy,
   Download,
-  Eye,
   Filter,
   History,
   RefreshCcw,
@@ -334,25 +335,12 @@ export function AdminAuditLogsPage() {
     {
       id: "actions",
       header: "عملیات",
-      cell: (row) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-xl"
-          onClick={(event) => {
-            event.stopPropagation()
-            setSelectedId(row.id)
-          }}
-          aria-label="مشاهده جزئیات"
-        >
-          <Eye className="size-4" />
-        </Button>
-      ),
+      cell: (row) => <EntityRowActions onView={() => setSelectedId(row.id)} />,
     },
   ]
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title="رویدادهای ممیزی"
         eyebrow="امنیت و انطباق"
@@ -406,7 +394,7 @@ export function AdminAuditLogsPage() {
           tone="warning"
         />
       </section>
-      <section className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5">
+      <section className="grid gap-3">
         <div
           onKeyDown={(event) => {
             if (
@@ -704,6 +692,6 @@ export function AdminAuditLogsPage() {
           </div>
         )}
       </ResponsiveModal>
-    </div>
+    </EntityListPage>
   )
 }

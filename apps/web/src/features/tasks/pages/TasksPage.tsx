@@ -1,3 +1,4 @@
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
@@ -192,7 +193,7 @@ export function TasksPage() {
   }
 
   return (
-    <div className="grid min-w-0 gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title={text.title}
         description={text.description}
@@ -467,7 +468,7 @@ export function TasksPage() {
           setAction(undefined)
         }}
       />
-    </div>
+    </EntityListPage>
   )
 }
 

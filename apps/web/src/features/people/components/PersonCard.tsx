@@ -1,10 +1,5 @@
-import {
-  Building2,
-  Mail,
-  Phone,
-  Star,
-  UserRound,
-} from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Building2, Mail, Phone, Star, UserRound } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
 
@@ -34,7 +29,7 @@ export function PersonCard({
     <button
       type="button"
       onClick={onClick}
-      className="group relative min-h-[220px] overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 text-start shadow-[var(--app-shadow-card)] transition-all duration-200 hover:-translate-y-1 hover:border-[var(--app-primary)]/25 hover:shadow-lg"
+      className="group relative min-h-[220px] overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 text-start shadow-[var(--app-shadow-card)] transition-all duration-200 hover:-translate-y-1 hover:border-[var(--app-primary)]/25 hover:shadow-lg"
     >
       <div className="pointer-events-none absolute -end-12 -top-12 size-32 rounded-full bg-[var(--app-primary-soft)]/70 blur-2xl transition-transform duration-300 group-hover:scale-125" />
       <div className="relative">
@@ -86,14 +81,14 @@ export function PersonCard({
           {display.personaRole || display.seniorityLevel ? (
             <div className="flex flex-wrap gap-1.5">
               {display.personaRole ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-on-primary-container)]">
+                <StatusBadge tone="primary" dot={false}>
                   {display.personaRole}
-                </span>
+                </StatusBadge>
               ) : null}
               {display.seniorityLevel ? (
-                <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+                <StatusBadge tone="neutral" dot={false}>
                   {display.seniorityLevel}
-                </span>
+                </StatusBadge>
               ) : null}
             </div>
           ) : null}
@@ -120,13 +115,7 @@ export function PersonCard({
   )
 }
 
-function MetaRow({
-  icon,
-  value,
-}: {
-  icon: React.ReactNode
-  value: string
-}) {
+function MetaRow({ icon, value }: { icon: React.ReactNode; value: string }) {
   return (
     <div className="flex min-w-0 items-center gap-2 text-xs text-[var(--app-text-secondary)]">
       <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[var(--app-background)] text-[var(--app-primary)]">

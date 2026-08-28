@@ -1,3 +1,4 @@
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useListQueryState } from "@/lib/listQuery"
 import {
@@ -240,7 +241,7 @@ export function OpportunityWorkspacePage() {
     )
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         icon={BriefcaseBusiness}
         eyebrow={text.hero.badge}
@@ -425,6 +426,6 @@ export function OpportunityWorkspacePage() {
           onConfirm={toggleArchive}
         />
       ) : null}
-    </div>
+    </EntityListPage>
   )
 }

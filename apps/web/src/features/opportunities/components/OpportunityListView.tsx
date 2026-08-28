@@ -1,5 +1,4 @@
 import { EntityTableCell } from "@/components/shared/EntityTableCell"
-import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BriefcaseBusiness } from "lucide-react"
 import { useListQueryState } from "@/lib/listQuery"
@@ -134,20 +133,15 @@ export function OpportunityListView({
       header: text.fields.actions,
       headerClassName: "w-28 text-end",
       cell: (item) => (
-        <EntityRowActions
-          label="مشاهده جزئیات فرصت"
+        <OpportunityActionsMenu
+          opportunity={item}
+          permissions={permissions}
           onView={() => onView(item)}
-        >
-          <OpportunityActionsMenu
-            opportunity={item}
-            permissions={permissions}
-            onView={() => onView(item)}
-            onEdit={() => onEdit(item)}
-            onChangeOwner={() => onChangeOwner(item)}
-            onChangeStage={() => onChangeStage(item)}
-            onArchiveToggle={() => onArchiveToggle(item)}
-          />
-        </EntityRowActions>
+          onEdit={() => onEdit(item)}
+          onChangeOwner={() => onChangeOwner(item)}
+          onChangeStage={() => onChangeStage(item)}
+          onArchiveToggle={() => onArchiveToggle(item)}
+        />
       ),
     },
   ]

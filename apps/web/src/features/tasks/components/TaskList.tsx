@@ -1,3 +1,4 @@
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { ListChecks } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -55,12 +56,11 @@ export function TaskList({
       header: text.table.task,
       className: "min-w-56",
       cell: (task) => (
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold">{task.title}</p>
-          <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
-            {taskContextLabel(task)}
-          </p>
-        </div>
+        <EntityTableCell
+          title={task.title}
+          subtitle={taskContextLabel(task)}
+          avatar={<ListChecks className="size-5" />}
+        />
       ),
     },
     {
@@ -129,6 +129,7 @@ export function TaskList({
           onKeyDown={(event) => event.stopPropagation()}
         >
           <TaskActionsMenu
+            onView={() => navigate(`/tasks/${task.id}`)}
             task={task}
             canUpdate={canUpdate}
             canAssign={canAssign}
@@ -143,30 +144,27 @@ export function TaskList({
   ]
 
   return (
-    <div className="w-full max-w-full overflow-x-auto">
-      <div className="min-w-[900px]">
-        <DataTableShell
-          rows={tasks}
-          columns={columns}
-          getRowKey={(task) => task.id}
-          onRowClick={(task) => navigate(`/tasks/${task.id}`)}
-          emptyState={
-            <EmptyState
-              icon={ListChecks}
-              title={text.empty.title}
-              description={text.empty.description}
-              action={
-                canCreate ? (
-                  <Button className="rounded-xl" onClick={onCreate}>
-                    {text.actions.create}
-                  </Button>
-                ) : undefined
-              }
-            />
-          }
-        />
-      </div>
-    </div>
+    <>
+      <DataTableShell
+        rows={tasks}
+        columns={columns}
+        getRowKey={(task) => task.id}
+        onRowClick={(task) => navigate(`/tasks/${task.id}`)}
+        emptyState={
+          <EmptyState
+            icon={ListChecks}
+            title={text.empty.title}
+            description={text.empty.description}
+            action={
+              canCreate ? (
+                <Button className="rounded-xl" onClick={onCreate}>
+                  {text.actions.create}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
+    </>
   )
 }
-

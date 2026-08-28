@@ -1,16 +1,14 @@
-import { Archive, Eye, MoreHorizontal, Pencil, RefreshCcw, UserRoundCog, Waypoints } from "lucide-react"
-
-import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
-
+  Archive,
+  Eye,
+  Pencil,
+  RefreshCcw,
+  UserRoundCog,
+  Waypoints,
+} from "lucide-react"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { uiText } from "@/config/uiText"
 import type { Opportunity } from "../types/opportunity.types"
-
 export interface OpportunityActionPermissions {
   update: boolean
   changeOwner: boolean
@@ -40,30 +38,46 @@ export function OpportunityActionsMenu({
   const active = !opportunity.archivedAt
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 rounded-lg"
-            aria-label={text.more}
-            onClick={(event) => event.stopPropagation()}
-          />
-        }
-      >
-        <MoreHorizontal className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-44 rounded-xl" dir="rtl" onClick={(event) => event.stopPropagation()}>
-        <DropdownMenuItem onClick={onView}><Eye />{text.view}</DropdownMenuItem>
-        {permissions.update && active ? <DropdownMenuItem onClick={onEdit}><Pencil />{text.edit}</DropdownMenuItem> : null}
-        {permissions.changeOwner && active ? <DropdownMenuItem onClick={onChangeOwner}><UserRoundCog />{text.changeOwner}</DropdownMenuItem> : null}
-        {permissions.changeStage && active ? <DropdownMenuItem onClick={onChangeStage}><Waypoints />{text.changeStage}</DropdownMenuItem> : null}
-        {active && permissions.archive ? <DropdownMenuItem variant="destructive" onClick={onArchiveToggle}><Archive />{text.archive}</DropdownMenuItem> : null}
-        {!active && permissions.restore ? <DropdownMenuItem onClick={onArchiveToggle}><RefreshCcw />{text.restore}</DropdownMenuItem> : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <EntityRowActions
+      actions={[
+        { id: "view", label: "مشاهده جزئیات فرصت", icon: Eye, onClick: onView },
+        {
+          id: "edit",
+          label: text.edit,
+          icon: Pencil,
+          onClick: onEdit,
+          enabled: permissions.update && active,
+        },
+        {
+          id: "owner",
+          label: text.changeOwner,
+          icon: UserRoundCog,
+          onClick: onChangeOwner,
+          enabled: permissions.changeOwner && active,
+        },
+        {
+          id: "stage",
+          label: text.changeStage,
+          icon: Waypoints,
+          onClick: onChangeStage,
+          enabled: permissions.changeStage && active,
+        },
+        {
+          id: "archive",
+          label: text.archive,
+          icon: Archive,
+          onClick: onArchiveToggle,
+          enabled: active && permissions.archive,
+          tone: "danger",
+        },
+        {
+          id: "restore",
+          label: text.restore,
+          icon: RefreshCcw,
+          onClick: onArchiveToggle,
+          enabled: !active && permissions.restore,
+        },
+      ]}
+    />
   )
 }
-

@@ -85,7 +85,9 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
     "/companies?page=2&limit=20&search=نمونه&priority=HIGH"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("شرکت نمونه")
-  expect(screen.getByText("شرکت نمونه").closest("tr")).toHaveClass("h-[68px]")
+  expect(screen.getByText("شرکت نمونه").closest("tr")).toHaveClass(
+    "h-[var(--app-table-row-height)]"
+  )
   expect(
     screen.getByRole("button", { name: uiText.companies.list.openCompany })
   ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
@@ -128,7 +130,9 @@ it("Admin Users uses shared pagination, server filters and unchanged create perm
     "/admin/users?page=2&limit=50&role=REP&status=ACTIVE&teamId=t1"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("کاربر نمونه")
-  expect(screen.getByText("کاربر نمونه").closest("tr")).toHaveClass("h-[68px]")
+  expect(screen.getByText("کاربر نمونه").closest("tr")).toHaveClass(
+    "h-[var(--app-table-row-height)]"
+  )
   expect(
     screen.getByRole("button", { name: "مشاهده جزئیات کاربر" })
   ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
@@ -186,7 +190,9 @@ it("Opportunities preserves company/view parameters and paginates on the server"
     "/opportunities?view=list&companyId=c1&page=2&limit=20"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("فرصت نمونه")
-  expect(screen.getByText("فرصت نمونه").closest("tr")).toHaveClass("h-[68px]")
+  expect(screen.getByText("فرصت نمونه").closest("tr")).toHaveClass(
+    "h-[var(--app-table-row-height)]"
+  )
   await userEvent.click(
     screen.getByRole("button", { name: "مشاهده جزئیات فرصت" })
   )

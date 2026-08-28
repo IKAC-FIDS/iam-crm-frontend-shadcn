@@ -1,21 +1,13 @@
-import { CheckCircle2, MoreHorizontal, Pencil, XCircle } from "lucide-react"
-
+import { CheckCircle2, Pencil, XCircle, Eye } from "lucide-react"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu"
-
 import type { Meeting } from "../types/meeting.types"
-
 export function MeetingActionsMenu({
   meeting,
   canUpdate,
   canComplete,
   canCancel,
+  onView,
   onEdit,
   onComplete,
   onCancel,
@@ -24,59 +16,46 @@ export function MeetingActionsMenu({
   canUpdate: boolean
   canComplete: boolean
   canCancel: boolean
+  onView?: () => void
   onEdit: () => void
   onComplete: () => void
   onCancel: () => void
 }) {
-  if (meeting.status !== "SCHEDULED") return null
-  if (!canUpdate && !canComplete && !canCancel) return null
   const text = uiText.meetings.actions
+  const active = meeting.status === "SCHEDULED"
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-8 rounded-xl"
-            aria-label={text.more}
-            onClick={(event) => event.stopPropagation()}
-          />
-        }
-      >
-        <MoreHorizontal className="size-4" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        dir="rtl"
-        className="w-52 rounded-xl p-1.5"
-      >
-        {canUpdate ? (
-          <DropdownMenuItem onClick={onEdit} className="gap-2 rounded-lg">
-            <Pencil className="size-4" />
-            {text.edit}
-          </DropdownMenuItem>
-        ) : null}
-        {canComplete ? (
-          <DropdownMenuItem
-            onClick={onComplete}
-            className="gap-2 rounded-lg text-[var(--success)]"
-          >
-            <CheckCircle2 className="size-4" />
-            {text.complete}
-          </DropdownMenuItem>
-        ) : null}
-        {canCancel ? (
-          <DropdownMenuItem
-            onClick={onCancel}
-            className="gap-2 rounded-lg text-[var(--destructive)]"
-          >
-            <XCircle className="size-4" />
-            {text.cancel}
-          </DropdownMenuItem>
-        ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <EntityRowActions
+      actions={[
+        {
+          id: "view",
+          label: uiText.common.view,
+          icon: Eye,
+          onClick: () => onView?.(),
+          enabled: Boolean(onView),
+        },
+        {
+          id: "edit",
+          label: text.edit,
+          icon: Pencil,
+          onClick: onEdit,
+          enabled: active && canUpdate,
+        },
+        {
+          id: "complete",
+          label: text.complete,
+          icon: CheckCircle2,
+          onClick: onComplete,
+          enabled: active && canComplete,
+        },
+        {
+          id: "cancel",
+          label: text.cancel,
+          icon: XCircle,
+          onClick: onCancel,
+          enabled: active && canCancel,
+          tone: "danger",
+        },
+      ]}
+    />
   )
 }

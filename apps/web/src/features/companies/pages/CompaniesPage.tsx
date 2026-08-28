@@ -1,3 +1,4 @@
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useMemo, useState } from "react"
 import { Building2, Plus, UsersRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -156,7 +157,7 @@ export function CompaniesPage() {
   }
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         eyebrow="مدیریت حساب‌های مشتری"
         icon={Building2}
@@ -285,7 +286,7 @@ export function CompaniesPage() {
           navigate(`/companies/${company.id}`)
         }}
       />
-    </div>
+    </EntityListPage>
   )
 }
 

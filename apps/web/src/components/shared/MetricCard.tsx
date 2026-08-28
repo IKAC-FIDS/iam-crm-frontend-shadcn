@@ -18,6 +18,8 @@ export function MetricCard({
   icon: Icon,
   tone = "primary",
   className = "",
+  onClick,
+  active,
 }: {
   label: ReactNode
   value: ReactNode
@@ -25,9 +27,23 @@ export function MetricCard({
   icon: LucideIcon
   tone?: keyof typeof toneClasses
   className?: string
+  onClick?: () => void
+  active?: boolean
 }) {
   return (
-    <SurfaceCard className={`p-4 sm:p-5 ${className}`}>
+    <SurfaceCard
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      aria-pressed={onClick ? Boolean(active) : undefined}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (onClick && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault()
+          onClick()
+        }
+      }}
+      className={`p-4 sm:p-5 ${onClick ? "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring" : ""} ${active ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]" : ""} ${className}`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="ui-caption">{label}</div>

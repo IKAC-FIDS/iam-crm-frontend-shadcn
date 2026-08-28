@@ -490,22 +490,23 @@ export function AdminTeamDetailsPage() {
                   <EntityRowActions
                     label="مشاهده جزئیات کاربر"
                     onView={() => navigate(`/admin/users/${member.id}`)}
-                  >
-                    {canManage ? (
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        disabled={removeMemberMutation.isPending}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          removeMemberMutation.mutate(member.id)
-                        }}
-                        aria-label="حذف از تیم"
-                      >
-                        <Trash2 className="size-4 text-red-600" />
-                      </Button>
-                    ) : null}
-                  </EntityRowActions>
+                    actions={[
+                      {
+                        id: "delete",
+                        label: "حذف از تیم",
+                        icon: Trash2,
+                        enabled: canManage,
+                        disabled: removeMemberMutation.isPending,
+                        tone: "danger",
+                        confirmation: {
+                          title: "حذف عضو از تیم",
+                          description: "این عضو از تیم حذف شود؟",
+                        },
+                        onClick: () =>
+                          removeMemberMutation.mutateAsync(member.id),
+                      },
+                    ]}
+                  />
                 ),
               },
             ]}

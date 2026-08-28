@@ -21,6 +21,8 @@
   },
 
   common: {
+    view: "مشاهده جزئیات",
+    moreActions: "عملیات بیشتر",
     filters: { status: "وضعیت", allStatuses: "همه وضعیت‌ها", owner: "ثبت‌کننده", team: "تیم", priority: "اولویت", actions: "عملیات" },
     invalidWebUrl: "آدرس معتبر با http یا https وارد کنید.",
     save: "ذخیره",
@@ -1619,9 +1621,3 @@ tasks: {
     },
   },
 } as const
-
-
-
-
-
-

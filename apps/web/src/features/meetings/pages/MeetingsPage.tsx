@@ -1,3 +1,4 @@
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { PageHero } from "@/components/shared/PageHero"
 import { CalendarDays, LayoutList, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -220,7 +221,7 @@ export function MeetingsPage() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title={text.title}
         description={text.description}
@@ -305,57 +306,55 @@ export function MeetingsPage() {
         </p>
       </section>
 
-      <section className="min-w-0 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]">
-        <div className="min-w-0 p-3 sm:p-5">
-          <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
-            {view === "agenda" ? (
-              <MeetingAgenda
-                meetings={rows}
-                canCreate={canCreate}
-                canUpdate={canUpdate}
-                canComplete={canComplete}
-                canCancel={canCancel}
-                onCreate={() => setFormMeeting(null)}
-                onEdit={setFormMeeting}
-                onComplete={(meeting) =>
-                  setStatusState({
-                    meeting,
-                    action: "complete",
-                  })
-                }
-                onCancel={(meeting) =>
-                  setStatusState({
-                    meeting,
-                    action: "cancel",
-                  })
-                }
-              />
-            ) : (
-              <MeetingList
-                meetings={rows}
-                canCreate={canCreate}
-                canUpdate={canUpdate}
-                canComplete={canComplete}
-                canCancel={canCancel}
-                onCreate={() => setFormMeeting(null)}
-                onEdit={setFormMeeting}
-                onComplete={(meeting) =>
-                  setStatusState({
-                    meeting,
-                    action: "complete",
-                  })
-                }
-                onCancel={(meeting) =>
-                  setStatusState({
-                    meeting,
-                    action: "cancel",
-                  })
-                }
-              />
-            )}
-          </QueryContent>
-        </div>
-      </section>
+      <div className="min-w-0">
+        <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
+          {view === "agenda" ? (
+            <MeetingAgenda
+              meetings={rows}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onCreate={() => setFormMeeting(null)}
+              onEdit={setFormMeeting}
+              onComplete={(meeting) =>
+                setStatusState({
+                  meeting,
+                  action: "complete",
+                })
+              }
+              onCancel={(meeting) =>
+                setStatusState({
+                  meeting,
+                  action: "cancel",
+                })
+              }
+            />
+          ) : (
+            <MeetingList
+              meetings={rows}
+              canCreate={canCreate}
+              canUpdate={canUpdate}
+              canComplete={canComplete}
+              canCancel={canCancel}
+              onCreate={() => setFormMeeting(null)}
+              onEdit={setFormMeeting}
+              onComplete={(meeting) =>
+                setStatusState({
+                  meeting,
+                  action: "complete",
+                })
+              }
+              onCancel={(meeting) =>
+                setStatusState({
+                  meeting,
+                  action: "cancel",
+                })
+              }
+            />
+          )}
+        </QueryContent>
+      </div>
 
       {meetings.data ? (
         <PaginationControls
@@ -403,6 +402,6 @@ export function MeetingsPage() {
           }}
         />
       ) : null}
-    </div>
+    </EntityListPage>
   )
 }

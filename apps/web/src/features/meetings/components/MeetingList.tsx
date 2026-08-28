@@ -1,3 +1,4 @@
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { CalendarDays } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -52,14 +53,11 @@ export function MeetingList({
       header: text.fields.meeting,
       className: "min-w-52",
       cell: (meeting) => (
-        <div className="min-w-0">
-          <p className="truncate text-xs font-bold">{meeting.title}</p>
-          {meeting.opportunity ? (
-            <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
-              {meeting.opportunity.title}
-            </p>
-          ) : null}
-        </div>
+        <EntityTableCell
+          title={meeting.title}
+          subtitle={meeting.opportunity?.title}
+          avatar={<CalendarDays className="size-5" />}
+        />
       ),
     },
     {
@@ -88,7 +86,11 @@ export function MeetingList({
       id: "type",
       header: text.table.type,
       className: "min-w-36",
-      cell: (meeting) => <StatusBadge tone="primary" dot={false}>{meetingTypeLabel(meeting.type)}</StatusBadge>,
+      cell: (meeting) => (
+        <StatusBadge tone="primary" dot={false}>
+          {meetingTypeLabel(meeting.type)}
+        </StatusBadge>
+      ),
     },
     {
       id: "mode",
@@ -128,6 +130,7 @@ export function MeetingList({
           onKeyDown={(event) => event.stopPropagation()}
         >
           <MeetingActionsMenu
+            onView={() => navigate(`/meetings/${meeting.id}`)}
             meeting={meeting}
             canUpdate={canUpdate}
             canComplete={canComplete}
@@ -142,29 +145,27 @@ export function MeetingList({
   ]
 
   return (
-    <div className="w-full max-w-full overflow-x-auto">
-      <div className="min-w-[920px]">
-        <DataTableShell
-          rows={meetings}
-          columns={columns}
-          getRowKey={(meeting) => meeting.id}
-          onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
-          emptyState={
-            <EmptyState
-              icon={CalendarDays}
-              title={text.empty.title}
-              description={text.empty.description}
-              action={
-                canCreate ? (
-                  <Button className="rounded-xl" onClick={onCreate}>
-                    {text.actions.create}
-                  </Button>
-                ) : undefined
-              }
-            />
-          }
-        />
-      </div>
-    </div>
+    <>
+      <DataTableShell
+        rows={meetings}
+        columns={columns}
+        getRowKey={(meeting) => meeting.id}
+        onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
+        emptyState={
+          <EmptyState
+            icon={CalendarDays}
+            title={text.empty.title}
+            description={text.empty.description}
+            action={
+              canCreate ? (
+                <Button className="rounded-xl" onClick={onCreate}>
+                  {text.actions.create}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      />
+    </>
   )
 }

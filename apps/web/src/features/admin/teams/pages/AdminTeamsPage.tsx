@@ -1,4 +1,6 @@
-import {uiText} from "@/config/uiText"
+import { MetricCard } from "@/components/shared/MetricCard"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { uiText } from "@/config/uiText"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -68,35 +70,6 @@ function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
       {...props}
       className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
     />
-  )
-}
-
-function StatCard({
-  title,
-  value,
-  helper,
-  icon: Icon,
-}: {
-  title: string
-  value: string
-  helper: string
-  icon: typeof UsersRound
-}) {
-  return (
-    <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="mt-2 text-3xl font-black">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            {helper}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
-          <Icon className="size-5" />
-        </div>
-      </div>
-    </article>
   )
 }
 
@@ -182,7 +155,7 @@ export function AdminTeamsPage() {
   })
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title={"مدیریت تیم‌ها"}
         description={
@@ -237,26 +210,26 @@ export function AdminTeamsPage() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="کل تیم‌ها"
+        <MetricCard
+          label="کل تیم‌ها"
           value={fa(totalTeams)}
           helper="تیم‌های فعال و غیرفعال"
           icon={UsersRound}
         />
-        <StatCard
-          title="تیم‌های فعال"
+        <MetricCard
+          label="تیم‌های فعال"
           value={fa(activeTeams)}
           helper="تیم‌های قابل استفاده برای تخصیص"
           icon={BadgeCheck}
         />
-        <StatCard
-          title="اعضای این صفحه"
+        <MetricCard
+          label="اعضای این صفحه"
           value={fa(totalMembersOnPage)}
           helper="مجموع اعضای تیم‌های نمایش‌داده‌شده"
           icon={Activity}
         />
-        <StatCard
-          title="بدون مدیر در این صفحه"
+        <MetricCard
+          label="بدون مدیر در این صفحه"
           value={fa(withoutManagerOnPage)}
           helper="تیم‌هایی که مدیر مشخص ندارند"
           icon={UserCog}
@@ -330,11 +303,11 @@ export function AdminTeamsPage() {
                       </p>
                     </div>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                  >
-                    {team.isActive ? uiText.common.active : uiText.common.inactive}
-                  </span>
+                  <StatusBadge tone={team.isActive ? "success" : "neutral"}>
+                    {team.isActive
+                      ? uiText.common.active
+                      : uiText.common.inactive}
+                  </StatusBadge>
                 </div>
 
                 <p className="mt-4 min-h-12 text-sm leading-6 text-muted-foreground">
@@ -358,82 +331,78 @@ export function AdminTeamsPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/admin/teams/${team.id}`)}
-                  >
-                    مشاهده تیم
-                  </Button>
-                  {canManage ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setStatusTarget(team)}
-                    >
-                      {team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}
-                    </Button>
-                  ) : null}
+                <div className="mt-5">
+                  <EntityRowActions
+                    onView={() => navigate(`/admin/teams/${team.id}`)}
+                    actions={[
+                      {
+                        id: "toggle",
+                        label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی",
+                        icon: RefreshCcw,
+                        enabled: canManage,
+                        onClick: () => setStatusTarget(team),
+                      },
+                    ]}
+                  />
                 </div>
               </article>
             ))}
           </section>
         ) : (
-          <section className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-            <div className="overflow-x-auto">
-              <DataTableShell
-                entityRows
-                rows={pageTeams}
-                getRowKey={(team) => team.id}
-                onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
-                columns={[
-                  {
-                    id: "team",
-                    header: "تیم",
-                    cell: (team) => (
-                      <EntityTableCell
-                        title={team.name}
-                        subtitle={team.code}
-                        subtitleDir="ltr"
-                        avatar={team.name.slice(0, 1)}
-                      />
-                    ),
-                  },
-                  {
-                    id: "manager",
-                    header: "مدیر",
-                    cell: (team) => team.manager?.fullName || "بدون مدیر",
-                  },
-                  {
-                    id: "members",
-                    header: "اعضا",
-                    cell: (team) => fa(team.memberCount),
-                  },
-                  {
-                    id: "status",
-                    header: "وضعیت",
-                    cell: (team) => (
-                      <StatusBadge tone={team.isActive ? "success" : "neutral"}>
-                        {team.isActive ? uiText.common.active : uiText.common.inactive}
-                      </StatusBadge>
-                    ),
-                  },
-                  {
-                    id: "actions",
-                    header: "عملیات",
-                    headerClassName: "text-end",
-                    cell: (team) => (
-                      <EntityRowActions
-                        label="مشاهده جزئیات تیم"
-                        onView={() => navigate(`/admin/teams/${team.id}`)}
-                      />
-                    ),
-                  },
-                ]}
-              />
-            </div>
-          </section>
+          <>
+            <DataTableShell
+              entityRows
+              rows={pageTeams}
+              getRowKey={(team) => team.id}
+              onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
+              columns={[
+                {
+                  id: "team",
+                  header: "تیم",
+                  cell: (team) => (
+                    <EntityTableCell
+                      title={team.name}
+                      subtitle={team.code}
+                      subtitleDir="ltr"
+                      avatar={team.name.slice(0, 1)}
+                    />
+                  ),
+                },
+                {
+                  id: "manager",
+                  header: "مدیر",
+                  cell: (team) => team.manager?.fullName || "بدون مدیر",
+                },
+                {
+                  id: "members",
+                  header: "اعضا",
+                  cell: (team) => fa(team.memberCount),
+                },
+                {
+                  id: "status",
+                  header: "وضعیت",
+                  cell: (team) => (
+                    <StatusBadge tone={team.isActive ? "success" : "neutral"}>
+                      {team.isActive
+                        ? uiText.common.active
+                        : uiText.common.inactive}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  id: "actions",
+                  header: "عملیات",
+                  headerClassName: "text-end",
+                  cell: (team) => (
+                    <EntityRowActions
+                      label="مشاهده جزئیات تیم"
+                      onView={() => navigate(`/admin/teams/${team.id}`)}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </>
         )}
       </QueryContent>
       <PaginationControls
@@ -480,7 +449,7 @@ export function AdminTeamsPage() {
           </Button>
         </div>
       </Modal>
-    </div>
+    </EntityListPage>
   )
 }
 

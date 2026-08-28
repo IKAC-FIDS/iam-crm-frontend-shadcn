@@ -1,5 +1,9 @@
-import {EmptyState} from "@/components/shared/EmptyState"
-import {useSaveProduct,useToggleProduct} from "../hooks/useLibraries"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { useSaveProduct, useToggleProduct } from "../hooks/useLibraries"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useForm, useWatch } from "react-hook-form"
@@ -410,11 +414,13 @@ function ProductForm({
     Object.entries(values).forEach(([key, value]) =>
       setValue(key as keyof ProductFormValues, value, { shouldDirty: true })
     )
-  const mutation=useSaveProduct()
- async function submitProduct(){
- if(!form.type)return
- clearErrors()
- try {await mutation.mutateAsync({payload:{
+  const mutation = useSaveProduct()
+  async function submitProduct() {
+    if (!form.type) return
+    clearErrors()
+    try {
+      await mutation.mutateAsync({
+        payload: {
           ...form,
           type: form.type,
           inPersonInputPrice: form.inPersonInputPrice || "0",
@@ -427,9 +433,20 @@ function ProductForm({
             form.pricingCurrency === "USD"
               ? form.digikalaProfitPercent || "0"
               : undefined,
-        },id:item?.id});toast.success(item?"محصول ویرایش شد.":"محصول ایجاد شد.");onClose()}
- catch(error){applyServerFieldErrors(error,setError,Object.keys(productFormSchema.shape) as (keyof ProductFormValues)[]);toast.error(getApiErrorMessage(error,"ذخیره محصول انجام نشد."))}
- }
+        },
+        id: item?.id,
+      })
+      toast.success(item ? "محصول ویرایش شد." : "محصول ایجاد شد.")
+      onClose()
+    } catch (error) {
+      applyServerFieldErrors(
+        error,
+        setError,
+        Object.keys(productFormSchema.shape) as (keyof ProductFormValues)[]
+      )
+      toast.error(getApiErrorMessage(error, "ذخیره محصول انجام نشد."))
+    }
+  }
   const field = (label: string, key: keyof ProductPayload, type = "text") => (
     <label className="grid gap-2 text-sm font-bold">
       {label}
@@ -615,7 +632,7 @@ export function AdminLibrariesPage() {
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "حذف آیتم انجام نشد.")),
   })
-  const productToggle=useToggleProduct()
+  const productToggle = useToggleProduct()
 
   const cols: DataTableColumn<LibraryItem>[] = [
     {
@@ -656,47 +673,39 @@ export function AdminLibrariesPage() {
       id: "status",
       header: "وضعیت",
       cell: (r) => (
-        <Badge
-          className={
-            r.isActive
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-slate-100 text-slate-600"
-          }
-        >
+        <StatusBadge tone={r.isActive ? "success" : "neutral"}>
           {r.isActive ? uiText.common.active : uiText.common.inactive}
-        </Badge>
+        </StatusBadge>
       ),
     },
     {
       id: "actions",
       header: "عملیات",
       cell: (r) => (
-        <div className="flex">
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canManage}
-            onClick={(e) => {
-              e.stopPropagation()
-              setEditing(r)
-            }}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canManage || remove.isPending}
-            className="text-red-600"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (window.confirm(`آیا از حذف «${r.label}» مطمئن هستید؟`))
-                remove.mutate(r)
-            }}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
+        <EntityRowActions
+          actions={[
+            {
+              id: "edit",
+              label: "ویرایش آیتم",
+              icon: Pencil,
+              onClick: () => setEditing(r),
+              enabled: canManage,
+            },
+            {
+              id: "delete",
+              label: "حذف آیتم",
+              icon: Trash2,
+              onClick: () => remove.mutateAsync(r),
+              enabled: canManage,
+              disabled: remove.isPending,
+              tone: "danger",
+              confirmation: {
+                title: "حذف آیتم",
+                description: `آیا از حذف «${r.label}» مطمئن هستید؟`,
+              },
+            },
+          ]}
+        />
       ),
     },
   ]
@@ -705,19 +714,21 @@ export function AdminLibrariesPage() {
       id: "type",
       header: uiText.products.type,
       cell: (r) => (
-        <Badge variant="outline">{uiText.products.types[r.type] ?? "—"}</Badge>
+        <StatusBadge tone="primary" dot={false}>
+          {uiText.products.types[r.type] ?? "—"}
+        </StatusBadge>
       ),
     },
     {
       id: "name",
       header: "محصول",
       cell: (r) => (
-        <div>
-          <b>{r.name}</b>
-          <div className="font-mono text-xs text-muted-foreground" dir="ltr">
-            {r.code}
-          </div>
-        </div>
+        <EntityTableCell
+          title={r.name}
+          subtitle={r.code}
+          subtitleDir="ltr"
+          avatar={<Package className="size-5" />}
+        />
       ),
     },
     { id: "category", header: "دسته‌بندی", cell: (r) => r.category || "—" },
@@ -748,85 +759,59 @@ export function AdminLibrariesPage() {
       id: "status",
       header: "وضعیت",
       cell: (r) => (
-        <Badge
-          className={
-            r.isActive
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-slate-100 text-slate-600"
-          }
-        >
+        <StatusBadge tone={r.isActive ? "success" : "neutral"}>
           {r.isActive ? uiText.common.active : uiText.common.inactive}
-        </Badge>
+        </StatusBadge>
       ),
     },
     {
       id: "actions",
       header: "عملیات",
       cell: (r) => (
-        <div className="flex">
-          {safeExternalUrl(r.digikalaUrl) ? (
-            <a
-              href={safeExternalUrl(r.digikalaUrl)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex size-9 items-center justify-center rounded-lg text-rose-600 transition hover:bg-accent hover:text-rose-700"
-              onClick={(e) => e.stopPropagation()}
-              aria-label="مشاهده صفحه محصول در دیجی‌کالا"
-              title="رفتن به صفحه دیجی‌کالا"
-            >
-              <ShoppingBag className="size-4" />
-            </a>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled
-              aria-label="صفحه دیجی‌کالا ثبت نشده است"
-              title="صفحه دیجی‌کالا ثبت نشده است"
-            >
-              <ShoppingBag className="size-4" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={!canManage}
-            onClick={(e) => {
-              e.stopPropagation()
-              setProductEditing(r)
-            }}
-            aria-label="ویرایش محصول"
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={
-              r.isActive
-                ? "text-amber-600 hover:text-amber-700"
-                : "text-emerald-600 hover:text-emerald-700"
-            }
-            disabled={!canManage || productToggle.isPending}
-            onClick={(e) => {
-              e.stopPropagation()
-              productToggle.mutate(r,{onSuccess:()=>toast.success(r.isActive?"محصول غیرفعال شد.":"محصول فعال شد."),onError:error=>toast.error(getApiErrorMessage(error,"تغییر وضعیت محصول انجام نشد."))})
-            }}
-            aria-label={r.isActive ? "غیرفعال‌کردن محصول" : "فعال‌کردن محصول"}
-            title={r.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}
-          >
-            {r.isActive ? (
-              <CircleOff className="size-4" />
-            ) : (
-              <CircleCheckBig className="size-4" />
-            )}
-          </Button>
-        </div>
+        <EntityRowActions
+          actions={[
+            {
+              id: "edit",
+              label: "ویرایش محصول",
+              icon: Pencil,
+              onClick: () => setProductEditing(r),
+              enabled: canManage,
+            },
+            {
+              id: "digikala",
+              label: "مشاهده صفحه محصول در دیجی‌کالا",
+              icon: ShoppingBag,
+              onClick: () => {
+                const url = safeExternalUrl(r.digikalaUrl)
+                if (url) window.open(url, "_blank", "noopener,noreferrer")
+              },
+              enabled: Boolean(safeExternalUrl(r.digikalaUrl)),
+            },
+            {
+              id: "toggle",
+              label: r.isActive ? "غیرفعال‌کردن محصول" : "فعال‌کردن محصول",
+              icon: r.isActive ? CircleOff : CircleCheckBig,
+              enabled: canManage,
+              disabled: productToggle.isPending,
+              tone: r.isActive ? "danger" : "default",
+              confirmation: r.isActive
+                ? {
+                    title: "غیرفعال‌کردن محصول",
+                    description: `آیا از غیرفعال‌کردن «${r.name}» مطمئن هستید؟`,
+                  }
+                : undefined,
+              onClick: async () => {
+                await productToggle.mutateAsync(r)
+                toast.success("وضعیت محصول به‌روزرسانی شد.")
+              },
+            },
+          ]}
+        />
       ),
     },
   ]
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title="مرکز کتابخانه‌ها"
         eyebrow="داده‌های پایه CRM"
@@ -924,7 +909,7 @@ export function AdminLibrariesPage() {
           </div>
         </aside>
         <main className="grid min-w-0 content-start gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pe-1">
-          <section className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
+          <section className="grid gap-3">
             <div className="mb-4">
               <h2 className="text-xl font-black">{section.label}</h2>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -971,7 +956,9 @@ export function AdminLibrariesPage() {
                       setStatus(e.target.value)
                     }}
                   >
-                    <option value="ALL">{uiText.common.filters.allStatuses}</option>
+                    <option value="ALL">
+                      {uiText.common.filters.allStatuses}
+                    </option>
                     <option value="ACTIVE">فعال</option>
                     <option value="INACTIVE">غیرفعال</option>
                   </select>
@@ -1027,7 +1014,15 @@ export function AdminLibrariesPage() {
           onClose={() => setProductEditing(undefined)}
         />
       ) : null}
-    </div>
+    </EntityListPage>
   )
 }
-function Empty(){return <EmptyState icon={BookOpen} title={uiText.common.table.noResults} description={uiText.common.table.noResultsDescription} />}
+function Empty() {
+  return (
+    <EmptyState
+      icon={BookOpen}
+      title={uiText.common.table.noResults}
+      description={uiText.common.table.noResultsDescription}
+    />
+  )
+}

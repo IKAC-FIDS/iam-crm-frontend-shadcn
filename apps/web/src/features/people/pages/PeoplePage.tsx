@@ -1,3 +1,5 @@
+import { MetricCard } from "@/components/shared/MetricCard"
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { PageHero } from "@/components/shared/PageHero"
 import {
   ContactRound,
@@ -105,7 +107,7 @@ export function PeoplePage() {
   }
 
   return (
-    <div className="grid gap-5">
+    <EntityListPage>
       <PageHero
         title={text.hero.title}
         description={text.hero.description}
@@ -124,27 +126,29 @@ export function PeoplePage() {
           ) : null
         }
       />
-      <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric
-          icon={<UsersRound className="size-4" />}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          icon={UsersRound}
           label={text.metrics.total}
-          value={metrics.total}
-          exact
+          value={metrics.total.toLocaleString("fa-IR")}
         />
-        <Metric
-          icon={<ContactRound className="size-4" />}
+        <MetricCard
+          icon={ContactRound}
           label={text.metrics.primaryCurrentPage}
-          value={metrics.primary}
+          value={metrics.primary.toLocaleString("fa-IR")}
+          helper={text.metrics.currentPageHint}
         />
-        <Metric
-          icon={<Phone className="size-4" />}
+        <MetricCard
+          icon={Phone}
           label={text.metrics.phoneCurrentPage}
-          value={metrics.phone}
+          value={metrics.phone.toLocaleString("fa-IR")}
+          helper={text.metrics.currentPageHint}
         />
-        <Metric
-          icon={<Mail className="size-4" />}
+        <MetricCard
+          icon={Mail}
           label={text.metrics.emailCurrentPage}
-          value={metrics.email}
+          value={metrics.email.toLocaleString("fa-IR")}
+          helper={text.metrics.currentPageHint}
         />
       </div>
 
@@ -216,38 +220,6 @@ export function PeoplePage() {
         onOpenChange={setCreateOpen}
         onCreated={(person) => setSelectedPersonId(person.id)}
       />
-    </div>
-  )
-}
-
-function Metric({
-  icon,
-  label,
-  value,
-  exact = false,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  exact?: boolean
-}) {
-  const text = uiText.people
-  return (
-    <div className="rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)]/85 p-4 backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-text-secondary)]">
-        <span className="grid size-8 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-          {icon}
-        </span>
-        {label}
-      </div>
-      <p className="mt-3 text-xl font-bold text-[var(--app-heading)]">
-        {value.toLocaleString("fa-IR")}
-      </p>
-      {!exact ? (
-        <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-          {text.metrics.currentPageHint}
-        </p>
-      ) : null}
-    </div>
+    </EntityListPage>
   )
 }
