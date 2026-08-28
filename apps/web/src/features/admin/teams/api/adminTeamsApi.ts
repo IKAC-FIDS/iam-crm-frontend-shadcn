@@ -1,3 +1,5 @@
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
@@ -129,11 +131,23 @@ export async function getTeams(filters: TeamFilters) {
 
   if (filters.search?.trim()) params.search = filters.search.trim()
   if (filters.isActive !== undefined) params.isActive = filters.isActive
-  if (filters.includeInactive !== undefined) params.includeInactive = filters.includeInactive
+  if (filters.includeInactive !== undefined)
+    params.includeInactive = filters.includeInactive
   if (filters.managerId) params.managerId = filters.managerId
 
   const response = await api.get("/teams", { params })
-  return normalizePage<Team>(response.data)
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<Team>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string" &&
+        "name" in value &&
+        typeof value.name === "string"
+    )
+  )
 }
 
 export async function getTeam(id: string) {
@@ -159,7 +173,7 @@ export async function updateTeam(
     description?: string | null
     managerId?: string | null
     isActive?: boolean
-  },
+  }
 ) {
   const response = await api.patch(`/teams/${id}`, payload)
   return unwrapApiResponse<Team>(response.data)

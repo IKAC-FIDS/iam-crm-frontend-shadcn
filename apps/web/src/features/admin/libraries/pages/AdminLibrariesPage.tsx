@@ -1,5 +1,17 @@
-import { useMemo, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {EmptyState} from "@/components/shared/EmptyState"
+import {useSaveProduct,useToggleProduct} from "../hooks/useLibraries"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { applyServerFieldErrors } from "@/lib/formErrors"
+import { FormActions } from "@/components/shared/FormActions"
+import { useLibraryItems, useProducts } from "../hooks/useLibraries"
+import { useListQueryState, enumParam } from "@/lib/listQuery"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
   BookOpen,
@@ -16,7 +28,6 @@ import {
   Pencil,
   Plus,
   RefreshCcw,
-  Search,
   Settings2,
   Sparkles,
   Tag,
@@ -38,13 +49,9 @@ import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
-  getLibraryItems,
   lookupGroups,
   removeLibraryItem,
   saveLibraryItem,
-  getProducts,
-  saveProduct,
-  toggleProduct,
   type LibraryItem,
   type LibraryKind,
   type LibraryPayload,
@@ -198,7 +205,8 @@ function LibraryForm({
     onSuccess: async () => {
       toast.success(item ? "آیتم ویرایش شد." : "آیتم جدید اضافه شد.")
       await client.invalidateQueries({ queryKey: ["admin-library"] })
-      if (group === "activity-types") await client.invalidateQueries({ queryKey: ["activities"] })
+      if (group === "activity-types")
+        await client.invalidateQueries({ queryKey: ["activities"] })
       onClose()
     },
     onError: (error) =>
@@ -333,6 +341,35 @@ function LibraryForm({
   )
 }
 
+type ProductFormValues = Omit<ProductPayload, "type"> & {
+  type: ProductType | ""
+}
+const productFormSchema = z.object({
+  type: z
+    .enum(["", "HARDWARE", "SOFTWARE"])
+    .refine(Boolean, uiText.products.chooseType),
+  code: z.string().trim().min(1, uiText.common.forms.required),
+  name: z.string().trim().min(1, uiText.common.forms.required),
+  digikalaCode: z.string().nullable().optional(),
+  digikalaUrl: z
+    .string()
+    .refine(
+      (value) => !value || Boolean(safeExternalUrl(value)),
+      uiText.common.invalidWebUrl
+    )
+    .nullable()
+    .optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  unit: z.string().optional(),
+  pricingCurrency: z.enum(["IRR", "USD"]),
+  inPersonInputPrice: z.string(),
+  digikalaInputPrice: z.string(),
+  inPersonProfitPercent: z.string().optional(),
+  digikalaProfitPercent: z.string().optional(),
+  isActive: z.boolean(),
+  sortOrder: z.number(),
+})
 function ProductForm({
   item,
   onClose,
@@ -340,53 +377,81 @@ function ProductForm({
   item?: Product
   onClose: () => void
 }) {
-  const client = useQueryClient()
-  const [form, setForm] = useState<Omit<ProductPayload, "type"> & { type: ProductType | "" }>({
-    type: item?.type ?? "",
-    code: item?.code ?? "",
-    digikalaCode: item?.digikalaCode ?? "",
-    digikalaUrl: item?.digikalaUrl ?? "",
-    name: item?.name ?? "",
-    description: item?.description ?? "",
-    category: item?.category ?? "",
-    unit: item?.unit ?? "",
-    pricingCurrency: item?.pricingCurrency ?? "IRR",
-    inPersonInputPrice: String(item?.inPersonInputPrice ?? ""),
-    digikalaInputPrice: String(item?.digikalaInputPrice ?? ""),
-    inPersonProfitPercent: String(item?.inPersonProfitPercent ?? ""),
-    digikalaProfitPercent: String(item?.digikalaProfitPercent ?? ""),
-    isActive: item?.isActive ?? true,
-    sortOrder: item?.sortOrder ?? 0,
-  })
-  const mutation = useMutation({
-    mutationFn: () => {
-      if (!form.type) throw new Error(uiText.products.chooseType)
-      return saveProduct({
-        ...form,
-        type: form.type,
-        inPersonInputPrice: form.inPersonInputPrice || "0",
-        digikalaInputPrice: form.digikalaInputPrice || "0",
-        inPersonProfitPercent: form.pricingCurrency === "USD" ? form.inPersonProfitPercent || "0" : undefined,
-        digikalaProfitPercent: form.pricingCurrency === "USD" ? form.digikalaProfitPercent || "0" : undefined,
-      }, item?.id)
+  const {
+    control,
+    register,
+    setValue,
+    handleSubmit,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<ProductFormValues>({
+    resolver: zodResolver(productFormSchema),
+    defaultValues: {
+      type: item?.type ?? "",
+      code: item?.code ?? "",
+      digikalaCode: item?.digikalaCode ?? "",
+      digikalaUrl: item?.digikalaUrl ?? "",
+      name: item?.name ?? "",
+      description: item?.description ?? "",
+      category: item?.category ?? "",
+      unit: item?.unit ?? "",
+      pricingCurrency: item?.pricingCurrency ?? "IRR",
+      inPersonInputPrice: String(item?.inPersonInputPrice ?? ""),
+      digikalaInputPrice: String(item?.digikalaInputPrice ?? ""),
+      inPersonProfitPercent: String(item?.inPersonProfitPercent ?? ""),
+      digikalaProfitPercent: String(item?.digikalaProfitPercent ?? ""),
+      isActive: item?.isActive ?? true,
+      sortOrder: item?.sortOrder ?? 0,
     },
-    onSuccess: async () => {
-      toast.success(item ? "محصول ویرایش شد." : "محصول ایجاد شد.")
-      await client.invalidateQueries({ queryKey: ["admin-products"] })
-      onClose()
-    },
-    onError: (e) =>
-      toast.error(getApiErrorMessage(e, "ذخیره محصول انجام نشد.")),
   })
+  const form = useWatch({ control }) as ProductFormValues
+  const setForm = (values: ProductFormValues) =>
+    Object.entries(values).forEach(([key, value]) =>
+      setValue(key as keyof ProductFormValues, value, { shouldDirty: true })
+    )
+  const mutation=useSaveProduct()
+ async function submitProduct(){
+ if(!form.type)return
+ clearErrors()
+ try {await mutation.mutateAsync({payload:{
+          ...form,
+          type: form.type,
+          inPersonInputPrice: form.inPersonInputPrice || "0",
+          digikalaInputPrice: form.digikalaInputPrice || "0",
+          inPersonProfitPercent:
+            form.pricingCurrency === "USD"
+              ? form.inPersonProfitPercent || "0"
+              : undefined,
+          digikalaProfitPercent:
+            form.pricingCurrency === "USD"
+              ? form.digikalaProfitPercent || "0"
+              : undefined,
+        },id:item?.id});toast.success(item?"محصول ویرایش شد.":"محصول ایجاد شد.");onClose()}
+ catch(error){applyServerFieldErrors(error,setError,Object.keys(productFormSchema.shape) as (keyof ProductFormValues)[]);toast.error(getApiErrorMessage(error,"ذخیره محصول انجام نشد."))}
+ }
   const field = (label: string, key: keyof ProductPayload, type = "text") => (
     <label className="grid gap-2 text-sm font-bold">
       {label}
       <Input
+        {...register(key)}
+        aria-invalid={Boolean(errors[key])}
         type={type}
         className={inputClass}
         value={String(form[key] ?? "")}
-        onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+        onChange={(e) =>
+          setValue(
+            key,
+            key === "sortOrder" ? Number(e.target.value) : e.target.value,
+            { shouldDirty: true }
+          )
+        }
       />
+      {errors[key]?.message ? (
+        <span role="alert" className="text-xs text-destructive">
+          {errors[key].message}
+        </span>
+      ) : null}
     </label>
   )
   return (
@@ -400,20 +465,30 @@ function ProductForm({
     >
       <form
         className="grid gap-4"
-        onSubmit={(e) => {
-          e.preventDefault()
-          mutation.mutate()
-        }}
+        noValidate
+        onSubmit={handleSubmit(submitProduct)}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           {field("نام محصول", "name")}
           {field("کد محصول", "code")}
           <label className="grid gap-2 text-sm font-bold">
             {uiText.products.type} *
-            <select required className={selectClass} value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value as ProductType })}>
-              <option value="" disabled>{uiText.products.chooseType}</option>
-              {Object.entries(uiText.products.types).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            <select
+              required
+              className={selectClass}
+              value={form.type}
+              onChange={(e) =>
+                setForm({ ...form, type: e.target.value as ProductType })
+              }
+            >
+              <option value="" disabled>
+                {uiText.products.chooseType}
+              </option>
+              {Object.entries(uiText.products.types).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
           {field("کد دیجی‌کالا", "digikalaCode")}
@@ -448,9 +523,11 @@ function ProductForm({
           </label>
           {field("ترتیب نمایش", "sortOrder", "number")}
           {field("قیمت ورودی حضوری", "inPersonInputPrice", "number")}
-          {form.pricingCurrency === "USD" && field("درصد سود حضوری", "inPersonProfitPercent", "number")}
+          {form.pricingCurrency === "USD" &&
+            field("درصد سود حضوری", "inPersonProfitPercent", "number")}
           {field("قیمت ورودی دیجی‌کالا", "digikalaInputPrice", "number")}
-          {form.pricingCurrency === "USD" && field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
+          {form.pricingCurrency === "USD" &&
+            field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input
@@ -460,19 +537,17 @@ function ProductForm({
           />
           محصول فعال باشد
         </label>
-        <div className="flex justify-end gap-2 border-t pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            انصراف
-          </Button>
-          <Button
-            type="submit"
-            disabled={
-              mutation.isPending || !form.name.trim() || !form.code.trim() || !form.type
-            }
-          >
-            ذخیره
-          </Button>
-        </div>
+        {errors.type?.message ? (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.type.message}
+          </p>
+        ) : null}
+        {errors.root?.server?.message ? (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.root.server.message}
+          </p>
+        ) : null}
+        <FormActions onCancel={onClose} pending={mutation.isPending} />
       </form>
     </ResponsiveModal>
   )
@@ -483,32 +558,33 @@ export function AdminLibrariesPage() {
   const available = sections.filter(
     (s) => permissions.includes(s.view) || permissions.includes(s.manage)
   )
-  const [activeId, setActiveId] = useState<string>(
-    available[0]?.id ?? "industries"
-  )
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
+  const activeId = params.get("section") || available[0]?.id || "industries"
   const section = available.find((s) => s.id === activeId) ?? available[0]
-  const [search, setSearch] = useState("")
+  const search = params.get("search") || ""
+  const status = enumParam(
+    params.get("status"),
+    ["ALL", "ACTIVE", "INACTIVE"],
+    "ALL"
+  )
+  const productType = enumParam(
+    params.get("type"),
+    ["ALL", "HARDWARE", "SOFTWARE"],
+    "ALL"
+  )
+  const setSearch = (search: string) => patch({ search }, { replace: true })
+  const setStatus = (status: string) => patch({ status })
+  const setProductType = (type: ProductType | "ALL") => patch({ type })
   const [editing, setEditing] = useState<LibraryItem | null | undefined>()
   const [productEditing, setProductEditing] = useState<
     Product | null | undefined
   >()
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [status, setStatus] = useState("ALL")
-  const [productType, setProductType] = useState<ProductType | "ALL">("ALL")
   const client = useQueryClient()
   const canManage = Boolean(section && permissions.includes(section.manage))
   const kind = section?.kind !== "products" ? section?.kind : undefined
   const group = section?.group
-  const items = useQuery({
-    queryKey: ["admin-library", kind, group],
-    queryFn: () =>
-      getLibraryItems(
-        kind as LibraryKind,
-        group
-      ),
-    enabled: Boolean(kind),
-  })
+  const items = useLibraryItems(kind, group)
   const productParams = {
     type: productType === "ALL" ? undefined : productType,
     page,
@@ -516,51 +592,31 @@ export function AdminLibrariesPage() {
     search: search.trim() || undefined,
     active: status === "ALL" ? undefined : String(status === "ACTIVE"),
   }
-  const products = useQuery({
-    queryKey: ["admin-products", productParams],
-    queryFn: () => getProducts(productParams),
-    enabled: section?.kind === "products",
-  })
-  const filtered = useMemo(
-    () =>
-      (items.data ?? []).filter(
-        (i) =>
-          `${i.label} ${i.code ?? ""} ${i.category ?? ""} ${i.description ?? ""}`
-            .toLocaleLowerCase("fa")
-            .includes(search.trim().toLocaleLowerCase("fa")) &&
-          (status === "ALL" || i.isActive === (status === "ACTIVE"))
-      ),
-    [items.data, search, status]
+  const debouncedSearch = useDebouncedValue(search, 300)
+  const products = useProducts(
+    { ...productParams, search: debouncedSearch.trim() || undefined },
+    section?.kind === "products" && search === debouncedSearch
+  )
+  const filtered = (items.data ?? []).filter(
+    (i) =>
+      `${i.label} ${i.code ?? ""} ${i.category ?? ""} ${i.description ?? ""}`
+        .toLocaleLowerCase("fa")
+        .includes(search.trim().toLocaleLowerCase("fa")) &&
+      (status === "ALL" || i.isActive === (status === "ACTIVE"))
   )
   const remove = useMutation({
     mutationFn: (item: LibraryItem) =>
-      removeLibraryItem(
-        kind as LibraryKind,
-        item.id,
-        group
-      ),
+      removeLibraryItem(kind as LibraryKind, item.id, group),
     onSuccess: async () => {
       toast.success("آیتم غیرفعال یا حذف شد.")
       await client.invalidateQueries({ queryKey: ["admin-library"] })
-      if (group === "activity-types") await client.invalidateQueries({ queryKey: ["activities"] })
+      if (group === "activity-types")
+        await client.invalidateQueries({ queryKey: ["activities"] })
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "حذف آیتم انجام نشد.")),
   })
-  const productToggle = useMutation({
-    mutationFn: toggleProduct,
-    onSuccess: async (_, item) => {
-      toast.success(item.isActive ? "محصول غیرفعال شد." : "محصول فعال شد.")
-      await client.invalidateQueries({ queryKey: ["admin-products"] })
-    },
-    onError: (e) =>
-      toast.error(getApiErrorMessage(e, "تغییر وضعیت انجام نشد.")),
-  })
-  if (!section)
-    return (
-      <div className="rounded-2xl border p-8 text-center">
-        برای مشاهده کتابخانه‌ها دسترسی لازم را ندارید.
-      </div>
-    )
+  const productToggle=useToggleProduct()
+
   const cols: DataTableColumn<LibraryItem>[] = [
     {
       id: "title",
@@ -607,7 +663,7 @@ export function AdminLibrariesPage() {
               : "bg-slate-100 text-slate-600"
           }
         >
-          {r.isActive ? "فعال" : "غیرفعال"}
+          {r.isActive ? uiText.common.active : uiText.common.inactive}
         </Badge>
       ),
     },
@@ -648,7 +704,9 @@ export function AdminLibrariesPage() {
     {
       id: "type",
       header: uiText.products.type,
-      cell: (r) => <Badge variant="outline">{uiText.products.types[r.type] ?? "—"}</Badge>,
+      cell: (r) => (
+        <Badge variant="outline">{uiText.products.types[r.type] ?? "—"}</Badge>
+      ),
     },
     {
       id: "name",
@@ -697,7 +755,7 @@ export function AdminLibrariesPage() {
               : "bg-slate-100 text-slate-600"
           }
         >
-          {r.isActive ? "فعال" : "غیرفعال"}
+          {r.isActive ? uiText.common.active : uiText.common.inactive}
         </Badge>
       ),
     },
@@ -752,7 +810,7 @@ export function AdminLibrariesPage() {
             disabled={!canManage || productToggle.isPending}
             onClick={(e) => {
               e.stopPropagation()
-              productToggle.mutate(r)
+              productToggle.mutate(r,{onSuccess:()=>toast.success(r.isActive?"محصول غیرفعال شد.":"محصول فعال شد."),onError:error=>toast.error(getApiErrorMessage(error,"تغییر وضعیت محصول انجام نشد."))})
             }}
             aria-label={r.isActive ? "غیرفعال‌کردن محصول" : "فعال‌کردن محصول"}
             title={r.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"}
@@ -843,11 +901,12 @@ export function AdminLibrariesPage() {
               <button
                 key={s.id}
                 onClick={() => {
-                  setActiveId(s.id)
-                  setSearch("")
-                  setStatus("ALL")
-                  setProductType("ALL")
-                  setPage(1)
+                  patch({
+                    section: s.id,
+                    search: undefined,
+                    status: undefined,
+                    type: undefined,
+                  })
                 }}
                 className={`flex items-center gap-3 rounded-2xl p-3 text-start transition ${s.id === section.id ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]" : "hover:bg-[var(--app-background)]"}`}
               >
@@ -872,42 +931,56 @@ export function AdminLibrariesPage() {
                 {section.description}
               </p>
             </div>
-            <div className={`grid gap-3 ${section.kind === "products" ? "md:grid-cols-2" : "md:grid-cols-[minmax(220px,1fr)_180px]"}`}>
-              {section.kind === "products" && (
-                <select aria-label={uiText.products.type} className={selectClass} value={productType}
-                  onChange={(e) => { setProductType(e.target.value as ProductType | "ALL"); setPage(1) }}>
-                  <option value="ALL">{uiText.products.allTypes}</option>
-                  {Object.entries(uiText.products.types).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+            <DataTableToolbar
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder={`جست‌وجو در ${section.label}...`}
+              hasActiveFilters={Boolean(
+                search || status !== "ALL" || productType !== "ALL"
               )}
-              <div className="relative">
-                <Search className="absolute end-3 top-3.5 size-4 text-muted-foreground" />
-                <Input
-                  className="h-11 rounded-xl pe-10"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value)
-                    setPage(1)
-                  }}
-                  placeholder={`جست‌وجو در ${section.label}...`}
-                />
-              </div>
-              <select
-                className={selectClass}
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value)
-                  setPage(1)
-                }}
-              >
-                <option value="ALL">همه وضعیت‌ها</option>
-                <option value="ACTIVE">فعال</option>
-                <option value="INACTIVE">غیرفعال</option>
-              </select>
-            </div>
+              onClearFilters={() =>
+                patch({ search: undefined, status: undefined, type: undefined })
+              }
+              filters={
+                <>
+                  {section.kind === "products" && (
+                    <select
+                      aria-label={uiText.products.type}
+                      className={selectClass}
+                      value={productType}
+                      onChange={(e) => {
+                        setProductType(e.target.value as ProductType | "ALL")
+                      }}
+                    >
+                      <option value="ALL">{uiText.products.allTypes}</option>
+                      {Object.entries(uiText.products.types).map(
+                        ([value, label]) => (
+                          <option key={value} value={value}>
+                            {label}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  )}
+
+                  <select
+                    aria-label={uiText.common.filters.status}
+                    className={selectClass}
+                    value={status}
+                    onChange={(e) => {
+                      setStatus(e.target.value)
+                    }}
+                  >
+                    <option value="ALL">{uiText.common.filters.allStatuses}</option>
+                    <option value="ACTIVE">فعال</option>
+                    <option value="INACTIVE">غیرفعال</option>
+                  </select>
+                </>
+              }
+            />
           </section>
           {section.kind === "products" ? (
-            <>
+            <QueryContent query={products}>
               <DataTableShell
                 rows={products.data?.data ?? []}
                 columns={productCols}
@@ -920,19 +993,21 @@ export function AdminLibrariesPage() {
                 pageCount={products.data?.meta.totalPages ?? 1}
                 onPageChange={setPage}
                 pageSize={pageSize}
-                onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
+                onPageSizeChange={setPageSize}
                 total={products.data?.meta.total}
                 disabled={products.isFetching}
               />
-            </>
+            </QueryContent>
           ) : (
-            <DataTableShell
-              rows={filtered}
-              columns={cols}
-              getRowKey={(r) => r.id}
-              onRowClick={(r) => canManage && setEditing(r)}
-              emptyState={<Empty />}
-            />
+            <QueryContent query={items}>
+              <DataTableShell
+                rows={filtered}
+                columns={cols}
+                getRowKey={(r) => r.id}
+                onRowClick={(r) => canManage && setEditing(r)}
+                emptyState={<Empty />}
+              />
+            </QueryContent>
           )}
         </main>
       </div>
@@ -955,14 +1030,4 @@ export function AdminLibrariesPage() {
     </div>
   )
 }
-function Empty() {
-  return (
-    <div className="rounded-2xl border border-dashed p-12 text-center">
-      <BookOpen className="mx-auto mb-3 size-8 text-muted-foreground" />
-      <p className="text-sm font-bold">آیتمی پیدا نشد</p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        عبارت جست‌وجو یا فیلتر وضعیت را تغییر دهید.
-      </p>
-    </div>
-  )
-}
+function Empty(){return <EmptyState icon={BookOpen} title={uiText.common.table.noResults} description={uiText.common.table.noResultsDescription} />}

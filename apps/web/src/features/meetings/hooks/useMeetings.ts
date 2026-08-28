@@ -1,3 +1,4 @@
+import { useQueryScope } from "@/lib/queryScope"
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -48,7 +49,7 @@ export const meetingKeys = {
 
 export function useMeetings(query: MeetingQuery, enabled = true) {
   return useQuery({
-    queryKey: meetingKeys.list(query),
+    queryKey: [...meetingKeys.list(query), useQueryScope()],
     queryFn: () => getMeetings(query),
     enabled,
     placeholderData: keepPreviousData,
@@ -57,14 +58,19 @@ export function useMeetings(query: MeetingQuery, enabled = true) {
 
 export function useMeeting(id: string, enabled = true) {
   return useQuery({
-    queryKey: meetingKeys.detail(id),
+    queryKey: [...meetingKeys.detail(id), useQueryScope()],
     queryFn: () => getMeeting(id),
     enabled: enabled && Boolean(id),
   })
 }
 
 export function useMeetingTypes(enabled = true) {
-  return useQuery({ queryKey: meetingKeys.types(), queryFn: getMeetingTypes, enabled, staleTime: 5 * 60_000 })
+  return useQuery({
+    queryKey: [...meetingKeys.types(), useQueryScope()],
+    queryFn: getMeetingTypes,
+    enabled,
+    staleTime: 5 * 60_000,
+  })
 }
 
 function useInvalidateMeeting() {
@@ -150,7 +156,7 @@ export function useCancelMeeting() {
 
 export function useMeetingAssignees(search: string, enabled = true) {
   return useInfiniteQuery({
-    queryKey: meetingKeys.assignees(search.trim()),
+    queryKey: [...meetingKeys.assignees(search.trim()), useQueryScope()],
     queryFn: ({ pageParam }) => getMeetingAssignees(search, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last) =>
@@ -166,7 +172,10 @@ export function useMeetingOpportunityOptions(
   enabled = true
 ) {
   return useInfiniteQuery({
-    queryKey: meetingKeys.opportunities(companyId, search.trim()),
+    queryKey: [
+      ...meetingKeys.opportunities(companyId, search.trim()),
+      useQueryScope(),
+    ],
     queryFn: ({ pageParam }) =>
       getMeetingOpportunities(companyId, search, pageParam),
     initialPageParam: 1,
@@ -183,7 +192,10 @@ export function useMeetingPeopleOptions(
   enabled = true
 ) {
   return useInfiniteQuery({
-    queryKey: meetingKeys.people(companyId, search.trim()),
+    queryKey: [
+      ...meetingKeys.people(companyId, search.trim()),
+      useQueryScope(),
+    ],
     queryFn: ({ pageParam }) => getMeetingPeople(companyId, search, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last) =>
@@ -199,7 +211,7 @@ export function useMeetingAttachments(
   enabled = true
 ) {
   return useQuery({
-    queryKey: meetingKeys.attachmentList(id, page),
+    queryKey: [...meetingKeys.attachmentList(id, page), useQueryScope()],
     queryFn: () => getMeetingAttachments(id, page),
     enabled: enabled && Boolean(id),
     placeholderData: keepPreviousData,
@@ -209,16 +221,13 @@ export function useMeetingAttachments(
 export function useUploadMeetingAttachment(id: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({
-      file,
-      description,
-    }: {
-      file: File
-      description?: string
-    }) => uploadMeetingAttachment(id, file, description),
+    mutationFn: ({ file, description }: { file: File; description?: string }) =>
+      uploadMeetingAttachment(id, file, description),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: meetingKeys.attachments(id) }),
+        queryClient.invalidateQueries({
+          queryKey: meetingKeys.attachments(id),
+        }),
         queryClient.invalidateQueries({ queryKey: meetingKeys.detail(id) }),
         queryClient.invalidateQueries({ queryKey: ["notifications"] }),
       ])

@@ -1,3 +1,5 @@
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
@@ -59,10 +61,18 @@ export async function getPeopleDirectory(query: PeopleDirectoryQuery) {
     },
   })
 
-  return {
-    data: response.data.data,
-    meta: response.data.meta,
-  } satisfies PaginatedPeople
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<PersonDirectoryItem>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string" &&
+        "fullName" in value &&
+        typeof value.fullName === "string"
+    )
+  )
 }
 
 export async function getPerson(personId: string) {
@@ -77,7 +87,7 @@ export async function createPerson(payload: PersonMutationPayload) {
 
 export async function updatePerson(
   personId: string,
-  payload: Omit<PersonMutationPayload, "companyId">,
+  payload: Omit<PersonMutationPayload, "companyId">
 ) {
   const response = await api.patch(`/people/${personId}`, payload)
   return unwrapApiResponse<PersonDetail>(response.data)
@@ -102,13 +112,23 @@ export async function getPersonContacts(personId: string) {
   return Array.isArray(data) ? data : []
 }
 
-export async function createPersonContact(personId: string, payload: PersonContactPayload) {
+export async function createPersonContact(
+  personId: string,
+  payload: PersonContactPayload
+) {
   const response = await api.post(`/people/${personId}/contacts`, payload)
   return unwrapApiResponse<PersonContact>(response.data)
 }
 
-export async function updatePersonContact(personId: string, contactId: string, payload: Partial<PersonContactPayload>) {
-  const response = await api.patch(`/people/${personId}/contacts/${contactId}`, payload)
+export async function updatePersonContact(
+  personId: string,
+  contactId: string,
+  payload: Partial<PersonContactPayload>
+) {
+  const response = await api.patch(
+    `/people/${personId}/contacts/${contactId}`,
+    payload
+  )
   return unwrapApiResponse<PersonContact>(response.data)
 }
 
@@ -123,13 +143,23 @@ export async function getPersonSocials(personId: string) {
   return Array.isArray(data) ? data : []
 }
 
-export async function createPersonSocial(personId: string, payload: PersonSocialPayload) {
+export async function createPersonSocial(
+  personId: string,
+  payload: PersonSocialPayload
+) {
   const response = await api.post(`/people/${personId}/socials`, payload)
   return unwrapApiResponse<PersonSocial>(response.data)
 }
 
-export async function updatePersonSocial(personId: string, socialId: string, payload: Partial<PersonSocialPayload>) {
-  const response = await api.patch(`/people/${personId}/socials/${socialId}`, payload)
+export async function updatePersonSocial(
+  personId: string,
+  socialId: string,
+  payload: Partial<PersonSocialPayload>
+) {
+  const response = await api.patch(
+    `/people/${personId}/socials/${socialId}`,
+    payload
+  )
   return unwrapApiResponse<PersonSocial>(response.data)
 }
 
@@ -144,33 +174,72 @@ export async function getEmploymentHistory(personId: string) {
   return Array.isArray(data) ? data : []
 }
 
-export async function createEmploymentHistory(personId: string, payload: EmploymentHistoryPayload) {
-  const response = await api.post(`/people/${personId}/employment-history`, payload)
+export async function createEmploymentHistory(
+  personId: string,
+  payload: EmploymentHistoryPayload
+) {
+  const response = await api.post(
+    `/people/${personId}/employment-history`,
+    payload
+  )
   return unwrapApiResponse<EmploymentHistory>(response.data)
 }
 
-export async function updateEmploymentHistory(personId: string, employmentId: string, payload: Partial<EmploymentHistoryPayload>) {
-  const response = await api.patch(`/people/${personId}/employment-history/${employmentId}`, payload)
+export async function updateEmploymentHistory(
+  personId: string,
+  employmentId: string,
+  payload: Partial<EmploymentHistoryPayload>
+) {
+  const response = await api.patch(
+    `/people/${personId}/employment-history/${employmentId}`,
+    payload
+  )
   return unwrapApiResponse<EmploymentHistory>(response.data)
 }
 
-export async function deleteEmploymentHistory(personId: string, employmentId: string) {
-  const response = await api.delete(`/people/${personId}/employment-history/${employmentId}`)
+export async function deleteEmploymentHistory(
+  personId: string,
+  employmentId: string
+) {
+  const response = await api.delete(
+    `/people/${personId}/employment-history/${employmentId}`
+  )
   return unwrapApiResponse<EmploymentHistory>(response.data)
 }
 
-export async function createEmploymentPosition(personId: string, employmentId: string, payload: EmploymentPositionPayload) {
-  const response = await api.post(`/people/${personId}/employment-history/${employmentId}/positions`, payload)
+export async function createEmploymentPosition(
+  personId: string,
+  employmentId: string,
+  payload: EmploymentPositionPayload
+) {
+  const response = await api.post(
+    `/people/${personId}/employment-history/${employmentId}/positions`,
+    payload
+  )
   return unwrapApiResponse<EmploymentPosition>(response.data)
 }
 
-export async function updateEmploymentPosition(personId: string, employmentId: string, positionId: string, payload: Partial<EmploymentPositionPayload>) {
-  const response = await api.patch(`/people/${personId}/employment-history/${employmentId}/positions/${positionId}`, payload)
+export async function updateEmploymentPosition(
+  personId: string,
+  employmentId: string,
+  positionId: string,
+  payload: Partial<EmploymentPositionPayload>
+) {
+  const response = await api.patch(
+    `/people/${personId}/employment-history/${employmentId}/positions/${positionId}`,
+    payload
+  )
   return unwrapApiResponse<EmploymentPosition>(response.data)
 }
 
-export async function deleteEmploymentPosition(personId: string, employmentId: string, positionId: string) {
-  const response = await api.delete(`/people/${personId}/employment-history/${employmentId}/positions/${positionId}`)
+export async function deleteEmploymentPosition(
+  personId: string,
+  employmentId: string,
+  positionId: string
+) {
+  const response = await api.delete(
+    `/people/${personId}/employment-history/${employmentId}/positions/${positionId}`
+  )
   return unwrapApiResponse<{ id: string; deleted: boolean }>(response.data)
 }
 
@@ -180,18 +249,36 @@ export async function getEducationHistory(personId: string) {
   return Array.isArray(data) ? data : []
 }
 
-export async function createEducationHistory(personId: string, payload: EducationHistoryPayload) {
-  const response = await api.post(`/people/${personId}/education-history`, payload)
+export async function createEducationHistory(
+  personId: string,
+  payload: EducationHistoryPayload
+) {
+  const response = await api.post(
+    `/people/${personId}/education-history`,
+    payload
+  )
   return unwrapApiResponse<EducationHistory>(response.data)
 }
 
-export async function updateEducationHistory(personId: string, educationId: string, payload: Partial<EducationHistoryPayload>) {
-  const response = await api.patch(`/people/${personId}/education-history/${educationId}`, payload)
+export async function updateEducationHistory(
+  personId: string,
+  educationId: string,
+  payload: Partial<EducationHistoryPayload>
+) {
+  const response = await api.patch(
+    `/people/${personId}/education-history/${educationId}`,
+    payload
+  )
   return unwrapApiResponse<EducationHistory>(response.data)
 }
 
-export async function deleteEducationHistory(personId: string, educationId: string) {
-  const response = await api.delete(`/people/${personId}/education-history/${educationId}`)
+export async function deleteEducationHistory(
+  personId: string,
+  educationId: string
+) {
+  const response = await api.delete(
+    `/people/${personId}/education-history/${educationId}`
+  )
   return unwrapApiResponse<{ id: string; deleted: boolean }>(response.data)
 }
 
@@ -210,7 +297,7 @@ export async function getCompanyOptions(search?: string) {
         limit: 10,
         search: search?.trim() || undefined,
       },
-    },
+    }
   )
 
   return {

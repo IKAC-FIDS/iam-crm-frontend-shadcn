@@ -1,8 +1,13 @@
-import { useMemo, useState } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { applyServerFieldErrors } from "@/lib/formErrors"
+import { FormActions } from "@/components/shared/FormActions"
+import { FormSection } from "@/components/shared/FormSection"
+import { useMemo, useEffect } from "react"
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
@@ -72,23 +77,42 @@ export function PersonFormDialog({
   onSubmit: (payload: PersonMutationPayload) => Promise<void>
 }) {
   const text = uiText.people
-  const [form, setForm] = useState<FormState>(() => ({
-    ...stateFromPerson(person),
-    companyId: person?.companyId || initialCompanyId || "",
-  }))
-
-  const resetInputs0 = [initialCompanyId, open, person] as const
-  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
-  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2]) {
-    setPreviousResetInputs0(resetInputs0)
-    if (open) {
-      setForm({
-        ...stateFromPerson(person),
-        companyId: person?.companyId || initialCompanyId || "",
-      })
-    }
-  }
-
+  const defaultValues = useMemo(
+    () => ({
+      ...stateFromPerson(person),
+      companyId: person?.companyId || initialCompanyId || "",
+    }),
+    [person, initialCompanyId]
+  )
+  const schema = z
+    .object({
+      companyId: z.string(),
+      fullName: z.string().trim().min(1, uiText.common.forms.required),
+      jobTitle: z.string(),
+      department: z.string(),
+      personaRole: z.string(),
+      seniorityLevel: z.string(),
+      isPrimaryContact: z.boolean(),
+      isSecondaryContact: z.boolean(),
+    })
+    .refine((value) => mode === "edit" || Boolean(value.companyId), {
+      path: ["companyId"],
+      message: uiText.common.forms.required,
+    })
+  const {
+    control,
+    register,
+    setValue,
+    reset,
+    setError,
+    clearErrors,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormState>({ defaultValues, resolver: zodResolver(schema) })
+  const form = useWatch({ control }) as FormState
+  useEffect(() => {
+    if (open) reset(defaultValues)
+  }, [open, defaultValues, reset])
   const valid = useMemo(
     () =>
       Boolean(form.fullName.trim()) &&
@@ -97,23 +121,36 @@ export function PersonFormDialog({
   )
 
   function patch(values: Partial<FormState>) {
-    setForm((current) => ({ ...current, ...values }))
+    Object.entries(values).forEach(([key, value]) =>
+      setValue(key as keyof FormState, value, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    )
   }
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault()
+  async function submit() {
+    clearErrors()
     if (!valid) return
 
-    await onSubmit({
-      ...(mode === "create" ? { companyId: form.companyId } : {}),
-      fullName: form.fullName.trim(),
-      jobTitle: form.jobTitle || undefined,
-      department: form.department || undefined,
-      personaRole: form.personaRole || undefined,
-      seniorityLevel: form.seniorityLevel || undefined,
-      isPrimaryContact: form.isPrimaryContact,
-      isSecondaryContact: form.isSecondaryContact,
-    })
+    try {
+      await onSubmit({
+        ...(mode === "create" ? { companyId: form.companyId } : {}),
+        fullName: form.fullName.trim(),
+        jobTitle: form.jobTitle || undefined,
+        department: form.department || undefined,
+        personaRole: form.personaRole || undefined,
+        seniorityLevel: form.seniorityLevel || undefined,
+        isPrimaryContact: form.isPrimaryContact,
+        isSecondaryContact: form.isSecondaryContact,
+      })
+    } catch (error) {
+      applyServerFieldErrors(
+        error,
+        setError,
+        Object.keys(emptyForm) as (keyof FormState)[]
+      )
+    }
   }
 
   return (
@@ -132,14 +169,23 @@ export function PersonFormDialog({
           onClose={() => onOpenChange(false)}
         />
 
-        <form onSubmit={submit} className="min-h-0 overflow-y-auto p-5 sm:p-7">
+        <form
+          noValidate
+          onSubmit={handleSubmit(submit)}
+          className="min-h-0 overflow-y-auto p-5 sm:p-7"
+        >
           <div className="grid gap-5 lg:grid-cols-2">
             <FormSection
               title={text.form.identityTitle}
               description={text.form.identityDescription}
             >
-              <Field label={text.fields.fullName}>
+              <Field
+                label={text.fields.fullName}
+                error={errors.fullName?.message}
+              >
                 <Input
+                  {...register("fullName")}
+                  aria-invalid={Boolean(errors.fullName)}
                   autoFocus
                   value={form.fullName}
                   onChange={(event) => patch({ fullName: event.target.value })}
@@ -148,7 +194,10 @@ export function PersonFormDialog({
               </Field>
 
               {mode === "create" ? (
-                <Field label={text.fields.company}>
+                <Field
+                  label={text.fields.company}
+                  error={errors.companyId?.message}
+                >
                   <SearchableCompanySelect
                     value={form.companyId || undefined}
                     onChange={(companyId) => {
@@ -163,7 +212,10 @@ export function PersonFormDialog({
                 </Field>
               ) : null}
 
-              <Field label={text.fields.jobTitle}>
+              <Field
+                label={text.fields.jobTitle}
+                error={errors.jobTitle?.message}
+              >
                 <LookupSelect
                   value={form.jobTitle}
                   options={lookups.jobTitles}
@@ -172,7 +224,10 @@ export function PersonFormDialog({
                 />
               </Field>
 
-              <Field label={text.fields.department}>
+              <Field
+                label={text.fields.department}
+                error={errors.department?.message}
+              >
                 <LookupSelect
                   value={form.department}
                   options={lookups.departments}
@@ -214,7 +269,10 @@ export function PersonFormDialog({
               title={text.form.salesProfileTitle}
               description={text.form.salesProfileDescription}
             >
-              <Field label={text.fields.personaRole}>
+              <Field
+                label={text.fields.personaRole}
+                error={errors.personaRole?.message}
+              >
                 <LookupSelect
                   value={form.personaRole}
                   options={lookups.personaRoles}
@@ -223,7 +281,10 @@ export function PersonFormDialog({
                 />
               </Field>
 
-              <Field label={text.fields.seniorityLevel}>
+              <Field
+                label={text.fields.seniorityLevel}
+                error={errors.seniorityLevel?.message}
+              >
                 <LookupSelect
                   value={form.seniorityLevel}
                   options={lookups.seniorityLevels}
@@ -234,28 +295,16 @@ export function PersonFormDialog({
             </FormSection>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2 border-t border-[var(--app-divider)] pt-5">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              disabled={isPending}
-              onClick={() => onOpenChange(false)}
-            >
-              {uiText.common.cancel}
-            </Button>
-            <Button
-              type="submit"
-              disabled={!valid || isPending}
-              className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-            >
-              {isPending
-                ? uiText.common.processing
-                : mode === "create"
-                  ? text.actions.create
-                  : text.actions.save}
-            </Button>
-          </div>
+          {errors.root?.server?.message ? (
+            <p role="alert" className="text-sm text-destructive">
+              {errors.root.server.message}
+            </p>
+          ) : null}
+          <FormActions
+            onCancel={() => onOpenChange(false)}
+            pending={Boolean(isPending)}
+            disabled={!valid}
+          />
         </form>
       </DialogContent>
     </Dialog>
@@ -290,31 +339,13 @@ function LookupSelect({
   )
 }
 
-function FormSection({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
-      <h3 className="text-sm font-bold text-[var(--app-heading)]">{title}</h3>
-      <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">
-        {description}
-      </p>
-      <div className="mt-4 grid gap-4">{children}</div>
-    </section>
-  )
-}
-
 function Field({
   label,
   children,
+  error,
 }: {
   label: string
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -323,6 +354,11 @@ function Field({
         {label}
       </span>
       {children}
+      {error ? (
+        <span role="alert" className="text-xs text-destructive">
+          {error}
+        </span>
+      ) : null}
     </label>
   )
 }

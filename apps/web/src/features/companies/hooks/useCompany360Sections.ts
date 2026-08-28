@@ -1,6 +1,6 @@
+import { useQueryScope } from "@/lib/queryScope"
+import { getCompanySection } from "../api/companySections.api"
 import { useQuery } from "@tanstack/react-query"
-
-import { api } from "@/lib/api"
 
 export type PaginationMeta = {
   page: number
@@ -12,12 +12,6 @@ export type PaginationMeta = {
 }
 
 export type PaginatedSection<T> = {
-  data: T[]
-  meta: PaginationMeta
-}
-
-type PaginatedEnvelope<T> = {
-  success?: boolean
   data: T[]
   meta: PaginationMeta
 }
@@ -84,7 +78,11 @@ export type CompanyTask = {
   priority?: string | null
   dueAt?: string | null
   reminderAt?: string | null
-  person?: { id?: string; fullName?: string | null; title?: string | null } | null
+  person?: {
+    id?: string
+    fullName?: string | null
+    title?: string | null
+  } | null
   opportunity?: { id?: string; title?: string | null } | null
   assignedTo?: {
     id?: string
@@ -137,7 +135,11 @@ export type CompanyActivityItem = {
   completedAt?: string | null
   createdAt?: string | null
   person?: { id?: string; fullName?: string | null } | null
-  createdBy?: { id?: string; fullName?: string | null; email?: string | null } | null
+  createdBy?: {
+    id?: string
+    fullName?: string | null
+    email?: string | null
+  } | null
 }
 
 export type CompanyBranch = {
@@ -171,19 +173,11 @@ function usePaginatedQuery<T>(
   page: number,
   limit: number,
   enabled: boolean,
-  params?: Record<string, unknown>,
+  params?: Record<string, unknown>
 ) {
   return useQuery({
-    queryKey: [key, companyId, page, limit, params],
-    queryFn: async () => {
-      const response = await api.get<PaginatedEnvelope<T>>(url, {
-        params: { page, limit, ...params },
-      })
-      return {
-        data: response.data.data,
-        meta: response.data.meta,
-      } satisfies PaginatedSection<T>
-    },
+    queryKey: [key, companyId, page, limit, params, useQueryScope()],
+    queryFn: () => getCompanySection<T>(url, page, limit, params),
     enabled: Boolean(companyId) && enabled,
   })
 }
@@ -192,7 +186,7 @@ export function useCompanyPeople(
   companyId: string,
   page = 1,
   limit = 12,
-  enabled = true,
+  enabled = true
 ) {
   return usePaginatedQuery<CompanyPersonListItem>(
     "company-people",
@@ -201,7 +195,7 @@ export function useCompanyPeople(
     page,
     limit,
     enabled,
-    { companyId },
+    { companyId }
   )
 }
 
@@ -209,7 +203,7 @@ export function useCompanyOpportunities(
   companyId: string,
   page = 1,
   limit = 12,
-  enabled = true,
+  enabled = true
 ) {
   return usePaginatedQuery<CompanyOpportunityItem>(
     "company-opportunities",
@@ -218,11 +212,16 @@ export function useCompanyOpportunities(
     page,
     limit,
     enabled,
-    { companyId },
+    { companyId }
   )
 }
 
-export function useCompanyTasks(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanyTasks(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanyTask>(
     "company-tasks",
     "/tasks",
@@ -230,11 +229,16 @@ export function useCompanyTasks(companyId: string, page = 1, limit = 12, enabled
     page,
     limit,
     enabled,
-    { companyId },
+    { companyId }
   )
 }
 
-export function useCompanyMeetings(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanyMeetings(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanyMeeting>(
     "company-meetings",
     "/meetings",
@@ -242,11 +246,16 @@ export function useCompanyMeetings(companyId: string, page = 1, limit = 12, enab
     page,
     limit,
     enabled,
-    { companyId },
+    { companyId }
   )
 }
 
-export function useCompanyActivities(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanyActivities(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanyActivityItem>(
     "company-activities",
     "/activities",
@@ -254,39 +263,54 @@ export function useCompanyActivities(companyId: string, page = 1, limit = 12, en
     page,
     limit,
     enabled,
-    { companyId },
+    { companyId }
   )
 }
 
-export function useCompanyBranches(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanyBranches(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanyBranch>(
     "company-branches",
     `/companies/${companyId}/branches`,
     companyId,
     page,
     limit,
-    enabled,
+    enabled
   )
 }
 
-export function useCompanySocialChannels(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanySocialChannels(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanySocialChannel>(
     "company-social-channels",
     `/companies/${companyId}/social-channels`,
     companyId,
     page,
     limit,
-    enabled,
+    enabled
   )
 }
 
-export function useCompanyLegalDocuments(companyId: string, page = 1, limit = 12, enabled = true) {
+export function useCompanyLegalDocuments(
+  companyId: string,
+  page = 1,
+  limit = 12,
+  enabled = true
+) {
   return usePaginatedQuery<CompanyLegalDocument>(
     "company-legal-documents",
     `/companies/${companyId}/legal-documents`,
     companyId,
     page,
     limit,
-    enabled,
+    enabled
   )
 }

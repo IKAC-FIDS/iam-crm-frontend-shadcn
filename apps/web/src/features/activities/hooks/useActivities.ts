@@ -1,4 +1,5 @@
-﻿import {
+import { useQueryScope } from "@/lib/queryScope"
+import {
   keepPreviousData,
   useMutation,
   useQuery,
@@ -26,30 +27,48 @@ export const activityQueryKeys = {
 }
 
 export function useActivityTypes(enabled = true) {
-  return useQuery({ queryKey: ["activities", "type-options"], queryFn: getActivityTypes, enabled })
+  return useQuery({
+    queryKey: [...["activities", "type-options"], useQueryScope()],
+    queryFn: getActivityTypes,
+    enabled,
+  })
 }
 
 export function useActivities(query: ActivityListQuery, enabled = true) {
   return useQuery({
-    queryKey: activityQueryKeys.list(query),
+    queryKey: [...activityQueryKeys.list(query), useQueryScope()],
     queryFn: () => getActivities(query),
     enabled,
     placeholderData: keepPreviousData,
   })
 }
 
-export function useActivityPeopleOptions(companyId: string, search: string, enabled = true) {
+export function useActivityPeopleOptions(
+  companyId: string,
+  search: string,
+  enabled = true
+) {
   return useQuery({
-    queryKey: ["activities", "people-options", companyId, search],
+    queryKey: [
+      ...["activities", "people-options", companyId, search],
+      useQueryScope(),
+    ],
     queryFn: () => getActivityPeopleOptions(companyId, search),
     enabled,
     staleTime: 30_000,
   })
 }
 
-export function useActivityOpportunityOptions(companyId: string, search: string, enabled = true) {
+export function useActivityOpportunityOptions(
+  companyId: string,
+  search: string,
+  enabled = true
+) {
   return useQuery({
-    queryKey: ["activities", "opportunity-options", companyId, search],
+    queryKey: [
+      ...["activities", "opportunity-options", companyId, search],
+      useQueryScope(),
+    ],
     queryFn: () => getActivityOpportunityOptions(companyId, search),
     enabled: enabled && Boolean(companyId),
     staleTime: 30_000,
@@ -58,7 +77,7 @@ export function useActivityOpportunityOptions(companyId: string, search: string,
 
 export function useActivityOwnerOptions(enabled = true) {
   return useQuery({
-    queryKey: ["activities", "owner-options"],
+    queryKey: [...["activities", "owner-options"], useQueryScope()],
     queryFn: getActivityOwnerOptions,
     enabled,
     staleTime: 60_000,
@@ -88,8 +107,13 @@ export function useCreateActivity() {
 export function useUpdateActivity() {
   const invalidate = useInvalidateActivities()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateActivityPayload }) =>
-      updateActivity(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: UpdateActivityPayload
+    }) => updateActivity(id, payload),
     onSuccess: invalidate,
   })
 }

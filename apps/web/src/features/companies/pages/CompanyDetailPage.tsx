@@ -1,3 +1,4 @@
+import { QueryContent } from "@/components/shared/QueryContent"
 import {
   Archive,
   ArrowRight,
@@ -75,7 +76,6 @@ import {
   formatCompanyNumber,
 } from "../utils/companyFormatters"
 
-
 type QuickViewState =
   | { kind: "task"; item: CompanyTask }
   | { kind: "meeting"; item: CompanyMeeting }
@@ -113,10 +113,16 @@ export function CompanyDetailPage() {
 
   type SectionKey = keyof typeof sectionPaging
   function setSectionPage(section: SectionKey, page: number) {
-    setSectionPaging((current) => ({ ...current, [section]: { ...current[section], page } }))
+    setSectionPaging((current) => ({
+      ...current,
+      [section]: { ...current[section], page },
+    }))
   }
   function setSectionPageSize(section: SectionKey, pageSize: number) {
-    setSectionPaging((current) => ({ ...current, [section]: { page: 1, pageSize } }))
+    setSectionPaging((current) => ({
+      ...current,
+      [section]: { page: 1, pageSize },
+    }))
   }
 
   const canViewPeople = permissions.includes("person:view")
@@ -481,47 +487,52 @@ export function CompanyDetailPage() {
               title={text.sections.opportunities}
               description={text.sections.opportunitiesDescription}
               count={opportunitiesQuery.data?.meta.total ?? 0}
-              page={opportunitiesQuery.data?.meta.page ?? sectionPaging.opportunities.page}
+              page={
+                opportunitiesQuery.data?.meta.page ??
+                sectionPaging.opportunities.page
+              }
               pageCount={opportunitiesQuery.data?.meta.totalPages ?? 1}
               pageSize={sectionPaging.opportunities.pageSize}
               total={opportunitiesQuery.data?.meta.total ?? 0}
               isFetching={opportunitiesQuery.isFetching}
               onPageChange={(page) => setSectionPage("opportunities", page)}
-              onPageSizeChange={(pageSize) => setSectionPageSize("opportunities", pageSize)}
+              onPageSizeChange={(pageSize) =>
+                setSectionPageSize("opportunities", pageSize)
+              }
               icon={<CircleDollarSign className="size-5" />}
               onViewAll={() => goToModule("/opportunities")}
             >
-              {opportunitiesQuery.isLoading ? (
-                <SectionLoading />
-              ) : opportunityRows.length ? (
-                <div className="grid gap-2.5">
-                  {opportunityRows.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="w-full cursor-pointer rounded-2xl text-start focus-visible:ring-2 focus-visible:ring-[var(--app-primary)] focus-visible:ring-offset-2 focus-visible:outline-none"
-                      onClick={() =>
-                        navigate(
-                          `/opportunities/${encodeURIComponent(item.id)}`
-                        )
-                      }
-                    >
-                      <EntityRow
-                        icon={<Building2 className="size-4" />}
-                        title={item.title}
-                        subtitle={item.owner?.fullName ?? undefined}
-                        meta={formatCompanyNumber(
-                          item.estimatedValue ?? item.amount ?? null
-                        )}
-                        badge={item.stage?.label || item.stage?.code}
-                        badgeColor={item.stage?.color}
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <SectionEmpty />
-              )}
+              <QueryContent query={opportunitiesQuery}>
+                {opportunityRows.length ? (
+                  <div className="grid gap-2.5">
+                    {opportunityRows.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="w-full cursor-pointer rounded-2xl text-start focus-visible:ring-2 focus-visible:ring-[var(--app-primary)] focus-visible:ring-offset-2 focus-visible:outline-none"
+                        onClick={() =>
+                          navigate(
+                            `/opportunities/${encodeURIComponent(item.id)}`
+                          )
+                        }
+                      >
+                        <EntityRow
+                          icon={<Building2 className="size-4" />}
+                          title={item.title}
+                          subtitle={item.owner?.fullName ?? undefined}
+                          meta={formatCompanyNumber(
+                            item.estimatedValue ?? item.amount ?? null
+                          )}
+                          badge={item.stage?.label || item.stage?.code}
+                          badgeColor={item.stage?.color}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SectionEmpty />
+                )}
+              </QueryContent>
             </Company360ActionSection>
           ) : null}
 
@@ -529,42 +540,94 @@ export function CompanyDetailPage() {
             <Company360ActionSection
               title={uiText.navigation.activities}
               count={activitiesQuery.data?.meta.total ?? 0}
-              page={activitiesQuery.data?.meta.page ?? sectionPaging.activities.page}
+              page={
+                activitiesQuery.data?.meta.page ?? sectionPaging.activities.page
+              }
               pageCount={activitiesQuery.data?.meta.totalPages ?? 1}
               pageSize={sectionPaging.activities.pageSize}
               total={activitiesQuery.data?.meta.total ?? 0}
               isFetching={activitiesQuery.isFetching}
               onPageChange={(page) => setSectionPage("activities", page)}
-              onPageSizeChange={(pageSize) => setSectionPageSize("activities", pageSize)}
+              onPageSizeChange={(pageSize) =>
+                setSectionPageSize("activities", pageSize)
+              }
               icon={<CalendarClock className="size-5" />}
               contentClassName="max-h-[476px]"
               onViewAll={() => goToModule("/activities")}
             >
-              {activitiesQuery.isLoading ? (
-                <SectionLoading count={6} />
-              ) : activitiesQuery.data?.data.length ? (
+              <QueryContent query={activitiesQuery}>
+                {activitiesQuery.data?.data.length ? (
+                  <div className="grid gap-2.5">
+                    {activitiesQuery.data.data.map((activity) => (
+                      <button
+                        key={activity.id}
+                        type="button"
+                        className="w-full text-start"
+                        onClick={() =>
+                          setQuickView({ kind: "activity", item: activity })
+                        }
+                      >
+                        <EntityRow
+                          icon={<CalendarClock className="size-4" />}
+                          title={getActivityTypeLabel(activity.type)}
+                          subtitle={
+                            activity.createdBy?.fullName ||
+                            activity.person?.fullName ||
+                            undefined
+                          }
+                          meta={formatCompanyDateTime(
+                            activity.activityDate ||
+                              activity.occurredAt ||
+                              activity.createdAt
+                          )}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SectionEmpty />
+                )}
+              </QueryContent>
+            </Company360ActionSection>
+          ) : null}
+
+          <Company360ActionSection
+            title={text.ecosystem.legalDocuments}
+            count={documentsQuery.data?.meta.total ?? 0}
+            page={
+              documentsQuery.data?.meta.page ?? sectionPaging.documents.page
+            }
+            pageCount={documentsQuery.data?.meta.totalPages ?? 1}
+            pageSize={sectionPaging.documents.pageSize}
+            total={documentsQuery.data?.meta.total ?? 0}
+            isFetching={documentsQuery.isFetching}
+            onPageChange={(page) => setSectionPage("documents", page)}
+            onPageSizeChange={(pageSize) =>
+              setSectionPageSize("documents", pageSize)
+            }
+            icon={<FileText className="size-5" />}
+            onViewAll={() => goToModule(`/companies/${companyId}`)}
+          >
+            <QueryContent query={documentsQuery}>
+              {documentsQuery.data?.data.length ? (
                 <div className="grid gap-2.5">
-                  {activitiesQuery.data.data.map((activity) => (
+                  {documentsQuery.data.data.map((document) => (
                     <button
-                      key={activity.id}
+                      key={document.id}
                       type="button"
                       className="w-full text-start"
                       onClick={() =>
-                        setQuickView({ kind: "activity", item: activity })
+                        setQuickView({ kind: "document", item: document })
                       }
                     >
                       <EntityRow
-                        icon={<CalendarClock className="size-4" />}
-                        title={getActivityTypeLabel(activity.type)}
-                        subtitle={
-                          activity.createdBy?.fullName ||
-                          activity.person?.fullName ||
-                          undefined
+                        icon={<FileText className="size-4" />}
+                        title={
+                          document.title || document.type || text.notSpecified
                         }
-                        meta={formatCompanyDateTime(
-                          activity.activityDate ||
-                            activity.occurredAt ||
-                            activity.createdAt
+                        subtitle={document.type || undefined}
+                        meta={formatCompanyDate(
+                          document.documentDate || document.createdAt
                         )}
                       />
                     </button>
@@ -573,51 +636,7 @@ export function CompanyDetailPage() {
               ) : (
                 <SectionEmpty />
               )}
-            </Company360ActionSection>
-          ) : null}
-
-          <Company360ActionSection
-            title={text.ecosystem.legalDocuments}
-            count={documentsQuery.data?.meta.total ?? 0}
-            page={documentsQuery.data?.meta.page ?? sectionPaging.documents.page}
-            pageCount={documentsQuery.data?.meta.totalPages ?? 1}
-            pageSize={sectionPaging.documents.pageSize}
-            total={documentsQuery.data?.meta.total ?? 0}
-            isFetching={documentsQuery.isFetching}
-            onPageChange={(page) => setSectionPage("documents", page)}
-            onPageSizeChange={(pageSize) => setSectionPageSize("documents", pageSize)}
-            icon={<FileText className="size-5" />}
-            onViewAll={() => goToModule(`/companies/${companyId}`)}
-          >
-            {documentsQuery.isLoading ? (
-              <SectionLoading />
-            ) : documentsQuery.data?.data.length ? (
-              <div className="grid gap-2.5">
-                {documentsQuery.data.data.map((document) => (
-                  <button
-                    key={document.id}
-                    type="button"
-                    className="w-full text-start"
-                    onClick={() =>
-                      setQuickView({ kind: "document", item: document })
-                    }
-                  >
-                    <EntityRow
-                      icon={<FileText className="size-4" />}
-                      title={
-                        document.title || document.type || text.notSpecified
-                      }
-                      subtitle={document.type || undefined}
-                      meta={formatCompanyDate(
-                        document.documentDate || document.createdAt
-                      )}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <SectionEmpty />
-            )}
+            </QueryContent>
           </Company360ActionSection>
         </div>
 
@@ -633,7 +652,9 @@ export function CompanyDetailPage() {
               total={peopleQuery.data?.meta.total ?? 0}
               isFetching={peopleQuery.isFetching}
               onPageChange={(page) => setSectionPage("people", page)}
-              onPageSizeChange={(pageSize) => setSectionPageSize("people", pageSize)}
+              onPageSizeChange={(pageSize) =>
+                setSectionPageSize("people", pageSize)
+              }
               icon={<UsersRound className="size-5" />}
               onCreate={
                 canCreatePerson ? () => setCreatePersonOpen(true) : undefined
@@ -641,46 +662,46 @@ export function CompanyDetailPage() {
               createLabel={uiText.people.actions.create}
               onViewAll={() => goToModule("/people")}
             >
-              {peopleQuery.isLoading ? (
-                <SectionLoading />
-              ) : peopleQuery.data?.data.length ? (
-                <div className="grid gap-2.5">
-                  {peopleQuery.data.data.map((person) => (
-                    <button
-                      key={person.id}
-                      type="button"
-                      onClick={() => setSelectedPersonId(person.id)}
-                      className="flex min-h-[58px] w-full items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 text-start transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)] hover:shadow-sm"
-                    >
-                      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
-                        {person.fullName.slice(0, 1)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-bold text-[var(--app-heading)]">
-                          {person.fullName}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
-                          {person.jobTitle ||
-                            person.title ||
-                            person.department ||
-                            text.notSpecified}
-                        </p>
-                      </div>
-                      {person.isPrimaryContact ? (
-                        <Star className="size-4 shrink-0 fill-[var(--app-primary)] text-[var(--app-primary)]" />
-                      ) : person.isSecondaryContact ? (
-                        <Star className="size-4 shrink-0 text-[var(--app-primary-alt)]" />
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={UsersRound}
-                  title={text.empty.peopleTitle}
-                  description={text.empty.peopleDescription}
-                />
-              )}
+              <QueryContent query={peopleQuery}>
+                {peopleQuery.data?.data.length ? (
+                  <div className="grid gap-2.5">
+                    {peopleQuery.data.data.map((person) => (
+                      <button
+                        key={person.id}
+                        type="button"
+                        onClick={() => setSelectedPersonId(person.id)}
+                        className="flex min-h-[58px] w-full items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 text-start transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)] hover:shadow-sm"
+                      >
+                        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
+                          {person.fullName.slice(0, 1)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-[var(--app-heading)]">
+                            {person.fullName}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
+                            {person.jobTitle ||
+                              person.title ||
+                              person.department ||
+                              text.notSpecified}
+                          </p>
+                        </div>
+                        {person.isPrimaryContact ? (
+                          <Star className="size-4 shrink-0 fill-[var(--app-primary)] text-[var(--app-primary)]" />
+                        ) : person.isSecondaryContact ? (
+                          <Star className="size-4 shrink-0 text-[var(--app-primary-alt)]" />
+                        ) : null}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={UsersRound}
+                    title={text.empty.peopleTitle}
+                    description={text.empty.peopleDescription}
+                  />
+                )}
+              </QueryContent>
             </Company360ActionSection>
           ) : null}
 
@@ -694,39 +715,43 @@ export function CompanyDetailPage() {
               total={tasksQuery.data?.meta.total ?? 0}
               isFetching={tasksQuery.isFetching}
               onPageChange={(page) => setSectionPage("tasks", page)}
-              onPageSizeChange={(pageSize) => setSectionPageSize("tasks", pageSize)}
+              onPageSizeChange={(pageSize) =>
+                setSectionPageSize("tasks", pageSize)
+              }
               icon={<ListTodo className="size-5" />}
               onViewAll={() => goToModule("/tasks")}
             >
-              {tasksQuery.isLoading ? (
-                <SectionLoading />
-              ) : tasksQuery.data?.data.length ? (
-                <div className="grid gap-2.5">
-                  {tasksQuery.data.data.map((task) => (
-                    <button
-                      key={task.id}
-                      type="button"
-                      className="w-full text-start"
-                      onClick={() => setQuickView({ kind: "task", item: task })}
-                    >
-                      <EntityRow
-                        icon={<ListTodo className="size-4" />}
-                        title={task.title}
-                        subtitle={[
-                          task.assignedTo?.fullName,
-                          task.status,
-                          task.priority,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                        meta={formatCompanyDateTime(task.dueAt)}
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <SectionEmpty />
-              )}
+              <QueryContent query={tasksQuery}>
+                {tasksQuery.data?.data.length ? (
+                  <div className="grid gap-2.5">
+                    {tasksQuery.data.data.map((task) => (
+                      <button
+                        key={task.id}
+                        type="button"
+                        className="w-full text-start"
+                        onClick={() =>
+                          setQuickView({ kind: "task", item: task })
+                        }
+                      >
+                        <EntityRow
+                          icon={<ListTodo className="size-4" />}
+                          title={task.title}
+                          subtitle={[
+                            task.assignedTo?.fullName,
+                            task.status,
+                            task.priority,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          meta={formatCompanyDateTime(task.dueAt)}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SectionEmpty />
+                )}
+              </QueryContent>
             </Company360ActionSection>
           ) : null}
 
@@ -734,13 +759,17 @@ export function CompanyDetailPage() {
             <Company360ActionSection
               title={uiText.navigation.meetings}
               count={meetingsQuery.data?.meta.total ?? 0}
-              page={meetingsQuery.data?.meta.page ?? sectionPaging.meetings.page}
+              page={
+                meetingsQuery.data?.meta.page ?? sectionPaging.meetings.page
+              }
               pageCount={meetingsQuery.data?.meta.totalPages ?? 1}
               pageSize={sectionPaging.meetings.pageSize}
               total={meetingsQuery.data?.meta.total ?? 0}
               isFetching={meetingsQuery.isFetching}
               onPageChange={(page) => setSectionPage("meetings", page)}
-              onPageSizeChange={(pageSize) => setSectionPageSize("meetings", pageSize)}
+              onPageSizeChange={(pageSize) =>
+                setSectionPageSize("meetings", pageSize)
+              }
               icon={<CalendarClock className="size-5" />}
               onCreate={
                 canCreateMeeting ? () => setCreateMeetingOpen(true) : undefined
@@ -748,35 +777,35 @@ export function CompanyDetailPage() {
               createLabel={uiText.meetings.actions.create}
               onViewAll={() => goToModule("/meetings")}
             >
-              {meetingsQuery.isLoading ? (
-                <SectionLoading />
-              ) : meetingsQuery.data?.data.length ? (
-                <div className="grid gap-2.5">
-                  {meetingsQuery.data.data.map((meeting) => (
-                    <button
-                      key={meeting.id}
-                      type="button"
-                      className="w-full text-start"
-                      onClick={() => navigate(`/meetings/${meeting.id}`)}
-                    >
-                      <EntityRow
-                        icon={<CalendarClock className="size-4" />}
-                        title={meeting.title}
-                        subtitle={[
-                          meeting.mode,
-                          meeting.location,
-                          meeting.organizer?.fullName,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                        meta={formatCompanyDateTime(meeting.startAt)}
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <SectionEmpty />
-              )}
+              <QueryContent query={meetingsQuery}>
+                {meetingsQuery.data?.data.length ? (
+                  <div className="grid gap-2.5">
+                    {meetingsQuery.data.data.map((meeting) => (
+                      <button
+                        key={meeting.id}
+                        type="button"
+                        className="w-full text-start"
+                        onClick={() => navigate(`/meetings/${meeting.id}`)}
+                      >
+                        <EntityRow
+                          icon={<CalendarClock className="size-4" />}
+                          title={meeting.title}
+                          subtitle={[
+                            meeting.mode,
+                            meeting.location,
+                            meeting.organizer?.fullName,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                          meta={formatCompanyDateTime(meeting.startAt)}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SectionEmpty />
+                )}
+              </QueryContent>
             </Company360ActionSection>
           ) : null}
 
@@ -789,35 +818,37 @@ export function CompanyDetailPage() {
             total={branchesQuery.data?.meta.total ?? 0}
             isFetching={branchesQuery.isFetching}
             onPageChange={(page) => setSectionPage("branches", page)}
-            onPageSizeChange={(pageSize) => setSectionPageSize("branches", pageSize)}
+            onPageSizeChange={(pageSize) =>
+              setSectionPageSize("branches", pageSize)
+            }
             icon={<MapPin className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
-            {branchesQuery.isLoading ? (
-              <SectionLoading />
-            ) : branchesQuery.data?.data.length ? (
-              <div className="grid gap-2.5">
-                {branchesQuery.data.data.map((branch) => (
-                  <button
-                    key={branch.id}
-                    type="button"
-                    className="w-full text-start"
-                    onClick={() =>
-                      setQuickView({ kind: "branch", item: branch })
-                    }
-                  >
-                    <EntityRow
-                      icon={<MapPin className="size-4" />}
-                      title={branch.name || branch.city || text.notSpecified}
-                      subtitle={branch.address || branch.city || undefined}
-                      meta={branch.phone || undefined}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <SectionEmpty />
-            )}
+            <QueryContent query={branchesQuery}>
+              {branchesQuery.data?.data.length ? (
+                <div className="grid gap-2.5">
+                  {branchesQuery.data.data.map((branch) => (
+                    <button
+                      key={branch.id}
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() =>
+                        setQuickView({ kind: "branch", item: branch })
+                      }
+                    >
+                      <EntityRow
+                        icon={<MapPin className="size-4" />}
+                        title={branch.name || branch.city || text.notSpecified}
+                        subtitle={branch.address || branch.city || undefined}
+                        meta={branch.phone || undefined}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty />
+              )}
+            </QueryContent>
           </Company360ActionSection>
 
           <Company360ActionSection
@@ -829,34 +860,36 @@ export function CompanyDetailPage() {
             total={socialQuery.data?.meta.total ?? 0}
             isFetching={socialQuery.isFetching}
             onPageChange={(page) => setSectionPage("social", page)}
-            onPageSizeChange={(pageSize) => setSectionPageSize("social", pageSize)}
+            onPageSizeChange={(pageSize) =>
+              setSectionPageSize("social", pageSize)
+            }
             icon={<Share2 className="size-5" />}
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
-            {socialQuery.isLoading ? (
-              <SectionLoading />
-            ) : socialQuery.data?.data.length ? (
-              <div className="grid gap-2.5">
-                {socialQuery.data.data.map((channel) => (
-                  <button
-                    key={channel.id}
-                    type="button"
-                    className="w-full text-start"
-                    onClick={() =>
-                      setQuickView({ kind: "social", item: channel })
-                    }
-                  >
-                    <EntityRow
-                      icon={<Share2 className="size-4" />}
-                      title={channel.platform || text.notSpecified}
-                      subtitle={channel.handle || undefined}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <SectionEmpty />
-            )}
+            <QueryContent query={socialQuery}>
+              {socialQuery.data?.data.length ? (
+                <div className="grid gap-2.5">
+                  {socialQuery.data.data.map((channel) => (
+                    <button
+                      key={channel.id}
+                      type="button"
+                      className="w-full text-start"
+                      onClick={() =>
+                        setQuickView({ kind: "social", item: channel })
+                      }
+                    >
+                      <EntityRow
+                        icon={<Share2 className="size-4" />}
+                        title={channel.platform || text.notSpecified}
+                        subtitle={channel.handle || undefined}
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <SectionEmpty />
+              )}
+            </QueryContent>
           </Company360ActionSection>
         </div>
       </div>
@@ -1109,17 +1142,3 @@ function SectionEmpty() {
     </p>
   )
 }
-
-function SectionLoading({ count = 4 }: { count?: number }) {
-  return (
-    <div className="grid gap-2.5">
-      {Array.from({ length: count }).map((_, index) => (
-        <div
-          key={index}
-          className="h-[58px] animate-pulse rounded-2xl bg-[var(--app-background)]"
-        />
-      ))}
-    </div>
-  )
-}
-

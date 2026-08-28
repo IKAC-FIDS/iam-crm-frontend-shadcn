@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/shared/PageHero"
 import {
   ContactRound,
   Mail,
@@ -6,12 +7,13 @@ import {
   Plus,
   UsersRound,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useMemo, useState } from "react"
+import { useListQueryState } from "@/lib/listQuery"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { QueryContent } from "@/components/shared/QueryContent"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
-import { LoadingState } from "@/components/shared/LoadingState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
@@ -24,41 +26,57 @@ import { PersonCard } from "../components/PersonCard"
 import { usePeopleDirectory, usePeopleLookups } from "../hooks/usePeople"
 import type { PeopleDirectoryQuery } from "../types/person.types"
 
-const initialQuery: PeopleDirectoryQuery = {
-  page: 1,
-  limit: 20,
-}
+const peopleFilterKeys = [
+  "search",
+  "companyId",
+  "ownerId",
+  "team",
+  "department",
+  "jobTitle",
+  "personaRole",
+  "seniorityLevel",
+  "isPrimaryContact",
+  "hasEmail",
+  "hasPhone",
+] as const
 
 export function PeoplePage() {
   const text = uiText.people
-  const [searchParams] = useSearchParams()
-  const initialCompanyId = searchParams.get("companyId")?.trim() || undefined
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
 
   const canViewDirectory = permissions.includes("people:directory:view")
   const canViewPerson = permissions.includes("person:view")
   const canCreate = permissions.includes("person:create")
 
-  const [query, setQuery] = useState<PeopleDirectoryQuery>(() => ({
-    ...initialQuery,
-    companyId: initialCompanyId,
-  }))
-  const [debouncedQuery, setDebouncedQuery] =
-    useState<PeopleDirectoryQuery>(() => ({
-      ...initialQuery,
-      companyId: initialCompanyId,
-    }))
+  const query = useMemo<PeopleDirectoryQuery>(
+    () => ({
+      ...Object.fromEntries(
+        peopleFilterKeys.map((key) => [
+          key,
+          ["isPrimaryContact", "hasEmail", "hasPhone"].includes(key)
+            ? params.get(key) === "true"
+              ? true
+              : params.get(key) === "false"
+                ? false
+                : undefined
+            : params.get(key) || undefined,
+        ])
+      ),
+      page,
+      limit: pageSize,
+    }),
+    [params, page, pageSize]
+  )
+  const debouncedQuery = useDebouncedValue(query, 350)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      setDebouncedQuery(query)
-    }, 350)
-    return () => window.clearTimeout(timeout)
-  }, [query])
-
-  const directory = usePeopleDirectory(debouncedQuery, canViewDirectory)
+  const directory = usePeopleDirectory(
+    debouncedQuery,
+    canViewDirectory && query === debouncedQuery
+  )
   const lookups = usePeopleLookups()
 
   const metrics = useMemo(() => {
@@ -71,31 +89,30 @@ export function PeoplePage() {
     }
   }, [directory.data])
 
-  function patchQuery(patch: Partial<PeopleDirectoryQuery>) {
-    setQuery((current) => ({ ...current, ...patch }))
+  function patchQuery(values: Partial<PeopleDirectoryQuery>) {
+    patch(
+      Object.fromEntries(
+        Object.entries(values).map(([key, value]) => [
+          key,
+          value === undefined ? undefined : String(value),
+        ])
+      ),
+      {
+        resetPage: !("page" in values) || values.page === 1,
+        replace: "search" in values,
+      }
+    )
   }
 
   return (
     <div className="grid gap-5">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 start-1/3 h-24 w-72 bg-[var(--app-info-light)]/35 blur-3xl" />
-
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
-              <Network className="size-3.5" />
-              {text.hero.badge}
-            </div>
-            <h1 className="ui-page-title">
-              {text.hero.title}
-            </h1>
-            <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">
-              {text.hero.description}
-            </p>
-          </div>
-
-          {canCreate ? (
+      <PageHero
+        title={text.hero.title}
+        description={text.hero.description}
+        eyebrow={text.hero.badge}
+        icon={Network}
+        actions={
+          canCreate ? (
             <Button
               type="button"
               className="w-fit rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
@@ -104,39 +121,42 @@ export function PeoplePage() {
               <Plus className="size-4" />
               {text.actions.create}
             </Button>
-          ) : null}
-        </div>
-
-        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric
-            icon={<UsersRound className="size-4" />}
-            label={text.metrics.total}
-            value={metrics.total}
-            exact
-          />
-          <Metric
-            icon={<ContactRound className="size-4" />}
-            label={text.metrics.primaryCurrentPage}
-            value={metrics.primary}
-          />
-          <Metric
-            icon={<Phone className="size-4" />}
-            label={text.metrics.phoneCurrentPage}
-            value={metrics.phone}
-          />
-          <Metric
-            icon={<Mail className="size-4" />}
-            label={text.metrics.emailCurrentPage}
-            value={metrics.email}
-          />
-        </div>
-      </section>
+          ) : null
+        }
+      />
+      <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          icon={<UsersRound className="size-4" />}
+          label={text.metrics.total}
+          value={metrics.total}
+          exact
+        />
+        <Metric
+          icon={<ContactRound className="size-4" />}
+          label={text.metrics.primaryCurrentPage}
+          value={metrics.primary}
+        />
+        <Metric
+          icon={<Phone className="size-4" />}
+          label={text.metrics.phoneCurrentPage}
+          value={metrics.phone}
+        />
+        <Metric
+          icon={<Mail className="size-4" />}
+          label={text.metrics.emailCurrentPage}
+          value={metrics.email}
+        />
+      </div>
 
       <PeopleFilterBar
         query={query}
         lookups={lookups.data}
         onChange={patchQuery}
-        onClear={() => setQuery(initialQuery)}
+        onClear={() =>
+          patch(
+            Object.fromEntries(peopleFilterKeys.map((key) => [key, undefined]))
+          )
+        }
       />
 
       {!canViewDirectory ? (
@@ -144,38 +164,41 @@ export function PeoplePage() {
           title={text.errors.permissionTitle}
           description={text.errors.permissionDescription}
         />
-      ) : directory.isLoading ? (
-        <LoadingState />
-      ) : directory.isError ? (
-        <ErrorState
-          title={text.errors.listTitle}
-          description={text.errors.listDescription}
-          retryLabel={uiText.common.retry}
-          onRetry={() => void directory.refetch()}
-        />
-      ) : directory.data?.data.length ? (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {directory.data.data.map((person) => (
-              <PersonCard
-                key={person.id}
-                person={person}
-                lookups={lookups.data}
-                onClick={() => {
-                  if (canViewPerson) setSelectedPersonId(person.id)
-                }}
-              />
-            ))}
-          </div>
-
-          <PaginationControls page={directory.data.meta.page} pageCount={directory.data.meta.totalPages} pageSize={query.limit} total={directory.data.meta.total} onPageChange={(page) => patchQuery({ page })} onPageSizeChange={(limit) => patchQuery({ limit, page: 1 })} disabled={directory.isFetching} />
-        </>
       ) : (
-        <EmptyState
-          icon={UsersRound}
-          title={text.empty.listTitle}
-          description={text.empty.listDescription}
-        />
+        <QueryContent query={directory} errorTitle={text.errors.listTitle}>
+          {directory.data?.data.length ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                {directory.data.data.map((person) => (
+                  <PersonCard
+                    key={person.id}
+                    person={person}
+                    lookups={lookups.data}
+                    onClick={() => {
+                      if (canViewPerson) setSelectedPersonId(person.id)
+                    }}
+                  />
+                ))}
+              </div>
+
+              <PaginationControls
+                page={directory.data.meta.page}
+                pageCount={directory.data.meta.totalPages}
+                pageSize={query.limit}
+                total={directory.data.meta.total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                disabled={directory.isFetching || query !== debouncedQuery}
+              />
+            </>
+          ) : (
+            <EmptyState
+              icon={UsersRound}
+              title={text.empty.listTitle}
+              description={text.empty.listDescription}
+            />
+          )}
+        </QueryContent>
       )}
 
       {selectedPersonId ? (
@@ -193,7 +216,6 @@ export function PeoplePage() {
         onOpenChange={setCreateOpen}
         onCreated={(person) => setSelectedPersonId(person.id)}
       />
-
     </div>
   )
 }

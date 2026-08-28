@@ -1,4 +1,10 @@
-﻿import { Loader2, Save } from "lucide-react"
+import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { applyServerFieldErrors } from "@/lib/formErrors"
+import { FormActions } from "@/components/shared/FormActions"
+import { uiText } from "@/config/uiText"
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
@@ -7,7 +13,6 @@ import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
-import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
@@ -32,20 +37,23 @@ const selectClass =
 const textareaClass =
   "w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
 
-function useDebounced(value: string) {
-  const [debounced, setDebounced] = useState(value)
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), 300)
-    return () => window.clearTimeout(timer)
-  }, [value])
-  return debounced
-}
-
 function safeDate(value?: string | null) {
   if (!value) return undefined
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? undefined : date
 }
+
+const formSchema = z.object({
+  companyId: z.string().min(1, uiText.common.forms.required),
+  person: z.custom<ActivityOption>().optional(),
+  opportunity: z.custom<ActivityOption>().optional(),
+  type: z.string().min(1, uiText.common.forms.required),
+  notes: z.string(),
+  outcome: z.string(),
+  occurredAt: z.date().optional(),
+  nextActionDate: z.date().optional(),
+})
+type FormValues = z.infer<typeof formSchema>
 
 export function ActivityFormDialog({
   open,
@@ -62,28 +70,12 @@ export function ActivityFormDialog({
   const pending = create.isPending || update.isPending
   const activityTypes = useActivityTypes(open)
 
-  const [companyId, setCompanyId] = useState("")
-  const [person, setPerson] = useState<ActivityOption>()
-  const [opportunity, setOpportunity] = useState<ActivityOption>()
-  const [type, setType] = useState<ManualActivityType>("")
-  const [notes, setNotes] = useState("")
-  const [outcome, setOutcome] = useState("")
-  const [occurredAt, setOccurredAt] = useState<Date>()
-  const [nextActionDate, setNextActionDate] = useState<Date>()
-  const [personSearch, setPersonSearch] = useState("")
-  const [opportunitySearch, setOpportunitySearch] = useState("")
-
-  const resetInputs0 = [activity, open] as const
-  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
-  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
-    setPreviousResetInputs0(resetInputs0)
-    if (open) {
-const existingCompanyId = activity?.companyId || activity?.company?.id || ""
+  const defaultValues = useMemo<FormValues>(() => {
+    const existingCompanyId = activity?.companyId || activity?.company?.id || ""
     const existingPersonId = activity?.personId || activity?.person?.id || ""
-
-    setCompanyId(existingCompanyId)
-    setPerson(
-      existingPersonId
+    return {
+      companyId: existingCompanyId,
+      person: existingPersonId
         ? {
             id: existingPersonId,
             label: activity?.person?.fullName || existingPersonId,
@@ -92,25 +84,74 @@ const existingCompanyId = activity?.companyId || activity?.company?.id || ""
               activity?.person?.department ||
               undefined,
           }
-        : undefined
-    )
-    setOpportunity(undefined)
-    setType(
-      activity?.type && activity.type !== "STAGE_CHANGE"
-        ? activity.type
-        : ""
-    )
-    setNotes(activity?.notes || "")
-    setOutcome(activity?.outcome || "")
-    setOccurredAt(
-      safeDate(activity?.occurredAt || activity?.activityDate) ||
-        (activity ? undefined : new Date())
-    )
-    setNextActionDate(undefined)
-    setPersonSearch("")
-    setOpportunitySearch("")
-}
+        : undefined,
+      opportunity: undefined,
+      type:
+        activity?.type && activity.type !== "STAGE_CHANGE" ? activity.type : "",
+      notes: activity?.notes || "",
+      outcome: activity?.outcome || "",
+      occurredAt:
+        safeDate(activity?.occurredAt || activity?.activityDate) ||
+        (activity ? undefined : new Date()),
+      nextActionDate: undefined,
+    }
+  }, [activity])
+  const {
+    control,
+    register,
+    setValue,
+    reset,
+    setError,
+    clearErrors,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({ defaultValues, resolver: zodResolver(formSchema) })
+  const {
+    companyId,
+    person,
+    opportunity,
+    type,
+    notes,
+    outcome,
+    occurredAt,
+    nextActionDate,
+  } = useWatch({ control }) as FormValues
+  const setCompanyId = (value: FormValues["companyId"]) =>
+    setValue("companyId", value, { shouldDirty: true, shouldValidate: true })
+  const setPerson = (value: FormValues["person"]) =>
+    setValue("person", value, { shouldDirty: true, shouldValidate: true })
+  const setOpportunity = (value: FormValues["opportunity"]) =>
+    setValue("opportunity", value, { shouldDirty: true, shouldValidate: true })
+  const setType = (value: FormValues["type"]) =>
+    setValue("type", value, { shouldDirty: true, shouldValidate: true })
+  const setNotes = (value: FormValues["notes"]) =>
+    setValue("notes", value, { shouldDirty: true, shouldValidate: true })
+  const setOutcome = (value: FormValues["outcome"]) =>
+    setValue("outcome", value, { shouldDirty: true, shouldValidate: true })
+  const setOccurredAt = (value: FormValues["occurredAt"]) =>
+    setValue("occurredAt", value, { shouldDirty: true, shouldValidate: true })
+  const setNextActionDate = (value: FormValues["nextActionDate"]) =>
+    setValue("nextActionDate", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  const [previousOpen, setPreviousOpen] = useState(open)
+  const [opportunitySearch, setOpportunitySearch] = useState("")
+  const [personSearch, setPersonSearch] = useState("")
+  if (previousOpen !== open) {
+    setPreviousOpen(open)
+    if (open) {
+      setOpportunitySearch("")
+      setPersonSearch("")
+    }
   }
+  useEffect(() => {
+    if (open) {
+      reset(
+        activity ? defaultValues : { ...defaultValues, occurredAt: new Date() }
+      )
+    }
+  }, [open, defaultValues, reset, activity])
 
   const people = useActivityPeopleOptions(
     companyId,
@@ -123,11 +164,19 @@ const existingCompanyId = activity?.companyId || activity?.company?.id || ""
     open && !editing && Boolean(companyId)
   )
   const validation = useMemo(
-    () => !companyId ? "انتخاب شرکت الزامی است." : !type ? "انتخاب نوع فعالیت الزامی است." : activityTypes.isError ? "دریافت انواع فعالیت ناموفق بود؛ فرم را دوباره باز کنید." : "",
+    () =>
+      !companyId
+        ? "انتخاب شرکت الزامی است."
+        : !type
+          ? "انتخاب نوع فعالیت الزامی است."
+          : activityTypes.isError
+            ? "دریافت انواع فعالیت ناموفق بود؛ فرم را دوباره باز کنید."
+            : "",
     [companyId, type, activityTypes.isError]
   )
 
   async function submit() {
+    clearErrors()
     if (validation) {
       toast.error(validation)
       return
@@ -159,6 +208,25 @@ const existingCompanyId = activity?.companyId || activity?.company?.id || ""
       }
       onOpenChange(false)
     } catch (error) {
+      applyServerFieldErrors(
+        error,
+        setError,
+        [
+          "companyId",
+          "person",
+          "opportunity",
+          "type",
+          "notes",
+          "outcome",
+          "occurredAt",
+          "nextActionDate",
+        ],
+        {
+          personId: "person",
+          opportunityId: "opportunity",
+          activityDate: "occurredAt",
+        }
+      )
       toast.error(
         getApiErrorMessage(
           error,
@@ -185,139 +253,162 @@ const existingCompanyId = activity?.companyId || activity?.company?.id || ""
           onClose={() => onOpenChange(false)}
         />
 
-        <div className="min-h-0 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
-          <FormSection
-            title="اطلاعات فعالیت"
-            description="نوع، زمان، نتیجه و توضیحات فعالیت"
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="شرکت *">
-                <SearchableCompanySelect
-                  value={companyId || undefined}
-                  onChange={(next) => {
-                    if (editing) return
-                    setCompanyId(next || "")
-                    setPerson(undefined)
-                    setOpportunity(undefined)
-                  }}
-                  disabled={editing}
-                  allowEmpty={!editing}
-                  placeholder="انتخاب شرکت"
-                />
-              </Field>
+        <form className="contents" noValidate onSubmit={handleSubmit(submit)}>
+          <div className="min-h-0 space-y-4 overflow-y-auto bg-[var(--app-background)]/45 p-4 sm:p-5">
+            {errors.root?.server?.message ? (
+              <p role="alert" className="text-sm text-destructive">
+                {errors.root.server.message}
+              </p>
+            ) : null}
+            <FormSection
+              title="اطلاعات فعالیت"
+              description="نوع، زمان، نتیجه و توضیحات فعالیت"
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="شرکت *" error={errors.companyId?.message}>
+                  <SearchableCompanySelect
+                    value={companyId || undefined}
+                    onChange={(next) => {
+                      if (editing) return
+                      setCompanyId(next || "")
+                      setPerson(undefined)
+                      setOpportunity(undefined)
+                    }}
+                    disabled={editing}
+                    allowEmpty={!editing}
+                    placeholder="انتخاب شرکت"
+                  />
+                </Field>
 
-              <Field label="نوع فعالیت *">
-                <select
-                  value={type}
-                  onChange={(event) =>
-                    setType(event.target.value as ManualActivityType)
-                  }
-                  className={selectClass}
-                >
-                  <option value="">{activityTypes.isLoading ? "در حال دریافت..." : "انتخاب نوع فعالیت"}</option>
-                  {(activityTypes.data ?? []).filter((item) => item.isActive || item.code === activity?.type).map((item) => (
-                    <option key={item.id} value={item.code} disabled={!item.isActive && item.code !== activity?.type}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="شخص">
-                <ActivityOptionSelect
-                  value={person?.id}
-                  selectedOption={person}
-                  options={people.data || []}
-                  onChange={setPerson}
-                  search={personSearch}
-                  onSearchChange={setPersonSearch}
-                  placeholder={
-                    companyId ? "انتخاب شخص" : "ابتدا شرکت را انتخاب کنید"
-                  }
-                  loading={people.isLoading}
-                  disabled={!companyId}
-                />
-              </Field>
-
-              {!editing ? (
-                <Field label="فرصت فروش">
-                  <ActivityOptionSelect
-                    value={opportunity?.id}
-                    selectedOption={opportunity}
-                    options={opportunities.data || []}
-                    onChange={setOpportunity}
-                    search={opportunitySearch}
-                    onSearchChange={setOpportunitySearch}
-                    placeholder={
-                      companyId
-                        ? "انتخاب فرصت فروش"
-                        : "ابتدا شرکت را انتخاب کنید"
+                <Field label="نوع فعالیت *" error={errors.type?.message}>
+                  <select
+                    {...register("type")}
+                    aria-invalid={Boolean(errors.type)}
+                    value={type}
+                    onChange={(event) =>
+                      setType(event.target.value as ManualActivityType)
                     }
-                    loading={opportunities.isLoading}
+                    className={selectClass}
+                  >
+                    <option value="">
+                      {activityTypes.isLoading
+                        ? "در حال دریافت..."
+                        : "انتخاب نوع فعالیت"}
+                    </option>
+                    {(activityTypes.data ?? [])
+                      .filter(
+                        (item) => item.isActive || item.code === activity?.type
+                      )
+                      .map((item) => (
+                        <option
+                          key={item.id}
+                          value={item.code}
+                          disabled={
+                            !item.isActive && item.code !== activity?.type
+                          }
+                        >
+                          {item.label}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+
+                <Field label="شخص" error={errors.person?.message}>
+                  <ActivityOptionSelect
+                    value={person?.id}
+                    selectedOption={person}
+                    options={people.data || []}
+                    onChange={setPerson}
+                    search={personSearch}
+                    onSearchChange={setPersonSearch}
+                    placeholder={
+                      companyId ? "انتخاب شخص" : "ابتدا شرکت را انتخاب کنید"
+                    }
+                    loading={people.isLoading}
                     disabled={!companyId}
                   />
                 </Field>
-              ) : null}
 
-              <Field label="زمان فعالیت">
-                <PersianDateTimePicker
-                  value={occurredAt}
-                  onChange={setOccurredAt}
-                />
-              </Field>
-              {!editing ? (
-                <Field label="پیگیری بعدی">
+                {!editing ? (
+                  <Field label="فرصت فروش" error={errors.opportunity?.message}>
+                    <ActivityOptionSelect
+                      value={opportunity?.id}
+                      selectedOption={opportunity}
+                      options={opportunities.data || []}
+                      onChange={setOpportunity}
+                      search={opportunitySearch}
+                      onSearchChange={setOpportunitySearch}
+                      placeholder={
+                        companyId
+                          ? "انتخاب فرصت فروش"
+                          : "ابتدا شرکت را انتخاب کنید"
+                      }
+                      loading={opportunities.isLoading}
+                      disabled={!companyId}
+                    />
+                  </Field>
+                ) : null}
+
+                <Field label="زمان فعالیت" error={errors.occurredAt?.message}>
                   <PersianDateTimePicker
-                    value={nextActionDate}
-                    onChange={setNextActionDate}
+                    value={occurredAt}
+                    onChange={setOccurredAt}
                   />
                 </Field>
-              ) : null}
+                {!editing ? (
+                  <Field
+                    label="پیگیری بعدی"
+                    error={errors.nextActionDate?.message}
+                  >
+                    <PersianDateTimePicker
+                      value={nextActionDate}
+                      onChange={setNextActionDate}
+                    />
+                  </Field>
+                ) : null}
 
-              <Field label="نتیجه" className={!editing ? "sm:col-span-2" : ""}>
-                <Input
-                  value={outcome}
-                  onChange={(event) => setOutcome(event.target.value)}
-                  placeholder="نتیجه فعالیت"
-                  className="h-11 rounded-xl"
-                />
-              </Field>
+                <Field
+                  label="نتیجه"
+                  className={!editing ? "sm:col-span-2" : ""}
+                  error={errors.outcome?.message}
+                >
+                  <Input
+                    {...register("outcome")}
+                    aria-invalid={Boolean(errors.outcome)}
+                    value={outcome}
+                    onChange={(event) => setOutcome(event.target.value)}
+                    placeholder="نتیجه فعالیت"
+                    className="h-11 rounded-xl"
+                  />
+                </Field>
 
-              <Field label="یادداشت" className="sm:col-span-2">
-                <textarea
-                  rows={5}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="توضیحات و نکات مرتبط با فعالیت"
-                  className={textareaClass}
-                />
-              </Field>
-            </div>
-          </FormSection>
-        </div>
+                <Field
+                  label="یادداشت"
+                  className="sm:col-span-2"
+                  error={errors.notes?.message}
+                >
+                  <textarea
+                    {...register("notes")}
+                    aria-invalid={Boolean(errors.notes)}
+                    rows={5}
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                    placeholder="توضیحات و نکات مرتبط با فعالیت"
+                    className={textareaClass}
+                  />
+                </Field>
+              </div>
+            </FormSection>
+          </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-4 sm:px-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={pending}
-          >
-            انصراف
-          </Button>
-          <Button
-            type="button"
-            disabled={pending || Boolean(validation)}
-            onClick={() => void submit()}
-          >
-            {pending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Save className="size-4" />
-            )}
-            {pending ? "در حال ذخیره..." : "ذخیره"}
-          </Button>
-        </div>
+          <div className="border-t border-[var(--app-divider)] px-5 py-4">
+            <FormActions
+              onCancel={() => onOpenChange(false)}
+              pending={pending}
+              disabled={Boolean(validation)}
+            />
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -327,10 +418,12 @@ function Field({
   label,
   children,
   className = "",
+  error,
 }: {
   label: string
   children: ReactNode
   className?: string
+  error?: string
 }) {
   return (
     <label className={`grid gap-2 ${className}`}>
@@ -338,6 +431,11 @@ function Field({
         {label}
       </span>
       {children}
+      {error ? (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      ) : null}
     </label>
   )
 }

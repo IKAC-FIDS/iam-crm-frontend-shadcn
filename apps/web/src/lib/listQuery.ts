@@ -20,8 +20,10 @@ export function parsePageParam(value: string | null): number {
   const page = Number(value)
   return Number.isSafeInteger(page) && page > 0 ? page : 1
 }
-export function parsePageSize(value: string | null): number {
-  return PAGE_SIZES.some((size) => size === Number(value)) ? Number(value) : 20
+export function parsePageSize(
+  value: string | null
+): (typeof PAGE_SIZES)[number] {
+  return PAGE_SIZES.find((size) => size === Number(value)) ?? 20
 }
 export function enumParam<const T extends string>(
   value: string | null,

@@ -1,74 +1,36 @@
-﻿import { api } from "@/lib/api"
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
+import { api } from "@/lib/api"
 import type {
   Notification,
-  NotificationPage,
   NotificationQuery,
 } from "../types/notification.types"
 
 const clean = (value: object) =>
   Object.fromEntries(
-    Object.entries(value).filter(([, item]) => item !== undefined && item !== "")
+    Object.entries(value).filter(
+      ([, item]) => item !== undefined && item !== ""
+    )
   )
-
-type NotificationEnvelope = {
-  success?: boolean
-  data?: Notification[]
-  items?: Notification[]
-  meta?: Partial<NotificationPage["meta"]>
-  total?: number
-  page?: number
-  limit?: number
-  totalPages?: number
-}
-
-function normalizePage(
-  value: unknown,
-  fallbackPage = 1,
-  fallbackLimit = 20
-): NotificationPage {
-  if (Array.isArray(value)) {
-    return {
-      data: value as Notification[],
-      meta: {
-        total: value.length,
-        page: fallbackPage,
-        limit: fallbackLimit,
-        totalPages: Math.max(
-          1,
-          Math.ceil(value.length / Math.max(1, fallbackLimit))
-        ),
-      },
-    }
-  }
-
-  const body = (value ?? {}) as NotificationEnvelope
-  const data = Array.isArray(body.data)
-    ? body.data
-    : Array.isArray(body.items)
-      ? body.items
-      : []
-
-  const total = body.meta?.total ?? body.total ?? data.length
-  const page = body.meta?.page ?? body.page ?? fallbackPage
-  const limit = body.meta?.limit ?? body.limit ?? fallbackLimit
-  const totalPages =
-    body.meta?.totalPages ??
-    body.totalPages ??
-    Math.max(1, Math.ceil(total / Math.max(1, limit)))
-
-  return { data, meta: { total, page, limit, totalPages } }
-}
 
 export async function getNotifications(query: NotificationQuery = {}) {
   const response = await api.get("/notifications", { params: clean(query) })
-  return normalizePage(response.data, query.page ?? 1, query.limit ?? 20)
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<Notification>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string"
+    )
+  )
 }
 
 export async function getUnreadCount() {
   const response = await api.get("/notifications/unread-count")
   const body = response.data as
-    | { success?: boolean; data?: { total?: number } }
-    | { total?: number }
+    { success?: boolean; data?: { total?: number } } | { total?: number }
 
   if (
     typeof body === "object" &&
@@ -126,4 +88,3 @@ export async function unarchive(id: string) {
 export async function removeNotification(id: string) {
   await api.delete(`/notifications/${id}`)
 }
-

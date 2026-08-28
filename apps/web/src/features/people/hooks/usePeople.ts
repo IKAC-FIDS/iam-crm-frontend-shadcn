@@ -1,3 +1,4 @@
+import { useQueryScope } from "@/lib/queryScope"
 import {
   keepPreviousData,
   useMutation,
@@ -58,19 +59,23 @@ export const peopleQueryKeys = {
     [...peopleQueryKeys.all, "company-options", search] as const,
   companyOption: (companyId: string) =>
     [...peopleQueryKeys.all, "company-option", companyId] as const,
-  contacts: (personId: string) => [...peopleQueryKeys.detail(personId), "contacts"] as const,
-  socials: (personId: string) => [...peopleQueryKeys.detail(personId), "socials"] as const,
-  employment: (personId: string) => [...peopleQueryKeys.detail(personId), "employment"] as const,
-  education: (personId: string) => [...peopleQueryKeys.detail(personId), "education"] as const,
+  contacts: (personId: string) =>
+    [...peopleQueryKeys.detail(personId), "contacts"] as const,
+  socials: (personId: string) =>
+    [...peopleQueryKeys.detail(personId), "socials"] as const,
+  employment: (personId: string) =>
+    [...peopleQueryKeys.detail(personId), "employment"] as const,
+  education: (personId: string) =>
+    [...peopleQueryKeys.detail(personId), "education"] as const,
   universities: () => [...peopleQueryKeys.all, "universities"] as const,
 }
 
 export function usePeopleDirectory(
   query: PeopleDirectoryQuery,
-  enabled = true,
+  enabled = true
 ) {
   return useQuery({
-    queryKey: peopleQueryKeys.directory(query),
+    queryKey: [...peopleQueryKeys.directory(query), useQueryScope()],
     queryFn: () => getPeopleDirectory(query),
     placeholderData: keepPreviousData,
     enabled,
@@ -79,7 +84,7 @@ export function usePeopleDirectory(
 
 export function usePerson(personId: string | null) {
   return useQuery({
-    queryKey: peopleQueryKeys.detail(personId ?? ""),
+    queryKey: [...peopleQueryKeys.detail(personId ?? ""), useQueryScope()],
     queryFn: () => getPerson(personId ?? ""),
     enabled: Boolean(personId),
   })
@@ -87,30 +92,51 @@ export function usePerson(personId: string | null) {
 
 export function usePeopleLookup(group: string) {
   return useQuery({
-    queryKey: peopleQueryKeys.lookup(group),
+    queryKey: [...peopleQueryKeys.lookup(group), useQueryScope()],
     queryFn: () => getLookupOptions(group),
     staleTime: 5 * 60_000,
   })
 }
 
 export function usePersonContacts(personId: string) {
-  return useQuery({ queryKey: peopleQueryKeys.contacts(personId), queryFn: () => getPersonContacts(personId), enabled: Boolean(personId) })
+  return useQuery({
+    queryKey: [...peopleQueryKeys.contacts(personId), useQueryScope()],
+    queryFn: () => getPersonContacts(personId),
+    enabled: Boolean(personId),
+  })
 }
 
 export function usePersonSocials(personId: string) {
-  return useQuery({ queryKey: peopleQueryKeys.socials(personId), queryFn: () => getPersonSocials(personId), enabled: Boolean(personId) })
+  return useQuery({
+    queryKey: [...peopleQueryKeys.socials(personId), useQueryScope()],
+    queryFn: () => getPersonSocials(personId),
+    enabled: Boolean(personId),
+  })
 }
 
 export function usePersonEmploymentHistory(personId: string) {
-  return useQuery({ queryKey: peopleQueryKeys.employment(personId), queryFn: () => getEmploymentHistory(personId), enabled: Boolean(personId) })
+  return useQuery({
+    queryKey: [...peopleQueryKeys.employment(personId), useQueryScope()],
+    queryFn: () => getEmploymentHistory(personId),
+    enabled: Boolean(personId),
+  })
 }
 
 export function usePersonEducationHistory(personId: string) {
-  return useQuery({ queryKey: peopleQueryKeys.education(personId), queryFn: () => getEducationHistory(personId), enabled: Boolean(personId) })
+  return useQuery({
+    queryKey: [...peopleQueryKeys.education(personId), useQueryScope()],
+    queryFn: () => getEducationHistory(personId),
+    enabled: Boolean(personId),
+  })
 }
 
 export function useUniversities(enabled = true) {
-  return useQuery({ queryKey: peopleQueryKeys.universities(), queryFn: getUniversities, enabled, staleTime: 5 * 60_000 })
+  return useQuery({
+    queryKey: [...peopleQueryKeys.universities(), useQueryScope()],
+    queryFn: getUniversities,
+    enabled,
+    staleTime: 5 * 60_000,
+  })
 }
 
 export function usePeopleLookups() {
@@ -128,7 +154,9 @@ export function usePeopleLookups() {
       departments: Array.isArray(departments.data) ? departments.data : [],
       jobTitles: Array.isArray(jobTitles.data) ? jobTitles.data : [],
       personaRoles: Array.isArray(personaRoles.data) ? personaRoles.data : [],
-      seniorityLevels: Array.isArray(seniorityLevels.data) ? seniorityLevels.data : [],
+      seniorityLevels: Array.isArray(seniorityLevels.data)
+        ? seniorityLevels.data
+        : [],
     },
     isLoading:
       departments.isLoading ||
@@ -142,79 +170,219 @@ function useInvalidateNested(personId: string, nestedKey: readonly unknown[]) {
   const queryClient = useQueryClient()
   return async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: peopleQueryKeys.detail(personId) }),
+      queryClient.invalidateQueries({
+        queryKey: peopleQueryKeys.detail(personId),
+      }),
       queryClient.invalidateQueries({ queryKey: nestedKey }),
     ])
   }
 }
 
 export function useCreatePersonContact(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.contacts(personId))
-  return useMutation({ mutationFn: (payload: PersonContactPayload) => createPersonContact(personId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.contacts(personId)
+  )
+  return useMutation({
+    mutationFn: (payload: PersonContactPayload) =>
+      createPersonContact(personId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useUpdatePersonContact(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.contacts(personId))
-  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: Partial<PersonContactPayload> }) => updatePersonContact(personId, id, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.contacts(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<PersonContactPayload>
+    }) => updatePersonContact(personId, id, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useDeletePersonContact(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.contacts(personId))
-  return useMutation({ mutationFn: (id: string) => deletePersonContact(personId, id), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.contacts(personId)
+  )
+  return useMutation({
+    mutationFn: (id: string) => deletePersonContact(personId, id),
+    onSuccess: invalidate,
+  })
 }
 
 export function useCreatePersonSocial(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.socials(personId))
-  return useMutation({ mutationFn: (payload: PersonSocialPayload) => createPersonSocial(personId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.socials(personId)
+  )
+  return useMutation({
+    mutationFn: (payload: PersonSocialPayload) =>
+      createPersonSocial(personId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useUpdatePersonSocial(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.socials(personId))
-  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: Partial<PersonSocialPayload> }) => updatePersonSocial(personId, id, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.socials(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<PersonSocialPayload>
+    }) => updatePersonSocial(personId, id, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useDeletePersonSocial(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.socials(personId))
-  return useMutation({ mutationFn: (id: string) => deletePersonSocial(personId, id), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.socials(personId)
+  )
+  return useMutation({
+    mutationFn: (id: string) => deletePersonSocial(personId, id),
+    onSuccess: invalidate,
+  })
 }
 
 export function useCreateEmploymentHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: (payload: EmploymentHistoryPayload) => createEmploymentHistory(personId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: (payload: EmploymentHistoryPayload) =>
+      createEmploymentHistory(personId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useUpdateEmploymentHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: Partial<EmploymentHistoryPayload> }) => updateEmploymentHistory(personId, id, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<EmploymentHistoryPayload>
+    }) => updateEmploymentHistory(personId, id, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useDeleteEmploymentHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: (id: string) => deleteEmploymentHistory(personId, id), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: (id: string) => deleteEmploymentHistory(personId, id),
+    onSuccess: invalidate,
+  })
 }
 export function useCreateEmploymentPosition(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: ({ employmentId, payload }: { employmentId: string; payload: EmploymentPositionPayload }) => createEmploymentPosition(personId, employmentId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      employmentId,
+      payload,
+    }: {
+      employmentId: string
+      payload: EmploymentPositionPayload
+    }) => createEmploymentPosition(personId, employmentId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useUpdateEmploymentPosition(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: ({ employmentId, positionId, payload }: { employmentId: string; positionId: string; payload: Partial<EmploymentPositionPayload> }) => updateEmploymentPosition(personId, employmentId, positionId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      employmentId,
+      positionId,
+      payload,
+    }: {
+      employmentId: string
+      positionId: string
+      payload: Partial<EmploymentPositionPayload>
+    }) => updateEmploymentPosition(personId, employmentId, positionId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useDeleteEmploymentPosition(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.employment(personId))
-  return useMutation({ mutationFn: ({ employmentId, positionId }: { employmentId: string; positionId: string }) => deleteEmploymentPosition(personId, employmentId, positionId), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.employment(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      employmentId,
+      positionId,
+    }: {
+      employmentId: string
+      positionId: string
+    }) => deleteEmploymentPosition(personId, employmentId, positionId),
+    onSuccess: invalidate,
+  })
 }
 
 export function useCreateEducationHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.education(personId))
-  return useMutation({ mutationFn: (payload: EducationHistoryPayload) => createEducationHistory(personId, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.education(personId)
+  )
+  return useMutation({
+    mutationFn: (payload: EducationHistoryPayload) =>
+      createEducationHistory(personId, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useUpdateEducationHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.education(personId))
-  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: Partial<EducationHistoryPayload> }) => updateEducationHistory(personId, id, payload), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.education(personId)
+  )
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Partial<EducationHistoryPayload>
+    }) => updateEducationHistory(personId, id, payload),
+    onSuccess: invalidate,
+  })
 }
 export function useDeleteEducationHistory(personId: string) {
-  const invalidate = useInvalidateNested(personId, peopleQueryKeys.education(personId))
-  return useMutation({ mutationFn: (id: string) => deleteEducationHistory(personId, id), onSuccess: invalidate })
+  const invalidate = useInvalidateNested(
+    personId,
+    peopleQueryKeys.education(personId)
+  )
+  return useMutation({
+    mutationFn: (id: string) => deleteEducationHistory(personId, id),
+    onSuccess: invalidate,
+  })
 }
 
 export function usePeopleCompanyOptions(search: string, enabled = true) {
   return useQuery({
-    queryKey: peopleQueryKeys.companyOptions(search),
+    queryKey: [...peopleQueryKeys.companyOptions(search), useQueryScope()],
     queryFn: () => getCompanyOptions(search),
     enabled,
     staleTime: 30_000,
@@ -224,7 +392,10 @@ export function usePeopleCompanyOptions(search: string, enabled = true) {
 
 export function usePeopleCompanyOption(companyId?: string, enabled = true) {
   return useQuery({
-    queryKey: peopleQueryKeys.companyOption(companyId ?? ""),
+    queryKey: [
+      ...peopleQueryKeys.companyOption(companyId ?? ""),
+      useQueryScope(),
+    ],
     queryFn: () => getCompanyOption(companyId ?? ""),
     enabled: enabled && Boolean(companyId),
     staleTime: 60_000,

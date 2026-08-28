@@ -1,18 +1,28 @@
+import {uiText} from "@/config/uiText"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { PageHero } from "@/components/shared/PageHero"
+import { DataTableShell } from "@/components/shared/DataTableShell"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { useTeamsQueries } from "../hooks/useTeams"
+import { useListQueryState, enumParam } from "@/lib/listQuery"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import {
   Activity,
   BadgeCheck,
-  Eye,
   LayoutGrid,
   List,
   Plus,
   RefreshCcw,
-  Search,
   Sparkles,
   UserCog,
   UsersRound,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMemo, useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
@@ -27,8 +37,6 @@ import {
   activateTeam,
   createTeam,
   deactivateTeam,
-  getAllUsers,
-  getTeams,
   type AdminUser,
   type Team,
 } from "../api/adminTeamsApi"
@@ -100,23 +108,24 @@ export function AdminTeamsPage() {
 
   const canManage = can(permissions, "team:manage")
 
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [status, setStatus] = useState<StatusFilter>("ALL")
-  const [managerId, setManagerId] = useState("ALL")
-  const [view, setView] = useState<ViewMode>("CARDS")
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
+  const searchInput = params.get("search") || ""
+  const search = useDebouncedValue(searchInput.trim(), 350)
+  const status = enumParam(
+    params.get("status"),
+    ["ALL", "ACTIVE", "INACTIVE"],
+    "ALL"
+  )
+  const managerId = params.get("managerId") || "ALL"
+  const view = enumParam(params.get("view"), ["CARDS", "TABLE"], "CARDS")
+  const setSearchInput = (search: string) =>
+    patch({ search }, { replace: true })
+  const setStatus = (status: StatusFilter) => patch({ status })
+  const setManagerId = (managerId: string) => patch({ managerId })
+  const setView = (view: ViewMode) => patch({ view }, { resetPage: false })
   const [createOpen, setCreateOpen] = useState(false)
   const [statusTarget, setStatusTarget] = useState<Team | null>(null)
-
-  useEffect(() => {
-    const handle = window.setTimeout(() => {
-      setSearch(searchInput.trim())
-      setPage(1)
-    }, 350)
-    return () => window.clearTimeout(handle)
-  }, [searchInput])
 
   const filters = useMemo(
     () => ({
@@ -130,26 +139,8 @@ export function AdminTeamsPage() {
     [page, pageSize, search, managerId, status]
   )
 
-  const teamsQuery = useQuery({
-    queryKey: ["admin-teams", filters],
-    queryFn: () => getTeams(filters),
-  })
-
-  const activeCountQuery = useQuery({
-    queryKey: ["admin-teams-count", "active"],
-    queryFn: () => getTeams({ page: 1, limit: 1, isActive: true }),
-  })
-
-  const inactiveCountQuery = useQuery({
-    queryKey: ["admin-teams-count", "inactive"],
-    queryFn: () =>
-      getTeams({ page: 1, limit: 1, isActive: false, includeInactive: true }),
-  })
-
-  const usersQuery = useQuery({
-    queryKey: ["admin-teams-users"],
-    queryFn: getAllUsers,
-  })
+  const { teamsQuery, activeCountQuery, inactiveCountQuery, usersQuery } =
+    useTeamsQueries(filters, search === searchInput.trim())
 
   const managers = useMemo(
     () =>
@@ -192,21 +183,14 @@ export function AdminTeamsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
-              <Sparkles className="size-4" />
-              مرکز مدیریت تیم‌ها
-            </div>
-            <h1 className="ui-page-title">مدیریت تیم‌ها</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              ساختار تیم‌ها، مدیران، اعضا و وضعیت فعالیت را از یک فضای واحد
-              مدیریت کنید.
-            </p>
-          </div>
-
+      <PageHero
+        title={"مدیریت تیم‌ها"}
+        description={
+          "ساختار تیم‌ها، مدیران، اعضا و وضعیت فعالیت را از یک فضای واحد مدیریت کنید."
+        }
+        eyebrow={"مرکز مدیریت تیم‌ها"}
+        icon={Sparkles}
+        actions={
           <div className="flex flex-wrap gap-2">
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
@@ -249,8 +233,8 @@ export function AdminTeamsPage() {
               </Button>
             ) : null}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -279,203 +263,185 @@ export function AdminTeamsPage() {
         />
       </section>
 
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
-        <div className="grid gap-3 xl:grid-cols-[minmax(280px,1.3fr)_minmax(180px,.7fr)_minmax(180px,.7fr)_auto]">
-          <div className="relative">
-            <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="جستجو در نام، کد یا توضیحات تیم"
-              className="pe-10"
-            />
-          </div>
-
-          <NativeSelect
-            value={managerId}
-            onChange={(event) => {
-              setManagerId(event.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="ALL">همه مدیران</option>
-            {managers.map((manager) => (
-              <option key={manager.id} value={manager.id}>
-                {manager.fullName}
-              </option>
-            ))}
-          </NativeSelect>
-
-          <NativeSelect
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as StatusFilter)
-              setPage(1)
-            }}
-          >
-            <option value="ALL">همه وضعیت‌ها</option>
-            <option value="ACTIVE">فعال</option>
-            <option value="INACTIVE">غیرفعال</option>
-          </NativeSelect>
-        </div>
-      </section>
-
-      {teamsQuery.isLoading ? (
-        <div className="grid min-h-72 place-items-center text-sm text-muted-foreground">
-          در حال دریافت تیم‌ها...
-        </div>
-      ) : teamsQuery.isError ? (
-        <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center">
-          <p className="font-bold text-red-600">
-            دریافت تیم‌ها با خطا مواجه شد.
-          </p>
-          <Button
-            className="mt-3"
-            variant="outline"
-            onClick={() => void teamsQuery.refetch()}
-          >
-            تلاش مجدد
-          </Button>
-        </div>
-      ) : !pageTeams.length ? (
-        <div className="grid min-h-72 place-items-center rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">
-          تیمی پیدا نشد.
-        </div>
-      ) : view === "CARDS" ? (
-        <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {pageTeams.map((team) => (
-            <article
-              key={team.id}
-              className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition hover:-translate-y-0.5"
+      <DataTableToolbar
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        searchPlaceholder="جستجو در نام، کد یا توضیحات تیم"
+        hasActiveFilters={Boolean(
+          searchInput || managerId !== "ALL" || status !== "ALL"
+        )}
+        onClearFilters={() =>
+          patch({ search: undefined, managerId: undefined, status: undefined })
+        }
+        filters={
+          <>
+            <NativeSelect
+              aria-label="مدیر تیم"
+              value={managerId}
+              onChange={(event) => {
+                setManagerId(event.target.value)
+              }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
-                    {initials(team.name)}
-                  </div>
-                  <div>
-                    <h2 className="font-black">{team.name}</h2>
-                    <p
-                      className="mt-0.5 text-xs text-muted-foreground"
-                      dir="ltr"
-                    >
-                      {team.code}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                >
-                  {team.isActive ? "فعال" : "غیرفعال"}
-                </span>
-              </div>
+              <option value="ALL">همه مدیران</option>
+              {managers.map((manager) => (
+                <option key={manager.id} value={manager.id}>
+                  {manager.fullName}
+                </option>
+              ))}
+            </NativeSelect>
 
-              <p className="mt-4 min-h-12 text-sm leading-6 text-muted-foreground">
-                {team.description || "برای این تیم توضیحی ثبت نشده است."}
-              </p>
+            <NativeSelect
+              aria-label="وضعیت تیم"
+              value={status}
+              onChange={(event) => {
+                setStatus(event.target.value as StatusFilter)
+              }}
+            >
+              <option value="ALL">{uiText.common.filters.allStatuses}</option>
+              <option value="ACTIVE">فعال</option>
+              <option value="INACTIVE">غیرفعال</option>
+            </NativeSelect>
+          </>
+        }
+      />
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-muted/35 p-3">
-                  <div className="text-xs text-muted-foreground">مدیر تیم</div>
-                  <div className="mt-1 truncate text-sm font-bold">
-                    {team.manager?.fullName || "بدون مدیر"}
+      <QueryContent query={teamsQuery}>
+        {!pageTeams.length ? (
+          <EmptyState title="تیمی پیدا نشد." />
+        ) : view === "CARDS" ? (
+          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {pageTeams.map((team) => (
+              <article
+                key={team.id}
+                className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition hover:-translate-y-0.5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
+                      {initials(team.name)}
+                    </div>
+                    <div>
+                      <h2 className="font-black">{team.name}</h2>
+                      <p
+                        className="mt-0.5 text-xs text-muted-foreground"
+                        dir="ltr"
+                      >
+                        {team.code}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="rounded-2xl bg-muted/35 p-3">
-                  <div className="text-xs text-muted-foreground">اعضا</div>
-                  <div className="mt-1 text-sm font-bold">
-                    {fa(team.memberCount)} نفر
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/admin/teams/${team.id}`)}
-                >
-                  مشاهده تیم
-                </Button>
-                {canManage ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setStatusTarget(team)}
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
                   >
-                    {team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}
-                  </Button>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </section>
-      ) : (
-        <section className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="bg-muted/45 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-3 text-right">تیم</th>
-                  <th className="px-4 py-3 text-right">مدیر</th>
-                  <th className="px-4 py-3 text-right">اعضا</th>
-                  <th className="px-4 py-3 text-right">وضعیت</th>
-                  <th className="px-4 py-3 text-center">عملیات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageTeams.map((team) => (
-                  <tr
-                    key={team.id}
-                    className="cursor-pointer border-t border-[var(--app-divider)] transition hover:bg-muted/25"
+                    {team.isActive ? uiText.common.active : uiText.common.inactive}
+                  </span>
+                </div>
+
+                <p className="mt-4 min-h-12 text-sm leading-6 text-muted-foreground">
+                  {team.description || "برای این تیم توضیحی ثبت نشده است."}
+                </p>
+
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-muted/35 p-3">
+                    <div className="text-xs text-muted-foreground">
+                      مدیر تیم
+                    </div>
+                    <div className="mt-1 truncate text-sm font-bold">
+                      {team.manager?.fullName || "بدون مدیر"}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl bg-muted/35 p-3">
+                    <div className="text-xs text-muted-foreground">اعضا</div>
+                    <div className="mt-1 text-sm font-bold">
+                      {fa(team.memberCount)} نفر
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => navigate(`/admin/teams/${team.id}`)}
                   >
-                    <td className="px-5 py-4">
-                      <div className="text-right">
-                        <div className="font-bold">{team.name}</div>
-                        <div
-                          className="text-xs text-muted-foreground"
-                          dir="ltr"
-                        >
-                          {team.code}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      {team.manager?.fullName || "بدون مدیر"}
-                    </td>
-                    <td className="px-4 py-4">{fa(team.memberCount)}</td>
-                    <td className="px-4 py-4">
-                      {team.isActive ? "فعال" : "غیرفعال"}
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label="مشاهده جزئیات تیم"
-                        title="مشاهده جزئیات"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          navigate(`/admin/teams/${team.id}`)
-                        }}
-                      >
-                        <Eye className="size-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
+                    مشاهده تیم
+                  </Button>
+                  {canManage ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setStatusTarget(team)}
+                    >
+                      {team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی"}
+                    </Button>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </section>
+        ) : (
+          <section className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
+            <div className="overflow-x-auto">
+              <DataTableShell
+                entityRows
+                rows={pageTeams}
+                getRowKey={(team) => team.id}
+                onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
+                columns={[
+                  {
+                    id: "team",
+                    header: "تیم",
+                    cell: (team) => (
+                      <EntityTableCell
+                        title={team.name}
+                        subtitle={team.code}
+                        subtitleDir="ltr"
+                        avatar={team.name.slice(0, 1)}
+                      />
+                    ),
+                  },
+                  {
+                    id: "manager",
+                    header: "مدیر",
+                    cell: (team) => team.manager?.fullName || "بدون مدیر",
+                  },
+                  {
+                    id: "members",
+                    header: "اعضا",
+                    cell: (team) => fa(team.memberCount),
+                  },
+                  {
+                    id: "status",
+                    header: "وضعیت",
+                    cell: (team) => (
+                      <StatusBadge tone={team.isActive ? "success" : "neutral"}>
+                        {team.isActive ? uiText.common.active : uiText.common.inactive}
+                      </StatusBadge>
+                    ),
+                  },
+                  {
+                    id: "actions",
+                    header: "عملیات",
+                    headerClassName: "text-end",
+                    cell: (team) => (
+                      <EntityRowActions
+                        label="مشاهده جزئیات تیم"
+                        onView={() => navigate(`/admin/teams/${team.id}`)}
+                      />
+                    ),
+                  },
+                ]}
+              />
+            </div>
+          </section>
+        )}
+      </QueryContent>
       <PaginationControls
         page={teamsQuery.data?.meta.page ?? page}
         pageCount={teamsQuery.data?.meta.totalPages ?? 1}
         onPageChange={setPage}
         pageSize={pageSize}
-        onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
+        onPageSizeChange={setPageSize}
         total={teamsQuery.data?.meta.total}
         disabled={teamsQuery.isFetching}
       />

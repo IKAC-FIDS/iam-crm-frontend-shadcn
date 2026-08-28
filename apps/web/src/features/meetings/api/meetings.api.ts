@@ -1,3 +1,5 @@
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 import { getOpportunities } from "@/features/opportunities/api/opportunities.api"
@@ -24,11 +26,18 @@ function clean<T extends object>(value: T) {
 
 export async function getMeetings(query: MeetingQuery) {
   const response = await api.get("/meetings", { params: clean(query) })
-  const body = response.data as MeetingPage
-  return {
-    data: Array.isArray(body.data) ? body.data : [],
-    meta: body.meta,
-  } satisfies MeetingPage
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<Meeting>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string" &&
+        "title" in value &&
+        typeof value.title === "string"
+    )
+  )
 }
 
 export async function getMeeting(id: string) {

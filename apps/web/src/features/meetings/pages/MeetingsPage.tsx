@@ -1,17 +1,11 @@
-import {
-  CalendarDays,
-  LayoutList,
-  Plus,
-} from "lucide-react"
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react"
-import { useSearchParams } from "react-router-dom"
+import { PageHero } from "@/components/shared/PageHero"
+import { CalendarDays, LayoutList, Plus } from "lucide-react"
+import { useMemo, useState } from "react"
+import { useListQueryState } from "@/lib/listQuery"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { QueryContent } from "@/components/shared/QueryContent"
 
 import { ErrorState } from "@/components/shared/ErrorState"
-import { LoadingState } from "@/components/shared/LoadingState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
@@ -36,13 +30,7 @@ import { localDayRange } from "../utils/meetingFormatters"
 
 type MeetingView = "agenda" | "list"
 type QuickFilter =
-  | "all"
-  | "today"
-  | "upcoming"
-  | "mine"
-  | "completed"
-  | "cancelled"
-  | "past"
+  "all" | "today" | "upcoming" | "mine" | "completed" | "cancelled" | "past"
 
 const quickFilters: QuickFilter[] = [
   "all",
@@ -70,11 +58,15 @@ const filterKeys = [
 
 export function MeetingsPage() {
   const text = uiText.meetings
-  const [searchParams, setSearchParams] =
-    useSearchParams()
-  const permissions = useAuthStore(
-    (state) => state.user?.permissions ?? []
-  )
+  const {
+    params: searchParams,
+    page,
+    pageSize: limit,
+    patch: patchList,
+    setPage,
+    setPageSize,
+  } = useListQueryState()
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
 
   const canView = permissions.includes("meeting:view")
   const canCreate = permissions.includes("meeting:create")
@@ -83,34 +75,20 @@ export function MeetingsPage() {
   const canCancel = permissions.includes("meeting:cancel")
 
   const view: MeetingView =
-    searchParams.get("view") === "list"
-      ? "list"
-      : "agenda"
+    searchParams.get("view") === "list" ? "list" : "agenda"
 
   const quickValue = searchParams.get("quick")
-  const quick: QuickFilter = quickFilters.includes(
-    quickValue as QuickFilter
-  )
+  const quick: QuickFilter = quickFilters.includes(quickValue as QuickFilter)
     ? (quickValue as QuickFilter)
     : "all"
 
-  const page = Math.max(
-    1,
-    Number(searchParams.get("page")) || 1
+  const searchDraft = searchParams.get("search") || ""
+  const debouncedSearch = useDebouncedValue(searchDraft, 300)
+  const setSearchDraft = (search: string) =>
+    patchList({ search }, { replace: true })
+  const [formMeeting, setFormMeeting] = useState<Meeting | null | undefined>(
+    undefined
   )
-
-  const limit = [10, 20, 50, 100].includes(
-    Number(searchParams.get("limit"))
-  )
-    ? Number(searchParams.get("limit"))
-    : 20
-
-  const [searchDraft, setSearchDraft] = useState(
-    searchParams.get("search") || ""
-  )
-  const [formMeeting, setFormMeeting] = useState<
-    Meeting | null | undefined
-  >(undefined)
   const [statusState, setStatusState] = useState<{
     meeting: Meeting
     action: "complete" | "cancel"
@@ -123,78 +101,31 @@ export function MeetingsPage() {
     values: Record<string, string | undefined>,
     resetPage = true
   ) {
-    const next = new URLSearchParams(searchParams)
-
-    Object.entries(values).forEach(([key, value]) => {
-      if (value) next.set(key, value)
-      else next.delete(key)
-    })
-
-    if (resetPage) next.set("page", "1")
-    setSearchParams(next)
+    patchList(values, { resetPage })
   }
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (
-        searchDraft ===
-        (searchParams.get("search") || "")
-      ) {
-        return
-      }
-
-      const next = new URLSearchParams(searchParams)
-
-      if (searchDraft.trim()) {
-        next.set("search", searchDraft.trim())
-      } else {
-        next.delete("search")
-      }
-
-      next.set("page", "1")
-      setSearchParams(next)
-    }, 300)
-
-    return () => window.clearTimeout(timer)
-  }, [
-    searchDraft,
-    searchParams,
-    setSearchParams,
-  ])
-
-  const filterValues = useMemo<MeetingFilterValues>(() => ({
-    search: searchDraft,
-    companyId:
-      searchParams.get("companyId") || undefined,
-    opportunityId:
-      searchParams.get("opportunityId") || undefined,
-    status: [
-      "SCHEDULED",
-      "COMPLETED",
-      "CANCELLED",
-    ].includes(statusParam || "")
-      ? (statusParam as MeetingStatus)
-      : undefined,
-    mode: [
-      "IN_PERSON",
-      "ONLINE",
-      "HYBRID",
-    ].includes(modeParam || "")
-      ? (modeParam as MeetingMode)
-      : undefined,
-    meetingTypeId: searchParams.get("meetingTypeId") || undefined,
-    dateFrom:
-      searchParams.get("dateFrom") || undefined,
-    dateTo:
-      searchParams.get("dateTo") || undefined,
-    organizerId:
-      searchParams.get("organizerId") || undefined,
-    assignedUserId:
-      searchParams.get("assignedUserId") || undefined,
-    attendeePersonId:
-      searchParams.get("attendeePersonId") ||
-      undefined,
-  }), [searchDraft, searchParams, statusParam, modeParam])
+  const filterValues = useMemo<MeetingFilterValues>(
+    () => ({
+      search: searchDraft,
+      companyId: searchParams.get("companyId") || undefined,
+      opportunityId: searchParams.get("opportunityId") || undefined,
+      status: ["SCHEDULED", "COMPLETED", "CANCELLED"].includes(
+        statusParam || ""
+      )
+        ? (statusParam as MeetingStatus)
+        : undefined,
+      mode: ["IN_PERSON", "ONLINE", "HYBRID"].includes(modeParam || "")
+        ? (modeParam as MeetingMode)
+        : undefined,
+      meetingTypeId: searchParams.get("meetingTypeId") || undefined,
+      dateFrom: searchParams.get("dateFrom") || undefined,
+      dateTo: searchParams.get("dateTo") || undefined,
+      organizerId: searchParams.get("organizerId") || undefined,
+      assignedUserId: searchParams.get("assignedUserId") || undefined,
+      attendeePersonId: searchParams.get("attendeePersonId") || undefined,
+    }),
+    [searchDraft, searchParams, statusParam, modeParam]
+  )
 
   const queryParams = useMemo<MeetingQuery>(() => {
     const today = localDayRange()
@@ -202,28 +133,18 @@ export function MeetingsPage() {
     const query: MeetingQuery = {
       page,
       limit,
-      search:
-        searchParams.get("search") || undefined,
+      search: debouncedSearch.trim() || undefined,
       companyId: filterValues.companyId,
       opportunityId: filterValues.opportunityId,
       organizerId: filterValues.organizerId,
-      assignedUserId:
-        filterValues.assignedUserId,
-      attendeePersonId:
-        filterValues.attendeePersonId,
+      assignedUserId: filterValues.assignedUserId,
+      attendeePersonId: filterValues.attendeePersonId,
       status: filterValues.status,
       mode: filterValues.mode,
       meetingTypeId: filterValues.meetingTypeId,
-      dateFrom:
-        quick === "today"
-          ? today.dateFrom
-          : filterValues.dateFrom,
-      dateTo:
-        quick === "today"
-          ? today.dateTo
-          : filterValues.dateTo,
-      upcoming:
-        quick === "upcoming" || undefined,
+      dateFrom: quick === "today" ? today.dateFrom : filterValues.dateFrom,
+      dateTo: quick === "today" ? today.dateTo : filterValues.dateTo,
+      upcoming: quick === "upcoming" || undefined,
       past: quick === "past" || undefined,
       mine: quick === "mine" || undefined,
     }
@@ -237,41 +158,28 @@ export function MeetingsPage() {
     }
 
     return query
-  }, [
-    filterValues,
-    limit,
-    page,
-    quick,
-    searchParams,
-  ])
+  }, [debouncedSearch, filterValues, limit, page, quick])
 
   const meetings = useMeetings(
     queryParams,
-    canView
+    canView && searchDraft === debouncedSearch
   )
   const rows = meetings.data?.data ?? []
 
   const contextualOpportunity = rows.find(
-    (item) =>
-      item.opportunity?.id ===
-      filterValues.opportunityId
+    (item) => item.opportunity?.id === filterValues.opportunityId
   )?.opportunity
 
   function changeQuick(nextQuick: QuickFilter) {
     patchParams({
-      quick:
-        nextQuick === "all"
-          ? undefined
-          : nextQuick,
+      quick: nextQuick === "all" ? undefined : nextQuick,
       status: undefined,
       dateFrom: undefined,
       dateTo: undefined,
     })
   }
 
-  function changeFilters(
-    patch: Partial<MeetingFilterValues>
-  ) {
+  function changeFilters(patch: Partial<MeetingFilterValues>) {
     if (patch.search !== undefined) {
       setSearchDraft(patch.search)
     }
@@ -279,17 +187,10 @@ export function MeetingsPage() {
     const params = Object.fromEntries(
       Object.entries(patch)
         .filter(([key]) => key !== "search")
-        .map(([key, value]) => [
-          key,
-          value || undefined,
-        ])
+        .map(([key, value]) => [key, value || undefined])
     )
 
-    if (
-      "status" in patch ||
-      "dateFrom" in patch ||
-      "dateTo" in patch
-    ) {
+    if ("status" in patch || "dateFrom" in patch || "dateTo" in patch) {
       params.quick = undefined
     }
 
@@ -303,9 +204,7 @@ export function MeetingsPage() {
       quick: undefined,
     }
 
-    filterKeys.forEach(
-      (key) => (values[key] = undefined)
-    )
+    filterKeys.forEach((key) => (values[key] = undefined))
 
     setSearchDraft("")
     patchParams(values)
@@ -321,29 +220,13 @@ export function MeetingsPage() {
   }
 
   return (
-    <div
-      className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-5"
-      dir="rtl"
-    >
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]">
-              <CalendarDays className="size-3.5" />
-              مرکز مدیریت جلسات
-            </div>
-
-            <h1 className="ui-page-title">
-              {text.title}
-            </h1>
-
-            <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">
-              {text.description}
-            </p>
-          </div>
-
+    <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-5" dir="rtl">
+      <PageHero
+        title={text.title}
+        description={text.description}
+        eyebrow={"مرکز مدیریت جلسات"}
+        icon={CalendarDays}
+        actions={
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
@@ -355,12 +238,7 @@ export function MeetingsPage() {
                     ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
                     : "rounded-lg"
                 }
-                onClick={() =>
-                  patchParams(
-                    { view: undefined },
-                    false
-                  )
-                }
+                onClick={() => patchParams({ view: undefined }, false)}
               >
                 <CalendarDays className="size-4" />
                 {text.views.agenda}
@@ -375,12 +253,7 @@ export function MeetingsPage() {
                     ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
                     : "rounded-lg"
                 }
-                onClick={() =>
-                  patchParams(
-                    { view: "list" },
-                    false
-                  )
-                }
+                onClick={() => patchParams({ view: "list" }, false)}
               >
                 <LayoutList className="size-4" />
                 {text.views.list}
@@ -391,17 +264,15 @@ export function MeetingsPage() {
               <Button
                 type="button"
                 className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() =>
-                  setFormMeeting(null)
-                }
+                onClick={() => setFormMeeting(null)}
               >
                 <Plus className="size-4" />
                 {text.actions.create}
               </Button>
             ) : null}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <MeetingFilters
         values={filterValues}
@@ -429,98 +300,72 @@ export function MeetingsPage() {
         </div>
 
         <p className="shrink-0 text-xs text-[var(--app-text-secondary)]">
-          {(
-            meetings.data?.meta.total ?? 0
-          ).toLocaleString("fa-IR")}{" "}
+          {(meetings.data?.meta.total ?? 0).toLocaleString("fa-IR")}{" "}
           {text.title}
         </p>
       </section>
 
       <section className="min-w-0 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]">
         <div className="min-w-0 p-3 sm:p-5">
-          {meetings.isLoading ? (
-            <LoadingState rows={6} />
-          ) : meetings.isError ? (
-            <ErrorState
-              title={text.errors.listTitle}
-              description={
-                text.errors.listDescription
-              }
-              retryLabel={uiText.common.retry}
-              onRetry={() =>
-                void meetings.refetch()
-              }
-            />
-          ) : view === "agenda" ? (
-            <MeetingAgenda
-              meetings={rows}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-              canComplete={canComplete}
-              canCancel={canCancel}
-              onCreate={() =>
-                setFormMeeting(null)
-              }
-              onEdit={setFormMeeting}
-              onComplete={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "complete",
-                })
-              }
-              onCancel={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "cancel",
-                })
-              }
-            />
-          ) : (
-            <MeetingList
-              meetings={rows}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-              canComplete={canComplete}
-              canCancel={canCancel}
-              onCreate={() =>
-                setFormMeeting(null)
-              }
-              onEdit={setFormMeeting}
-              onComplete={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "complete",
-                })
-              }
-              onCancel={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "cancel",
-                })
-              }
-            />
-          )}
+          <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
+            {view === "agenda" ? (
+              <MeetingAgenda
+                meetings={rows}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canComplete={canComplete}
+                canCancel={canCancel}
+                onCreate={() => setFormMeeting(null)}
+                onEdit={setFormMeeting}
+                onComplete={(meeting) =>
+                  setStatusState({
+                    meeting,
+                    action: "complete",
+                  })
+                }
+                onCancel={(meeting) =>
+                  setStatusState({
+                    meeting,
+                    action: "cancel",
+                  })
+                }
+              />
+            ) : (
+              <MeetingList
+                meetings={rows}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canComplete={canComplete}
+                canCancel={canCancel}
+                onCreate={() => setFormMeeting(null)}
+                onEdit={setFormMeeting}
+                onComplete={(meeting) =>
+                  setStatusState({
+                    meeting,
+                    action: "complete",
+                  })
+                }
+                onCancel={(meeting) =>
+                  setStatusState({
+                    meeting,
+                    action: "cancel",
+                  })
+                }
+              />
+            )}
+          </QueryContent>
         </div>
       </section>
 
       {meetings.data ? (
         <PaginationControls
           page={page}
-          pageCount={
-            meetings.data.meta.totalPages
-          }
+          pageCount={meetings.data.meta.totalPages}
           disabled={meetings.isFetching}
           pageSize={limit}
           total={meetings.data.meta.total}
-          onPageSizeChange={(nextLimit) => patchParams({ limit: String(nextLimit), page: "1" }, false)}
-          onPageChange={(nextPage) =>
-            patchParams(
-              {
-                page: String(nextPage),
-              },
-              false
-            )
-          }
+          onPageSizeChange={setPageSize}
+          onPageChange={setPage}
         />
       ) : null}
 
@@ -533,17 +378,13 @@ export function MeetingsPage() {
             }
           }}
           meeting={formMeeting}
-          initialCompanyId={
-            filterValues.companyId
-          }
+          initialCompanyId={filterValues.companyId}
           initialOpportunity={
             contextualOpportunity
               ? {
                   id: contextualOpportunity.id,
-                  title:
-                    contextualOpportunity.title,
-                  companyId:
-                    contextualOpportunity.companyId,
+                  title: contextualOpportunity.title,
+                  companyId: contextualOpportunity.companyId,
                 }
               : undefined
           }

@@ -1,3 +1,5 @@
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 import { getPeopleDirectory } from "@/features/people/api/people.api"
@@ -17,7 +19,9 @@ import type {
 
 function clean<T extends object>(value: T) {
   return Object.fromEntries(
-    Object.entries(value).filter(([, item]) => item !== undefined && item !== "")
+    Object.entries(value).filter(
+      ([, item]) => item !== undefined && item !== ""
+    )
   )
 }
 
@@ -29,11 +33,18 @@ export async function getTasks(query: TaskListQuery) {
         query.overdueOnly === undefined ? undefined : String(query.overdueOnly),
     }),
   })
-  const body = response.data as TaskPage
-  return {
-    data: Array.isArray(body.data) ? body.data : [],
-    meta: body.meta,
-  } satisfies TaskPage
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<Task>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string" &&
+        "title" in value &&
+        typeof value.title === "string"
+    )
+  )
 }
 
 export async function getTask(id: string) {

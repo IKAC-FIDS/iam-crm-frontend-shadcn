@@ -21,6 +21,8 @@
   },
 
   common: {
+    filters: { status: "وضعیت", allStatuses: "همه وضعیت‌ها", owner: "ثبت‌کننده", team: "تیم", priority: "اولویت", actions: "عملیات" },
+    invalidWebUrl: "آدرس معتبر با http یا https وارد کنید.",
     save: "ذخیره",
     loading: "در حال دریافت اطلاعات...",
     refresh: "به‌روزرسانی",

@@ -1,4 +1,6 @@
-﻿import { getPeopleDirectory } from "@/features/people/api/people.api"
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
+import { getPeopleDirectory } from "@/features/people/api/people.api"
 import {
   getOpportunities,
   getOpportunityOwnerOptions,
@@ -12,14 +14,15 @@ import type {
   ActivityListQuery,
   ActivityOption,
   ActivityOwnerOption,
-  ActivityPage,
   CreateActivityPayload,
   UpdateActivityPayload,
 } from "../types/activity.types"
 
 function clean(value: object) {
   return Object.fromEntries(
-    Object.entries(value).filter(([, item]) => item !== undefined && item !== "")
+    Object.entries(value).filter(
+      ([, item]) => item !== undefined && item !== ""
+    )
   )
 }
 
@@ -27,68 +30,6 @@ export async function getActivityTypes() {
   const response = await api.get("/activities/types/options")
   const data = unwrapApiResponse<ActivityTypeOption[]>(response.data)
   return Array.isArray(data) ? data : []
-}
-
-type Envelope = {
-  success?: boolean
-  data?: Activity[] | Envelope
-  items?: Activity[]
-  meta?: Partial<ActivityPage["meta"]>
-  total?: number
-  page?: number
-  limit?: number
-  totalPages?: number
-}
-
-function normalizePage(value: unknown, fallbackPage: number, fallbackLimit: number): ActivityPage {
-  if (Array.isArray(value)) {
-    return {
-      data: value as Activity[],
-      meta: {
-        total: value.length,
-        page: fallbackPage,
-        limit: fallbackLimit,
-        totalPages: Math.max(1, Math.ceil(value.length / Math.max(1, fallbackLimit))),
-      },
-    }
-  }
-
-  if (!value || typeof value !== "object") {
-    return {
-      data: [],
-      meta: { total: 0, page: fallbackPage, limit: fallbackLimit, totalPages: 1 },
-    }
-  }
-
-  const body = value as Envelope
-  if (body.data && !Array.isArray(body.data) && typeof body.data === "object") {
-    return normalizePage(body.data, fallbackPage, fallbackLimit)
-  }
-
-  const data = Array.isArray(body.data)
-    ? body.data
-    : Array.isArray(body.items)
-      ? body.items
-      : []
-  const total = body.meta?.total ?? body.total ?? data.length
-  const page = body.meta?.page ?? body.page ?? fallbackPage
-  const limit = body.meta?.limit ?? body.limit ?? fallbackLimit
-  const totalPages =
-    body.meta?.totalPages ??
-    body.totalPages ??
-    Math.max(1, Math.ceil(total / Math.max(1, limit)))
-
-  return {
-    data,
-    meta: {
-      total,
-      page,
-      limit,
-      totalPages,
-      hasNext: body.meta?.hasNext ?? page < totalPages,
-      hasPrevious: body.meta?.hasPrevious ?? page > 1,
-    },
-  }
 }
 
 export async function getActivities(query: ActivityListQuery) {
@@ -100,7 +41,18 @@ export async function getActivities(query: ActivityListQuery) {
         query.unassigned === undefined ? undefined : String(query.unassigned),
     }),
   })
-  return normalizePage(response.data, query.page, query.limit)
+  return parsePaginatedResponse(
+    response.data,
+    z.custom<Activity>(
+      (value) =>
+        !!value &&
+        typeof value === "object" &&
+        "id" in value &&
+        typeof value.id === "string" &&
+        "type" in value &&
+        typeof value.type === "string"
+    )
+  )
 }
 
 export async function createActivity(payload: CreateActivityPayload) {
@@ -108,12 +60,18 @@ export async function createActivity(payload: CreateActivityPayload) {
   return unwrapApiResponse<Activity>(response.data)
 }
 
-export async function updateActivity(id: string, payload: UpdateActivityPayload) {
+export async function updateActivity(
+  id: string,
+  payload: UpdateActivityPayload
+) {
   const response = await api.patch(`/activities/${id}`, clean(payload))
   return unwrapApiResponse<Activity>(response.data)
 }
 
-export async function getActivityPeopleOptions(companyId: string, search: string): Promise<ActivityOption[]> {
+export async function getActivityPeopleOptions(
+  companyId: string,
+  search: string
+): Promise<ActivityOption[]> {
   const page = await getPeopleDirectory({
     page: 1,
     limit: 25,
@@ -134,7 +92,10 @@ export async function getActivityPeopleOptions(companyId: string, search: string
   }))
 }
 
-export async function getActivityOpportunityOptions(companyId: string, search: string): Promise<ActivityOption[]> {
+export async function getActivityOpportunityOptions(
+  companyId: string,
+  search: string
+): Promise<ActivityOption[]> {
   if (!companyId) return []
   const page = await getOpportunities({
     page: 1,
@@ -152,7 +113,9 @@ export async function getActivityOpportunityOptions(companyId: string, search: s
   }))
 }
 
-export async function getActivityOwnerOptions(): Promise<ActivityOwnerOption[]> {
+export async function getActivityOwnerOptions(): Promise<
+  ActivityOwnerOption[]
+> {
   const data = await getOpportunityOwnerOptions()
   return data.map((item) => ({
     id: item.id,

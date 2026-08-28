@@ -1,12 +1,15 @@
+import {uiText} from "@/config/uiText"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { useListQueryState, enumParam } from "@/lib/listQuery"
+import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
+import { QueryContent } from "@/components/shared/QueryContent"
 import {
   Activity as ActivityIcon,
   Filter,
   Plus,
-  RotateCcw,
-  Search,
   SlidersHorizontal,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import {
   DataTableShell,
@@ -14,14 +17,12 @@ import {
 } from "@/components/shared/DataTableShell"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
-import { LoadingState } from "@/components/shared/LoadingState"
 import { PageHero } from "@/components/shared/PageHero"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
   PopoverContent,
@@ -47,26 +48,11 @@ import {
   ACTIVITY_TYPE_OPTIONS,
   type Activity,
   type ActivityListQuery,
-  type ActivityOption,
-  type ActivityStatus,
   type ActivityType,
 } from "../types/activity.types"
 
-type QuickScope = "all" | "mine" | "team"
-
 const selectClass =
   "h-11 w-full rounded-xl border border-input bg-transparent px-3 text-xs outline-none focus:border-[var(--app-primary)]"
-
-function useDebounced(value: string, delay = 300) {
-  const [debounced, setDebounced] = useState(value)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebounced(value), delay)
-    return () => window.clearTimeout(timer)
-  }, [delay, value])
-
-  return debounced
-}
 
 function formatDate(value?: string | null) {
   if (!value) return "—"
@@ -83,10 +69,11 @@ function formatDate(value?: string | null) {
   }).format(date)
 }
 
-function activityTypeLabel(type: ActivityType, options: readonly { value: string; label: string }[] = ACTIVITY_TYPE_OPTIONS) {
-  return (
-    options.find((item) => item.value === type)?.label || type
-  )
+function activityTypeLabel(
+  type: ActivityType,
+  options: readonly { value: string; label: string }[] = ACTIVITY_TYPE_OPTIONS
+) {
+  return options.find((item) => item.value === type)?.label || type
 }
 
 function companyName(activity: Activity) {
@@ -101,34 +88,58 @@ export function ActivitiesPage() {
   const canCreate = permissions.includes("activity:create")
   const canUpdate = permissions.includes("activity:update")
   const typeQuery = useActivityTypes(canView)
-  const typeOptions = useMemo(() => typeQuery.data
-    ? [...typeQuery.data.map((item) => ({ value: item.code, label: item.label })), { value: "STAGE_CHANGE", label: "تغییر مرحله" }]
-    : [...ACTIVITY_TYPE_OPTIONS], [typeQuery.data])
+  const typeOptions = useMemo(
+    () =>
+      typeQuery.data
+        ? [
+            ...typeQuery.data.map((item) => ({
+              value: item.code,
+              label: item.label,
+            })),
+            { value: "STAGE_CHANGE", label: "تغییر مرحله" },
+          ]
+        : [...ACTIVITY_TYPE_OPTIONS],
+    [typeQuery.data]
+  )
 
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<10 | 20 | 50 | 100>(20)
-  const [search, setSearch] = useState("")
-  const [scope, setScope] = useState<QuickScope>("all")
-  const [activityType, setActivityType] = useState<"" | ActivityType>("")
-  const [status, setStatus] = useState<"" | ActivityStatus>("")
-  const [companyId, setCompanyId] = useState("")
-  const [person, setPerson] = useState<ActivityOption>()
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
+  const search = params.get("search") || ""
+  const scope = enumParam(params.get("scope"), ["all", "mine", "team"], "all")
+  const activityType = params.get("activityType") || ""
+  const status = enumParam(
+    params.get("status"),
+    ["", "RECORDED", "COMPLETED"],
+    ""
+  )
+  const companyId = params.get("companyId") || ""
+  const personId = params.get("personId") || undefined
+  const ownerId = params.get("ownerId") || ""
+  const team = params.get("team") || ""
   const [personSearch, setPersonSearch] = useState("")
-  const [ownerId, setOwnerId] = useState("")
-  const [team, setTeam] = useState("")
-  const [dateRange, setDateRange] = useState<ActivityPersianDateRange>()
+  const dateRange = useMemo<ActivityPersianDateRange>(() => {
+    const date = (key: string) => {
+      const value = params.get(key)
+      const parsed = value ? new Date(value) : undefined
+      return parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined
+    }
+    return { from: date("dateFrom"), to: date("dateTo") }
+  }, [params])
   const [createOpen, setCreateOpen] = useState(false)
   const [editActivity, setEditActivity] = useState<Activity | null>(null)
   const [detailActivity, setDetailActivity] = useState<Activity | null>(null)
 
-  const debouncedSearch = useDebounced(search)
-  const debouncedPersonSearch = useDebounced(personSearch)
+  const debouncedSearch = useDebounced(search, 300)
+  const debouncedPersonSearch = useDebounced(personSearch, 300)
 
   const people = useActivityPeopleOptions(
     companyId,
     debouncedPersonSearch,
     canView
   )
+  const person =
+    people.data?.find((item) => item.id === personId) ??
+    (personId ? { id: personId, label: personId } : undefined)
   const owners = useActivityOwnerOptions(canView)
 
   const ownerOptions = useMemo(
@@ -209,7 +220,7 @@ export function ActivitiesPage() {
     team,
   ])
 
-  const activities = useActivities(query, canView)
+  const activities = useActivities(query, canView && search === debouncedSearch)
   const stages = usePipelineStages(canView)
   const stageItems = useMemo(() => stages.data ?? [], [stages.data])
 
@@ -217,22 +228,24 @@ export function ActivitiesPage() {
     Boolean
   ).length
 
-  function resetPage() {
-    setPage(1)
-  }
-
   function clearFilters() {
-    setSearch("")
-    setScope("all")
-    setActivityType("")
-    setStatus("")
-    setCompanyId("")
-    setPerson(undefined)
+    patch(
+      Object.fromEntries(
+        [
+          "search",
+          "scope",
+          "activityType",
+          "status",
+          "companyId",
+          "personId",
+          "ownerId",
+          "team",
+          "dateFrom",
+          "dateTo",
+        ].map((key) => [key, undefined])
+      )
+    )
     setPersonSearch("")
-    setOwnerId("")
-    setTeam("")
-    setDateRange(undefined)
-    setPage(1)
   }
 
   const columns = useMemo<DataTableColumn<Activity>[]>(
@@ -243,12 +256,25 @@ export function ActivitiesPage() {
         cell: (item) => (
           <div className="max-w-[280px]">
             <span className="font-bold">
-              {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.title || item.outcome, stageItems) || activityTypeLabel(item.type, typeOptions) : (item.title && item.title !== item.type ? item.title : item.outcome) || activityTypeLabel(item.type, typeOptions)}
+              {item.type === "STAGE_CHANGE"
+                ? localizeStageChangeText(
+                    item.title || item.outcome,
+                    stageItems
+                  ) || activityTypeLabel(item.type, typeOptions)
+                : (item.title && item.title !== item.type
+                    ? item.title
+                    : item.outcome) ||
+                  activityTypeLabel(item.type, typeOptions)}
             </span>
 
             {item.description || item.notes ? (
               <p className="mt-1 line-clamp-1 text-xs leading-5 text-[var(--app-text-secondary)]">
-                {item.type === "STAGE_CHANGE" ? localizeStageChangeText(item.description || item.notes, stageItems) : item.description || item.notes}
+                {item.type === "STAGE_CHANGE"
+                  ? localizeStageChangeText(
+                      item.description || item.notes,
+                      stageItems
+                    )
+                  : item.description || item.notes}
               </p>
             ) : null}
           </div>
@@ -352,218 +378,203 @@ export function ActivitiesPage() {
         }
       />
 
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-        <div className="grid gap-3 xl:grid-cols-[minmax(220px,1.35fr)_auto_minmax(155px,.8fr)_minmax(145px,.72fr)_minmax(210px,1fr)_auto] xl:items-center">
-          <div className="relative">
-            <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
-            <Input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value)
-                resetPage()
-              }}
-              placeholder="جستجو در نتیجه، یادداشت، شخص یا شرکت"
-              className="h-11 rounded-xl pe-9"
-            />
-          </div>
-
-          <div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-            {(["all", "mine", "team"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => {
-                  setScope(value)
-                  if (value === "mine") setOwnerId("")
-                  resetPage()
-                }}
-                className={[
-                  "rounded-lg px-3 py-2 text-xs font-bold transition",
-                  scope === value
-                    ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                    : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-                ].join(" ")}
-              >
-                {value === "all"
-                  ? "همه"
-                  : value === "mine"
-                    ? "فعالیت‌های من"
-                    : "تیم من"}
-              </button>
-            ))}
-          </div>
-
-          <select
-            className={selectClass}
-            value={activityType}
-            onChange={(event) => {
-              setActivityType(event.target.value as "" | ActivityType)
-              resetPage()
-            }}
-          >
-            <option value="">نوع: همه</option>
-            {typeOptions.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className={selectClass}
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as "" | ActivityStatus)
-              resetPage()
-            }}
-          >
-            <option value="">وضعیت: همه</option>
-            <option value="RECORDED">ثبت‌شده</option>
-            <option value="COMPLETED">تکمیل‌شده</option>
-          </select>
-
-          <ActivityPersianDateRangePicker
-            value={dateRange}
-            onChange={(value) => {
-              setDateRange(value)
-              resetPage()
-            }}
-          />
-
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
+      <DataTableToolbar
+        searchValue={search}
+        onSearchChange={(value) => patch({ search: value }, { replace: true })}
+        searchPlaceholder="جستجو در نتیجه، یادداشت، شخص یا شرکت"
+        hasActiveFilters
+        onClearFilters={clearFilters}
+        filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+        filters={
+          <>
+            <div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
+              {(["all", "mine", "team"] as const).map((value) => (
+                <button
+                  key={value}
                   type="button"
-                  variant="outline"
-                  className="h-11 rounded-xl"
+                  onClick={() => {
+                    patch({
+                      scope: value,
+                      ...(value === "mine" ? { ownerId: undefined } : {}),
+                    })
+                  }}
+                  className={[
+                    "rounded-lg px-3 py-2 text-xs font-bold transition",
+                    scope === value
+                      ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
+                      : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+                  ].join(" ")}
+                >
+                  {value === "all"
+                    ? "همه"
+                    : value === "mine"
+                      ? "فعالیت‌های من"
+                      : "تیم من"}
+                </button>
+              ))}
+            </div>
+
+            <select
+              aria-label="نوع فعالیت"
+              className={selectClass}
+              value={activityType}
+              onChange={(event) => {
+                patch({ activityType: event.target.value })
+              }}
+            >
+              <option value="">نوع: همه</option>
+              {typeOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              aria-label={uiText.common.filters.status}
+              className={selectClass}
+              value={status}
+              onChange={(event) => {
+                patch({ status: event.target.value })
+              }}
+            >
+              <option value="">وضعیت: همه</option>
+              <option value="RECORDED">ثبت‌شده</option>
+              <option value="COMPLETED">تکمیل‌شده</option>
+            </select>
+
+            <ActivityPersianDateRangePicker
+              value={dateRange}
+              onChange={(value) => {
+                patch({
+                  dateFrom: value?.from?.toISOString(),
+                  dateTo: value?.to?.toISOString(),
+                })
+              }}
+            />
+
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11 rounded-xl"
+                  />
+                }
+              >
+                <SlidersHorizontal className="size-4" />
+                فیلترهای بیشتر
+                {activeAdvanced ? (
+                  <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
+                    {activeAdvanced.toLocaleString("fa-IR")}
+                  </span>
+                ) : null}
+              </PopoverTrigger>
+
+              <PopoverContent
+                align="end"
+                className="w-[min(680px,calc(100vw-24px))] rounded-2xl p-4"
+                dir="rtl"
+              >
+                <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
+                  <Filter className="size-4 text-[var(--app-primary)]" />
+                  فیلترهای بیشتر
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <SearchableCompanySelect
+                    value={companyId || undefined}
+                    onChange={(next) => {
+                      patch({
+                        companyId: next || undefined,
+                        personId: undefined,
+                      })
+                      setPersonSearch("")
+                    }}
+                    placeholder="همه شرکت‌ها"
+                  />
+
+                  <ActivityOptionSelect
+                    value={person?.id}
+                    selectedOption={person}
+                    options={people.data || []}
+                    onChange={(next) => {
+                      patch({ personId: next?.id })
+                    }}
+                    search={personSearch}
+                    onSearchChange={setPersonSearch}
+                    placeholder="همه اشخاص"
+                    loading={people.isLoading}
+                  />
+
+                  <ActivityOptionSelect
+                    value={ownerId || undefined}
+                    options={ownerOptions}
+                    onChange={(next) => {
+                      patch({ ownerId: next?.id })
+                    }}
+                    search=""
+                    onSearchChange={() => undefined}
+                    placeholder="همه مالکان شرکت"
+                    loading={owners.isLoading}
+                    searchable={false}
+                    disabled={scope === "mine"}
+                  />
+
+                  <select
+                    aria-label={uiText.common.filters.team}
+                    className={selectClass}
+                    value={team}
+                    onChange={(event) => {
+                      patch({ team: event.target.value })
+                    }}
+                  >
+                    <option value="">تیم: همه</option>
+                    {teams.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+      />
+
+      <QueryContent query={activities} errorTitle="خطا در دریافت فعالیت‌ها">
+        {activities.data ? (
+          <div className="grid gap-3">
+            <DataTableShell
+              rows={
+                Array.isArray(activities.data.data) ? activities.data.data : []
+              }
+              columns={columns}
+              getRowKey={(item) => item.id}
+              onRowClick={setDetailActivity}
+              emptyState={
+                <EmptyState
+                  icon={ActivityIcon}
+                  title="فعالیتی پیدا نشد"
+                  description="فعالیتی مطابق فیلترهای انتخاب‌شده وجود ندارد."
                 />
               }
-            >
-              <SlidersHorizontal className="size-4" />
-              فیلترهای بیشتر
-              {activeAdvanced ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
-                  {activeAdvanced.toLocaleString("fa-IR")}
-                </span>
-              ) : null}
-            </PopoverTrigger>
+            />
 
-            <PopoverContent
-              align="end"
-              className="w-[min(680px,calc(100vw-24px))] rounded-2xl p-4"
-              dir="rtl"
-            >
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
-                <Filter className="size-4 text-[var(--app-primary)]" />
-                فیلترهای بیشتر
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <SearchableCompanySelect
-                  value={companyId || undefined}
-                  onChange={(next) => {
-                    setCompanyId(next || "")
-                    setPerson(undefined)
-                    setPersonSearch("")
-                    resetPage()
-                  }}
-                  placeholder="همه شرکت‌ها"
-                />
-
-                <ActivityOptionSelect
-                  value={person?.id}
-                  selectedOption={person}
-                  options={people.data || []}
-                  onChange={(next) => {
-                    setPerson(next)
-                    resetPage()
-                  }}
-                  search={personSearch}
-                  onSearchChange={setPersonSearch}
-                  placeholder="همه اشخاص"
-                  loading={people.isLoading}
-                />
-
-                <ActivityOptionSelect
-                  value={ownerId || undefined}
-                  options={ownerOptions}
-                  onChange={(next) => {
-                    setOwnerId(next?.id || "")
-                    resetPage()
-                  }}
-                  search=""
-                  onSearchChange={() => undefined}
-                  placeholder="همه مالکان شرکت"
-                  loading={owners.isLoading}
-                  searchable={false}
-                  disabled={scope === "mine"}
-                />
-
-                <select
-                  className={selectClass}
-                  value={team}
-                  onChange={(event) => {
-                    setTeam(event.target.value)
-                    resetPage()
-                  }}
-                >
-                  <option value="">تیم: همه</option>
-                  {teams.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="mt-3 flex justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="rounded-xl text-[var(--app-text-secondary)]"
-            onClick={clearFilters}
-          >
-            <RotateCcw className="size-3.5" />
-            پاک کردن فیلترها
-          </Button>
-        </div>
-      </section>
-
-      {activities.isLoading && !activities.data ? (
-        <LoadingState />
-      ) : activities.isError ? (
-        <ErrorState
-          title="خطا در دریافت فعالیت‌ها"
-          description="دریافت فهرست فعالیت‌ها ناموفق بود."
-          retryLabel="تلاش مجدد"
-          onRetry={() => void activities.refetch()}
-        />
-      ) : activities.data ? (
-        <div className="grid gap-3">
-          <DataTableShell
-            rows={
-              Array.isArray(activities.data.data) ? activities.data.data : []
-            }
-            columns={columns}
-            getRowKey={(item) => item.id}
-            onRowClick={setDetailActivity}
-            emptyState={
-              <EmptyState
-                icon={ActivityIcon}
-                title="فعالیتی پیدا نشد"
-                description="فعالیتی مطابق فیلترهای انتخاب‌شده وجود ندارد."
-              />
-            }
-          />
-
-          <PaginationControls page={activities.data.meta.page} pageCount={activities.data.meta.totalPages} pageSize={pageSize} total={activities.data.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value as 10 | 20 | 50 | 100); setPage(1) }} disabled={activities.isFetching} />
-        </div>
-      ) : null}
+            <PaginationControls
+              page={activities.data.meta.page}
+              pageCount={activities.data.meta.totalPages}
+              pageSize={pageSize}
+              total={activities.data.meta.total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              disabled={activities.isFetching || search !== debouncedSearch}
+            />
+          </div>
+        ) : null}
+      </QueryContent>
 
       <ActivityDetailDialog
         activity={detailActivity}

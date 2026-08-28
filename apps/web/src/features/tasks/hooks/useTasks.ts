@@ -1,3 +1,4 @@
+import { useQueryScope } from "@/lib/queryScope"
 import {
   keepPreviousData,
   useInfiniteQuery,
@@ -30,7 +31,8 @@ export const taskKeys = {
   list: (query: TaskListQuery) => [...taskKeys.lists(), query] as const,
   details: () => [...taskKeys.all, "detail"] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
-  assignees: (search: string) => [...taskKeys.all, "assignees", search] as const,
+  assignees: (search: string) =>
+    [...taskKeys.all, "assignees", search] as const,
   opportunities: (companyId: string, search: string) =>
     [...taskKeys.all, "opportunities", companyId, search] as const,
   people: (companyId: string, search: string) =>
@@ -43,7 +45,7 @@ export const taskKeys = {
 
 export function useTasks(query: TaskListQuery, enabled = true) {
   return useQuery({
-    queryKey: taskKeys.list(query),
+    queryKey: [...taskKeys.list(query), useQueryScope()],
     queryFn: () => getTasks(query),
     enabled,
     placeholderData: keepPreviousData,
@@ -52,7 +54,7 @@ export function useTasks(query: TaskListQuery, enabled = true) {
 
 export function useTask(id: string, enabled = true) {
   return useQuery({
-    queryKey: taskKeys.detail(id),
+    queryKey: [...taskKeys.detail(id), useQueryScope()],
     queryFn: () => getTask(id),
     enabled: enabled && Boolean(id),
   })
@@ -106,7 +108,10 @@ function useInvalidateTaskDomain() {
 
 export function useCreateTask() {
   const invalidate = useInvalidateTaskDomain()
-  return useMutation({ mutationFn: createTask, onSuccess: (task) => invalidate(task) })
+  return useMutation({
+    mutationFn: createTask,
+    onSuccess: (task) => invalidate(task),
+  })
 }
 
 export function useUpdateTask() {
@@ -143,13 +148,8 @@ export function useChangeTaskStatus() {
 export function useAssignTask() {
   const invalidate = useInvalidateTaskDomain()
   return useMutation({
-    mutationFn: ({
-      id,
-      assignedToId,
-    }: {
-      id: string
-      assignedToId: string
-    }) => assignTask(id, assignedToId),
+    mutationFn: ({ id, assignedToId }: { id: string; assignedToId: string }) =>
+      assignTask(id, assignedToId),
     onSuccess: (task) => invalidate(task),
   })
 }
@@ -197,7 +197,7 @@ export function useDeleteTask() {
 
 export function useTaskAssignees(search: string, enabled = true) {
   return useInfiniteQuery({
-    queryKey: taskKeys.assignees(search.trim()),
+    queryKey: [...taskKeys.assignees(search.trim()), useQueryScope()],
     queryFn: ({ pageParam }) => getTaskAssignees(search, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last) =>
@@ -213,7 +213,10 @@ export function useTaskOpportunityOptions(
   enabled = true
 ) {
   return useInfiniteQuery({
-    queryKey: taskKeys.opportunities(companyId, search.trim()),
+    queryKey: [
+      ...taskKeys.opportunities(companyId, search.trim()),
+      useQueryScope(),
+    ],
     queryFn: ({ pageParam }) =>
       getTaskOpportunities(companyId, search, pageParam),
     initialPageParam: 1,
@@ -230,7 +233,7 @@ export function useTaskPeopleOptions(
   enabled = true
 ) {
   return useInfiniteQuery({
-    queryKey: taskKeys.people(companyId, search.trim()),
+    queryKey: [...taskKeys.people(companyId, search.trim()), useQueryScope()],
     queryFn: ({ pageParam }) => getTaskPeople(companyId, search, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last) =>
@@ -242,7 +245,7 @@ export function useTaskPeopleOptions(
 
 export function useTaskDocuments(opportunityId: string, enabled = true) {
   return useQuery({
-    queryKey: taskKeys.documents(opportunityId),
+    queryKey: [...taskKeys.documents(opportunityId), useQueryScope()],
     queryFn: () => getTaskDocuments(opportunityId, 1),
     enabled: enabled && Boolean(opportunityId),
   })
@@ -250,7 +253,7 @@ export function useTaskDocuments(opportunityId: string, enabled = true) {
 
 export function useTaskPayments(opportunityId: string, enabled = true) {
   return useQuery({
-    queryKey: taskKeys.payments(opportunityId),
+    queryKey: [...taskKeys.payments(opportunityId), useQueryScope()],
     queryFn: () => getTaskPayments(opportunityId, 1),
     enabled: enabled && Boolean(opportunityId),
   })
