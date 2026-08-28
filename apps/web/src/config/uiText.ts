@@ -1,5 +1,6 @@
 ﻿export const uiText = {
   app: {
+    invalidResponse: "پاسخ دریافتی قابل نمایش نیست. لطفاً دوباره تلاش کنید.",
     loading: "در حال آماده‌سازی...",
     sessionUnavailable: "بررسی نشست ممکن نیست. اتصال را بررسی کنید و دوباره تلاش کنید.",
     login: "رفتن به صفحه ورود",
@@ -20,6 +21,12 @@
   },
 
   common: {
+    save: "ذخیره",
+    loading: "در حال دریافت اطلاعات...",
+    refresh: "به‌روزرسانی",
+    active: "فعال",
+    inactive: "غیرفعال",
+    forms: { required: "تکمیل این فیلد الزامی است.", invalidEmail: "ایمیل معتبر نیست.", shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد." },
     home: "خانه",
     profile: "پروفایل",
     logout: "خروج",
@@ -37,15 +44,30 @@
     processing: "در حال انجام...",
     listSeparator: "، ",
     table: {
+      loadError: "دریافت اطلاعات با خطا مواجه شد.",
+      noResults: "اطلاعاتی پیدا نشد",
+      noResultsDescription: "فیلترهای جستجو را تغییر دهید.",
+      caption: "فهرست اطلاعات",
       searchPlaceholder: "جستجو...",
       clearFilters: "پاک کردن فیلترها",
     },
     pagination: {
+      rows: "ردیف",
+      rowsPerPage: "تعداد ردیف در هر صفحه",
       page: "صفحه",
       of: "از",
       previous: "قبلی",
       next: "بعدی",
     },
+  },
+
+  adminUsers: {
+    title: "مدیریت کاربران",
+    create: "افزودن کاربر",
+    noTeam: "بدون تیم",
+    fields: { fullName: "نام کامل", email: "ایمیل", password: "رمز عبور اولیه", roleChoice: "نقش", teamId: "تیم", status: "وضعیت" },
+    roleLabels: { ADMIN: "ادمین", MANAGER: "مدیر فروش", REP: "کارشناس فروش", BOARDS: "برد / مشاهده‌گر" },
+    search: "جستجو بر اساس نام یا ایمیل",
   },
 
   navigation: {

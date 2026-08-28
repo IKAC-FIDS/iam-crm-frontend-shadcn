@@ -145,6 +145,7 @@ export function OpportunityDetailPage() {
       setEditOpen(false)
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.mutation))
+      throw error
     }
   }
 

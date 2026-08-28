@@ -1,4 +1,6 @@
 import { api } from "@/lib/api"
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
 import type {
@@ -9,11 +11,11 @@ import type {
   UpdateCompanyPayload,
 } from "../types/company.types"
 
-interface PaginatedCompaniesEnvelope {
-  success?: boolean
-  data: Company[]
-  meta: PaginatedCompanies["meta"]
-}
+// Validate the list's structural boundary, retaining optional domain fields.
+const companyRowSchema = z.custom<Company>(
+  (value) =>
+    z.object({ id: z.string(), legalName: z.string() }).safeParse(value).success
+)
 
 export type CompanyOwnerOption = {
   id: string
@@ -30,7 +32,7 @@ export type CompanyOwnerOption = {
 }
 
 export async function getCompanies(query: CompaniesQuery) {
-  const response = await api.get<PaginatedCompaniesEnvelope>("/companies", {
+  const response = await api.get<unknown>("/companies", {
     params: {
       page: query.page,
       limit: query.limit,
@@ -45,10 +47,10 @@ export async function getCompanies(query: CompaniesQuery) {
     },
   })
 
-  return {
-    data: response.data.data,
-    meta: response.data.meta,
-  } satisfies PaginatedCompanies
+  return parsePaginatedResponse(
+    response.data,
+    companyRowSchema
+  ) satisfies PaginatedCompanies
 }
 
 export async function getCompany(companyId: string) {
@@ -63,7 +65,7 @@ export async function createCompany(payload: CreateCompanyPayload) {
 
 export async function updateCompany(
   companyId: string,
-  payload: UpdateCompanyPayload,
+  payload: UpdateCompanyPayload
 ) {
   const response = await api.patch(`/companies/${companyId}`, payload)
   return unwrapApiResponse<Company>(response.data)
@@ -76,7 +78,7 @@ export async function getCompanyOwnerOptions() {
 
 export async function changeCompanyOwner(
   companyId: string,
-  newOwnerId: string,
+  newOwnerId: string
 ) {
   const response = await api.patch(`/companies/${companyId}/owner`, {
     newOwnerId,

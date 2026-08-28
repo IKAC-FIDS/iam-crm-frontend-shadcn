@@ -1,5 +1,6 @@
 import axios from "axios"
 import { uiText } from "@/config/uiText"
+import { ApiContractError } from "./pagination"
 
 export interface AppError {
   kind:
@@ -29,6 +30,13 @@ export function normalizeAppError(
   error: unknown,
   fallback: string = text.unexpected
 ): AppError {
+  if (error instanceof ApiContractError)
+    return {
+      kind: "unknown",
+      message: error.message,
+      fieldErrors: {},
+      retryable: false,
+    }
   if (!axios.isAxiosError(error))
     return {
       kind: "unknown",
@@ -41,16 +49,22 @@ export function normalizeAppError(
   const details =
     record(body) && record(body.error) ? body.error : record(body) ? body : {}
   const fieldErrors: Record<string, string[]> = {}
-  const fields = details.fieldErrors ?? details.errors
-  if (record(fields)) {
-    for (const [field, value] of Object.entries(fields)) {
-      const list = messages(value)
-      if (list.length) fieldErrors[field] = list
-    }
-  } else if (Array.isArray(fields)) {
+  const nested = record(details.details) ? details.details : {}
+  const fields =
+    details.fieldErrors ??
+    details.errors ??
+    nested.fieldErrors ??
+    nested.errors ??
+    details.details
+  if (Array.isArray(fields)) {
     for (const field of fields) {
       if (record(field) && typeof field.field === "string")
         fieldErrors[field.field] = messages(field.message)
+    }
+  } else if (record(fields)) {
+    for (const [field, value] of Object.entries(fields)) {
+      const list = messages(value)
+      if (list.length) fieldErrors[field] = list
     }
   }
   const businessMessage = messages(details.message).join("؛ ")

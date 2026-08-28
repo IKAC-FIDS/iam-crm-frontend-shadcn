@@ -23,15 +23,19 @@ export function PaginationControls({
   total?: number
   disabled?: boolean
 }) {
-  const safePageCount = Math.max(pageCount, 1)
-  const safePage = Math.min(Math.max(page, 1), safePageCount)
+  const safePageCount = Number.isFinite(pageCount)
+    ? Math.max(Math.floor(pageCount), 1)
+    : 1
+  const safePage = Number.isFinite(page)
+    ? Math.min(Math.max(Math.floor(page), 1), safePageCount)
+    : 1
 
   return (
     <div className="flex flex-col gap-2 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--app-text-secondary)]">
         {total != null ? (
-          <span className="whitespace-nowrap font-medium">
-            {total.toLocaleString("fa-IR")} ردیف
+          <span className="font-medium whitespace-nowrap">
+            {total.toLocaleString("fa-IR")} {uiText.common.pagination.rows}
           </span>
         ) : null}
 
@@ -48,17 +52,20 @@ export function PaginationControls({
       <div className="flex flex-wrap items-center gap-2">
         {pageSize != null && onPageSizeChange ? (
           <label className="relative">
-            <span className="sr-only">تعداد ردیف در هر صفحه</span>
+            <span className="sr-only">
+              {uiText.common.pagination.rowsPerPage}
+            </span>
             <select
-              aria-label="تعداد ردیف در هر صفحه"
-              className="h-9 min-w-[92px] appearance-none rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] ps-3 pe-8 text-xs font-medium text-[var(--app-text-primary)] outline-none transition hover:border-[var(--app-primary)]/40 focus:border-[var(--app-primary)] disabled:opacity-50"
+              aria-label={uiText.common.pagination.rowsPerPage}
+              className="h-9 min-w-[92px] appearance-none rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] ps-3 pe-8 text-xs font-medium text-[var(--app-text-primary)] transition outline-none hover:border-[var(--app-primary)]/40 focus:border-[var(--app-primary)] disabled:opacity-50"
               value={pageSize}
               disabled={disabled}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
             >
               {pageSizeOptions.map((option) => (
                 <option key={option} value={option}>
-                  {option.toLocaleString("fa-IR")} / صفحه
+                  {option.toLocaleString("fa-IR")} /{" "}
+                  {uiText.common.pagination.page}
                 </option>
               ))}
             </select>

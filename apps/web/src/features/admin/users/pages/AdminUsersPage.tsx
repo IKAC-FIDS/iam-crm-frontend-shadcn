@@ -1,25 +1,37 @@
+import { PageHero } from "@/components/shared/PageHero"
+import { MetricCard } from "@/components/shared/MetricCard"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import {
+  DataTableShell,
+  type DataTableColumn,
+} from "@/components/shared/DataTableShell"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { uiText } from "@/config/uiText"
+import { enumParam, useListQueryState } from "@/lib/listQuery"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import {
+  useAdminUsers,
+  useAdminUserCount,
+  useAdminUserOptions,
+  useRefreshAdminUsers,
+  useSetAdminUserStatus,
+} from "../hooks/useAdminUsers"
+import { CreateUserModal } from "../components/CreateUserModal"
 import {
   Ban,
   CircleGauge,
   Eye,
-  Filter,
   MoreHorizontal,
   Plus,
   RefreshCcw,
-  Search,
   Sparkles,
   UserCheck,
-  Users,
   UsersRound,
 } from "lucide-react"
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-  type SelectHTMLAttributes,
-} from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMemo, useState, type SelectHTMLAttributes } from "react"
+
 import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
 
@@ -28,25 +40,13 @@ import { useAuthStore } from "@/store/authStore"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
+
 import {
   USER_ROLES,
   USER_ROLE_LABELS,
-  activateUser,
-  createUser,
-  deactivateUser,
-  getQuotaSummary,
-  getRoles,
-  getTeams,
-  getUsers,
-  updateUserRole,
   type AdminUser,
-  type Role,
-  type Team,
-  type UserRole,
 } from "../api/adminUsersApi"
 
-type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE"
 const fa = (v: number) => new Intl.NumberFormat("fa-IR").format(v)
 const can = (p: string[], action: string) => p.includes(action)
 const initials = (name: string) =>
@@ -59,7 +59,8 @@ const initials = (name: string) =>
     .toUpperCase() || "U"
 const roleLabel = (u: AdminUser) =>
   u.assignedRole?.name || USER_ROLE_LABELS[u.role] || u.role
-const teamLabel = (u: AdminUser) => u.teamRef?.name || u.team || "بدون تیم"
+const teamLabel = (u: AdminUser) =>
+  u.teamRef?.name || u.team || uiText.adminUsers.noTeam
 function formatDate(value?: string) {
   if (!value) return "—"
   try {
@@ -80,77 +81,30 @@ function NativeSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
     />
   )
 }
-function FieldLabel({ children }: { children: ReactNode }) {
-  return (
-    <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
-      {children}
-    </label>
-  )
-}
-function StatCard({
-  label,
-  value,
-  helper,
-  icon: Icon,
-  tone = "primary",
-}: {
-  label: string
-  value: string
-  helper: string
-  icon: typeof Users
-  tone?: "primary" | "success" | "warning" | "neutral"
-}) {
-  const tones = {
-    primary: "bg-[var(--app-primary-soft)] text-[var(--app-primary)]",
-    success: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    neutral: "bg-muted text-muted-foreground",
-  }
-  return (
-    <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-black">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            {helper}
-          </p>
-        </div>
-        <div className={`rounded-2xl p-3 ${tones[tone]}`}>
-          <Icon className="size-5" />
-        </div>
-      </div>
-    </article>
-  )
-}
-
 export function AdminUsersPage() {
   const navigate = useNavigate()
   const current = useAuthStore((s) => s.user)
   const permissions = current?.permissions ?? []
-  const qc = useQueryClient()
+  const refresh = useRefreshAdminUsers()
   const canCreate = can(permissions, "user:create")
   const canChangeRole = can(permissions, "user:change-role")
   const canViewTeams =
     can(permissions, "team:view") || can(permissions, "team:manage")
   const canViewRoles = can(permissions, "role:view")
 
-  const [page, setPage] = useState(1),
-    [pageSize, setPageSize] = useState(20),
-    [searchInput, setSearchInput] = useState(""),
-    [search, setSearch] = useState(""),
-    [role, setRole] = useState<UserRole | "ALL">("ALL"),
-    [teamId, setTeamId] = useState("ALL"),
-    [status, setStatus] = useState<StatusFilter>("ALL"),
-    [createOpen, setCreateOpen] = useState(false),
-    [statusTarget, setStatusTarget] = useState<AdminUser | null>(null)
-  useEffect(() => {
-    const h = window.setTimeout(() => {
-      setSearch(searchInput.trim())
-      setPage(1)
-    }, 350)
-    return () => window.clearTimeout(h)
-  }, [searchInput])
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
+  const searchInput = params.get("search") ?? ""
+  const search = useDebouncedValue(searchInput.trim(), 350)
+  const role = enumParam(params.get("role"), [...USER_ROLES, "ALL"], "ALL")
+  const teamId = params.get("teamId") || "ALL"
+  const status = enumParam(
+    params.get("status"),
+    ["ALL", "ACTIVE", "INACTIVE"],
+    "ALL"
+  )
+  const [createOpen, setCreateOpen] = useState(false)
+  const [statusTarget, setStatusTarget] = useState<AdminUser | null>(null)
   const filters = useMemo(
     () => ({
       page,
@@ -163,42 +117,16 @@ export function AdminUsersPage() {
     [page, pageSize, search, role, teamId, status]
   )
 
-  const users = useQuery({
-    queryKey: ["admin-users", filters],
-    queryFn: () => getUsers(filters),
-  })
-  const activeCount = useQuery({
-    queryKey: ["admin-users-count", "active"],
-    queryFn: () => getUsers({ page: 1, limit: 1, isActive: true }),
-  })
-  const inactiveCount = useQuery({
-    queryKey: ["admin-users-count", "inactive"],
-    queryFn: () => getUsers({ page: 1, limit: 1, isActive: false }),
-  })
-  const teams = useQuery({
-    queryKey: ["admin-users-teams"],
-    queryFn: getTeams,
-    enabled: canViewTeams,
-  })
-  const roles = useQuery({
-    queryKey: ["admin-users-roles"],
-    queryFn: getRoles,
-    enabled: canViewRoles,
-  })
-  const quota = useQuery({
-    queryKey: ["quota-current"],
-    queryFn: getQuotaSummary,
-  })
-
-  async function refresh() {
-    await qc.invalidateQueries({ queryKey: ["admin-users"] })
-    await qc.invalidateQueries({ queryKey: ["admin-users-count"] })
-    await qc.invalidateQueries({ queryKey: ["quota-current"] })
-  }
-  const statusMutation = useMutation({
-    mutationFn: (u: AdminUser) =>
-      u.isActive ? deactivateUser(u.id) : activateUser(u.id),
-    onSuccess: async (_, u) => {
+  const isSearchPending = search !== searchInput.trim()
+  const users = useAdminUsers(filters, !isSearchPending)
+  const activeCount = useAdminUserCount(true)
+  const inactiveCount = useAdminUserCount(false)
+  const { teams, roles, quota } = useAdminUserOptions(
+    canViewTeams,
+    canViewRoles
+  )
+  const statusMutation = useSetAdminUserStatus({
+    onSuccess: async (u) => {
       toast.success(u.isActive ? "کاربر غیرفعال شد." : "کاربر فعال شد.")
       setStatusTarget(null)
       await refresh()
@@ -219,67 +147,155 @@ export function AdminUsersPage() {
     search || role !== "ALL" || teamId !== "ALL" || status !== "ALL"
   )
   const clearFilters = () => {
-    setSearchInput("")
-    setSearch("")
-    setRole("ALL")
-    setTeamId("ALL")
-    setStatus("ALL")
-    setPage(1)
+    patch({
+      search: undefined,
+      role: undefined,
+      teamId: undefined,
+      status: undefined,
+    })
   }
+
+  const columns = useMemo<DataTableColumn<AdminUser>[]>(
+    () => [
+      {
+        id: "user",
+        header: "کاربر",
+        cell: (u) => (
+          <>
+            <div className="flex items-center gap-3 text-right">
+              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
+                {initials(u.fullName)}
+              </span>
+              <span>
+                <span className="block font-bold">{u.fullName}</span>
+                <span
+                  className="mt-0.5 block text-xs text-muted-foreground"
+                  dir="ltr"
+                >
+                  {u.email}
+                </span>
+              </span>
+            </div>
+          </>
+        ),
+      },
+      {
+        id: "role",
+        header: uiText.adminUsers.fields.roleChoice,
+        cell: (u) => (
+          <>
+            <StatusBadge tone="primary" dot={false}>
+              {roleLabel(u)}
+            </StatusBadge>
+          </>
+        ),
+      },
+      {
+        id: "team",
+        header: uiText.adminUsers.fields.teamId,
+        cell: (u) => <>{teamLabel(u)}</>,
+      },
+      {
+        id: "status",
+        header: uiText.adminUsers.fields.status,
+        cell: (u) => (
+          <>
+            <StatusBadge tone={u.isActive ? "success" : "neutral"}>
+              {u.isActive ? uiText.common.active : uiText.common.inactive}
+            </StatusBadge>
+          </>
+        ),
+      },
+      {
+        id: "updated",
+        header: "آخرین تغییر",
+        cell: (u) => <>{formatDate(u.updatedAt || u.createdAt)}</>,
+      },
+      {
+        id: "actions",
+        header: "عملیات",
+        cell: (u) => (
+          <>
+            <div className="flex justify-center gap-1">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label="مشاهده جزئیات کاربر"
+                title="مشاهده جزئیات"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  navigate(`/admin/users/${u.id}`)
+                }}
+              >
+                <Eye className="size-4" />
+              </Button>
+              {canChangeRole ? (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  aria-label="عملیات کاربر"
+                  title="عملیات"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    navigate(`/admin/users/${u.id}`)
+                  }}
+                >
+                  <MoreHorizontal className="size-4" />
+                </Button>
+              ) : null}
+            </div>
+          </>
+        ),
+      },
+    ],
+    [navigate, canChangeRole]
+  )
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
-              <Sparkles className="size-4" />
-              مرکز مدیریت کاربران
-            </div>
-            <h1 className="ui-page-title">مدیریت کاربران</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              کاربران، نقش‌ها، تیم‌ها، وضعیت دسترسی و تاریخچه تغییرات را از یک
-              فضای واحد مدیریت کنید.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <PageHero
+        title={uiText.adminUsers.title}
+        eyebrow="مرکز مدیریت کاربران"
+        icon={Sparkles}
+        description="کاربران، نقش‌ها، تیم‌ها، وضعیت دسترسی و تاریخچه تغییرات را از یک فضای واحد مدیریت کنید."
+        actions={
+          <>
             <Button variant="outline" onClick={() => void refresh()}>
               <RefreshCcw className="ms-2 size-4" />
-              به‌روزرسانی
+              {uiText.common.refresh}
             </Button>
             {canCreate ? (
               <Button onClick={() => setCreateOpen(true)}>
                 <Plus className="ms-2 size-4" />
-                افزودن کاربر
+                {uiText.adminUsers.create}
               </Button>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
+        <MetricCard
           label="کل کاربران"
           value={fa(total)}
           helper="تمام کاربران ثبت‌شده در سازمان"
           icon={UsersRound}
         />
-        <StatCard
+        <MetricCard
           label="کاربران فعال"
           value={fa(active)}
           helper="حساب‌هایی که امکان استفاده از سامانه دارند"
           icon={UserCheck}
           tone="success"
         />
-        <StatCard
+        <MetricCard
           label="کاربران غیرفعال"
           value={fa(inactive)}
           helper="حساب‌هایی که دسترسی آن‌ها متوقف شده است"
           icon={Ban}
           tone={inactive ? "warning" : "neutral"}
         />
-        <StatCard
+        <MetricCard
           label="ظرفیت کاربران فعال"
           value={
             quotaLimit
@@ -295,209 +311,86 @@ export function AdminUsersPage() {
         />
       </section>
 
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)]">
-        <div className="grid gap-3 xl:grid-cols-[minmax(280px,1.4fr)_repeat(3,minmax(150px,.65fr))_auto]">
-          <div className="relative">
-            <Search className="absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="جستجو بر اساس نام یا ایمیل"
-              className="pe-10"
-            />
-          </div>
-          <NativeSelect
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value as UserRole | "ALL")
-              setPage(1)
-            }}
-          >
-            <option value="ALL">همه نقش‌ها</option>
-            {USER_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {USER_ROLE_LABELS[r]}
-              </option>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            value={teamId}
-            disabled={!canViewTeams || teams.isLoading}
-            onChange={(e) => {
-              setTeamId(e.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="ALL">
-              {canViewTeams ? "همه تیم‌ها" : "بدون دسترسی به تیم‌ها"}
-            </option>
-            {(teams.data ?? []).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as StatusFilter)
-              setPage(1)
-            }}
-          >
-            <option value="ALL">همه وضعیت‌ها</option>
-            <option value="ACTIVE">فعال</option>
-            <option value="INACTIVE">غیرفعال</option>
-          </NativeSelect>
-          <Button
-            variant="outline"
-            onClick={clearFilters}
-            disabled={!hasFilters}
-          >
-            <Filter className="ms-2 size-4" />
-            پاک کردن
-          </Button>
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] px-5 py-4">
-          <div>
-            <h2 className="font-bold">فهرست کاربران</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {users.data
-                ? `${fa(users.data.meta.total)} کاربر مطابق فیلتر فعلی`
-                : "در حال دریافت کاربران"}
-            </p>
-          </div>
-          <div className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-            صفحه {fa(users.data?.meta.page ?? page)} از{" "}
-            {fa(Math.max(1, users.data?.meta.totalPages ?? 1))}
-          </div>
-        </div>
-        {users.isError ? (
-          <div className="p-8 text-center">
-            <p className="font-bold text-red-600">
-              دریافت کاربران با خطا مواجه شد.
-            </p>
-            <Button
-              className="mt-3"
-              variant="outline"
-              onClick={() => void users.refetch()}
+      <DataTableToolbar
+        filtersClassName="grid grid-cols-1 sm:grid-cols-3"
+        searchValue={searchInput}
+        onSearchChange={(search) => patch({ search }, { replace: true })}
+        searchPlaceholder={uiText.adminUsers.search}
+        hasActiveFilters={hasFilters}
+        onClearFilters={clearFilters}
+        filters={
+          <>
+            <NativeSelect
+              aria-label={uiText.adminUsers.fields.roleChoice}
+              value={role}
+              onChange={(e) => {
+                patch({ role: e.target.value })
+              }}
             >
-              تلاش مجدد
-            </Button>
-          </div>
-        ) : users.isLoading ? (
-          <div className="grid min-h-72 place-items-center text-sm text-muted-foreground">
-            در حال دریافت کاربران...
-          </div>
-        ) : !users.data?.data.length ? (
-          <div className="grid min-h-72 place-items-center p-6 text-center">
-            <div>
-              <Users className="mx-auto size-9 text-muted-foreground" />
-              <p className="mt-3 font-bold">کاربری پیدا نشد</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                فیلترها را تغییر دهید یا یک کاربر جدید اضافه کنید.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-sm">
-              <thead className="bg-muted/45 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-5 py-3 text-right font-medium">کاربر</th>
-                  <th className="px-4 py-3 text-right font-medium">نقش</th>
-                  <th className="px-4 py-3 text-right font-medium">تیم</th>
-                  <th className="px-4 py-3 text-right font-medium">وضعیت</th>
-                  <th className="px-4 py-3 text-right font-medium">
-                    آخرین تغییر
-                  </th>
-                  <th className="px-4 py-3 text-center font-medium">عملیات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.data.data.map((u) => (
-                  <tr
-                    key={u.id}
-                    className="cursor-pointer border-t border-[var(--app-divider)] transition hover:bg-muted/25"
-                    onClick={() => navigate(`/admin/users/${u.id}`)}
-                  >
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3 text-right">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
-                          {initials(u.fullName)}
-                        </span>
-                        <span>
-                          <span className="block font-bold">{u.fullName}</span>
-                          <span
-                            className="mt-0.5 block text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {u.email}
-                          </span>
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-bold text-violet-700 dark:text-violet-300">
-                        {roleLabel(u)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">
-                      {teamLabel(u)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${u.isActive ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
-                      >
-                        <span
-                          className={`size-1.5 rounded-full ${u.isActive ? "bg-emerald-500" : "bg-slate-400"}`}
-                        />
-                        {u.isActive ? "فعال" : "غیرفعال"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-xs text-muted-foreground">
-                      {formatDate(u.updatedAt || u.createdAt)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          aria-label="مشاهده جزئیات کاربر"
-                          title="مشاهده جزئیات"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            navigate(`/admin/users/${u.id}`)
-                          }}
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                        {canChangeRole ? (
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            aria-label="عملیات کاربر"
-                            title="عملیات"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              navigate(`/admin/users/${u.id}`)
-                            }}
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <div className="border-t border-[var(--app-divider)] p-3"><PaginationControls page={users.data?.meta.page ?? page} pageCount={users.data?.meta.totalPages ?? 1} pageSize={pageSize} total={users.data?.meta.total} onPageChange={setPage} onPageSizeChange={(value) => { setPageSize(value); setPage(1) }} disabled={users.isFetching} /></div>
-      </section>
+              <option value="ALL">همه نقش‌ها</option>
+              {USER_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {USER_ROLE_LABELS[r]}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              aria-label={uiText.adminUsers.fields.teamId}
+              value={teamId}
+              disabled={!canViewTeams || teams.isLoading}
+              onChange={(e) => {
+                patch({ teamId: e.target.value })
+              }}
+            >
+              <option value="ALL">
+                {canViewTeams ? "همه تیم‌ها" : "بدون دسترسی به تیم‌ها"}
+              </option>
+              {(teams.data ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              aria-label={uiText.adminUsers.fields.status}
+              value={status}
+              onChange={(e) => {
+                patch({ status: e.target.value })
+              }}
+            >
+              <option value="ALL">همه وضعیت‌ها</option>
+              <option value="ACTIVE">{uiText.common.active}</option>
+              <option value="INACTIVE">{uiText.common.inactive}</option>
+            </NativeSelect>
+          </>
+        }
+      />
+
+      <QueryContent query={users}>
+        <DataTableShell
+          caption="فهرست کاربران"
+          rows={users.data?.data ?? []}
+          columns={columns}
+          getRowKey={(user) => user.id}
+          onRowClick={(user) => navigate(`/admin/users/${user.id}`)}
+          emptyState={
+            <EmptyState
+              icon={UsersRound}
+              title="کاربری پیدا نشد"
+              description="فیلترها را تغییر دهید یا یک کاربر جدید اضافه کنید."
+            />
+          }
+        />
+        <PaginationControls
+          page={users.data?.meta.page ?? page}
+          pageCount={users.data?.meta.totalPages ?? 1}
+          pageSize={pageSize}
+          total={users.data?.meta.total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          disabled={users.isFetching || isSearchPending}
+        />
+      </QueryContent>
 
       <CreateUserModal
         open={createOpen}
@@ -526,174 +419,16 @@ export function AdminUsersPage() {
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="outline" onClick={() => setStatusTarget(null)}>
-            انصراف
+            {uiText.common.cancel}
           </Button>
           <Button
             onClick={() => statusTarget && statusMutation.mutate(statusTarget)}
             disabled={statusMutation.isPending}
           >
-            تأیید
+            {uiText.common.confirm}
           </Button>
         </div>
       </Modal>
     </div>
-  )
-}
-
-function CreateUserModal({
-  open,
-  onClose,
-  teams,
-  roles,
-  canChangeRole,
-  canUseTeams,
-  onCreated,
-}: {
-  open: boolean
-  onClose: () => void
-  teams: Team[]
-  roles: Role[]
-  canChangeRole: boolean
-  canUseTeams: boolean
-  onCreated: (id: string) => Promise<void>
-}) {
-  const [fullName, setFullName] = useState(""),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [roleChoice, setRoleChoice] = useState("BASE:REP"),
-    [teamId, setTeamId] = useState("")
-  const resetInputs0 = [open] as const
-  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
-  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
-    setPreviousResetInputs0(resetInputs0)
-    if (!open) {
-      setFullName("")
-      setEmail("")
-      setPassword("")
-      setRoleChoice("BASE:REP")
-      setTeamId("")
-    }
-  }
-  const custom = roleChoice.startsWith("ROLE:")
-    ? roles.find((r) => r.id === roleChoice.slice(5))
-    : null
-  const baseRole = (custom?.baseRole ??
-    roleChoice.replace("BASE:", "")) as UserRole
-  const mutation = useMutation({
-    mutationFn: async () => {
-      if (!fullName.trim()) throw new Error("نام کامل الزامی است.")
-      if (!email.includes("@")) throw new Error("ایمیل معتبر نیست.")
-      if (password.length < 6)
-        throw new Error("رمز عبور باید حداقل ۶ کاراکتر باشد.")
-      const created = await createUser({
-        fullName: fullName.trim(),
-        email: email.trim(),
-        password,
-        role: baseRole,
-        teamId: teamId || undefined,
-      })
-      if (custom && canChangeRole)
-        await updateUserRole(created.id, {
-          roleId: custom.id,
-          teamId: teamId || null,
-        })
-      return created
-    },
-    onSuccess: (u) => {
-      toast.success("کاربر با موفقیت ایجاد شد.")
-      void onCreated(u.id)
-    },
-    onError: (e) =>
-      toast.error(getApiErrorMessage(e, "ایجاد کاربر انجام نشد.")),
-  })
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="افزودن کاربر"
-      description="هویت، نقش و تیم اولیه کاربر را مشخص کنید."
-    >
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <FieldLabel>نام کامل</FieldLabel>
-          <Input
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-        </div>
-        <div>
-          <FieldLabel>ایمیل</FieldLabel>
-          <Input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            dir="ltr"
-          />
-        </div>
-        <div>
-          <FieldLabel>رمز عبور اولیه</FieldLabel>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="حداقل ۶ کاراکتر"
-            dir="ltr"
-          />
-        </div>
-        <div>
-          <FieldLabel>نقش</FieldLabel>
-          <NativeSelect
-            value={roleChoice}
-            onChange={(e) => setRoleChoice(e.target.value)}
-          >
-            <optgroup label="نقش‌های پایه">
-              {USER_ROLES.map((r) => (
-                <option key={r} value={`BASE:${r}`}>
-                  {USER_ROLE_LABELS[r]}
-                </option>
-              ))}
-            </optgroup>
-            {canChangeRole && roles.length ? (
-              <optgroup label="نقش‌های سفارشی">
-                {roles
-                  .filter((r) => r.isActive !== false)
-                  .map((r) => (
-                    <option key={r.id} value={`ROLE:${r.id}`}>
-                      {r.name} — {USER_ROLE_LABELS[r.baseRole]}
-                    </option>
-                  ))}
-              </optgroup>
-            ) : null}
-          </NativeSelect>
-        </div>
-        <div>
-          <FieldLabel>تیم</FieldLabel>
-          <NativeSelect
-            value={teamId}
-            onChange={(e) => setTeamId(e.target.value)}
-            disabled={!canUseTeams}
-          >
-            <option value="">بدون تیم</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </NativeSelect>
-        </div>
-      </div>
-      <div className="mt-5 rounded-2xl bg-muted/45 p-4 text-xs leading-6 text-muted-foreground">
-        نقش سفارشی در صورت داشتن مجوز تغییر نقش، بلافاصله پس از ساخت حساب تخصیص
-        داده می‌شود.
-      </div>
-      <div className="mt-5 flex justify-end gap-2">
-        <Button variant="outline" onClick={onClose}>
-          انصراف
-        </Button>
-        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-          <Plus className="ms-2 size-4" />
-          ثبت کاربر
-        </Button>
-      </div>
-    </Modal>
   )
 }

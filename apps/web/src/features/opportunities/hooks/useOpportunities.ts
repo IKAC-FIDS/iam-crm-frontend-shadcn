@@ -6,6 +6,7 @@ import {
   useQueryClient,
   type InfiniteData,
 } from "@tanstack/react-query"
+import { useQueryScope } from "@/lib/queryScope"
 
 import {
   archiveOpportunity,
@@ -65,8 +66,8 @@ export const opportunityQueryKeys = {
   all: ["opportunities"] as const,
   workspace: () => [...opportunityQueryKeys.all, "workspace"] as const,
   lists: () => [...opportunityQueryKeys.workspace(), "list"] as const,
-  list: (query: OpportunityListQuery) =>
-    [...opportunityQueryKeys.lists(), query] as const,
+  list: (query: OpportunityListQuery, scope: string) =>
+    [...opportunityQueryKeys.lists(), scope, query] as const,
   pipeline: () => [...opportunityQueryKeys.workspace(), "pipeline"] as const,
   pipelineColumn: (stageId: string, filters: OpportunityFilters) =>
     [...opportunityQueryKeys.pipeline(), stageId, filters] as const,
@@ -95,8 +96,9 @@ export function useOpportunityList(
   query: OpportunityListQuery,
   enabled = true
 ) {
+  const scope = useQueryScope()
   return useQuery({
-    queryKey: opportunityQueryKeys.list(query),
+    queryKey: opportunityQueryKeys.list(query, scope),
     queryFn: () => getOpportunities(query),
     placeholderData: keepPreviousData,
     enabled,

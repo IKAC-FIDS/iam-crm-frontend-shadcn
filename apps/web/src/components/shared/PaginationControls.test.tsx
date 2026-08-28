@@ -6,11 +6,43 @@ import { uiText } from "@/config/uiText"
 
 it("disables previous on first page and changes pages and row count", async () => {
   const user = userEvent.setup()
-  const changePage = vi.fn(), changeSize = vi.fn()
-  render(<PaginationControls page={1} pageCount={3} onPageChange={changePage} pageSize={20} onPageSizeChange={changeSize} total={50} />)
-  expect(screen.getByRole("button", { name: uiText.common.pagination.previous })).toBeDisabled()
-  await user.click(screen.getByRole("button", { name: uiText.common.pagination.next }))
+  const changePage = vi.fn(),
+    changeSize = vi.fn()
+  render(
+    <PaginationControls
+      page={1}
+      pageCount={3}
+      onPageChange={changePage}
+      pageSize={20}
+      onPageSizeChange={changeSize}
+      total={50}
+    />
+  )
+  expect(
+    screen.getByRole("button", { name: uiText.common.pagination.previous })
+  ).toBeDisabled()
+  await user.click(
+    screen.getByRole("button", { name: uiText.common.pagination.next })
+  )
   expect(changePage).toHaveBeenCalledWith(2)
   await user.selectOptions(screen.getByRole("combobox"), "50")
   expect(changeSize).toHaveBeenCalledWith(50)
+})
+
+it("clamps non-finite pages and disables both actions for empty data", () => {
+  render(
+    <PaginationControls
+      page={Number.NaN}
+      pageCount={0}
+      onPageChange={vi.fn()}
+      total={0}
+    />
+  )
+  expect(
+    screen.getByRole("button", { name: uiText.common.pagination.previous })
+  ).toBeDisabled()
+  expect(
+    screen.getByRole("button", { name: uiText.common.pagination.next })
+  ).toBeDisabled()
+  expect(screen.getByText(/صفحه ۱ از ۱/)).toBeInTheDocument()
 })

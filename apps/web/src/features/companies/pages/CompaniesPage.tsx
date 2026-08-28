@@ -8,8 +8,8 @@ import {
 } from "@/components/shared/DataTableShell"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { ErrorState } from "@/components/shared/ErrorState"
-import { LoadingState } from "@/components/shared/LoadingState"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { enumParam, useListQueryState } from "@/lib/listQuery"
 import { PageHero } from "@/components/shared/PageHero"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -22,11 +22,7 @@ import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { useCompanies } from "../hooks/useCompanies"
 import { useCreateCompany } from "../hooks/useCompanyMutations"
-import type {
-  Company,
-  CompanyPriority,
-  OwnershipScope,
-} from "../types/company.types"
+import type { Company } from "../types/company.types"
 import {
   companyDisplayName,
   formatCompanyDate,
@@ -39,13 +35,23 @@ export function CompaniesPage() {
   const canCreate = permissions.includes("company:create")
   const createMutation = useCreateCompany()
 
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const { params, page, pageSize, patch, setPage, setPageSize } =
+    useListQueryState()
   const [createOpen, setCreateOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const [priority, setPriority] = useState<CompanyPriority | "">("")
-  const [ownershipScope, setOwnershipScope] = useState<OwnershipScope>("ALL")
-  const [archiveMode, setArchiveMode] = useState<"ACTIVE" | "ARCHIVED" | "ALL">(
+  const search = params.get("search") ?? ""
+  const priority = enumParam(
+    params.get("priority"),
+    ["", "LOW", "MEDIUM", "HIGH", "STRATEGIC"],
+    ""
+  )
+  const ownershipScope = enumParam(
+    params.get("ownershipScope"),
+    ["ALL", "MINE", "TEAM", "UNASSIGNED"],
+    "ALL"
+  )
+  const archiveMode = enumParam(
+    params.get("archiveMode"),
+    ["ACTIVE", "ARCHIVED", "ALL"],
     "ACTIVE"
   )
 
@@ -158,11 +164,12 @@ export function CompaniesPage() {
     archiveMode !== "ACTIVE"
 
   function clearFilters() {
-    setSearch("")
-    setPriority("")
-    setOwnershipScope("ALL")
-    setArchiveMode("ACTIVE")
-    setPage(1)
+    patch({
+      search: undefined,
+      priority: undefined,
+      ownershipScope: undefined,
+      archiveMode: undefined,
+    })
   }
 
   return (
@@ -187,10 +194,10 @@ export function CompaniesPage() {
       />
 
       <DataTableToolbar
+        filtersClassName="grid grid-cols-1 xl:grid-cols-2 [&>div]:xl:col-span-2"
         searchValue={search}
         onSearchChange={(value) => {
-          setSearch(value)
-          setPage(1)
+          patch({ search: value }, { replace: true })
         }}
         searchPlaceholder={text.searchPlaceholder}
         hasActiveFilters={hasActiveFilters}
@@ -208,10 +215,10 @@ export function CompaniesPage() {
               ).map(([value, label]) => (
                 <button
                   key={value}
+                  aria-pressed={ownershipScope === value}
                   type="button"
                   onClick={() => {
-                    setOwnershipScope(value)
-                    setPage(1)
+                    patch({ ownershipScope: value })
                   }}
                   className={[
                     "rounded-lg px-3 py-2 text-xs font-bold transition",
@@ -226,10 +233,10 @@ export function CompaniesPage() {
             </div>
 
             <select
+              aria-label={text.filters.allPriorities}
               value={priority}
               onChange={(event) => {
-                setPriority(event.target.value as CompanyPriority | "")
-                setPage(1)
+                patch({ priority: event.target.value })
               }}
               className={selectClass}
             >
@@ -241,12 +248,10 @@ export function CompaniesPage() {
             </select>
 
             <select
+              aria-label={text.filters.allArchiveStates}
               value={archiveMode}
               onChange={(event) => {
-                setArchiveMode(
-                  event.target.value as "ACTIVE" | "ARCHIVED" | "ALL"
-                )
-                setPage(1)
+                patch({ archiveMode: event.target.value })
               }}
               className={selectClass}
             >
@@ -258,42 +263,31 @@ export function CompaniesPage() {
         }
       />
 
-      {query.isLoading ? (
-        <LoadingState />
-      ) : query.isError ? (
-        <ErrorState
-          title={text.errorTitle}
-          description={text.errorDescription}
-          retryLabel={uiText.common.retry}
-          onRetry={() => void query.refetch()}
+      <QueryContent query={query} errorTitle={text.errorTitle}>
+        <DataTableShell
+          rows={query.data?.data ?? []}
+          columns={columns}
+          getRowKey={(company) => company.id}
+          onRowClick={(company) => navigate(`/companies/${company.id}`)}
+          emptyState={
+            <EmptyState
+              icon={Building2}
+              title={text.emptyTitle}
+              description={text.emptyDescription}
+            />
+          }
         />
-      ) : (
-        <>
-          <DataTableShell
-            rows={query.data?.data ?? []}
-            columns={columns}
-            getRowKey={(company) => company.id}
-            onRowClick={(company) => navigate(`/companies/${company.id}`)}
-            emptyState={
-              <EmptyState
-                icon={Building2}
-                title={text.emptyTitle}
-                description={text.emptyDescription}
-              />
-            }
-          />
 
-          <PaginationControls
-            page={query.data?.meta.page ?? page}
-            pageCount={query.data?.meta.totalPages ?? 1}
-            onPageChange={setPage}
-            pageSize={pageSize}
-            onPageSizeChange={(value) => { setPageSize(value); setPage(1) }}
-            total={query.data?.meta.total}
-            disabled={query.isFetching}
-          />
-        </>
-      )}
+        <PaginationControls
+          page={query.data?.meta.page ?? page}
+          pageCount={query.data?.meta.totalPages ?? 1}
+          onPageChange={setPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          total={query.data?.meta.total}
+          disabled={query.isFetching}
+        />
+      </QueryContent>
 
       <CompanyFormDialog
         open={createOpen}

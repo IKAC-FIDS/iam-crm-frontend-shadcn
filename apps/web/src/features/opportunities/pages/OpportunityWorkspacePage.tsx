@@ -1,6 +1,13 @@
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { useListQueryState } from "@/lib/listQuery"
+import {
+  readOpportunityFilters,
+  opportunityFilterKeys,
+} from "../utils/opportunityQuery"
+import { PageHero } from "@/components/shared/PageHero"
 import { BriefcaseBusiness, LayoutList, Plus, Rows3 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom"
+import { useMemo, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
@@ -31,18 +38,35 @@ import {
   useUpdateOpportunity,
 } from "../hooks/useOpportunities"
 import type { OpportunityActionPermissions } from "../components/OpportunityActionsMenu"
-import type { Opportunity, OpportunityFilters, OpportunityPayload, OpportunityStage, OpportunityTransition, OpportunityUpdatePayload } from "../types/opportunity.types"
+import type {
+  Opportunity,
+  OpportunityPayload,
+  OpportunityStage,
+  OpportunityTransition,
+  OpportunityUpdatePayload,
+} from "../types/opportunity.types"
 
-const baseFilters: OpportunityFilters = { ownershipScope: "all", archiveState: "active" }
-
-function allowedTargets(opportunity: Opportunity, stages: OpportunityStage[], transitions: OpportunityTransition[], role?: string) {
-  const relevant = transitions.filter((rule) => rule.fromStageId === opportunity.stageId)
+function allowedTargets(
+  opportunity: Opportunity,
+  stages: OpportunityStage[],
+  transitions: OpportunityTransition[],
+  role?: string
+) {
+  const relevant = transitions.filter(
+    (rule) => rule.fromStageId === opportunity.stageId
+  )
   return stages.filter((stage) => {
     if (stage.id === opportunity.stageId) return false
-    const specific = relevant.find((rule) => rule.toStageId === stage.id && rule.role === role)
-    const general = relevant.find((rule) => rule.toStageId === stage.id && rule.role == null)
+    const specific = relevant.find(
+      (rule) => rule.toStageId === stage.id && rule.role === role
+    )
+    const general = relevant.find(
+      (rule) => rule.toStageId === stage.id && rule.role == null
+    )
     const selected = specific ?? general
-    return Boolean(selected && (selected.isAllowed ?? selected.allowed ?? false))
+    return Boolean(
+      selected && (selected.isAllowed ?? selected.allowed ?? false)
+    )
   })
 }
 
@@ -52,15 +76,25 @@ export function OpportunityWorkspacePage() {
   const permissions = user?.permissions ?? []
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initialCompanyId = searchParams.get("companyId")?.trim() || undefined
-  const [view, setView] = useState<"pipeline" | "list">(searchParams.get("view") === "list" ? "list" : "pipeline")
-  const [filters, setFilters] = useState<OpportunityFilters>(() => ({ ...baseFilters, companyId: initialCompanyId }))
-  const [queryFilters, setQueryFilters] = useState(filters)
-  const [formOpportunity, setFormOpportunity] = useState<Opportunity | null | undefined>(undefined)
-  const [ownerOpportunity, setOwnerOpportunity] = useState<Opportunity | null>(null)
-  const [stageState, setStageState] = useState<{ opportunity: Opportunity; target?: OpportunityStage | null } | null>(null)
-  const [archiveOpportunityState, setArchiveOpportunityState] = useState<Opportunity | null>(null)
+  const { params: searchParams, patch } = useListQueryState()
+  const view = searchParams.get("view") === "list" ? "list" : "pipeline"
+  const filters = useMemo(
+    () => readOpportunityFilters(searchParams),
+    [searchParams]
+  )
+  const queryFilters = useDebouncedValue(filters)
+  const [formOpportunity, setFormOpportunity] = useState<
+    Opportunity | null | undefined
+  >(undefined)
+  const [ownerOpportunity, setOwnerOpportunity] = useState<Opportunity | null>(
+    null
+  )
+  const [stageState, setStageState] = useState<{
+    opportunity: Opportunity
+    target?: OpportunityStage | null
+  } | null>(null)
+  const [archiveOpportunityState, setArchiveOpportunityState] =
+    useState<Opportunity | null>(null)
 
   const canView = permissions.includes("opportunity:view")
   const canCreate = permissions.includes("opportunity:create")
@@ -72,18 +106,27 @@ export function OpportunityWorkspacePage() {
     restore: permissions.includes("opportunity:restore"),
   }
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setQueryFilters(filters), 300)
-    return () => window.clearTimeout(timer)
-  }, [filters])
-
   const stagesQuery = usePipelineStages(canView)
-  const transitionsQuery = usePipelineTransitions(canView && actionPermissions.changeStage)
+  const transitionsQuery = usePipelineTransitions(
+    canView && actionPermissions.changeStage
+  )
   const sourcesQuery = useOpportunitySources(canView)
-  const ownersQuery = useOpportunityOwners(canView && permissions.includes("company:assign-owner"))
-  const stages = useMemo(() => (Array.isArray(stagesQuery.data) ? stagesQuery.data : []).filter((stage) => stage.isActive !== false).sort((left, right) => left.sortOrder - right.sortOrder), [stagesQuery.data])
-  const transitions = Array.isArray(transitionsQuery.data) ? transitionsQuery.data : []
-  const boardStages = queryFilters.stageId ? stages.filter((stage) => stage.id === queryFilters.stageId) : stages
+  const ownersQuery = useOpportunityOwners(
+    canView && permissions.includes("company:assign-owner")
+  )
+  const stages = useMemo(
+    () =>
+      (Array.isArray(stagesQuery.data) ? stagesQuery.data : [])
+        .filter((stage) => stage.isActive !== false)
+        .sort((left, right) => left.sortOrder - right.sortOrder),
+    [stagesQuery.data]
+  )
+  const transitions = Array.isArray(transitionsQuery.data)
+    ? transitionsQuery.data
+    : []
+  const boardStages = queryFilters.stageId
+    ? stages.filter((stage) => stage.id === queryFilters.stageId)
+    : stages
   const effectiveActionPermissions = {
     ...actionPermissions,
     changeStage:
@@ -91,7 +134,9 @@ export function OpportunityWorkspacePage() {
       !transitionsQuery.isError &&
       !transitionsQuery.isLoading,
   }
-  const targets = stageState ? allowedTargets(stageState.opportunity, stages, transitions, user?.role) : []
+  const targets = stageState
+    ? allowedTargets(stageState.opportunity, stages, transitions, user?.role)
+    : []
 
   const createMutation = useCreateOpportunity()
   const updateMutation = useUpdateOpportunity()
@@ -101,17 +146,18 @@ export function OpportunityWorkspacePage() {
   const restoreMutation = useRestoreOpportunity()
 
   function switchView(next: "pipeline" | "list") {
-    setView(next)
-    const updated = new URLSearchParams(searchParams)
-    if (next === "list") updated.set("view", "list")
-    else updated.delete("view")
-    setSearchParams(updated, { replace: true })
+    patch({ view: next }, { resetPage: false })
   }
 
-  async function submitForm(payload: OpportunityPayload | OpportunityUpdatePayload) {
+  async function submitForm(
+    payload: OpportunityPayload | OpportunityUpdatePayload
+  ) {
     try {
       if (formOpportunity) {
-        await updateMutation.mutateAsync({ id: formOpportunity.id, payload: payload as OpportunityUpdatePayload })
+        await updateMutation.mutateAsync({
+          id: formOpportunity.id,
+          payload: payload as OpportunityUpdatePayload,
+        })
         toast.success(text.feedback.updated)
       } else {
         await createMutation.mutateAsync(payload as OpportunityPayload)
@@ -120,13 +166,19 @@ export function OpportunityWorkspacePage() {
       setFormOpportunity(undefined)
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.mutation))
+      throw error
     }
   }
 
   async function submitStage(stageId: string, note?: string) {
     if (!stageState) return
     try {
-      await stageMutation.mutateAsync({ opportunity: stageState.opportunity, stageId, note, optimistic: true })
+      await stageMutation.mutateAsync({
+        opportunity: stageState.opportunity,
+        stageId,
+        note,
+        optimistic: true,
+      })
       toast.success(text.feedback.stageChanged)
       setStageState(null)
     } catch (error) {
@@ -139,9 +191,12 @@ export function OpportunityWorkspacePage() {
       setStageState({ opportunity, target })
       return
     }
-    void stageMutation.mutateAsync({ opportunity, stageId: target.id, optimistic: true })
+    void stageMutation
+      .mutateAsync({ opportunity, stageId: target.id, optimistic: true })
       .then(() => toast.success(text.feedback.stageChanged))
-      .catch((error) => toast.error(getApiErrorMessage(error, text.errors.stageMutation)))
+      .catch((error) =>
+        toast.error(getApiErrorMessage(error, text.errors.stageMutation))
+      )
   }
 
   async function submitOwner(ownerId: string | null) {
@@ -171,53 +226,205 @@ export function OpportunityWorkspacePage() {
     }
   }
 
-  const onView = (item: Opportunity) => navigate(`/opportunities/${item.id}`, { state: { backTo: `${location.pathname}${location.search}` } })
+  const onView = (item: Opportunity) =>
+    navigate(`/opportunities/${item.id}`, {
+      state: { backTo: `${location.pathname}${location.search}` },
+    })
 
-  if (!canView) return <ErrorState title={text.errors.permissionTitle} description={text.errors.permissionDescription} />
+  if (!canView)
+    return (
+      <ErrorState
+        title={text.errors.permissionTitle}
+        description={text.errors.permissionDescription}
+      />
+    )
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-28 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[var(--app-divider)] bg-[var(--app-background)]/70 px-3 py-1.5 text-xs font-bold text-[var(--app-primary)]"><BriefcaseBusiness className="size-3.5" />{text.hero.badge}</div>
-            <h1 className="ui-page-title">{text.hero.title}</h1>
-            <p className="mt-2 max-w-xl text-xs leading-6 text-[var(--app-text-secondary)]">{text.hero.description}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+      <PageHero
+        icon={BriefcaseBusiness}
+        eyebrow={text.hero.badge}
+        title={text.hero.title}
+        description={text.hero.description}
+        actions={
+          <>
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              <Button type="button" variant="ghost" size="sm" className={view === "pipeline" ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm" : "rounded-lg"} onClick={() => switchView("pipeline")}><Rows3 className="size-4" />{text.views.pipeline}</Button>
-              <Button type="button" variant="ghost" size="sm" className={view === "list" ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm" : "rounded-lg"} onClick={() => switchView("list")}><LayoutList className="size-4" />{text.views.list}</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={
+                  view === "pipeline"
+                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                    : "rounded-lg"
+                }
+                onClick={() => switchView("pipeline")}
+              >
+                <Rows3 className="size-4" />
+                {text.views.pipeline}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={
+                  view === "list"
+                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                    : "rounded-lg"
+                }
+                onClick={() => switchView("list")}
+              >
+                <LayoutList className="size-4" />
+                {text.views.list}
+              </Button>
             </div>
-            {canCreate ? <Button type="button" className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]" onClick={() => setFormOpportunity(null)}><Plus className="size-4" />{text.actions.create}</Button> : null}
-          </div>
-        </div>
-      </section>
+            {canCreate ? (
+              <Button
+                type="button"
+                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                onClick={() => setFormOpportunity(null)}
+              >
+                <Plus className="size-4" />
+                {text.actions.create}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
 
       <OpportunityFilterBar
         filters={filters}
         stages={stages}
         owners={Array.isArray(ownersQuery.data) ? ownersQuery.data : []}
         sources={Array.isArray(sourcesQuery.data) ? sourcesQuery.data : []}
-        onChange={(patch) => setFilters((current) => ({ ...current, ...patch }))}
-        onClear={() => setFilters({ ...baseFilters, companyId: initialCompanyId })}
+        onChange={(values) => patch(values, { replace: "search" in values })}
+        onClear={() =>
+          patch(
+            Object.fromEntries(
+              opportunityFilterKeys
+                .filter((key) => key !== "companyId")
+                .map((key) => [key, undefined])
+            )
+          )
+        }
       />
 
-      {transitionsQuery.isError && actionPermissions.changeStage ? <p className="rounded-xl border border-[var(--warning)]/20 bg-[var(--warning-light)] p-3 text-xs text-[var(--app-text-secondary)]">{text.errors.transitions}</p> : null}
+      {transitionsQuery.isError && actionPermissions.changeStage ? (
+        <p className="rounded-xl border border-[var(--warning)]/20 bg-[var(--warning-light)] p-3 text-xs text-[var(--app-text-secondary)]">
+          {text.errors.transitions}
+        </p>
+      ) : null}
 
       {view === "pipeline" ? (
-        stagesQuery.isLoading ? <LoadingState /> : stagesQuery.isError ? <ErrorState title={text.errors.stagesTitle} description={text.errors.stagesDescription} retryLabel={uiText.common.retry} onRetry={() => void stagesQuery.refetch()} /> : !stages.length ? <EmptyState icon={Rows3} title={text.empty.stagesTitle} description={text.empty.stagesDescription} /> : (
+        stagesQuery.isLoading ? (
+          <LoadingState />
+        ) : stagesQuery.isError ? (
+          <ErrorState
+            title={text.errors.stagesTitle}
+            description={text.errors.stagesDescription}
+            retryLabel={uiText.common.retry}
+            onRetry={() => void stagesQuery.refetch()}
+          />
+        ) : !stages.length ? (
+          <EmptyState
+            icon={Rows3}
+            title={text.empty.stagesTitle}
+            description={text.empty.stagesDescription}
+          />
+        ) : (
           <>
-            <OpportunityPipelineBoard stages={boardStages} transitions={effectiveActionPermissions.changeStage ? transitions : null} filters={queryFilters} role={user?.role} permissions={effectiveActionPermissions} onView={onView} onEdit={(item) => setFormOpportunity(item)} onChangeOwner={setOwnerOpportunity} onChangeStage={(item) => setStageState({ opportunity: item })} onArchiveToggle={setArchiveOpportunityState} onDropStage={dropStage} />
+            <OpportunityPipelineBoard
+              stages={boardStages}
+              transitions={
+                effectiveActionPermissions.changeStage ? transitions : null
+              }
+              filters={queryFilters}
+              role={user?.role}
+              permissions={effectiveActionPermissions}
+              onView={onView}
+              onEdit={(item) => setFormOpportunity(item)}
+              onChangeOwner={setOwnerOpportunity}
+              onChangeStage={(item) => setStageState({ opportunity: item })}
+              onArchiveToggle={setArchiveOpportunityState}
+              onDropStage={dropStage}
+            />
           </>
         )
-      ) : <OpportunityListView filters={queryFilters} permissions={effectiveActionPermissions} onView={onView} onEdit={(item) => setFormOpportunity(item)} onChangeOwner={setOwnerOpportunity} onChangeStage={(item) => setStageState({ opportunity: item })} onArchiveToggle={setArchiveOpportunityState} />}
+      ) : (
+        <OpportunityListView
+          filters={queryFilters}
+          isUpdatingFilters={filters !== queryFilters}
+          permissions={effectiveActionPermissions}
+          onView={onView}
+          onEdit={(item) => setFormOpportunity(item)}
+          onChangeOwner={setOwnerOpportunity}
+          onChangeStage={(item) => setStageState({ opportunity: item })}
+          onArchiveToggle={setArchiveOpportunityState}
+        />
+      )}
 
-      {formOpportunity !== undefined ? <OpportunityFormDialog open onOpenChange={(open) => { if (!open) setFormOpportunity(undefined) }} opportunity={formOpportunity} initialCompanyId={filters.companyId} stages={stages} isPending={createMutation.isPending || updateMutation.isPending} onSubmit={submitForm} /> : null}
-      {ownerOpportunity ? <ChangeOpportunityOwnerDialog opportunity={ownerOpportunity} open onOpenChange={(open) => { if (!open) setOwnerOpportunity(null) }} isPending={ownerMutation.isPending} onSubmit={submitOwner} /> : null}
-      {stageState ? <ChangeOpportunityStageDialog targets={stageState.target ? [stageState.target] : targets} initialTarget={stageState.target} open onOpenChange={(open) => { if (!open) setStageState(null) }} isPending={stageMutation.isPending} onSubmit={submitStage} /> : null}
-      {archiveOpportunityState ? <ConfirmDialog open onOpenChange={(open) => { if (!open) setArchiveOpportunityState(null) }} title={archiveOpportunityState.archivedAt ? text.dialogs.restoreTitle : text.dialogs.archiveTitle} description={archiveOpportunityState.archivedAt ? text.dialogs.restoreDescription : text.dialogs.archiveDescription} confirmLabel={archiveOpportunityState.archivedAt ? text.actions.restore : text.actions.archive} tone={archiveOpportunityState.archivedAt ? "primary" : "danger"} isPending={archiveMutation.isPending || restoreMutation.isPending} onConfirm={toggleArchive} /> : null}
+      {formOpportunity !== undefined ? (
+        <OpportunityFormDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setFormOpportunity(undefined)
+          }}
+          opportunity={formOpportunity}
+          initialCompanyId={filters.companyId}
+          stages={stages}
+          isPending={createMutation.isPending || updateMutation.isPending}
+          onSubmit={submitForm}
+        />
+      ) : null}
+      {ownerOpportunity ? (
+        <ChangeOpportunityOwnerDialog
+          opportunity={ownerOpportunity}
+          open
+          onOpenChange={(open) => {
+            if (!open) setOwnerOpportunity(null)
+          }}
+          isPending={ownerMutation.isPending}
+          onSubmit={submitOwner}
+        />
+      ) : null}
+      {stageState ? (
+        <ChangeOpportunityStageDialog
+          targets={stageState.target ? [stageState.target] : targets}
+          initialTarget={stageState.target}
+          open
+          onOpenChange={(open) => {
+            if (!open) setStageState(null)
+          }}
+          isPending={stageMutation.isPending}
+          onSubmit={submitStage}
+        />
+      ) : null}
+      {archiveOpportunityState ? (
+        <ConfirmDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setArchiveOpportunityState(null)
+          }}
+          title={
+            archiveOpportunityState.archivedAt
+              ? text.dialogs.restoreTitle
+              : text.dialogs.archiveTitle
+          }
+          description={
+            archiveOpportunityState.archivedAt
+              ? text.dialogs.restoreDescription
+              : text.dialogs.archiveDescription
+          }
+          confirmLabel={
+            archiveOpportunityState.archivedAt
+              ? text.actions.restore
+              : text.actions.archive
+          }
+          tone={archiveOpportunityState.archivedAt ? "primary" : "danger"}
+          isPending={archiveMutation.isPending || restoreMutation.isPending}
+          onConfirm={toggleArchive}
+        />
+      ) : null}
     </div>
   )
 }

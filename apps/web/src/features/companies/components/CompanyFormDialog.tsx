@@ -21,6 +21,7 @@ import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { CurrencyInput, NumberInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { applyServerFieldErrors } from "@/lib/formErrors"
 import { toApiDate } from "@/lib/date/jalali"
 
 import {
@@ -111,6 +112,8 @@ export function CompanyFormDialog({
     control,
     handleSubmit,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isDirty },
   } = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -125,6 +128,7 @@ export function CompanyFormDialog({
   const brandName = useWatch({ control, name: "brandName" })
 
   async function submit(values: CompanyFormValues) {
+    clearErrors()
     const payload: CompanyMutationPayload = {
       legalName: values.legalName.trim(),
       brandName: clean(values.brandName),
@@ -146,7 +150,15 @@ export function CompanyFormDialog({
         : undefined,
     }
 
-    await onSubmit(payload)
+    try {
+      await onSubmit(payload)
+    } catch (error) {
+      applyServerFieldErrors(
+        error,
+        setError,
+        Object.keys(defaultValues) as (keyof CompanyFormValues)[]
+      )
+    }
   }
 
   const title = mode === "create" ? text.createTitle : text.editTitle
@@ -225,11 +237,19 @@ export function CompanyFormDialog({
                     description={text.sections.identityDescription}
                   >
                     <Field
+                      htmlFor="company-legalName"
                       label={text.fields.legalName}
                       error={errors.legalName?.message}
                       required
                     >
                       <Input
+                        id="company-legalName"
+                        aria-invalid={Boolean(errors.legalName)}
+                        aria-describedby={
+                          errors.legalName
+                            ? "company-legalName-error"
+                            : undefined
+                        }
                         {...register("legalName")}
                         autoFocus
                         placeholder={text.placeholders.legalName}
@@ -238,18 +258,37 @@ export function CompanyFormDialog({
                     </Field>
 
                     <Field
+                      htmlFor="company-brandName"
                       label={text.fields.brandName}
                       error={errors.brandName?.message}
                     >
                       <Input
+                        id="company-brandName"
+                        aria-invalid={Boolean(errors.brandName)}
+                        aria-describedby={
+                          errors.brandName
+                            ? "company-brandName-error"
+                            : undefined
+                        }
                         {...register("brandName")}
                         placeholder={text.placeholders.brandName}
                         className="h-11 rounded-xl"
                       />
                     </Field>
 
-                    <Field label={text.fields.ownership}>
+                    <Field
+                      error={errors.ownership?.message}
+                      htmlFor="company-ownership"
+                      label={text.fields.ownership}
+                    >
                       <select
+                        id="company-ownership"
+                        aria-invalid={Boolean(errors.ownership)}
+                        aria-describedby={
+                          errors.ownership
+                            ? "company-ownership-error"
+                            : undefined
+                        }
                         {...register("ownership")}
                         className={selectClass}
                       >
@@ -262,8 +301,19 @@ export function CompanyFormDialog({
                       </select>
                     </Field>
 
-                    <Field label={text.fields.activityStatus}>
+                    <Field
+                      error={errors.activityStatus?.message}
+                      htmlFor="company-activityStatus"
+                      label={text.fields.activityStatus}
+                    >
                       <select
+                        id="company-activityStatus"
+                        aria-invalid={Boolean(errors.activityStatus)}
+                        aria-describedby={
+                          errors.activityStatus
+                            ? "company-activityStatus-error"
+                            : undefined
+                        }
                         {...register("activityStatus")}
                         className={selectClass}
                       >
@@ -283,10 +333,18 @@ export function CompanyFormDialog({
                     description={text.sections.marketDescription}
                   >
                     <Field
+                      htmlFor="company-industryId"
                       label={text.fields.industry}
                       error={errors.industryId?.message}
                     >
                       <select
+                        id="company-industryId"
+                        aria-invalid={Boolean(errors.industryId)}
+                        aria-describedby={
+                          errors.industryId
+                            ? "company-industryId-error"
+                            : undefined
+                        }
                         {...register("industryId")}
                         className={selectClass}
                         disabled={isIndustriesPending}
@@ -300,8 +358,20 @@ export function CompanyFormDialog({
                       </select>
                     </Field>
 
-                    <Field label={text.fields.priority}>
-                      <select {...register("priority")} className={selectClass}>
+                    <Field
+                      error={errors.priority?.message}
+                      htmlFor="company-priority"
+                      label={text.fields.priority}
+                    >
+                      <select
+                        id="company-priority"
+                        aria-invalid={Boolean(errors.priority)}
+                        aria-describedby={
+                          errors.priority ? "company-priority-error" : undefined
+                        }
+                        {...register("priority")}
+                        className={selectClass}
+                      >
                         <option value="">{text.selectPlaceholder}</option>
                         {COMPANY_PRIORITIES.map((value) => (
                           <option key={value} value={value}>
@@ -312,10 +382,16 @@ export function CompanyFormDialog({
                     </Field>
 
                     <Field
+                      htmlFor="company-sourceId"
                       label={text.fields.source}
                       error={errors.sourceId?.message}
                     >
                       <select
+                        id="company-sourceId"
+                        aria-invalid={Boolean(errors.sourceId)}
+                        aria-describedby={
+                          errors.sourceId ? "company-sourceId-error" : undefined
+                        }
                         {...register("sourceId")}
                         className={selectClass}
                         disabled={isLeadSourcesPending}
@@ -330,10 +406,18 @@ export function CompanyFormDialog({
                     </Field>
 
                     <Field
+                      htmlFor="company-headOfficeCity"
                       label={text.fields.city}
                       error={errors.headOfficeCity?.message}
                     >
                       <Input
+                        id="company-headOfficeCity"
+                        aria-invalid={Boolean(errors.headOfficeCity)}
+                        aria-describedby={
+                          errors.headOfficeCity
+                            ? "company-headOfficeCity-error"
+                            : undefined
+                        }
                         {...register("headOfficeCity")}
                         placeholder={text.placeholders.city}
                         className="h-11 rounded-xl"
@@ -341,10 +425,18 @@ export function CompanyFormDialog({
                     </Field>
 
                     <Field
+                      htmlFor="company-centralPhone"
                       label={text.fields.phone}
                       error={errors.centralPhone?.message}
                     >
                       <Input
+                        id="company-centralPhone"
+                        aria-invalid={Boolean(errors.centralPhone)}
+                        aria-describedby={
+                          errors.centralPhone
+                            ? "company-centralPhone-error"
+                            : undefined
+                        }
                         {...register("centralPhone")}
                         dir="ltr"
                         inputMode="tel"
@@ -354,10 +446,16 @@ export function CompanyFormDialog({
                     </Field>
 
                     <Field
+                      htmlFor="company-website"
                       label={text.fields.website}
                       error={errors.website?.message}
                     >
                       <Input
+                        id="company-website"
+                        aria-invalid={Boolean(errors.website)}
+                        aria-describedby={
+                          errors.website ? "company-website-error" : undefined
+                        }
                         {...register("website")}
                         dir="ltr"
                         placeholder={text.placeholders.website}
@@ -372,30 +470,54 @@ export function CompanyFormDialog({
                     description={text.sections.legalDescription}
                   >
                     <Field
+                      htmlFor="company-registrationNumber"
                       label={text.fields.registrationNumber}
                       error={errors.registrationNumber?.message}
                     >
                       <Input
+                        id="company-registrationNumber"
+                        aria-invalid={Boolean(errors.registrationNumber)}
+                        aria-describedby={
+                          errors.registrationNumber
+                            ? "company-registrationNumber-error"
+                            : undefined
+                        }
                         {...register("registrationNumber")}
                         className="h-11 rounded-xl"
                       />
                     </Field>
 
                     <Field
+                      htmlFor="company-nationalId"
                       label={text.fields.nationalId}
                       error={errors.nationalId?.message}
                     >
                       <Input
+                        id="company-nationalId"
+                        aria-invalid={Boolean(errors.nationalId)}
+                        aria-describedby={
+                          errors.nationalId
+                            ? "company-nationalId-error"
+                            : undefined
+                        }
                         {...register("nationalId")}
                         className="h-11 rounded-xl"
                       />
                     </Field>
 
                     <Field
+                      htmlFor="company-economicCode"
                       label={text.fields.economicCode}
                       error={errors.economicCode?.message}
                     >
                       <Input
+                        id="company-economicCode"
+                        aria-invalid={Boolean(errors.economicCode)}
+                        aria-describedby={
+                          errors.economicCode
+                            ? "company-economicCode-error"
+                            : undefined
+                        }
                         {...register("economicCode")}
                         className="h-11 rounded-xl"
                       />
@@ -458,9 +580,13 @@ export function CompanyFormDialog({
                     </Field>
                   </FormSectionBlock>
 
-                  {submitError ? (
-                    <div className="rounded-2xl border border-[var(--destructive)]/20 bg-[var(--destructive-soft)] px-4 py-3 text-xs leading-6 text-[var(--destructive)]">
-                      {getApiErrorMessage(submitError, text.submitError)}
+                  {errors.root?.server || submitError ? (
+                    <div
+                      role="alert"
+                      className="rounded-2xl border border-[var(--destructive)]/20 bg-[var(--destructive-soft)] px-4 py-3 text-xs leading-6 text-[var(--destructive)]"
+                    >
+                      {errors.root?.server?.message ??
+                        getApiErrorMessage(submitError, text.submitError)}
                     </div>
                   ) : null}
                 </div>
@@ -534,11 +660,13 @@ function FormSectionBlock({
 }
 
 function Field({
+  htmlFor,
   label,
   error,
   required,
   children,
 }: {
+  htmlFor?: string
   label: string
   error?: string
   required?: boolean
@@ -546,7 +674,10 @@ function Field({
 }) {
   return (
     <div className="grid content-start gap-2">
-      <Label className="text-xs font-bold text-[var(--app-heading)]">
+      <Label
+        htmlFor={htmlFor}
+        className="text-xs font-bold text-[var(--app-heading)]"
+      >
         {label}
         {required ? (
           <span className="ms-1 text-[var(--destructive)]">*</span>
@@ -554,7 +685,12 @@ function Field({
       </Label>
       {children}
       {error ? (
-        <p className="text-xs text-[var(--destructive)]">{error}</p>
+        <p
+          id={htmlFor ? `${htmlFor}-error` : undefined}
+          className="text-xs text-[var(--destructive)]"
+        >
+          {error}
+        </p>
       ) : null}
     </div>
   )

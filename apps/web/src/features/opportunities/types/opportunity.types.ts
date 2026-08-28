@@ -1,3 +1,6 @@
+import type { PageParams } from "@/lib/listQuery"
+import type { PaginatedResult } from "@/lib/pagination"
+
 export type OpportunityPriority = "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
 export type OwnershipScope = "all" | "mine" | "team" | "unassigned"
 export type ArchiveState = "active" | "all" | "archived"
@@ -318,22 +321,9 @@ export interface OpportunityFilters {
   archiveState: ArchiveState
 }
 
-export interface OpportunityListQuery extends OpportunityFilters {
-  page: number
-  limit: number
-}
+export interface OpportunityListQuery extends OpportunityFilters, PageParams {}
 
-export interface OpportunityPage {
-  data: Opportunity[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-    hasNext?: boolean
-    hasPrevious?: boolean
-  }
-}
+export type OpportunityPage = PaginatedResult<Opportunity>
 
 export interface OpportunityPayload {
   companyId: string

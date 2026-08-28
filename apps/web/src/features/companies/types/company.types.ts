@@ -1,5 +1,18 @@
-export const COMPANY_PRIORITIES = ["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as const
-export const COMPANY_ACTIVITY_STATUSES = ["ACTIVE", "INACTIVE", "MERGED", "UNKNOWN"] as const
+import type { PageParams, SearchParams } from "@/lib/listQuery"
+import type { PaginatedResult } from "@/lib/pagination"
+
+export const COMPANY_PRIORITIES = [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "STRATEGIC",
+] as const
+export const COMPANY_ACTIVITY_STATUSES = [
+  "ACTIVE",
+  "INACTIVE",
+  "MERGED",
+  "UNKNOWN",
+] as const
 export const COMPANY_OWNERSHIPS = [
   "PRIVATE",
   "STATE",
@@ -121,22 +134,9 @@ export interface Company {
   subsidiaryCompanies?: CompanySummary[]
 }
 
-export interface PaginatedCompanies {
-  data: Company[]
-  meta: {
-    total: number
-    page: number
-    limit: number
-    totalPages: number
-    hasNext?: boolean
-    hasPrevious?: boolean
-  }
-}
+export type PaginatedCompanies = PaginatedResult<Company>
 
-export interface CompaniesQuery {
-  page: number
-  limit: number
-  search?: string
+export interface CompaniesQuery extends PageParams, SearchParams {
   priority?: CompanyPriority
   ownershipScope?: OwnershipScope
   includeArchived?: boolean

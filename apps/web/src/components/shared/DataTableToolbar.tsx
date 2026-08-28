@@ -5,6 +5,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
 import { uiText } from "@/config/uiText"
+import { cn } from "@workspace/ui/lib/utils"
 
 export function DataTableToolbar({
   searchValue,
@@ -14,6 +15,7 @@ export function DataTableToolbar({
   actions,
   hasActiveFilters = false,
   onClearFilters,
+  filtersClassName,
 }: {
   searchValue: string
   onSearchChange: (value: string) => void
@@ -22,6 +24,7 @@ export function DataTableToolbar({
   actions?: ReactNode
   hasActiveFilters?: boolean
   onClearFilters?: () => void
+  filtersClassName?: string
 }) {
   return (
     <div className="grid min-w-0 gap-3 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] lg:grid-cols-[minmax(220px,1fr)_minmax(0,2fr)_auto] lg:items-center">
@@ -29,6 +32,7 @@ export function DataTableToolbar({
         <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
 
         <Input
+          aria-label={searchPlaceholder}
           value={searchValue}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={searchPlaceholder}
@@ -37,7 +41,12 @@ export function DataTableToolbar({
       </div>
 
       {filters ? (
-        <div className="flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto pb-1 lg:overflow-visible lg:pb-0">
+        <div
+          className={cn(
+            "flex min-w-0 flex-wrap items-center gap-2 overflow-x-auto pb-1 lg:overflow-visible lg:pb-0",
+            filtersClassName
+          )}
+        >
           {filters}
         </div>
       ) : null}

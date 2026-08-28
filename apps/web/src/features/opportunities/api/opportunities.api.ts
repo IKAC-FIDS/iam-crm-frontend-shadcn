@@ -1,4 +1,6 @@
 import { api } from "@/lib/api"
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 import type { PersonDirectoryItem } from "@/features/people/types/person.types"
 
@@ -48,15 +50,27 @@ function opportunityParams(query: OpportunityListQuery) {
   }
 }
 
+const opportunityRowSchema = z.custom<Opportunity>(
+  (value) =>
+    z
+      .object({
+        id: z.string(),
+        title: z.string(),
+        companyId: z.string(),
+        stageId: z.string(),
+        priority: z.string(),
+      })
+      .safeParse(value).success
+)
+
 export async function getOpportunities(query: OpportunityListQuery) {
   const response = await api.get("/opportunities", {
     params: opportunityParams(query),
   })
-  const body = response.data as OpportunityPage
-  return {
-    data: Array.isArray(body.data) ? body.data : [],
-    meta: body.meta,
-  } satisfies OpportunityPage
+  return parsePaginatedResponse(
+    response.data,
+    opportunityRowSchema
+  ) satisfies OpportunityPage
 }
 
 export async function getOpportunity(id: string) {
@@ -147,7 +161,14 @@ function paginated<T>(value: unknown): PaginatedResource<T> {
   const body = value as { data?: T[]; meta?: PaginatedResource<T>["meta"] }
   return {
     data: Array.isArray(body.data) ? body.data : [],
-    meta: body.meta ?? { total: 0, page: 1, limit: 20, totalPages: 0 },
+    meta: body.meta ?? {
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0,
+      hasNext: false,
+      hasPrevious: false,
+    },
   }
 }
 

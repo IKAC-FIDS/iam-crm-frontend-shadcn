@@ -14,7 +14,10 @@ export function ErrorState({
   onRetry?: () => void
 }) {
   return (
-    <div className="rounded-[var(--app-radius-card)] border border-[var(--destructive)]/20 bg-[var(--destructive)]/5 p-6">
+    <div
+      role="alert"
+      className="rounded-[var(--app-radius-card)] border border-[var(--destructive)]/20 bg-[var(--destructive)]/5 p-6"
+    >
       <div className="flex items-start gap-3">
         <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--destructive-soft)] text-[var(--destructive)]">
           <AlertTriangle className="size-5" />

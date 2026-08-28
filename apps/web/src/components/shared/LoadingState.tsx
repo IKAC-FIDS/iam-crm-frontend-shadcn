@@ -1,10 +1,12 @@
-export function LoadingState({
-  rows = 3,
-}: {
-  rows?: number
-}) {
+import { uiText } from "@/config/uiText"
+
+export function LoadingState({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="grid animate-pulse gap-3">
+    <div
+      role="status"
+      aria-label={uiText.common.loading}
+      className="grid animate-pulse gap-3"
+    >
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={index}

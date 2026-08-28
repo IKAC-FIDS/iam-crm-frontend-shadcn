@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { uiText } from "@/config/uiText"
 
 import {
   Table,
@@ -23,12 +24,14 @@ export function DataTableShell<Row>({
   getRowKey,
   emptyState,
   onRowClick,
+  caption = uiText.common.table.caption,
 }: {
   rows: Row[]
   columns: DataTableColumn<Row>[]
   getRowKey: (row: Row) => string
   emptyState?: ReactNode
   onRowClick?: (row: Row) => void
+  caption?: string
 }) {
   if (!rows.length && emptyState) {
     return <>{emptyState}</>
@@ -37,11 +40,13 @@ export function DataTableShell<Row>({
   return (
     <div className="min-w-0 overflow-x-auto rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]">
       <Table className="min-w-max">
+        <caption className="sr-only">{caption}</caption>
         <TableHeader className="bg-[var(--app-background)]/70">
           <TableRow className="hover:bg-transparent">
             {columns.map((column) => (
               <TableHead
                 key={column.id}
+                scope="col"
                 className={[
                   "h-11 px-4 text-xs font-bold text-[var(--app-primary-alt)]",
                   column.headerClassName ?? "",
@@ -62,6 +67,17 @@ export function DataTableShell<Row>({
                 onRowClick ? "cursor-pointer" : "",
               ].join(" ")}
               onClick={() => onRowClick?.(row)}
+              tabIndex={onRowClick ? 0 : undefined}
+              onKeyDown={(event) => {
+                if (
+                  event.target === event.currentTarget &&
+                  onRowClick &&
+                  (event.key === "Enter" || event.key === " ")
+                ) {
+                  event.preventDefault()
+                  onRowClick(row)
+                }
+              }}
             >
               {columns.map((column) => (
                 <TableCell
