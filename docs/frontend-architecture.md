@@ -72,6 +72,11 @@ row activation. QueryContent owns loading and normalized error/retry states,
 without depending on a domain or table implementation.
 
 DataTableToolbar is the FilterBar; do not create a parallel component.
+Companies, Opportunities and Admin Users also share EntityTableCell and
+EntityRowActions for visual consistency: 44px avatar frame, bounded title and
+optional subtitle, and the same trailing eye action. Their DataTableShell uses
+entityRows (68px rows); other tables retain their existing density. Domain
+actions remain beside the eye button and retain their permission checks.
 filtersClassName allows responsive composition of different numbers of filters.
 Use logical CSS properties, labelled controls and bounded overflow. Keep
 expensive column transformations memoized where beneficial; avoid memoization

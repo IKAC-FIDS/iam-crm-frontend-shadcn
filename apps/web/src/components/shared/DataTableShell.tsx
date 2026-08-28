@@ -25,6 +25,7 @@ export function DataTableShell<Row>({
   emptyState,
   onRowClick,
   caption = uiText.common.table.caption,
+  entityRows = false,
 }: {
   rows: Row[]
   columns: DataTableColumn<Row>[]
@@ -32,6 +33,7 @@ export function DataTableShell<Row>({
   emptyState?: ReactNode
   onRowClick?: (row: Row) => void
   caption?: string
+  entityRows?: boolean
 }) {
   if (!rows.length && emptyState) {
     return <>{emptyState}</>
@@ -63,7 +65,8 @@ export function DataTableShell<Row>({
             <TableRow
               key={getRowKey(row)}
               className={[
-                "h-12 border-[var(--app-divider)] hover:bg-[var(--app-background)]/55",
+                "border-[var(--app-divider)] hover:bg-[var(--app-background)]/55",
+                entityRows ? "h-[68px]" : "h-12",
                 onRowClick ? "cursor-pointer" : "",
               ].join(" ")}
               onClick={() => onRowClick?.(row)}
@@ -84,6 +87,7 @@ export function DataTableShell<Row>({
                   key={column.id}
                   className={[
                     "px-4 py-3 text-sm text-[var(--app-heading)]",
+                    entityRows ? "leading-5 whitespace-nowrap" : "",
                     column.className ?? "",
                   ].join(" ")}
                 >

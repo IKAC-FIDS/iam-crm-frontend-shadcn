@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Building2, Eye, Plus, UsersRound } from "lucide-react"
+import { Building2, Plus, UsersRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import {
@@ -17,7 +17,8 @@ import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
-import { CompanyAvatar } from "../components/CompanyAvatar"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { useCompanies } from "../hooks/useCompanies"
@@ -71,28 +72,19 @@ export function CompaniesPage() {
         id: "company",
         header: text.columns.company,
         cell: (company) => (
-          <button
-            type="button"
-            className="flex min-w-64 items-center gap-3 text-start"
-            onClick={(event) => {
-              event.stopPropagation()
-              navigate(`/companies/${company.id}`)
-            }}
-          >
-            <CompanyAvatar
-              name={companyDisplayName(company.legalName, company.brandName)}
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-[var(--app-heading)]">
-                {companyDisplayName(company.legalName, company.brandName)}
-              </p>
-              {company.brandName && company.brandName !== company.legalName ? (
-                <p className="mt-1 truncate text-xs text-[var(--app-text-secondary)]">
-                  {company.legalName}
-                </p>
-              ) : null}
-            </div>
-          </button>
+          <EntityTableCell
+            title={companyDisplayName(company.legalName, company.brandName)}
+            subtitle={
+              company.brandName && company.brandName !== company.legalName
+                ? company.legalName
+                : undefined
+            }
+            avatar={
+              companyDisplayName(company.legalName, company.brandName)
+                .trim()
+                .slice(0, 1) || <Building2 className="size-5" />
+            }
+          />
         ),
       },
       {
@@ -135,22 +127,13 @@ export function CompaniesPage() {
       },
       {
         id: "actions",
-        header: "",
-        headerClassName: "w-16",
+        header: "عملیات",
+        headerClassName: "w-28 text-end",
         cell: (company) => (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="rounded-xl text-[var(--app-primary)]"
-            aria-label={text.openCompany}
-            onClick={(event) => {
-              event.stopPropagation()
-              navigate(`/companies/${company.id}`)
-            }}
-          >
-            <Eye className="size-4" />
-          </Button>
+          <EntityRowActions
+            label={text.openCompany}
+            onView={() => navigate(`/companies/${company.id}`)}
+          />
         ),
       },
     ],
@@ -265,6 +248,7 @@ export function CompaniesPage() {
 
       <QueryContent query={query} errorTitle={text.errorTitle}>
         <DataTableShell
+          entityRows
           rows={query.data?.data ?? []}
           columns={columns}
           getRowKey={(company) => company.id}

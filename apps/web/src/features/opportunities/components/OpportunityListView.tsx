@@ -1,3 +1,6 @@
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BriefcaseBusiness } from "lucide-react"
 import { useListQueryState } from "@/lib/listQuery"
 
@@ -59,7 +62,12 @@ export function OpportunityListView({
     {
       id: "opportunity",
       header: text.table.opportunity,
-      cell: (item) => <span className="font-bold">{item.title}</span>,
+      cell: (item) => (
+        <EntityTableCell
+          title={item.title}
+          avatar={<BriefcaseBusiness className="size-5" />}
+        />
+      ),
     },
     { id: "company", header: text.table.company, cell: opportunityCompanyName },
     {
@@ -86,9 +94,19 @@ export function OpportunityListView({
       id: "priority",
       header: text.table.priority,
       cell: (item) => (
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">
+        <StatusBadge
+          tone={
+            item.priority === "STRATEGIC"
+              ? "primary"
+              : item.priority === "HIGH"
+                ? "warning"
+                : item.priority === "MEDIUM"
+                  ? "info"
+                  : "neutral"
+          }
+        >
           {priorityLabel(item.priority)}
-        </span>
+        </StatusBadge>
       ),
     },
     {
@@ -106,32 +124,30 @@ export function OpportunityListView({
       id: "status",
       header: text.table.status,
       cell: (item) => (
-        <span
-          className={
-            item.archivedAt
-              ? "text-[var(--app-text-secondary)]"
-              : "text-[var(--success)]"
-          }
-        >
+        <StatusBadge tone={item.archivedAt ? "warning" : "success"}>
           {item.archivedAt ? text.status.archived : text.status.active}
-        </span>
+        </StatusBadge>
       ),
     },
     {
       id: "actions",
       header: text.fields.actions,
-      headerClassName: "text-center",
-      className: "text-center",
+      headerClassName: "w-28 text-end",
       cell: (item) => (
-        <OpportunityActionsMenu
-          opportunity={item}
-          permissions={permissions}
+        <EntityRowActions
+          label="مشاهده جزئیات فرصت"
           onView={() => onView(item)}
-          onEdit={() => onEdit(item)}
-          onChangeOwner={() => onChangeOwner(item)}
-          onChangeStage={() => onChangeStage(item)}
-          onArchiveToggle={() => onArchiveToggle(item)}
-        />
+        >
+          <OpportunityActionsMenu
+            opportunity={item}
+            permissions={permissions}
+            onView={() => onView(item)}
+            onEdit={() => onEdit(item)}
+            onChangeOwner={() => onChangeOwner(item)}
+            onChangeStage={() => onChangeStage(item)}
+            onArchiveToggle={() => onArchiveToggle(item)}
+          />
+        </EntityRowActions>
       ),
     },
   ]
@@ -140,6 +156,7 @@ export function OpportunityListView({
     <QueryContent query={query} errorTitle={text.errors.listTitle}>
       <div className="grid gap-3">
         <DataTableShell
+          entityRows
           rows={rows}
           columns={columns}
           getRowKey={(item) => item.id}

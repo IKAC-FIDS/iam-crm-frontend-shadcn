@@ -1,3 +1,5 @@
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { PageHero } from "@/components/shared/PageHero"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
@@ -22,7 +24,6 @@ import { CreateUserModal } from "../components/CreateUserModal"
 import {
   Ban,
   CircleGauge,
-  Eye,
   MoreHorizontal,
   Plus,
   RefreshCcw,
@@ -161,22 +162,12 @@ export function AdminUsersPage() {
         id: "user",
         header: "کاربر",
         cell: (u) => (
-          <>
-            <div className="flex items-center gap-3 text-right">
-              <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
-                {initials(u.fullName)}
-              </span>
-              <span>
-                <span className="block font-bold">{u.fullName}</span>
-                <span
-                  className="mt-0.5 block text-xs text-muted-foreground"
-                  dir="ltr"
-                >
-                  {u.email}
-                </span>
-              </span>
-            </div>
-          </>
+          <EntityTableCell
+            title={u.fullName}
+            subtitle={u.email}
+            subtitleDir="ltr"
+            avatar={initials(u.fullName)}
+          />
         ),
       },
       {
@@ -214,37 +205,27 @@ export function AdminUsersPage() {
       {
         id: "actions",
         header: "عملیات",
+        headerClassName: "w-28 text-end",
         cell: (u) => (
-          <>
-            <div className="flex justify-center gap-1">
+          <EntityRowActions
+            label="مشاهده جزئیات کاربر"
+            onView={() => navigate(`/admin/users/${u.id}`)}
+          >
+            {canChangeRole ? (
               <Button
                 size="icon-sm"
                 variant="ghost"
-                aria-label="مشاهده جزئیات کاربر"
-                title="مشاهده جزئیات"
+                aria-label="عملیات کاربر"
+                title="عملیات"
                 onClick={(event) => {
                   event.stopPropagation()
                   navigate(`/admin/users/${u.id}`)
                 }}
               >
-                <Eye className="size-4" />
+                <MoreHorizontal className="size-4" />
               </Button>
-              {canChangeRole ? (
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  aria-label="عملیات کاربر"
-                  title="عملیات"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    navigate(`/admin/users/${u.id}`)
-                  }}
-                >
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              ) : null}
-            </div>
-          </>
+            ) : null}
+          </EntityRowActions>
         ),
       },
     ],
@@ -368,6 +349,7 @@ export function AdminUsersPage() {
 
       <QueryContent query={users}>
         <DataTableShell
+          entityRows
           caption="فهرست کاربران"
           rows={users.data?.data ?? []}
           columns={columns}
