@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -18,7 +18,12 @@ export function PersonSocialDialog({ open, onOpenChange, social, isPending, erro
   const [handle, setHandle] = useState("")
   const [note, setNote] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
-  useEffect(() => { if (open) { setPlatform(PERSON_SOCIAL_PLATFORM_OPTIONS.some((option) => option.value === social?.platform) ? social?.platform as PersonSocialPlatform : "LINKEDIN"); setHandle(social?.handle || ""); setNote(social?.note || ""); setIsPrimary(Boolean(social?.isPrimary)) } }, [open, social])
+  const resetInputs0 = [open, social] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (open) { setPlatform(PERSON_SOCIAL_PLATFORM_OPTIONS.some((option) => option.value === social?.platform) ? social?.platform as PersonSocialPlatform : "LINKEDIN"); setHandle(social?.handle || ""); setNote(social?.note || ""); setIsPrimary(Boolean(social?.isPrimary)) }
+  }
   async function submit(event: React.FormEvent) { event.preventDefault(); if (handle.trim()) await onSubmit({ platform, handle: handle.trim(), note: note.trim() || undefined, isPrimary }) }
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent showCloseButton={false} dir="rtl" className="max-w-lg gap-0 rounded-[26px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0"><DialogHeader className="flex-row items-center justify-between border-b border-[var(--app-divider)] p-5"><DialogTitle>{social ? text.edit : text.add}</DialogTitle><Button type="button" variant="ghost" size="icon" className="rounded-xl" aria-label={uiText.people.actions.close} onClick={() => onOpenChange(false)}><X className="size-4" /></Button></DialogHeader><form onSubmit={submit} className="grid gap-4 p-5">
     <Field label={text.platform}><select value={platform} onChange={(event) => setPlatform(event.target.value as PersonSocialPlatform)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm">{PERSON_SOCIAL_PLATFORM_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></Field>

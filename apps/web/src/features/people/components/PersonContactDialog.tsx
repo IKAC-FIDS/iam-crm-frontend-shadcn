@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -24,13 +24,17 @@ export function PersonContactDialog({ open, onOpenChange, contact, isPending, er
   const [note, setNote] = useState("")
   const [isPrimary, setIsPrimary] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
-    setType(PERSON_CONTACT_TYPE_OPTIONS.some((option) => option.value === contact?.type) ? contact?.type as PersonContactType : "MOBILE")
+  const resetInputs0 = [contact, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (open) {
+setType(PERSON_CONTACT_TYPE_OPTIONS.some((option) => option.value === contact?.type) ? contact?.type as PersonContactType : "MOBILE")
     setValue(contact?.value || "")
     setNote(contact?.note || "")
     setIsPrimary(Boolean(contact?.isPrimary))
-  }, [contact, open])
+}
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()

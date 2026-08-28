@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useMemo } from "react"
-import { Controller, useForm } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -111,7 +111,6 @@ export function CompanyFormDialog({
     control,
     handleSubmit,
     reset,
-    watch,
     formState: { errors, isDirty },
   } = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -122,8 +121,8 @@ export function CompanyFormDialog({
     if (open) reset(defaultValues)
   }, [defaultValues, open, reset])
 
-  const legalName = watch("legalName")
-  const brandName = watch("brandName")
+  const legalName = useWatch({ control, name: "legalName" })
+  const brandName = useWatch({ control, name: "brandName" })
 
   async function submit(values: CompanyFormValues) {
     const payload: CompanyMutationPayload = {

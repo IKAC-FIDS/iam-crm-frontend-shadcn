@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useSidebar } from "@workspace/ui/hooks/use-sidebar"
 import { useLocation, useNavigate } from "react-router-dom"
 import {
   BriefcaseBusiness,
@@ -25,7 +26,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  useSidebar,
 } from "@workspace/ui/components/sidebar"
 
 import {
@@ -76,14 +76,11 @@ export function AppSidebar() {
     [groups, location.pathname],
   )
 
-  useEffect(() => {
-    if (!activeGroup) return
-
-    setOpenGroups((current) => ({
-      ...current,
-      [activeGroup]: true,
-    }))
-  }, [activeGroup])
+  const [previousActiveGroup, setPreviousActiveGroup] = useState(activeGroup)
+  if (previousActiveGroup !== activeGroup) {
+    setPreviousActiveGroup(activeGroup)
+    if (activeGroup) setOpenGroups(current => ({ ...current, [activeGroup]: true }))
+  }
 
   const handleNavigate = (path: string) => {
     navigate(path)

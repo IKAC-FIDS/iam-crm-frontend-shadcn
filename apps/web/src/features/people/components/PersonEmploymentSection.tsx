@@ -65,7 +65,7 @@ export function PersonEmploymentSection({
   const [deletingPosition, setDeletingPosition] =
     useState<PositionTarget | undefined>()
 
-  const histories = Array.isArray(query.data) ? query.data : []
+  const histories = useMemo(() => Array.isArray(query.data) ? query.data : [], [query.data])
   const timeline = useMemo<TimelineItem[]>(() => {
     const flattened = histories.flatMap<PositionTarget>((employment) => {
       const positions = Array.isArray(employment.positions)

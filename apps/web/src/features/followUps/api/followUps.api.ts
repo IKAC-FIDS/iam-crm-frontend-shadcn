@@ -2,7 +2,8 @@
 import {unwrapApiResponse} from "@/lib/apiResponse"
 import type {FollowUpActivity,FollowUpPage} from "../types/followUp.types"
 function page(v:unknown,p:number,l:number):FollowUpPage{
- const b=unwrapApiResponse<any>(v)||{}; const data=Array.isArray(b)?b:(b.data??b.items??[]);
+ const raw=unwrapApiResponse<FollowUpActivity[] | (Partial<FollowUpPage["meta"]> & {meta?: FollowUpPage["meta"];data?:FollowUpActivity[];items?:FollowUpActivity[]})>(v)||{};
+ const b=Array.isArray(raw)?{data:raw}:raw; const data=b.data??b.items??[];
  const total=b.meta?.total??b.total??data.length, pg=b.meta?.page??b.page??p, lim=b.meta?.limit??b.limit??l;
  return {data,meta:{total,page:pg,limit:lim,totalPages:b.meta?.totalPages??b.totalPages??Math.max(1,Math.ceil(total/Math.max(1,lim)))}}
 }

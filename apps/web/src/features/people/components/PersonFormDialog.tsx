@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { uiText } from "@/config/uiText"
@@ -77,14 +77,17 @@ export function PersonFormDialog({
     companyId: person?.companyId || initialCompanyId || "",
   }))
 
-  useEffect(() => {
+  const resetInputs0 = [initialCompanyId, open, person] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) {
       setForm({
         ...stateFromPerson(person),
         companyId: person?.companyId || initialCompanyId || "",
       })
     }
-  }, [initialCompanyId, open, person])
+  }
 
   const valid = useMemo(
     () =>

@@ -79,8 +79,10 @@ export function TaskFormDialog({
   const [personSearch, setPersonSearch] = useState("")
   const [assigneeSearch, setAssigneeSearch] = useState("")
 
-  useEffect(() => {
-    if (!open) return
+  const [previousInputs, setPreviousInputs] = useState({ open: false, task, initialCompanyId, initialOpportunity })
+  if (previousInputs.open !== open || previousInputs.task !== task || previousInputs.initialCompanyId !== initialCompanyId || previousInputs.initialOpportunity !== initialOpportunity) {
+    setPreviousInputs({ open, task, initialCompanyId, initialOpportunity })
+    if (open) {
     setTitle(task?.title || "")
     setDescription(task?.description || "")
     setPriority(task?.priority || "MEDIUM")
@@ -140,7 +142,8 @@ export function TaskFormDialog({
     setOpportunitySearch("")
     setPersonSearch("")
     setAssigneeSearch("")
-  }, [initialCompanyId, initialOpportunity, open, task, text.fallbacks])
+    }
+  }
 
   const debouncedOpportunity = useDebounced(opportunitySearch)
   const debouncedPerson = useDebounced(personSearch)

@@ -162,7 +162,7 @@ export function MeetingsPage() {
     setSearchParams,
   ])
 
-  const filterValues: MeetingFilterValues = {
+  const filterValues = useMemo<MeetingFilterValues>(() => ({
     search: searchDraft,
     companyId:
       searchParams.get("companyId") || undefined,
@@ -194,7 +194,7 @@ export function MeetingsPage() {
     attendeePersonId:
       searchParams.get("attendeePersonId") ||
       undefined,
-  }
+  }), [searchDraft, searchParams, statusParam, modeParam])
 
   const queryParams = useMemo<MeetingQuery>(() => {
     const today = localDayRange()

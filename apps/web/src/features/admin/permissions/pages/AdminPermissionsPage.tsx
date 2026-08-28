@@ -153,8 +153,8 @@ export function AdminPermissionsPage() {
     enabled: canViewRoles,
   })
 
-  const permissionRows = permissionsQuery.data ?? []
-  const roleRows = rolesQuery.data ?? []
+  const permissionRows = useMemo(() => permissionsQuery.data ?? [], [permissionsQuery.data])
+  const roleRows = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data])
 
   const groups = useMemo(
     () => new Set(permissionRows.map(groupName)),

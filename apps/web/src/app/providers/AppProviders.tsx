@@ -6,6 +6,7 @@ import { Toaster } from "sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 import { queryClient } from "@/lib/queryClient"
+import { SessionBoundary } from "@/features/auth/components/SessionBoundary"
 
 type AppProvidersProps = {
   children: ReactNode
@@ -17,7 +18,7 @@ export function AppProviders({
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {children}
+        <SessionBoundary>{children}</SessionBoundary>
         <Toaster
           richColors
           position="top-center"

@@ -1,5 +1,5 @@
 import { Loader2, Waypoints } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -13,7 +13,12 @@ export function ChangeOpportunityStageDialog({ targets, initialTarget, open, onO
   const [note, setNote] = useState("")
   const target = targets.find((stage) => stage.id === stageId) ?? initialTarget
   const terminal = Boolean(target?.isTerminal)
-  useEffect(() => { if (open) { setStageId(initialTarget?.id ?? ""); setNote("") } }, [initialTarget, open])
+  const resetInputs0 = [initialTarget, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (open) { setStageId(initialTarget?.id ?? ""); setNote("") }
+  }
 
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent dir="rtl" className="max-w-md rounded-[24px]">

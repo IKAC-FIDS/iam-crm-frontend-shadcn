@@ -211,7 +211,7 @@ export function ActivitiesPage() {
 
   const activities = useActivities(query, canView)
   const stages = usePipelineStages(canView)
-  const stageItems = stages.data ?? []
+  const stageItems = useMemo(() => stages.data ?? [], [stages.data])
 
   const activeAdvanced = [companyId, person?.id, ownerId, team].filter(
     Boolean

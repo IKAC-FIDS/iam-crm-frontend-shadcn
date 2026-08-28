@@ -1,13 +1,14 @@
 import { browserSupportsWebAuthn, startAuthentication } from "@simplewebauthn/browser"
+import axios from "axios"
 import { useMutation } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { authService } from "../services/auth.service"
-import { applyAuthenticatedSession } from "../utils/authSession"
 
 function passkeyMessage(error: unknown) {
+  if (axios.isAxiosError(error)) return getApiErrorMessage(error, "ورود با Passkey انجام نشد.")
   if (error instanceof Error && error.message) return error.message
   return getApiErrorMessage(error, "ورود با Passkey انجام نشد.")
 }
@@ -32,8 +33,7 @@ export function usePasskeyLogin() {
         throw error
       }
     },
-    onSuccess: session => {
-      applyAuthenticatedSession(session)
+    onSuccess: () => {
       toast.success("ورود با Passkey با موفقیت انجام شد")
       navigate("/dashboard", { replace: true })
     },

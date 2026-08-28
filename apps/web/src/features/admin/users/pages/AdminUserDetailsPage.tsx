@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   UserRoundCog,
 } from "lucide-react"
-import { useEffect, useState, type SelectHTMLAttributes } from "react"
+import { useState, type SelectHTMLAttributes } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -95,11 +95,15 @@ export function AdminUserDetailsPage() {
   const [roleChoice, setRoleChoice] = useState("")
   const [teamId, setTeamId] = useState("")
 
-  useEffect(() => {
-    if (!user) return
-    setRoleChoice(user.roleId ? `ROLE:${user.roleId}` : `BASE:${user.role}`)
+  const resetInputs0 = [user] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (user) {
+setRoleChoice(user.roleId ? `ROLE:${user.roleId}` : `BASE:${user.role}`)
     setTeamId(user.teamId ?? "")
-  }, [user])
+}
+  }
 
   const statusMutation = useMutation({
     mutationFn: async () => {

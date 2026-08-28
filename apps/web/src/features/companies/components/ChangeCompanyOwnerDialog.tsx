@@ -1,5 +1,5 @@
 import { UserRoundCog, X } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -30,9 +30,12 @@ export function ChangeCompanyOwnerDialog({
   const mutation = useChangeCompanyOwner(company.id)
   const [ownerId, setOwnerId] = useState(company.owner?.id ?? "")
 
-  useEffect(() => {
+  const resetInputs0 = [company.owner?.id, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) setOwnerId(company.owner?.id ?? "")
-  }, [company.owner?.id, open])
+  }
 
   const owners = useMemo(() => {
     const values = options.data ?? []

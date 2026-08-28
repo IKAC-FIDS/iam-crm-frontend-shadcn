@@ -562,7 +562,10 @@ function CreateUserModal({
     [password, setPassword] = useState(""),
     [roleChoice, setRoleChoice] = useState("BASE:REP"),
     [teamId, setTeamId] = useState("")
-  useEffect(() => {
+  const resetInputs0 = [open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
     if (!open) {
       setFullName("")
       setEmail("")
@@ -570,7 +573,7 @@ function CreateUserModal({
       setRoleChoice("BASE:REP")
       setTeamId("")
     }
-  }, [open])
+  }
   const custom = roleChoice.startsWith("ROLE:")
     ? roles.find((r) => r.id === roleChoice.slice(5))
     : null

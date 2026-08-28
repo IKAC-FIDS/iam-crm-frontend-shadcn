@@ -1,5 +1,5 @@
 import { BriefcaseBusiness, Loader2, Save } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { ReactNode } from "react"
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
@@ -102,12 +102,15 @@ export function OpportunityFormDialog({
   const sourceOptions = Array.isArray(sources.data) ? sources.data : []
   const ownerOptions = Array.isArray(owners.data) ? owners.data : []
 
-  useEffect(() => {
+  const resetInputs0 = [initialCompanyId, open, opportunity] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) {
       setState(initialState(opportunity, initialCompanyId))
       setValidation(null)
     }
-  }, [initialCompanyId, open, opportunity])
+  }
 
   function patch(next: Partial<FormState>) {
     setState((current) => ({ ...current, ...next }))

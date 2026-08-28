@@ -108,9 +108,12 @@ export function MeetingFormDialog({
   const [attendeeSearch, setAttendeeSearch] = useState("")
   const [pendingCompany, setPendingCompany] = useState<string | undefined>()
 
-  useEffect(() => {
-    if (!open) return
-    const schedule = initialSchedule()
+  const resetInputs0 = [initialCompanyId, initialOpportunity?.id, initialOpportunity?.title, meeting, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2] || previousResetInputs0[3] !== resetInputs0[3] || previousResetInputs0[4] !== resetInputs0[4]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (open) {
+const schedule = initialSchedule()
     const preset = reminderPresetFor(meeting)
     setCompanyId(meeting?.companyId || initialCompanyId || "")
     setOpportunity(
@@ -150,13 +153,8 @@ export function MeetingFormDialog({
     setOpportunitySearch("")
     setAssigneeSearch("")
     setAttendeeSearch("")
-  }, [
-    initialCompanyId,
-    initialOpportunity?.id,
-    initialOpportunity?.title,
-    meeting,
-    open,
-  ])
+}
+  }
 
   const debouncedOpportunity = useDebounced(opportunitySearch)
   const debouncedAssignee = useDebounced(assigneeSearch)
@@ -235,8 +233,7 @@ export function MeetingFormDialog({
     companyId,
     customReminder,
     endAt,
-    meeting?.companyId,
-    meeting?.opportunityId,
+    meeting,
     meetingUrl,
     mode,
     opportunity,

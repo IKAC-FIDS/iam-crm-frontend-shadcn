@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -52,12 +52,16 @@ export function PersianCalendar({
     [resolvedMaxYear, resolvedMinYear],
   )
 
-  useEffect(() => {
-    if (!value) return
-    const jalali = dateToJalali(value)
+  const resetInputs0 = [value] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (value) {
+const jalali = dateToJalali(value)
     setViewYear(jalali.year)
     setViewMonth(jalali.month)
-  }, [value])
+}
+  }
 
   const daysInMonth = getJalaliMonthLength(viewYear, viewMonth)
   const offset = getJalaliMonthStartWeekday(viewYear, viewMonth)

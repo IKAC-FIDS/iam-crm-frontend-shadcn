@@ -1,5 +1,7 @@
 import { browserSupportsWebAuthn, startRegistration, type PublicKeyCredentialCreationOptionsJSON, type RegistrationResponseJSON } from "@simplewebauthn/browser"
 import { api } from "@/lib/api"
+import { logoutSession, mutateBrowserSession } from "@/features/auth/services/session.service"
+import { queryClient } from "@/lib/queryClient"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
 export type SecurityOverview = { id: string; fullName: string; email: string; role: string; isActive: boolean; passwordChangedAt: string | null; lastLoginAt: string | null; lastLoginIp: string | null; failedLoginAttempts: number; lockedUntil: string | null; createdAt: string; activeSessionsCount: number; isLocked: boolean }
@@ -22,6 +24,13 @@ export async function registerPasskey(deviceName: string) {
   return unwrapApiResponse<Passkey>(verifyResponse.data)
 }
 export async function getSessions() { const response = await api.get("/auth/sessions"); const value = unwrapApiResponse<unknown>(response.data); return (Array.isArray(value) ? value : []) as UserSession[] }
-export async function revokeSession(id: string) { const response = await api.delete(`/auth/sessions/${id}`); return unwrapApiResponse<{ revokedCurrentSession: boolean }>(response.data) }
-export async function logoutOtherSessions() { const response = await api.post("/auth/account/logout-other-sessions"); return unwrapApiResponse<{ revokedCount: number; currentSessionKept: boolean }>(response.data) }
-export async function changePassword(currentPassword: string, newPassword: string) { const response = await api.post("/auth/account/change-password", { currentPassword, newPassword }); return unwrapApiResponse<{ message: string; requiresLogin: boolean }>(response.data) }
+export async function revokeSession(id: string) {
+  // The displayed current row can have rotated since the list was fetched.
+  if (queryClient.getQueryData<UserSession[]>(["account-sessions"])?.some(session => session.id === id && session.current)) {
+    await logoutSession()
+    return { revokedCurrentSession: true }
+  }
+  return mutateBrowserSession<{ revokedCurrentSession: boolean }>("delete", `/auth/sessions/${id}`)
+}
+export async function logoutOtherSessions() { return mutateBrowserSession<{ revokedCount: number; currentSessionKept: boolean }>("post", "/auth/account/logout-other-sessions") }
+export async function changePassword(currentPassword: string, newPassword: string) { return mutateBrowserSession<{ message: string; requiresLogin: boolean }>("post", "/auth/account/change-password", { currentPassword, newPassword }) }

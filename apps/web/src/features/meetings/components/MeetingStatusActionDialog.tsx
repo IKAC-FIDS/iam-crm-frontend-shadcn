@@ -1,5 +1,5 @@
 import { CheckCircle2, Loader2, XCircle } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 
 import { uiText } from "@/config/uiText"
@@ -33,9 +33,12 @@ export function MeetingStatusActionDialog({
   const cancel = useCancelMeeting()
   const pending = complete.isPending || cancel.isPending
   const isCancel = action === "cancel"
-  useEffect(() => {
+  const resetInputs0 = [action, meeting.id, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) setNote("")
-  }, [action, meeting.id, open])
+  }
 
   async function submit() {
     try {

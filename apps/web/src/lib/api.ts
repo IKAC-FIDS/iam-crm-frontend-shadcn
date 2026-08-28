@@ -1,26 +1,69 @@
 import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from "axios"
-import { unwrapApiResponse, type ApiWrappedResponse } from "@/lib/apiResponse"
-import { applyAuthenticatedSession } from "@/features/auth/utils/authSession"
-import { useAuthStore, type AuthUser } from "@/store/authStore"
-export const apiBaseUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api").replace(/\/+$/, "")
-interface RefreshResponse { accessToken: string; user: AuthUser }
-interface Retryable extends InternalAxiosRequestConfig { _retry?: boolean }
-let refreshPromise: Promise<RefreshResponse> | null = null
-function clearAndRedirect() { useAuthStore.getState().clearUser(); if (window.location.pathname !== "/login") window.location.assign("/login") }
-function refreshSession(): Promise<RefreshResponse> {
-  if (!refreshPromise) refreshPromise = axios.post<ApiWrappedResponse<RefreshResponse>>("/auth/refresh",undefined,{baseURL:apiBaseUrl,timeout:30000,withCredentials:true})
-    .then(r=>{ const s=unwrapApiResponse<RefreshResponse>(r.data); if(!s.accessToken||!s.user) throw new Error("Invalid refresh response"); applyAuthenticatedSession(s); return s })
-    .catch(e=>{ clearAndRedirect(); throw e }).finally(()=>{ refreshPromise=null })
-  return refreshPromise
+import { refreshSession } from "@/features/auth/services/session.service"
+import { useAuthStore } from "@/store/authStore"
+import { apiBaseUrl } from "./httpConfig"
+export { apiBaseUrl } from "./httpConfig"
+
+interface Retryable extends InternalAxiosRequestConfig {
+  _retry?: boolean
+  _sessionRevision?: number
 }
-export const api = axios.create({ baseURL:apiBaseUrl, timeout:30000, withCredentials:true, headers:{"Content-Type":"application/json"} })
-api.interceptors.request.use(config=>{ const token=localStorage.getItem("accessToken"); if(token) config.headers.Authorization=`Bearer ${token}`; if(config.data instanceof FormData) delete config.headers["Content-Type"]; return config })
-api.interceptors.response.use(r=>r, async error=>{
-  const original=error.config as Retryable|undefined; const url=original?.url ?? ""
-  if(error.response?.status!==401 || !original) return Promise.reject(error)
-  if(url.includes("/auth/refresh") || original._retry){ clearAndRedirect(); return Promise.reject(error) }
-  if(url.includes("/auth/login")) return Promise.reject(error)
-  original._retry=true
-  try { const s=await refreshSession(); original.headers=AxiosHeaders.from(original.headers); original.headers.set("Authorization",`Bearer ${s.accessToken}`); return api(original) }
-  catch { return Promise.reject(error) }
+export const api = axios.create({
+  baseURL: apiBaseUrl,
+  timeout: 30_000,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
 })
+api.interceptors.request.use((config: Retryable) => {
+  const { accessToken, revision } = useAuthStore.getState()
+  config._sessionRevision ??= revision
+  if (accessToken) config.headers.set("Authorization", `Bearer ${accessToken}`)
+  else config.headers.delete("Authorization")
+  if (config.data instanceof FormData) config.headers.delete("Content-Type")
+  return config
+})
+api.interceptors.response.use(
+  (response) => {
+    const config = response.config as Retryable
+    if (config._sessionRevision !== useAuthStore.getState().revision)
+      throw new axios.CanceledError("Session changed")
+    return response
+  },
+  async (error: unknown) => {
+    if (!axios.isAxiosError(error)) throw error
+    const original = error.config as Retryable | undefined
+    if (error.response?.status !== 401 || !original) throw error
+    if (
+      [
+        "/auth/login",
+        "/auth/refresh",
+        "/auth/logout",
+        "/auth/passkeys/authentication/options",
+        "/auth/passkeys/authentication/verify",
+      ].includes(original.url ?? "")
+    )
+      throw error
+    const state = useAuthStore.getState()
+    if (
+      original._sessionRevision !== state.revision ||
+      state.status === "anonymous"
+    )
+      throw error
+    if (original._retry) {
+      state.clearUser()
+      throw error
+    }
+    original._retry = true
+    // A delayed 401 may belong to a token already refreshed by another request.
+    const sentToken = AxiosHeaders.from(original.headers).get("Authorization")
+    const session =
+      state.accessToken && sentToken !== `Bearer ${state.accessToken}`
+        ? { accessToken: state.accessToken }
+        : await refreshSession()
+    if (original._sessionRevision !== useAuthStore.getState().revision)
+      throw error
+    original.headers = AxiosHeaders.from(original.headers)
+    original.headers.set("Authorization", `Bearer ${session.accessToken}`)
+    return api(original)
+  }
+)

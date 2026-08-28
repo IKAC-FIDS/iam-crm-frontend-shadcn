@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { uiText } from "@/config/uiText"
@@ -37,16 +37,20 @@ export function Person360WorkspaceDialog({
   const updateMutation = useUpdatePerson(personId ?? "")
   const deleteMutation = useDeletePerson()
 
-  useEffect(() => {
+  const resetInputs0 = [open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
     if (!open) {
       setEditOpen(false)
       setDeleteOpen(false)
     }
-  }, [open])
+  }
 
   async function updatePerson(payload: PersonMutationPayload) {
     if (!personId) return
-    const { companyId: _ignoredCompanyId, ...data } = payload
+    const data = { ...payload }
+    delete data.companyId
     await updateMutation.mutateAsync(data)
     await onPersonChanged?.()
     setEditOpen(false)

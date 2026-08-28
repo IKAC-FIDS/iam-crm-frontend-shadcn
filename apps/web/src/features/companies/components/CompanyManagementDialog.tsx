@@ -1,5 +1,5 @@
 import { Archive, RefreshCcw, UserRoundCog, X } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { uiText } from "@/config/uiText"
@@ -45,9 +45,12 @@ export function CompanyManagementDialog({
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false)
   const [archiveReason, setArchiveReason] = useState("")
 
-  useEffect(() => {
+  const resetInputs0 = [company.owner?.id, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) setOwnerId(company.owner?.id ?? "")
-  }, [company.owner?.id, open])
+  }
 
   const owners = useMemo(() => {
     const items = ownerOptions.data ?? []

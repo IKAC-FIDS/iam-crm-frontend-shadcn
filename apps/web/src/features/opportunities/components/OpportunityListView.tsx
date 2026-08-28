@@ -1,5 +1,5 @@
 import { BriefcaseBusiness } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { DataTableShell, type DataTableColumn } from "@/components/shared/DataTableShell"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -28,7 +28,12 @@ export function OpportunityListView({ filters, permissions, onView, onEdit, onCh
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const fingerprint = JSON.stringify(filters)
-  useEffect(() => setPage(1), [fingerprint])
+  const resetInputs0 = [fingerprint] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
+    setPage(1);
+  }
   const query = useOpportunityList({ ...filters, page, limit: pageSize })
   const rows = Array.isArray(query.data?.data) ? query.data.data : []
 

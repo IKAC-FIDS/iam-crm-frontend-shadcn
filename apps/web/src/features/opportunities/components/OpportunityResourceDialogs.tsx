@@ -1,5 +1,5 @@
 import { Loader2, Save, Upload, X } from "lucide-react"
-import { useEffect, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
@@ -155,7 +155,10 @@ export function LineItemDialog({
   const [unitPrice, setUnitPrice] = useState("")
   const [discount, setDiscount] = useState("0")
   const [tax, setTax] = useState("0")
-  useEffect(() => {
+  const resetInputs0 = [item, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
     if (open) {
       setProductId(item?.productId ?? "")
       setDescription(item?.description ?? "")
@@ -171,7 +174,7 @@ export function LineItemDialog({
       setDiscount(String(item?.discountAmount ?? 0))
       setTax(String(item?.taxAmount ?? 0))
     }
-  }, [item, open])
+  }
   function applyCatalogPrice(
     id: string,
     nextChannel: Exclude<SalesChannel, "LEGACY_UNKNOWN">
@@ -324,7 +327,10 @@ export function CommercialDocumentDialog({
   const [validUntil, setValidUntil] = useState<Date>()
   const [description, setDescription] = useState("")
   const [file, setFile] = useState<File>()
-  useEffect(() => {
+  const resetInputs1 = [document, open] as const
+  const [previousResetInputs1, setPreviousResetInputs1] = useState<typeof resetInputs1 | null>(null)
+  if (previousResetInputs1 === null || previousResetInputs1[0] !== resetInputs1[0] || previousResetInputs1[1] !== resetInputs1[1]) {
+    setPreviousResetInputs1(resetInputs1)
     if (open) {
       setType(document?.type ?? "PROPOSAL")
       setStatus(document?.status ?? "DRAFT")
@@ -337,7 +343,7 @@ export function CommercialDocumentDialog({
       setDescription(document?.description ?? "")
       setFile(undefined)
     }
-  }, [document, open])
+  }
   return (
     <BaseDialog
       open={open}
@@ -475,7 +481,10 @@ export function PaymentDialog({
   const [dueDate, setDueDate] = useState<Date>()
   const [reference, setReference] = useState("")
   const [description, setDescription] = useState("")
-  useEffect(() => {
+  const resetInputs2 = [open, payment] as const
+  const [previousResetInputs2, setPreviousResetInputs2] = useState<typeof resetInputs2 | null>(null)
+  if (previousResetInputs2 === null || previousResetInputs2[0] !== resetInputs2[0] || previousResetInputs2[1] !== resetInputs2[1]) {
+    setPreviousResetInputs2(resetInputs2)
     if (open) {
       setAmount(payment == null ? "" : String(payment.amount))
       setCurrency(payment?.currency ?? "IRR")
@@ -486,7 +495,7 @@ export function PaymentDialog({
       setReference(payment?.referenceNumber ?? "")
       setDescription(payment?.description ?? "")
     }
-  }, [open, payment])
+  }
   return (
     <BaseDialog
       open={open}
@@ -605,7 +614,10 @@ export function TaskDialog({
   const [status, setStatus] = useState<TaskStatus>("TODO")
   const [priority, setPriority] = useState<OpportunityPriority>("MEDIUM")
   const [dueAt, setDueAt] = useState<Date>()
-  useEffect(() => {
+  const resetInputs3 = [open, task] as const
+  const [previousResetInputs3, setPreviousResetInputs3] = useState<typeof resetInputs3 | null>(null)
+  if (previousResetInputs3 === null || previousResetInputs3[0] !== resetInputs3[0] || previousResetInputs3[1] !== resetInputs3[1]) {
+    setPreviousResetInputs3(resetInputs3)
     if (open) {
       setTitle(task?.title ?? "")
       setDescription(task?.description ?? "")
@@ -613,7 +625,7 @@ export function TaskDialog({
       setPriority(task?.priority ?? "MEDIUM")
       setDueAt(task?.dueAt ? new Date(task.dueAt) : undefined)
     }
-  }, [open, task])
+  }
   return (
     <BaseDialog
       open={open}
@@ -703,12 +715,15 @@ export function AttachmentUploadDialog({
   const text = uiText.opportunities.detail
   const [file, setFile] = useState<File>()
   const [description, setDescription] = useState("")
-  useEffect(() => {
+  const resetInputs4 = [open] as const
+  const [previousResetInputs4, setPreviousResetInputs4] = useState<typeof resetInputs4 | null>(null)
+  if (previousResetInputs4 === null || previousResetInputs4[0] !== resetInputs4[0]) {
+    setPreviousResetInputs4(resetInputs4)
     if (open) {
       setFile(undefined)
       setDescription("")
     }
-  }, [open])
+  }
   return (
     <BaseDialog
       open={open}

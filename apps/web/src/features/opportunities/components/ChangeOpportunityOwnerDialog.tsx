@@ -1,5 +1,5 @@
 import { Loader2, UserRoundCog } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { uiText } from "@/config/uiText"
 import { Button } from "@workspace/ui/components/button"
@@ -12,7 +12,12 @@ export function ChangeOpportunityOwnerDialog({ opportunity, open, onOpenChange, 
   const [ownerId, setOwnerId] = useState(opportunity.ownerId ?? "")
   const owners = useOpportunityOwners(open)
   const options = Array.isArray(owners.data) ? owners.data : []
-  useEffect(() => setOwnerId(opportunity.ownerId ?? ""), [opportunity])
+  const resetInputs0 = [opportunity] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
+    setOwnerId(opportunity.ownerId ?? "");
+  }
 
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent dir="rtl" className="max-w-md rounded-[24px]">

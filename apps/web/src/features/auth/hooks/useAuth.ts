@@ -3,18 +3,16 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
-import { useAuthStore } from "@/store/authStore"
+import { uiText } from "@/config/uiText"
 
 import { authService, type LoginRequest } from "../services/auth.service"
-import { applyAuthenticatedSession } from "../utils/authSession"
 
 export function useAuth() {
   const navigate = useNavigate()
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginRequest) => authService.login(data),
-    onSuccess: (response) => {
-      applyAuthenticatedSession(response)
+    onSuccess: () => {
       toast.success("ورود با موفقیت انجام شد")
       navigate("/dashboard", { replace: true })
     },
@@ -25,8 +23,8 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
+    onError: () => toast.error(uiText.app.logoutFailed),
     onSettled: () => {
-      useAuthStore.getState().clearUser()
       navigate("/login", { replace: true })
     },
   })

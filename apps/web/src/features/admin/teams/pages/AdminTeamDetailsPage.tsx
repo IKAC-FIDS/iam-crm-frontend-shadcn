@@ -9,7 +9,7 @@ import {
   UserCog,
   UsersRound,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -94,8 +94,8 @@ export function AdminTeamDetailsPage() {
   })
 
   const team = teamQuery.data
-  const members = membersQuery.data ?? []
-  const allUsers = usersQuery.data ?? []
+  const members = useMemo(() => membersQuery.data ?? [], [membersQuery.data])
+  const allUsers = useMemo(() => usersQuery.data ?? [], [usersQuery.data])
 
   const managers = useMemo(
     () =>
@@ -125,13 +125,17 @@ export function AdminTeamDetailsPage() {
   const [memberPage, setMemberPage] = useState(1)
   const [memberPageSize, setMemberPageSize] = useState(20)
 
-  useEffect(() => {
-    if (!team) return
-    setName(team.name)
+  const resetInputs0 = [team?.id, team?.name, team?.code, team?.description, team?.managerId, team?.manager?.id] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1] || previousResetInputs0[2] !== resetInputs0[2] || previousResetInputs0[3] !== resetInputs0[3] || previousResetInputs0[4] !== resetInputs0[4] || previousResetInputs0[5] !== resetInputs0[5]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (team) {
+setName(team.name)
     setCode(team.code)
     setDescription(team.description ?? "")
     setManagerId(team.managerId ?? team.manager?.id ?? "")
-  }, [team?.id, team?.name, team?.code, team?.description, team?.managerId, team?.manager?.id])
+}
+  }
 
   const refreshTeam = async () => {
     await queryClient.invalidateQueries({ queryKey: ["admin-team-detail", teamId] })

@@ -73,9 +73,12 @@ export function ActivityFormDialog({
   const [personSearch, setPersonSearch] = useState("")
   const [opportunitySearch, setOpportunitySearch] = useState("")
 
-  useEffect(() => {
-    if (!open) return
-    const existingCompanyId = activity?.companyId || activity?.company?.id || ""
+  const resetInputs0 = [activity, open] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0] || previousResetInputs0[1] !== resetInputs0[1]) {
+    setPreviousResetInputs0(resetInputs0)
+    if (open) {
+const existingCompanyId = activity?.companyId || activity?.company?.id || ""
     const existingPersonId = activity?.personId || activity?.person?.id || ""
 
     setCompanyId(existingCompanyId)
@@ -106,7 +109,8 @@ export function ActivityFormDialog({
     setNextActionDate(undefined)
     setPersonSearch("")
     setOpportunitySearch("")
-  }, [activity, open])
+}
+  }
 
   const people = useActivityPeopleOptions(
     companyId,

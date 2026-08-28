@@ -8,7 +8,7 @@ import {
   Target,
   UserRound,
 } from "lucide-react"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -28,6 +28,11 @@ export function OpportunityExecutiveSummary({
   opportunity: Opportunity
 }) {
   const text = uiText.opportunities.detail.summary
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
   const value = Number(opportunity.estimatedValue) || 0
   const probability = opportunity.probability
   const weighted =
@@ -39,7 +44,7 @@ export function OpportunityExecutiveSummary({
     : null
   const days =
     close && !Number.isNaN(close.getTime())
-      ? Math.ceil((close.getTime() - Date.now()) / 86_400_000)
+      ? Math.ceil((close.getTime() - now) / 86_400_000)
       : null
   const activities = Array.isArray(opportunity.activities)
     ? opportunity.activities

@@ -174,7 +174,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: "management",
     order: 230,
     icon: CircleDollarSign,
-    access: any(["exchange-rate:view"]),
+    access: any(["exchange-rate:view", "exchange-rate:manage"]),
   },
   {
     id: "admin-permissions",
@@ -183,7 +183,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: "management",
     order: 260,
     icon: ShieldCheck,
-    access: any(["permission:view", "role:view"]),
+    access: any(["permission:view", "permission:manage", "role:view", "role:manage"]),
   },
   {
     id: "admin-libraries",

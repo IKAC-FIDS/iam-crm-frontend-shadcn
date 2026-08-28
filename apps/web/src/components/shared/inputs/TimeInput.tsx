@@ -1,4 +1,4 @@
-import { useEffect, useState, type InputHTMLAttributes } from "react"
+import { useState, type InputHTMLAttributes } from "react"
 import { Clock3 } from "lucide-react"
 
 import { Input } from "@workspace/ui/components/input"
@@ -39,7 +39,12 @@ export function TimeInput({
 }: TimeInputProps) {
   const [draft, setDraft] = useState(value)
 
-  useEffect(() => setDraft(value), [value])
+  const resetInputs0 = [value] as const
+  const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
+  if (previousResetInputs0 === null || previousResetInputs0[0] !== resetInputs0[0]) {
+    setPreviousResetInputs0(resetInputs0)
+    setDraft(value);
+  }
 
   return (
     <div className="relative w-full min-w-0" dir="ltr">
