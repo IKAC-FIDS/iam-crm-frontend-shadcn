@@ -169,6 +169,14 @@ export async function deactivateUser(id: string) {
   const r = await api.patch(`/users/${id}/deactivate`)
   return unwrapApiResponse<AdminUser>(r.data)
 }
+export async function resetUserPassword(id: string, newPassword: string) {
+  const r = await api.patch(`/users/${id}/reset-password`, { newPassword })
+  return unwrapApiResponse<{
+    success: boolean
+    revokedSessions: number
+    message: string
+  }>(r.data)
+}
 export async function getTeams() {
   const r = await api.get("/teams", {
     params: { page: 1, limit: 100, isActive: true },

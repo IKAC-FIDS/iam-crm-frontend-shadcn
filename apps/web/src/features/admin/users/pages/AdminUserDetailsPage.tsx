@@ -16,6 +16,8 @@ import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import {
   USER_ROLES,
   USER_ROLE_LABELS,
@@ -26,6 +28,7 @@ import {
   getTeams,
   getUser,
   getUserAuditLogs,
+  resetUserPassword,
   updateUserRole,
   type UserRole,
 } from "../api/adminUsersApi"
@@ -55,6 +58,8 @@ function auditLabel(action?: string) {
         ? "کاربر غیرفعال شد"
         : action === "user.role_changed"
           ? "نقش یا تیم کاربر تغییر کرد"
+          : action === "user.password_reset"
+            ? "رمز عبور توسط مدیر ریست شد"
           : action || "تغییر مدیریتی"
 }
 
@@ -71,6 +76,7 @@ export function AdminUserDetailsPage() {
   const canViewTeams = can(permissions, "team:view") || can(permissions, "team:manage")
   const canViewRoles = can(permissions, "role:view")
   const canViewAudit = can(permissions, "audit-log:view")
+  const canResetPassword = can(permissions, "user:manage")
 
   const userQuery = useQuery({
     queryKey: ["admin-user-detail", userId],
@@ -94,6 +100,9 @@ export function AdminUserDetailsPage() {
 
   const [roleChoice, setRoleChoice] = useState("")
   const [teamId, setTeamId] = useState("")
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
 
   const resetInputs0 = [user] as const
   const [previousResetInputs0, setPreviousResetInputs0] = useState<typeof resetInputs0 | null>(null)
@@ -137,6 +146,18 @@ setRoleChoice(user.roleId ? `ROLE:${user.roleId}` : `BASE:${user.role}`)
     onError: (e) => toast.error(getApiErrorMessage(e, "ذخیره تغییرات انجام نشد.")),
   })
 
+  const passwordMutation = useMutation({
+    mutationFn: () => resetUserPassword(userId as string, newPassword),
+    onSuccess: async (result) => {
+      toast.success(result.message)
+      setPasswordOpen(false)
+      setNewPassword("")
+      setConfirmPassword("")
+      await qc.invalidateQueries({ queryKey: ["admin-user-audit", userId] })
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, "ریست رمز عبور انجام نشد.")),
+  })
+
   if (userQuery.isLoading) return <div className="grid min-h-72 place-items-center text-sm text-muted-foreground">در حال دریافت اطلاعات کاربر...</div>
   if (userQuery.isError || !user) return <div className="grid min-h-72 place-items-center"><Button variant="outline" onClick={() => navigate("/admin/users")}>بازگشت به کاربران</Button></div>
 
@@ -172,7 +193,7 @@ setRoleChoice(user.roleId ? `ROLE:${user.roleId}` : `BASE:${user.role}`)
       <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
         <div className="mb-4 flex items-center gap-2"><ShieldCheck className="size-5 text-[var(--app-primary)]" /><h2 className="font-bold">دسترسی‌ها و امنیت</h2></div>
         {!user.roleId ? <p className="rounded-2xl bg-muted/35 p-4 text-sm text-muted-foreground">این کاربر از نقش پایه «{USER_ROLE_LABELS[user.role]}» استفاده می‌کند.</p> : !canViewRoles ? <p className="text-sm text-muted-foreground">مجوز مشاهده نقش‌ها موجود نیست.</p> : <div className="flex flex-wrap gap-2">{(rolePerms.data?.assignedActions ?? []).map((a) => <span key={a} className="rounded-lg border border-[var(--app-divider)] bg-muted/35 px-2.5 py-1.5 text-xs" dir="ltr">{a}</span>)}</div>}
-        <div className="mt-6 rounded-2xl border border-dashed border-[var(--app-divider)] p-4"><div className="flex items-center gap-2 text-sm font-bold"><KeyRound className="size-4 text-muted-foreground" />امنیت حساب</div><p className="mt-2 text-xs leading-6 text-muted-foreground">در Backend فعلی سرویس تغییر یا Reset کلمه عبور توسط مدیر وجود ندارد؛ بنابراین این عملیات در UI نمایش داده نشده است.</p></div>
+        <div className="mt-6 rounded-2xl border border-dashed border-[var(--app-divider)] p-4"><div className="flex items-center gap-2 text-sm font-bold"><KeyRound className="size-4 text-muted-foreground" />امنیت حساب</div><p className="mt-2 text-xs leading-6 text-muted-foreground">با ریست رمز عبور، قفل حساب رفع و تمام نشست‌های فعال این کاربر پایان داده می‌شود.</p>{canResetPassword && user.id !== current?.id ? <Button type="button" variant="outline" className="mt-3 rounded-xl" onClick={() => setPasswordOpen(true)}><KeyRound className="ms-2 size-4" />ریست رمز عبور</Button> : null}</div>
       </article>
     </section>
 
@@ -183,6 +204,15 @@ setRoleChoice(user.roleId ? `ROLE:${user.roleId}` : `BASE:${user.role}`)
       </div>
       {!canViewAudit ? <p className="text-sm text-muted-foreground">مجوز مشاهده Audit Log موجود نیست.</p> : audit.isLoading ? <p className="text-sm text-muted-foreground">در حال دریافت تاریخچه...</p> : !(audit.data ?? []).length ? <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p> : <div className="grid gap-3">{(audit.data ?? []).map((a) => <div key={a.id} className="flex items-start gap-3 rounded-2xl bg-muted/30 p-4"><span className="mt-1 size-2 rounded-full bg-[var(--app-primary)]" /><div><div className="font-bold">{auditLabel(a.action)}</div><div className="mt-1 text-xs text-muted-foreground">{formatDate(a.createdAt)}</div></div></div>)}</div>}
     </section>
+
+    <ResponsiveModal open={passwordOpen} onClose={() => !passwordMutation.isPending && setPasswordOpen(false)} title="ریست رمز عبور کاربر" description={`یک رمز عبور جدید برای ${user.fullName} تعیین کنید. تمام نشست‌های فعال این کاربر بسته می‌شوند.`} icon={KeyRound}>
+      <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); if (newPassword !== confirmPassword) { toast.error("تکرار رمز عبور مطابقت ندارد."); return } passwordMutation.mutate() }}>
+        <label className="grid gap-2 text-sm font-bold">رمز عبور جدید<Input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="حداقل ۸ کاراکتر" className="h-11 rounded-xl" /></label>
+        <label className="grid gap-2 text-sm font-bold">تکرار رمز عبور<Input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="h-11 rounded-xl" /></label>
+        <p className="rounded-xl bg-amber-500/10 p-3 text-xs leading-6 text-amber-800">رمز باید شامل حرف کوچک، حرف بزرگ، عدد و کاراکتر خاص باشد. رمز را از مسیر امن در اختیار کاربر قرار دهید.</p>
+        <div className="flex justify-end gap-2 border-t pt-4"><Button type="button" variant="outline" onClick={() => setPasswordOpen(false)} disabled={passwordMutation.isPending}>انصراف</Button><Button type="submit" disabled={passwordMutation.isPending || newPassword.length < 8 || !confirmPassword}>{passwordMutation.isPending ? "در حال ریست..." : "تأیید و خروج از نشست‌ها"}</Button></div>
+      </form>
+    </ResponsiveModal>
   </div>
 }
 
