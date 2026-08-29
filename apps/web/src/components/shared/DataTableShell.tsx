@@ -3,6 +3,7 @@ import { uiText } from "@/config/uiText"
 import { PaginationControls } from "./PaginationControls"
 import { LoadingState } from "./LoadingState"
 import { EmptyState } from "./EmptyState"
+import { MobileEntityCard, type MobileEntityConfig } from "./MobileEntityCard"
 
 import {
   Table,
@@ -32,6 +33,7 @@ export function DataTableShell<Row>({
   renderRowActions,
   pagination,
   loading = false,
+  mobile,
 }: {
   rows: Row[]
   columns: DataTableColumn<Row>[]
@@ -43,6 +45,7 @@ export function DataTableShell<Row>({
   renderRowActions?: (row: Row) => ReactNode
   pagination?: ComponentProps<typeof PaginationControls>
   loading?: boolean
+  mobile?: MobileEntityConfig<Row>
 }) {
   const tableColumns = renderRowActions
     ? [
@@ -59,7 +62,7 @@ export function DataTableShell<Row>({
 
   return (
     <div className="grid min-w-0 gap-3">
-      <div className="min-w-0 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
+      <div className={mobile ? "hidden min-w-0 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)] md:block" : "min-w-0 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]"}>
         {!rows.length ? (
           (emptyState ?? (
             <EmptyState
@@ -127,9 +130,22 @@ export function DataTableShell<Row>({
           </Table>
         )}
       </div>
+      {mobile ? (
+        <div className="grid min-w-0 gap-3 md:hidden">
+          {!rows.length ? (emptyState ?? <EmptyState title={uiText.common.table.noResults} description={uiText.common.table.noResultsDescription} />) : rows.map((row) => (
+            <MobileEntityCard
+              key={getRowKey(row)}
+              row={row}
+              config={mobile}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              actions={renderRowActions?.(row) ?? tableColumns.find((column) => column.id === "actions")?.cell(row)}
+            />
+          ))}
+        </div>
+      ) : null}
       {pagination ? <PaginationControls {...pagination} /> : null}
     </div>
   )
 }
 
-export type { DataTableColumn }
+export type { DataTableColumn, MobileEntityConfig }

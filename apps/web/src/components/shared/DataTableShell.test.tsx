@@ -99,3 +99,44 @@ it("renders typed rows, overflow and keyboard navigation without swallowing acti
   expect(action).toHaveBeenCalledTimes(1)
   expect(open).toHaveBeenCalledTimes(1)
 })
+
+it("renders one responsive mobile summary from the same rows and actions", async () => {
+  const action = vi.fn()
+  render(
+    <DataTableShell
+      rows={[{ id: "1", name: "شرکت نمونه", owner: "سارا" }]}
+      columns={[
+        { id: "name", header: "نام", cell: (row) => row.name },
+        { id: "owner", header: "مسئول", cell: (row) => row.owner },
+      ]}
+      getRowKey={(row) => row.id}
+      renderRowActions={() => <button onClick={action}>عملیات مشترک</button>}
+      mobile={{
+        title: (row) => row.name,
+        subtitle: () => "زیرعنوان اختیاری",
+        status: () => <span>فعال</span>,
+        fields: [{ id: "owner", label: "مسئول", render: (row) => row.owner }],
+      }}
+    />
+  )
+  expect(screen.getAllByText("شرکت نمونه")).toHaveLength(2)
+  expect(screen.getByText("زیرعنوان اختیاری")).toBeInTheDocument()
+  expect(screen.getByText("فعال")).toBeInTheDocument()
+  expect(screen.getAllByText("مسئول").some((node) => node.tagName === "DT")).toBe(true)
+  expect(screen.getAllByRole("button", { name: "عملیات مشترک" })).toHaveLength(2)
+  await userEvent.click(screen.getAllByRole("button", { name: "عملیات مشترک" })[1]!)
+  expect(action).toHaveBeenCalledOnce()
+})
+
+it("keeps subtitle, status and actions optional in mobile cards", () => {
+  render(
+    <DataTableShell
+      rows={[{ id: "1", name: "مورد ساده" }]}
+      columns={columns}
+      getRowKey={(row) => row.id}
+      mobile={{ title: (row) => row.name, fields: [] }}
+    />
+  )
+  expect(screen.getAllByText("مورد ساده")).toHaveLength(2)
+  expect(screen.queryByRole("button")).not.toBeInTheDocument()
+})

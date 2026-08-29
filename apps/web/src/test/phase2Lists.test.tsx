@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
@@ -85,11 +85,11 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
     "/companies?page=2&limit=20&search=نمونه&priority=HIGH"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("شرکت نمونه")
-  expect(screen.getByText("شرکت نمونه").closest("tr")).toHaveClass(
+  expect(within(screen.getByRole("table")).getByText("شرکت نمونه").closest("tr")).toHaveClass(
     "h-[var(--app-table-row-height)]"
   )
   expect(
-    screen.getByRole("button", { name: uiText.companies.list.openCompany })
+    within(screen.getByRole("table")).getByRole("button", { name: uiText.companies.list.openCompany })
   ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
   expect(api.get).toHaveBeenCalledWith(
     "/companies",
@@ -130,11 +130,11 @@ it("Admin Users uses shared pagination, server filters and unchanged create perm
     "/admin/users?page=2&limit=50&role=REP&status=ACTIVE&teamId=t1"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("کاربر نمونه")
-  expect(screen.getByText("کاربر نمونه").closest("tr")).toHaveClass(
+  expect(within(screen.getByRole("table")).getByText("کاربر نمونه").closest("tr")).toHaveClass(
     "h-[var(--app-table-row-height)]"
   )
   expect(
-    screen.getByRole("button", { name: "مشاهده جزئیات کاربر" })
+    within(screen.getByRole("table")).getByRole("button", { name: "مشاهده جزئیات کاربر" })
   ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
   expect(api.get).toHaveBeenCalledWith("/users", {
     params: { page: 2, limit: 50, role: "REP", teamId: "t1", isActive: true },
@@ -190,11 +190,11 @@ it("Opportunities preserves company/view parameters and paginates on the server"
     "/opportunities?view=list&companyId=c1&page=2&limit=20"
   )
   expect(await screen.findByRole("table")).toHaveTextContent("فرصت نمونه")
-  expect(screen.getByText("فرصت نمونه").closest("tr")).toHaveClass(
+  expect(within(screen.getByRole("table")).getByText("فرصت نمونه").closest("tr")).toHaveClass(
     "h-[var(--app-table-row-height)]"
   )
   await userEvent.click(
-    screen.getByRole("button", { name: "مشاهده جزئیات فرصت" })
+    within(screen.getByRole("table")).getByRole("button", { name: "مشاهده جزئیات فرصت" })
   )
   expect(onView).toHaveBeenCalledTimes(1)
   onView.mockClear()
@@ -215,7 +215,7 @@ it("Opportunities preserves company/view parameters and paginates on the server"
     )
   )
   expect(router.state.location.search).toContain("view=list")
-  await userEvent.click(screen.getByText("فرصت نمونه"))
+  await userEvent.click(within(screen.getByRole("table")).getByText("فرصت نمونه"))
   expect(onView).toHaveBeenCalledWith(expect.objectContaining({ id: "o1" }))
 })
 it("a migrated page presents a normalized server error, not a false empty result", async () => {

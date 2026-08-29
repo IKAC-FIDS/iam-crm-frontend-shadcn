@@ -355,6 +355,16 @@ export function AdminTeamsPage() {
               rows={pageTeams}
               getRowKey={(team) => team.id}
               onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
+              mobile={{
+                title: (team) => team.name,
+                subtitle: (team) => team.code,
+                avatar: (team) => team.name.slice(0, 1),
+                status: (team) => <StatusBadge tone={team.isActive ? "success" : "neutral"}>{team.isActive ? uiText.common.active : uiText.common.inactive}</StatusBadge>,
+                fields: [
+                  { id: "manager", label: "مدیر", render: (team) => team.manager?.fullName || "بدون مدیر" },
+                  { id: "members", label: "اعضا", render: (team) => fa(team.memberCount) },
+                ],
+              }}
               columns={[
                 {
                   id: "team",

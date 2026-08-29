@@ -350,6 +350,17 @@ export function AdminUsersPage() {
           columns={columns}
           getRowKey={(user) => user.id}
           onRowClick={(user) => navigate(`/admin/users/${user.id}`)}
+          mobile={{
+            title: (user) => user.fullName,
+            subtitle: (user) => user.email,
+            avatar: (user) => initials(user.fullName),
+            status: (user) => <StatusBadge tone={user.isActive ? "success" : "neutral"}>{user.isActive ? uiText.common.active : uiText.common.inactive}</StatusBadge>,
+            fields: [
+              { id: "role", label: uiText.adminUsers.fields.roleChoice, render: roleLabel },
+              { id: "team", label: uiText.adminUsers.fields.teamId, render: teamLabel },
+              { id: "updated", label: "آخرین تغییر", render: (user) => formatDate(user.updatedAt || user.createdAt) },
+            ],
+          }}
           emptyState={
             <EmptyState
               icon={UsersRound}

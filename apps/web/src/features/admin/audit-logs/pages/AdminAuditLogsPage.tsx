@@ -588,6 +588,17 @@ export function AdminAuditLogsPage() {
           columns={columns}
           getRowKey={(row) => row.id}
           onRowClick={(row) => setSelectedId(row.id)}
+          mobile={{
+            title: (row) => row.action,
+            subtitle: (row) => `${row.entityType}${row.entityId ? ` · ${row.entityId}` : ""}`,
+            status: (row) => <Badge variant={row.result === "FAILURE" ? "destructive" : "secondary"}>{row.result === "FAILURE" ? "ناموفق" : "موفق"}</Badge>,
+            fields: [
+              { id: "date", label: "زمان", render: (row) => faDate(row.createdAt) },
+              { id: "actor", label: "انجام‌دهنده", render: (row) => row.actor?.fullName || "سیستم" },
+              { id: "request", label: "مسیر", render: (row) => row.request?.path || "—" },
+              { id: "ip", label: "IP", render: (row) => row.request?.ipAddress || "—" },
+            ],
+          }}
           emptyState={
             <EmptyState
               title="رویدادی مطابق فیلترها پیدا نشد."

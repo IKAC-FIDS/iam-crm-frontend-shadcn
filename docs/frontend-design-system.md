@@ -281,3 +281,31 @@ visual debt, not a reason to replace preserved workflows. Do not claim every
 pixel of every application screen is standardized.
 
 See `phase22-validation.md` for final command results and acceptance status.
+# Responsive Entity Lists
+
+Standard CRM entity lists use `DataTableShell` with a `mobile` configuration. The component renders the canonical table at the Tailwind `md` breakpoint and above (768px), and a canonical `MobileEntityCard` list below it. Both presentations receive the same rows, query state, pagination, click behavior, permissions, and action renderer; viewport changes never create another query or reset list state.
+
+The feature owns information priority through `mobile: { title, subtitle?, avatar?, status?, fields }`. Each field has a stable `id`, a label, a row renderer, and an optional row-level `hidden` predicate. Normal cards should expose identity, status, and only three to five decision-relevant fields. Internal IDs and secondary detail belong on the detail screen.
+
+```tsx
+<DataTableShell
+  rows={companies}
+  columns={columns}
+  getRowKey={(company) => company.id}
+  renderRowActions={renderCompanyActions}
+  mobile={{
+    title: (company) => company.name,
+    status: (company) => <StatusBadge>{company.status}</StatusBadge>,
+    fields: [
+      { id: "owner", label: "مسئول", render: (company) => company.ownerName },
+      { id: "updated", label: "آخرین تغییر", render: (company) => formatDate(company.updatedAt) },
+    ],
+  }}
+/>
+```
+
+Actions are defined once, preferably through `EntityRowActions` or an existing canonical feature action menu, and the same table action cell/renderer is placed in the mobile card. Destructive confirmations and permission filtering therefore remain identical.
+
+Cards are the default mobile presentation for normal entity lists. True analytical matrices, reports, pipeline boards, calendars, and technical datasets may retain controlled horizontal navigation when a compact summary would conceal information needed for the task. Audit events may use cards only when their technical detail remains available through the existing detail view.
+
+Cards use semantic headings and description lists. Clickable cards support Enter and Space, action controls stop propagation through the existing action component, and CSS-hidden presentations are removed from the accessibility tree. Do not wrap the whole card in a link when it contains buttons or menus.

@@ -254,6 +254,17 @@ export function CompaniesPage() {
           columns={columns}
           getRowKey={(company) => company.id}
           onRowClick={(company) => navigate(`/companies/${company.id}`)}
+          mobile={{
+            title: (company) => companyDisplayName(company.legalName, company.brandName),
+            subtitle: (company) => company.industryRef?.name || company.industry || undefined,
+            avatar: (company) => companyDisplayName(company.legalName, company.brandName).trim().slice(0, 1) || <Building2 className="size-5" />,
+            status: (company) => company.archivedAt ? <StatusBadge tone="warning">{text.archived}</StatusBadge> : <StatusBadge tone="success">{text.active}</StatusBadge>,
+            fields: [
+              { id: "owner", label: text.columns.owner, render: (company) => company.owner?.fullName || text.unassigned },
+              { id: "priority", label: text.columns.priority, render: (company) => <CompanyPriorityBadge priority={company.priority} /> },
+              { id: "updatedAt", label: text.columns.updatedAt, render: (company) => formatCompanyDate(company.updatedAt) },
+            ],
+          }}
           emptyState={
             <EmptyState
               icon={Building2}

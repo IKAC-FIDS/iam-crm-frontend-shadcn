@@ -151,6 +151,17 @@ export function MeetingList({
         columns={columns}
         getRowKey={(meeting) => meeting.id}
         onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
+        mobile={{
+          title: (meeting) => meeting.title,
+          subtitle: meetingCompanyName,
+          avatar: () => <CalendarDays className="size-5" />,
+          status: (meeting) => <StatusBadge tone={meetingStatusTone(meeting.status)}>{meetingStatusLabel(meeting.status)}</StatusBadge>,
+          fields: [
+            { id: "schedule", label: text.table.schedule, render: (meeting) => `${formatJalaliDate(meeting.startAt)}، ${meetingTimeRange(meeting)}` },
+            { id: "type", label: text.table.type, render: (meeting) => meetingTypeLabel(meeting.type) },
+            { id: "owner", label: text.table.owner, render: (meeting) => meeting.assignees?.map((item) => item.user.fullName).filter(Boolean).join(uiText.common.listSeparator) || meeting.organizer?.fullName || uiText.common.notAvailable },
+          ],
+        }}
         emptyState={
           <EmptyState
             icon={CalendarDays}

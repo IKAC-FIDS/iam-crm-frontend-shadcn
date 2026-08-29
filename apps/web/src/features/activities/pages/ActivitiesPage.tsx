@@ -551,6 +551,18 @@ export function ActivitiesPage() {
               columns={columns}
               getRowKey={(item) => item.id}
               onRowClick={setDetailActivity}
+              mobile={{
+                title: (item) => (item.title && item.title !== item.type ? item.title : item.outcome) || activityTypeLabel(item.type, typeOptions),
+                subtitle: (item) => item.description || item.notes,
+                avatar: () => <ActivityIcon className="size-5" />,
+                status: (item) => <StatusBadge tone={item.status === "COMPLETED" ? "success" : "neutral"}>{item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}</StatusBadge>,
+                fields: [
+                  { id: "type", label: "نوع", render: (item) => activityTypeLabel(item.type, typeOptions) },
+                  { id: "company", label: "شرکت", render: companyName },
+                  { id: "owner", label: "ایجادکننده", render: (item) => item.createdBy?.fullName || item.user?.fullName || "—" },
+                  { id: "date", label: "تاریخ فعالیت", render: (item) => formatDate(item.activityDate || item.occurredAt) },
+                ],
+              }}
               emptyState={
                 <EmptyState
                   icon={ActivityIcon}

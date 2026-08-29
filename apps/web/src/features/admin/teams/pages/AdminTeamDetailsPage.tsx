@@ -453,6 +453,13 @@ export function AdminTeamDetailsPage() {
             rows={visibleMembers}
             getRowKey={(member) => member.id}
             onRowClick={(member) => navigate(`/admin/users/${member.id}`)}
+            mobile={{
+              title: (member) => member.fullName,
+              subtitle: (member) => member.email,
+              avatar: (member) => member.fullName.slice(0, 1),
+              status: (member) => <StatusBadge tone={member.isActive ? "success" : "neutral"}>{member.isActive ? "فعال" : "غیرفعال"}</StatusBadge>,
+              fields: [{ id: "role", label: "نقش", render: (member) => member.role }],
+            }}
             emptyState={
               <EmptyState
                 title="عضوی در این تیم وجود ندارد."

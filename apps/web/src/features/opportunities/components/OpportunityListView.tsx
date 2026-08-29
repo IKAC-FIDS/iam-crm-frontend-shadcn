@@ -155,6 +155,18 @@ export function OpportunityListView({
           columns={columns}
           getRowKey={(item) => item.id}
           onRowClick={onView}
+          mobile={{
+            title: (item) => item.title,
+            subtitle: opportunityCompanyName,
+            avatar: () => <BriefcaseBusiness className="size-5" />,
+            status: (item) => <StatusBadge tone={item.archivedAt ? "warning" : "success"}>{item.archivedAt ? text.status.archived : text.status.active}</StatusBadge>,
+            fields: [
+              { id: "stage", label: text.table.stage, render: (item) => item.stage?.label || uiText.common.notAvailable },
+              { id: "owner", label: text.table.owner, render: (item) => item.owner?.fullName || text.fields.noOwner },
+              { id: "value", label: text.table.estimatedValue, render: (item) => `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}` },
+              { id: "close", label: text.table.closeDate, render: (item) => formatOpportunityDate(item.expectedCloseDate) },
+            ],
+          }}
           emptyState={
             <EmptyState
               icon={BriefcaseBusiness}

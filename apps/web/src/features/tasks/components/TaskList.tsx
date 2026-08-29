@@ -150,6 +150,17 @@ export function TaskList({
         columns={columns}
         getRowKey={(task) => task.id}
         onRowClick={(task) => navigate(`/tasks/${task.id}`)}
+        mobile={{
+          title: (task) => task.title,
+          subtitle: taskContextLabel,
+          avatar: () => <ListChecks className="size-5" />,
+          status: (task) => <StatusBadge tone={taskStatusTone(task.status)}>{taskStatusLabel(task.status)}</StatusBadge>,
+          fields: [
+            { id: "priority", label: text.table.priority, render: (task) => <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>{taskPriorityLabel(task.priority)}</StatusBadge> },
+            { id: "assignee", label: text.table.assignee, render: (task) => task.assignedTo?.fullName || task.assignedTo?.email || text.labels.unassigned },
+            { id: "due", label: text.table.dueAt, render: (task) => task.dueAt ? formatJalaliDateTime(task.dueAt) : text.labels.noDueDate },
+          ],
+        }}
         emptyState={
           <EmptyState
             icon={ListChecks}
