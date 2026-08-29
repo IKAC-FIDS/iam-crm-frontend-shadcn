@@ -29,6 +29,11 @@ yarn-error.log*
 
 coverage
 **/coverage
+playwright-report
+test-results
+*.tsbuildinfo
+.cache
+**/.cache
 
 .DS_Store
 Thumbs.db

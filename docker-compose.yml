@@ -1,0 +1,18 @@
+services:
+  frontend-shadcn:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        VITE_API_URL: /api
+    container_name: iam-crm-frontend-shadcn
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - iam-crm-backend_default
+
+networks:
+  iam-crm-backend_default:
+    external: true
