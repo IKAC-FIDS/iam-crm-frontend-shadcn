@@ -7,6 +7,8 @@
     "test:run": "npm run test:run --workspace web",
     "test:coverage": "npm run test:coverage --workspace web",
     "build": "turbo build",
+    "analyze": "npm run analyze --workspace web",
+    "bundle:check": "npm run bundle:check --workspace web",
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",

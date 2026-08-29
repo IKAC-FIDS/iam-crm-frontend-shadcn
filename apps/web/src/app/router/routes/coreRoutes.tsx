@@ -1,3 +1,11 @@
-import { DashboardPage } from "@/features/dashboard/pages/DashboardPage"
+import { lazyRoute } from "../lazyRoute"
 import { routeGroup } from "./routeGroup"
-export const coreRoutes = [routeGroup("dashboard", <DashboardPage />)]
+export const coreRoutes = [
+  routeGroup(
+    "dashboard",
+    lazyRoute(
+      () => import("@/features/dashboard/pages/DashboardPage"),
+      "DashboardPage"
+    )
+  ),
+]
