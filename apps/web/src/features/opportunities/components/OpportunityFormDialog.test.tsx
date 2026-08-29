@@ -4,6 +4,7 @@ import { expect, it, vi } from "vitest"
 import { OpportunityFormDialog } from "./OpportunityFormDialog"
 import { httpError } from "@/test/fixtures"
 import { uiText } from "@/config/uiText"
+import { formatJalaliDate } from "@/lib/date/jalali"
 import type { Opportunity } from "../types/opportunity.types"
 
 vi.mock("../hooks/useOpportunities", () => ({
@@ -26,18 +27,17 @@ const opportunity: Opportunity = {
   stageId: "s1",
   stage: { id: "s1", code: "LEAD", label: "سرنخ", sortOrder: 1 },
   priority: "MEDIUM",
+  expectedCloseDate: "2026-08-30",
 }
 it("keeps edit values, validates probability and maps a rejected title to the field", async () => {
-  const submit = vi
-    .fn()
-    .mockRejectedValue(
-      httpError(422, {
-        error: {
-          message: "اصلاح عنوان",
-          fieldErrors: { title: ["عنوان تکراری"] },
-        },
-      })
-    )
+  const submit = vi.fn().mockRejectedValue(
+    httpError(422, {
+      error: {
+        message: "اصلاح عنوان",
+        fieldErrors: { title: ["عنوان تکراری"] },
+      },
+    })
+  )
   const props = {
     open: true,
     onOpenChange: vi.fn(),
@@ -50,6 +50,9 @@ it("keeps edit values, validates probability and maps a rejected title to the fi
   expect(
     screen.getByLabelText(new RegExp(uiText.opportunities.fields.title))
   ).toHaveValue("فرصت قبلی")
+  expect(
+    screen.getByLabelText(uiText.opportunities.fields.expectedCloseDate)
+  ).toHaveTextContent(formatJalaliDate(opportunity.expectedCloseDate))
   const probability = screen.getByLabelText(
     uiText.opportunities.fields.probability
   )

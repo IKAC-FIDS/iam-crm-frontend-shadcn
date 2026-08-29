@@ -322,8 +322,15 @@ export function OpportunityFormDialog({
                 label={text.fields.expectedCloseDate}
               >
                 <PersianDatePicker
+                  id="opportunity-expectedCloseDate"
                   value={state.expectedCloseDate}
                   onChange={(expectedCloseDate) => patch({ expectedCloseDate })}
+                  ariaInvalid={Boolean(errors.expectedCloseDate)}
+                  ariaDescribedBy={
+                    errors.expectedCloseDate
+                      ? "opportunity-expectedCloseDate-error"
+                      : undefined
+                  }
                 />
               </Field>
               <Field

@@ -13,29 +13,41 @@ import { formatJalaliDate } from "@/lib/date/jalali"
 import { PersianCalendar } from "./PersianCalendar"
 
 export type PersianDatePickerProps = {
+  id?: string
   value?: Date
   onChange?: (date?: Date) => void
   placeholder?: string
   disabled?: boolean
   minDate?: Date
   maxDate?: Date
+  ariaLabel?: string
+  ariaDescribedBy?: string
+  ariaInvalid?: boolean
 }
 
 export function PersianDatePicker({
+  id,
   value,
   onChange,
   placeholder = uiText.date.pickDate,
   disabled = false,
   minDate,
   maxDate,
+  ariaLabel,
+  ariaDescribedBy,
+  ariaInvalid,
 }: PersianDatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger
         render={
           <Button
+            id={id}
             variant="outline"
             disabled={disabled}
+            aria-label={ariaLabel}
+            aria-describedby={ariaDescribedBy}
+            aria-invalid={ariaInvalid}
             className="h-11 w-full justify-start gap-2 rounded-xl text-start font-normal"
           />
         }

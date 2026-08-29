@@ -92,6 +92,7 @@ export function SearchableOptionSelect({
               className="mb-1 flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-xs text-[var(--app-text-secondary)] hover:bg-[var(--app-background)]"
               onClick={() => {
                 onChange(undefined)
+                onSearchChange("")
                 setOpen(false)
               }}
             >
@@ -113,6 +114,7 @@ export function SearchableOptionSelect({
                 className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-start hover:bg-[var(--app-primary-soft)]"
                 onClick={() => {
                   onChange(option.id)
+                  onSearchChange("")
                   setOpen(false)
                 }}
               >

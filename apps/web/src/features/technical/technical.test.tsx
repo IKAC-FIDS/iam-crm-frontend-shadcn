@@ -123,11 +123,12 @@ describe("Technical Center behavior", () => {
       </MemoryRouter>,
       { wrapper }
     )
-    await userEvent.selectOptions(
-      await screen.findByLabelText("محرمانگی"),
-      "CONFIDENTIAL"
+    await userEvent.click(await screen.findByLabelText("محرمانگی"))
+    await userEvent.click(screen.getByRole("button", { name: "محرمانه" }))
+    await userEvent.click(screen.getByLabelText("مناقصه"))
+    await userEvent.click(
+      await screen.findByRole("button", { name: "مناقصه نمونه" })
     )
-    await userEvent.selectOptions(await screen.findByLabelText("مناقصه"), "t1")
     await waitFor(() =>
       expect(api.get).toHaveBeenCalledWith(
         "/technical/documents",

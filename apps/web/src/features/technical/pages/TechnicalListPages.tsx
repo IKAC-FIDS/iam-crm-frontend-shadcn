@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import {
@@ -19,6 +19,8 @@ import { QueryContent } from "@/components/shared/QueryContent"
 import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
 import { useTechnicalList } from "../hooks"
 import { technicalLookups } from "../api"
@@ -73,6 +75,41 @@ function usePermission(name: string) {
 }
 const selectClass =
   "h-11 min-w-44 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 text-sm"
+function StaticFilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value?: string
+  options: Record<string, string>
+  onChange: (value?: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const normalized = search.trim().toLocaleLowerCase("fa")
+  const visible = Object.entries(options)
+    .filter(
+      ([id, optionLabel]) =>
+        !normalized ||
+        id.toLocaleLowerCase("en").includes(normalized) ||
+        optionLabel.toLocaleLowerCase("fa").includes(normalized)
+    )
+    .map(([id, optionLabel]) => ({ id, label: optionLabel }))
+  return (
+    <div className="min-w-44">
+      <SearchableOptionSelect
+        value={value}
+        onChange={onChange}
+        options={visible}
+        search={search}
+        onSearchChange={setSearch}
+        placeholder={`${label}: همه`}
+        ariaLabel={label}
+      />
+    </div>
+  )
+}
 function Filters({
   search,
   status,
@@ -110,33 +147,19 @@ function Filters({
       }
       filters={
         <>
-          <select
-            aria-label="وضعیت"
-            className={selectClass}
+          <StaticFilterSelect
+            label="وضعیت"
             value={status}
-            onChange={(e) => patch({ status: e.target.value || undefined })}
-          >
-            <option value="">همه وضعیت‌ها</option>
-            {Object.entries(statuses).map(([v, l]) => (
-              <option key={v} value={v}>
-                {l}
-              </option>
-            ))}
-          </select>
+            options={statuses}
+            onChange={(value) => patch({ status: value })}
+          />
           {types ? (
-            <select
-              aria-label="نوع"
-              className={selectClass}
+            <StaticFilterSelect
+              label="نوع"
               value={type}
-              onChange={(e) => patch({ type: e.target.value || undefined })}
-            >
-              <option value="">همه نوع‌ها</option>
-              {Object.entries(types).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
+              options={types}
+              onChange={(value) => patch({ type: value })}
+            />
           ) : null}
           {extra}
         </>
@@ -363,46 +386,7 @@ function SupportedFilters({
       "documents",
       "resources",
       "tenders",
-    ].includes(kind),
-    products = useQuery({
-      queryKey: ["technical-list-lookups", "products"],
-      queryFn: () => technicalLookups("products"),
-      enabled: usesProduct,
-    }),
-    companies = useQuery({
-      queryKey: ["technical-list-lookups", "companies"],
-      queryFn: () => technicalLookups("companies"),
-      enabled: usesCompany,
-    }),
-    owners = useQuery({
-      queryKey: ["technical-list-lookups", "users"],
-      queryFn: () => technicalLookups("users"),
-      enabled: usesOwner,
-    }),
-    tenders = useQuery({
-      queryKey: ["technical-list-lookups", "tenders"],
-      queryFn: () => technicalLookups("tenders"),
-      enabled: kind === "documents",
-    })
-  const lookup = (
-    label: string,
-    key: string,
-    options?: { id: string; label: string }[]
-  ) => (
-    <select
-      aria-label={label}
-      className={selectClass}
-      value={values[key] || ""}
-      onChange={(e) => patch({ [key]: e.target.value || undefined })}
-    >
-      <option value="">{label}: همه</option>
-      {options?.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  )
+    ].includes(kind)
   const sortOptions: Record<string, string> =
     kind === "releases"
       ? {
@@ -434,26 +418,45 @@ function SupportedFilters({
               }
   return (
     <>
-      {usesProduct ? lookup("محصول", "productId", products.data) : null}
-      {usesCompany ? lookup("شرکت", "companyId", companies.data) : null}
-      {usesOwner ? lookup("مالک", "ownerId", owners.data) : null}
-      {kind === "documents" ? lookup("مناقصه", "tenderId", tenders.data) : null}
+      {usesProduct ? (
+        <LookupFilter
+          kind="products"
+          label="محصول"
+          value={values.productId}
+          onChange={(value) => patch({ productId: value })}
+        />
+      ) : null}
+      {usesCompany ? (
+        <LookupFilter
+          kind="companies"
+          label="شرکت"
+          value={values.companyId}
+          onChange={(value) => patch({ companyId: value })}
+        />
+      ) : null}
+      {usesOwner ? (
+        <LookupFilter
+          kind="users"
+          label="مالک"
+          value={values.ownerId}
+          onChange={(value) => patch({ ownerId: value })}
+        />
+      ) : null}
       {kind === "documents" ? (
-        <select
-          aria-label="محرمانگی"
-          className={selectClass}
+        <LookupFilter
+          kind="tenders"
+          label="مناقصه"
+          value={values.tenderId}
+          onChange={(value) => patch({ tenderId: value })}
+        />
+      ) : null}
+      {kind === "documents" ? (
+        <StaticFilterSelect
+          label="محرمانگی"
           value={values.confidentiality || ""}
-          onChange={(e) =>
-            patch({ confidentiality: e.target.value || undefined })
-          }
-        >
-          <option value="">همه سطوح محرمانگی</option>
-          {Object.entries(confidentialityLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          options={confidentialityLabels}
+          onChange={(value) => patch({ confidentiality: value })}
+        />
       ) : null}
       {kind === "releases" ? (
         <Input
@@ -474,16 +477,12 @@ function SupportedFilters({
         />
       ) : null}
       {kind === "knowledge-base" ? (
-        <select
-          aria-label="موعد بازبینی"
-          className={selectClass}
+        <StaticFilterSelect
+          label="موعد بازبینی"
           value={values.reviewDue || ""}
-          onChange={(e) => patch({ reviewDue: e.target.value || undefined })}
-        >
-          <option value="">همه موعدهای بازبینی</option>
-          <option value="true">سررسیدشده</option>
-          <option value="false">سررسیدنشده</option>
-        </select>
+          options={{ true: "سررسیدشده", false: "سررسیدنشده" }}
+          onChange={(value) => patch({ reviewDue: value })}
+        />
       ) : null}
       {kind === "releases" || kind === "tenders" ? (
         <div className="min-w-44" aria-label="از تاریخ">
@@ -503,28 +502,53 @@ function SupportedFilters({
           />
         </div>
       ) : null}
-      <select
-        aria-label="مرتب‌سازی"
-        className={selectClass}
+      <StaticFilterSelect
+        label="مرتب‌سازی"
         value={values.sort}
-        onChange={(e) => patch({ sort: e.target.value })}
-      >
-        {Object.entries(sortOptions).map(([v, l]) => (
-          <option key={v} value={v}>
-            {l}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="جهت مرتب‌سازی"
-        className={selectClass}
+        options={sortOptions}
+        onChange={(value) => patch({ sort: value || "updatedAt" })}
+      />
+      <StaticFilterSelect
+        label="جهت مرتب‌سازی"
         value={values.sortDirection}
-        onChange={(e) => patch({ sortDirection: e.target.value })}
-      >
-        <option value="desc">نزولی</option>
-        <option value="asc">صعودی</option>
-      </select>
+        options={{ desc: "نزولی", asc: "صعودی" }}
+        onChange={(value) => patch({ sortDirection: value || "desc" })}
+      />
     </>
+  )
+}
+
+function LookupFilter({
+  kind,
+  label,
+  value,
+  onChange,
+}: {
+  kind: "products" | "companies" | "users" | "tenders"
+  label: string
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
+  const query = useQuery({
+    queryKey: ["technical-list-lookups", kind, debouncedSearch],
+    queryFn: () => technicalLookups(kind, debouncedSearch),
+  })
+  return (
+    <div className="min-w-44">
+      <SearchableOptionSelect
+        value={value}
+        onChange={onChange}
+        options={query.data ?? []}
+        search={search}
+        onSearchChange={setSearch}
+        placeholder={`${label}: همه`}
+        ariaLabel={label}
+        loading={query.isLoading || query.isFetching}
+        emptyText={query.isError ? "دریافت گزینه‌ها انجام نشد." : undefined}
+      />
+    </div>
   )
 }
 
