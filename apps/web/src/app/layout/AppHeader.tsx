@@ -20,13 +20,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
-import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
 import { getRoutePresentation } from "@/app/navigation/routeNavigation"
 import { uiText } from "@/config/uiText"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { NotificationBell } from "@/features/notifications/components/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
+import { AppTopNavigation } from "./AppTopNavigation"
 
 export function AppHeader() {
   const location = useLocation()
@@ -40,11 +40,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--app-divider)]/80 bg-[var(--app-surface)]/85 backdrop-blur-xl">
-      <div className="flex min-h-[72px] items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <SidebarTrigger
-          aria-label={uiText.common.openCloseMainMenu}
-          className="size-9 rounded-xl text-[var(--app-primary-alt)] hover:bg-[var(--app-background)] hover:text-[var(--app-primary)]"
-        />
+      <div className="mx-auto flex min-h-[72px] w-full max-w-[var(--app-content-max-width)] items-center gap-3 px-4 sm:px-6 lg:px-8 xl:px-10">
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-3">
@@ -165,6 +161,7 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <AppTopNavigation />
     </header>
   )
 }
