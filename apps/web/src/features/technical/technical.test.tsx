@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, screen, waitFor } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Route, Routes } from "react-router-dom"
 import userEvent from "@testing-library/user-event"
 import { axe, toHaveNoViolations } from "jest-axe"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -16,6 +16,7 @@ import {
 import { technicalApi } from "./api"
 import { releasePresentation, releaseTransitions } from "./presentation"
 import { TechnicalDocumentsPage } from "./pages/TechnicalListPages"
+import { TechnicalTenderDetailPage } from "./pages/TechnicalDetailPages"
 
 vi.mock("@/lib/api", () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -88,9 +89,42 @@ describe("Technical Center contract", () => {
       { documentId: "d1" }
     )
   })
+
+  it("uses typed readiness and review workflow endpoints", async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { data: { overallReady: false, blockers: [] } } })
+    await technicalApi.tenders.readiness("t1")
+    await technicalApi.tenders.reviews("t1")
+    vi.mocked(api.post).mockResolvedValue({ data: { data: { id: "rv1" } } })
+    await technicalApi.tenders.requestReview("t1", { type: "TECHNICAL", revision: 2 })
+    await technicalApi.tenders.decideReview("t1", "rv1", { status: "REJECTED", comment: "نیازمند اصلاح", revision: 2 })
+    expect(api.get).toHaveBeenCalledWith("/technical/tenders/t1/readiness")
+    expect(api.get).toHaveBeenCalledWith("/technical/tenders/t1/reviews")
+    expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/reviews/rv1/decision", expect.objectContaining({ status: "REJECTED", comment: "نیازمند اصلاح" }))
+  })
 })
 
 describe("Technical Center behavior", () => {
+  it("renders actionable tender readiness blockers and separate reviews", async () => {
+    useAuthStore.setState({ user: { ...user, permissions: ["technical-tender:view"] }, status: "authenticated" })
+    const readiness = {
+      overallReady: false,
+      blockers: [{ code: "MANDATORY_REQUIREMENTS_INCOMPLETE", count: 2 }], warnings: [],
+      checks: {
+        mandatoryRequirements: { total: 3, satisfied: 1, unresolved: 2, blocked: 0 },
+        requirements: { total: 3, verified: 1, inProgress: 1, open: 1, blocked: 0, overdue: 0, unassigned: 0 },
+        deliverables: { total: 0, required: 0, completedRequired: 0, missing: 0 },
+        technicalReview: { status: "PENDING" }, commercialReview: { status: "NOT_STARTED" },
+        submissionDeadline: { value: "2026-09-01", overdue: false }, requiredTenderFields: { complete: true, missing: [] },
+      },
+    }
+    const tender = { id: "t1", title: "مناقصه تست", tenderType: "RFP", status: "PREPARING", ownerId: "u1", revision: 1, requirements: [], deliverables: [], readiness, createdAt: "2026-08-30", updatedAt: "2026-08-30" }
+    vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url.endsWith("/readiness") ? readiness : url.endsWith("/reviews") || url.endsWith("/requirements") || url.endsWith("/history") ? [] : tender } }))
+    render(<MemoryRouter initialEntries={["/technical/tenders/t1"]}><Routes><Route path="/technical/tenders/:id" element={<TechnicalTenderDetailPage />} /></Routes></MemoryRouter>, { wrapper })
+    expect(await screen.findByText("آماده ارسال نیست")).toBeInTheDocument()
+    expect(screen.getByText(/الزامات الزامی تکمیل نشده‌اند/)).toBeInTheDocument()
+    expect(screen.getByText("بازبینی فنی")).toBeInTheDocument()
+    expect(screen.getByText("بازبینی تجاری")).toBeInTheDocument()
+  })
   it("sends document confidentiality and tender filters from the URL-backed UI", async () => {
     useAuthStore.setState({
       user: { ...user, permissions: ["technical-document:view"] },

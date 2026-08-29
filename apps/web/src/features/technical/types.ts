@@ -14,6 +14,8 @@ export type EntityRef = {
   version?: string
   legalName?: string
   brandName?: string
+  fullName?: string
+  email?: string
   status?: string
 }
 export type TechnicalListParams = {
@@ -236,6 +238,8 @@ export type TenderRequirement = {
   ownerId?: string | null
   dueDate?: string | null
   response?: string | null
+  blockedReason?: string | null
+  blockedAt?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -244,8 +248,37 @@ export type TenderDeliverable = {
   tenderId: string
   documentId: string
   label?: string | null
+  required: boolean
   document?: EntityRef
   createdAt: string
+}
+export type TenderReviewType = "TECHNICAL" | "COMMERCIAL"
+export type TenderReviewStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
+export type TenderReview = {
+  id: string
+  tenderId: string
+  type: TenderReviewType
+  status: TenderReviewStatus
+  reviewerId?: string | null
+  reviewer?: EntityRef | null
+  requestedAt: string
+  reviewedAt?: string | null
+  comment?: string | null
+}
+export type ReadinessIssue = { code: string; count?: number; fields?: string[] }
+export type TenderReadiness = {
+  overallReady: boolean
+  blockers: ReadinessIssue[]
+  warnings: ReadinessIssue[]
+  checks: {
+    mandatoryRequirements: { total: number; satisfied: number; unresolved: number; blocked: number }
+    requirements: { total: number; verified: number; inProgress: number; open: number; blocked: number; overdue: number; unassigned: number }
+    deliverables: { total: number; required: number; completedRequired: number; missing: number }
+    technicalReview: { status: TenderReviewStatus | "NOT_STARTED"; reviewId?: string | null }
+    commercialReview: { status: TenderReviewStatus | "NOT_STARTED"; reviewId?: string | null }
+    submissionDeadline: { value?: string | null; overdue: boolean }
+    requiredTenderFields: { complete: boolean; missing: string[] }
+  }
 }
 export type Tender = {
   id: string
@@ -273,6 +306,12 @@ export type Tender = {
   revision: number
   requirements?: TenderRequirement[]
   deliverables?: TenderDeliverable[]
+  reviews?: TenderReview[]
+  readiness?: TenderReadiness
+  submittedAt?: string | null
+  submittedById?: string | null
+  closedAt?: string | null
+  closedById?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -304,6 +343,7 @@ export type RequirementPayload = {
   ownerId?: string
   dueDate?: string
   response?: string
+  blockedReason?: string
   status?: RequirementStatus
 }
 export type TechnicalKind =

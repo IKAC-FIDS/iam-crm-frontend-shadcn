@@ -18,6 +18,10 @@ import type {
   TenderDeliverable,
   TenderPayload,
   TenderRequirement,
+  TenderReadiness,
+  TenderReview,
+  TenderReviewStatus,
+  TenderReviewType,
 } from "./types"
 const root = "/technical"
 async function list<T>(kind: TechnicalKind, params: TechnicalListParams) {
@@ -121,6 +125,26 @@ export const technicalApi = {
       const r = await api.get(`${root}/tenders/${id}/requirements`)
       return unwrapApiResponse<TenderRequirement[]>(r.data)
     },
+    readiness: async (id: string) => {
+      const r = await api.get(`${root}/tenders/${id}/readiness`)
+      return unwrapApiResponse<TenderReadiness>(r.data)
+    },
+    reviews: async (id: string) => {
+      const r = await api.get(`${root}/tenders/${id}/reviews`)
+      return unwrapApiResponse<TenderReview[]>(r.data)
+    },
+    history: async (id: string) => {
+      const r = await api.get(`${root}/tenders/${id}/history`)
+      return unwrapApiResponse<Array<{ id: string; action: string; actorId?: string; createdAt: string; metadata?: { reason?: string } }>>(r.data)
+    },
+    requestReview: async (id: string, p: { type: TenderReviewType; reviewerId?: string; comment?: string; revision?: number }) => {
+      const r = await api.post(`${root}/tenders/${id}/reviews`, p)
+      return unwrapApiResponse<TenderReview>(r.data)
+    },
+    decideReview: async (id: string, reviewId: string, p: { status: TenderReviewStatus; comment?: string; revision?: number }) => {
+      const r = await api.post(`${root}/tenders/${id}/reviews/${reviewId}/decision`, p)
+      return unwrapApiResponse<TenderReview>(r.data)
+    },
     saveRequirement: async (
       id: string,
       p: RequirementPayload,
@@ -135,7 +159,7 @@ export const technicalApi = {
       api.delete(`${root}/tenders/${id}/requirements/${rid}`),
     addDeliverable: async (
       id: string,
-      p: { documentId: string; label?: string }
+      p: { documentId: string; label?: string; required?: boolean }
     ) => {
       const r = await api.post(`${root}/tenders/${id}/deliverables`, p)
       return unwrapApiResponse<TenderDeliverable>(r.data)

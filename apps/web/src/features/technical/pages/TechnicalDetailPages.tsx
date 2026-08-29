@@ -10,6 +10,8 @@ import {
   Edit3,
   Plus,
   Trash2,
+  AlertTriangle,
+  CheckCircle2,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -36,6 +38,8 @@ import {
   useRequirements,
   useTechnicalDetail,
   useTechnicalTransition,
+  useTenderWorkflow,
+  useTenderWorkflowMutations,
   technicalKeys,
 } from "../hooks"
 import {
@@ -65,6 +69,7 @@ import type {
   TechnicalRelease,
   Tender,
   TenderRequirement,
+  TenderReviewType,
   TenderStatus,
 } from "../types"
 
@@ -180,6 +185,7 @@ export function TechnicalReleaseDetailPage() {
             })
           }}
         />
+        {transition.error ? <TenderTransitionError error={transition.error} /> : null}
         <FormSection title="هویت و چرخه انتشار">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="محصول" value={relationName(item.product)} />
@@ -568,11 +574,100 @@ export function TechnicalTenderDetailPage() {
             />
           </dl>
         </FormSection>
+        <TenderWorkflowPanels tender={item} permissions={p} />
         <Requirements tender={item} canManage={manage} />
         <Deliverables tender={item} canManage={manage} />
       </DetailShell>
     )
   }
+}
+function TenderTransitionError({ error }: { error: unknown }) {
+  const payload = (error as { response?: { data?: { details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string } } })?.response?.data
+  const blockers = payload?.details?.blockers
+  return <div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
+    <b>امکان انجام این تغییر وجود ندارد.</b>
+    {blockers?.length ? <ul className="mt-2 grid gap-1">{blockers.map((issue) => <li key={issue.code}>• {readinessLabels[issue.code] ?? issue.code}{issue.count ? ` (${issue.count.toLocaleString("fa-IR")})` : ""}</li>)}</ul> : <p className="mt-2">{payload?.message || (error instanceof Error ? error.message : "خطای ناشناخته")}</p>}
+  </div>
+}
+const readinessLabels: Record<string, string> = {
+  MANDATORY_REQUIREMENTS_INCOMPLETE: "الزامات الزامی تکمیل نشده‌اند",
+  MANDATORY_REQUIREMENTS_UNASSIGNED: "الزامات الزامی بدون مسئول هستند",
+  REQUIRED_DELIVERABLES_INCOMPLETE: "اقلام تحویلی الزامی کامل نیستند",
+  TECHNICAL_REVIEW_NOT_APPROVED: "بازبینی فنی تأیید نشده است",
+  COMMERCIAL_REVIEW_NOT_APPROVED: "بازبینی تجاری تأیید نشده است",
+  REQUIRED_TENDER_FIELDS_INCOMPLETE: "اطلاعات ضروری مناقصه ناقص است",
+  TENDER_DEADLINE_PASSED: "مهلت ارسال گذشته است",
+  REQUIREMENT_DUE_AFTER_SUBMISSION: "مهلت برخی الزامات بعد از مهلت ارسال است",
+  REQUIREMENTS_OVERDUE: "برخی الزامات سررسید گذشته‌اند",
+}
+function tenderEventLabel(action: string) {
+  const exact: Record<string, string> = {
+    "technical-tender.created": "مناقصه ایجاد شد",
+    "technical-tender.updated": "اطلاعات مناقصه ویرایش شد",
+    "technical-tender.transitioned": "مرحله گردش کار تغییر کرد",
+    "technical-tender.submitted": "مناقصه ارسال شد",
+    "technical-tender.won": "مناقصه برنده شد",
+    "technical-tender.lost": "مناقصه از دست رفت",
+    "technical-tender.cancelled": "مناقصه لغو شد",
+    "technical-tender.archived": "مناقصه بایگانی شد",
+  }
+  if (exact[action]) return exact[action]
+  if (action.includes("review-technical-requested")) return "بازبینی فنی درخواست شد"
+  if (action.includes("review-commercial-requested")) return "بازبینی تجاری درخواست شد"
+  if (action.includes("review-technical-approved")) return "بازبینی فنی تأیید شد"
+  if (action.includes("review-commercial-approved")) return "بازبینی تجاری تأیید شد"
+  if (action.includes("review-technical-rejected")) return "بازبینی فنی رد شد"
+  if (action.includes("review-commercial-rejected")) return "بازبینی تجاری رد شد"
+  return action
+}
+function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permissions: string[] }) {
+  const workflow = useTenderWorkflow(tender.id), mutations = useTenderWorkflowMutations(tender.id)
+  const [dialog, setDialog] = useState<{ type: TenderReviewType; reviewId?: string; status?: "APPROVED" | "REJECTED" }>()
+  const [comment, setComment] = useState(""), [reviewerId, setReviewerId] = useState(""), [reviewerSearch, setReviewerSearch] = useState("")
+  const debouncedReviewerSearch = useDebouncedValue(reviewerSearch, 250)
+  const reviewers = useQuery({ queryKey: ["technical-tender-reviewers", debouncedReviewerSearch], queryFn: () => technicalLookups("users", debouncedReviewerSearch), enabled: Boolean(dialog && !dialog.reviewId) })
+  const readiness = workflow.readiness.data ?? tender.readiness
+  const latest = (type: TenderReviewType) => workflow.reviews.data?.find((r) => r.type === type)
+  const reviewLabel: Record<string, string> = { NOT_STARTED: "شروع نشده", PENDING: "در انتظار", APPROVED: "تأیید شده", REJECTED: "رد شده", CANCELLED: "لغو شده" }
+  return <>
+    <FormSection title="آمادگی ارسال">
+      {readiness ? <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]">
+        <div className={`rounded-2xl border p-4 ${readiness.overallReady ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20" : "border-amber-300 bg-amber-50/60 dark:bg-amber-950/20"}`}>
+          <div className="flex items-center gap-2 font-black">{readiness.overallReady ? <CheckCircle2 className="size-5 text-emerald-600" /> : <AlertTriangle className="size-5 text-amber-600" />}{readiness.overallReady ? "آماده ارسال" : "آماده ارسال نیست"}</div>
+          <ul className="mt-3 grid gap-2 text-sm" aria-label="موانع آمادگی ارسال">
+            {[...readiness.blockers, ...readiness.warnings].map((issue) => <li key={issue.code} className="flex gap-2"><span aria-hidden>•</span><span>{readinessLabels[issue.code] ?? issue.code}{issue.count ? ` (${issue.count.toLocaleString("fa-IR")})` : ""}</span></li>)}
+            {readiness.overallReady ? <li>تمام کنترل‌های الزامی با موفقیت عبور کرده‌اند.</li> : null}
+          </ul>
+        </div>
+        <dl className="grid grid-cols-2 gap-2 text-sm">
+          <Meta label="الزامات الزامی" value={`${readiness.checks.mandatoryRequirements.satisfied.toLocaleString("fa-IR")} از ${readiness.checks.mandatoryRequirements.total.toLocaleString("fa-IR")}`} />
+          <Meta label="الزامات مسدود" value={readiness.checks.requirements.blocked.toLocaleString("fa-IR")} />
+          <Meta label="تحویلی کامل" value={`${readiness.checks.deliverables.completedRequired.toLocaleString("fa-IR")} از ${readiness.checks.deliverables.required.toLocaleString("fa-IR")}`} />
+          <Meta label="سررسید گذشته" value={readiness.checks.requirements.overdue.toLocaleString("fa-IR")} />
+        </dl>
+      </div> : <p className="text-sm text-muted-foreground">در حال محاسبه آمادگی…</p>}
+    </FormSection>
+    <FormSection title="بازبینی‌های فنی و تجاری">
+      <div className="grid gap-3 md:grid-cols-2">{(["TECHNICAL", "COMMERCIAL"] as TenderReviewType[]).map((type) => {
+        const review = latest(type), allowed = permissions.includes(type === "TECHNICAL" ? "technical-tender:review-technical" : "technical-tender:review-commercial"), inStage = tender.status === (type === "TECHNICAL" ? "TECHNICAL_REVIEW" : "COMMERCIAL_REVIEW")
+        return <article key={type} className="rounded-2xl border p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2"><b>{type === "TECHNICAL" ? "بازبینی فنی" : "بازبینی تجاری"}</b><span className="rounded-full border px-2 py-1 text-xs font-bold">{reviewLabel[review?.status ?? "NOT_STARTED"]}</span></div>
+          <dl className="mt-3 grid gap-2 text-sm"><div>بازبین: {relationName(review?.reviewer)}</div><div>درخواست: {faDate(review?.requestedAt)}</div><div>تصمیم: {faDate(review?.reviewedAt)}</div>{review?.comment ? <div>توضیح: {review.comment}</div> : null}</dl>
+          {allowed && inStage ? <div className="mt-4 flex flex-wrap gap-2">{!review || review.status !== "PENDING" ? <Button size="sm" variant="outline" onClick={() => { setDialog({ type }); setComment(""); setReviewerId("") }}>درخواست بازبینی</Button> : <><Button size="sm" onClick={() => { setDialog({ type, reviewId: review.id, status: "APPROVED" }); setComment("") }}>تأیید</Button><Button size="sm" variant="destructive" onClick={() => { setDialog({ type, reviewId: review.id, status: "REJECTED" }); setComment("") }}>رد</Button></>}</div> : null}
+        </article>
+      })}</div>
+    </FormSection>
+    <FormSection title="تاریخچه گردش کار">
+      {workflow.history.data?.length ? <ol className="grid gap-2">{workflow.history.data.map((event) => <li key={event.id} className="flex flex-col gap-1 rounded-xl border p-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span>{tenderEventLabel(event.action)}</span><span className="text-muted-foreground">{faDate(event.createdAt)}</span></li>)}</ol> : <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p>}
+    </FormSection>
+    <ResponsiveModal open={Boolean(dialog)} onClose={() => setDialog(undefined)} title={dialog?.reviewId ? (dialog.status === "APPROVED" ? "تأیید بازبینی" : "رد بازبینی") : "درخواست بازبینی"}>
+      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!dialog) return; if (dialog.reviewId && dialog.status) await mutations.decideReview.mutateAsync({ reviewId: dialog.reviewId, status: dialog.status, comment: comment || undefined, revision: tender.revision }); else await mutations.requestReview.mutateAsync({ type: dialog.type, reviewerId: reviewerId || undefined, comment: comment || undefined, revision: tender.revision }); setDialog(undefined) }}>
+        {!dialog?.reviewId ? <label>بازبین<SearchableOptionSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} options={reviewers.data ?? []} search={reviewerSearch} onSearchChange={setReviewerSearch} loading={reviewers.isLoading || reviewers.isFetching} ariaLabel="بازبین" /></label> : null}
+        <label>توضیح<textarea className="min-h-28 w-full rounded-xl border p-3" value={comment} onChange={(e) => setComment(e.target.value)} required={dialog?.status === "REJECTED"} /></label>
+        <Button disabled={mutations.requestReview.isPending || mutations.decideReview.isPending || (dialog?.status === "REJECTED" && !comment.trim())}>ثبت تصمیم</Button>
+      </form>
+    </ResponsiveModal>
+  </>
 }
 function Requirements({
   tender,
@@ -602,6 +697,7 @@ function Requirements({
             ownerId: item.ownerId || "",
             dueDate: item.dueDate?.slice(0, 10) || "",
             response: item.response || "",
+            blockedReason: item.blockedReason || "",
             status: item.status,
           }
         : { title: "", mandatory: false, status: "OPEN" }
@@ -621,7 +717,15 @@ function Requirements({
     >
       <QueryContent query={q} errorTitle="دریافت الزامات ناموفق بود">
         {q.data?.length ? (
-          <div className="grid gap-2">
+          <div className="grid gap-3">
+            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              <Meta label="کل" value={q.data.length.toLocaleString("fa-IR")} />
+              <Meta label="الزامی" value={q.data.filter((r) => r.mandatory).length.toLocaleString("fa-IR")} />
+              <Meta label="تأییدشده" value={q.data.filter((r) => r.status === "VERIFIED").length.toLocaleString("fa-IR")} />
+              <Meta label="در جریان" value={q.data.filter((r) => r.status === "IN_PROGRESS").length.toLocaleString("fa-IR")} />
+              <Meta label="مسدود" value={q.data.filter((r) => r.status === "BLOCKED").length.toLocaleString("fa-IR")} />
+              <Meta label="بدون مسئول" value={q.data.filter((r) => !r.ownerId).length.toLocaleString("fa-IR")} />
+            </dl>
             {q.data.map((r) => (
               <article
                 key={r.id}
@@ -646,6 +750,7 @@ function Requirements({
                   <div className="mt-2 text-xs">
                     مهلت: {faDate(r.dueDate)} · دسته: {r.category || "—"}
                   </div>
+                  {r.blockedReason ? <p className="mt-2 rounded-lg bg-destructive/10 p-2 text-sm text-destructive">دلیل مسدودی: {r.blockedReason}</p> : null}
                 </div>
                 {canManage ? (
                   <EntityRowActions
@@ -763,6 +868,7 @@ function Requirements({
               onChange={(e) => setForm({ ...form, response: e.target.value })}
             />
           </label>
+          {form.status === "BLOCKED" ? <label>دلیل مسدودی<textarea className="min-h-24 w-full rounded-xl border p-3" required value={form.blockedReason || ""} onChange={(e) => setForm({ ...form, blockedReason: e.target.value })} /></label> : null}
           <Button disabled={!form.title || m.save.isPending}>
             ذخیره الزام
           </Button>
@@ -781,6 +887,7 @@ function Deliverables({
   const m = useRequirementMutations(tender.id),
     [documentId, setDocumentId] = useState(""),
     [label, setLabel] = useState(""),
+    [required, setRequired] = useState(true),
     [open, setOpen] = useState(false),
     [documentSearch, setDocumentSearch] = useState("")
   const debouncedDocumentSearch = useDebouncedValue(documentSearch, 250)
@@ -852,6 +959,7 @@ function Deliverables({
             await m.deliver.mutateAsync({
               documentId,
               label: label || undefined,
+              required,
             })
             setOpen(false)
           }}
@@ -876,6 +984,7 @@ function Deliverables({
             عنوان تحویل
             <Input value={label} onChange={(e) => setLabel(e.target.value)} />
           </label>
+          <label className="flex items-center gap-2"><input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />قلم تحویلی الزامی است</label>
           <Button disabled={!documentId || m.deliver.isPending}>اتصال</Button>
         </form>
       </ResponsiveModal>

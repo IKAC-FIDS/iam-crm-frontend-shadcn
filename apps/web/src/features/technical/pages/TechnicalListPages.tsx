@@ -908,6 +908,11 @@ export function TechnicalTendersPage() {
       cell: (r) => <Deadline value={r.submissionDeadline} />,
     },
     {
+      id: "readiness",
+      header: "آمادگی",
+      cell: (r) => <span className={`rounded-full border px-2 py-1 text-xs font-bold ${r.readiness?.overallReady ? "text-emerald-700" : "text-amber-700"}`}>{r.readiness?.overallReady ? "آماده" : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع`}</span>,
+    },
+    {
       id: "value",
       header: "ارزش",
       cell: (r) =>
@@ -948,6 +953,7 @@ export function TechnicalTendersPage() {
             label: "مهلت ارسال",
             render: (r) => <Deadline value={r.submissionDeadline} />,
           },
+          { id: "readiness", label: "آمادگی", render: (r) => r.readiness?.overallReady ? "آماده" : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع` },
         ],
       }}
     />
@@ -960,18 +966,18 @@ export function Deadline({ value }: { value?: string | null }) {
     tone =
       days < 0
         ? "text-destructive"
-        : days <= 7
+        : days <= 3
           ? "text-amber-700"
           : "text-foreground"
   return (
     <span className={tone}>
       {faDate(value)}{" "}
       <span className="sr-only">
-        {days < 0 ? "گذشته" : days <= 7 ? "نزدیک" : "آینده"}
+        {days < 0 ? "گذشته" : days <= 3 ? "نزدیک" : "آینده"}
       </span>
       {days < 0
         ? "(گذشته)"
-        : days <= 7
+        : days <= 3
           ? `(${days.toLocaleString("fa-IR")} روز)`
           : null}
     </span>

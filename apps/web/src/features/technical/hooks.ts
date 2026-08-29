@@ -16,6 +16,8 @@ import type {
   TechnicalResource,
   Tender,
   TenderPayload,
+  TenderReviewStatus,
+  TenderReviewType,
 } from "./types"
 export const technicalKeys = {
   all: ["technical-center"] as const,
@@ -25,6 +27,9 @@ export const technicalKeys = {
     [...technicalKeys.all, kind, "detail", id] as const,
   requirements: (id: string) =>
     [...technicalKeys.all, "tenders", id, "requirements"] as const,
+  readiness: (id: string) => [...technicalKeys.all, "tenders", id, "readiness"] as const,
+  reviews: (id: string) => [...technicalKeys.all, "tenders", id, "reviews"] as const,
+  history: (id: string) => [...technicalKeys.all, "tenders", id, "history"] as const,
   versions: (id: string) =>
     [...technicalKeys.all, "documents", id, "versions"] as const,
 }
@@ -124,6 +129,28 @@ export function useRequirements(id: string) {
     enabled: Boolean(id),
   })
 }
+export function useTenderWorkflow(id: string) {
+  const scope = useQueryScope()
+  return {
+    readiness: useQuery({ queryKey: [...technicalKeys.readiness(id), scope], queryFn: () => technicalApi.tenders.readiness(id), enabled: Boolean(id) }),
+    reviews: useQuery({ queryKey: [...technicalKeys.reviews(id), scope], queryFn: () => technicalApi.tenders.reviews(id), enabled: Boolean(id) }),
+    history: useQuery({ queryKey: [...technicalKeys.history(id), scope], queryFn: () => technicalApi.tenders.history(id), enabled: Boolean(id) }),
+  }
+}
+export function useTenderWorkflowMutations(id: string) {
+  const q = useQueryClient()
+  const invalidate = () => {
+    void q.invalidateQueries({ queryKey: technicalKeys.detail("tenders", id) })
+    void q.invalidateQueries({ queryKey: technicalKeys.readiness(id) })
+    void q.invalidateQueries({ queryKey: technicalKeys.reviews(id) })
+    void q.invalidateQueries({ queryKey: technicalKeys.history(id) })
+    void q.invalidateQueries({ queryKey: [...technicalKeys.all, "tenders", "list"] })
+  }
+  return {
+    requestReview: useMutation({ mutationFn: (payload: { type: TenderReviewType; reviewerId?: string; comment?: string; revision?: number }) => technicalApi.tenders.requestReview(id, payload), onSuccess: invalidate }),
+    decideReview: useMutation({ mutationFn: ({ reviewId, ...payload }: { reviewId: string; status: TenderReviewStatus; comment?: string; revision?: number }) => technicalApi.tenders.decideReview(id, reviewId, payload), onSuccess: invalidate }),
+  }
+}
 export function useRequirementMutations(id: string) {
   const q = useQueryClient(),
     invalidate = () => {
@@ -149,7 +176,7 @@ export function useRequirementMutations(id: string) {
       onSuccess: invalidate,
     }),
     deliver: useMutation({
-      mutationFn: (payload: { documentId: string; label?: string }) =>
+      mutationFn: (payload: { documentId: string; label?: string; required?: boolean }) =>
         technicalApi.tenders.addDeliverable(id, payload),
       onSuccess: invalidate,
     }),
