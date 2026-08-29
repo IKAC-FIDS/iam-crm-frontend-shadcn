@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 
 type Props = {
   title: string
@@ -26,7 +26,6 @@ export function Company360PaginatedSection({
   onPrevious,
   children,
 }: Props) {
-  const pagination = uiText.common.pagination
   const detail = uiText.companies.detail
 
   return (
@@ -38,31 +37,6 @@ export function Company360PaginatedSection({
             {total.toLocaleString("fa-IR")}
           </p>
         </div>
-
-        {totalPages > 1 ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--app-text-secondary)]">
-              {pagination.page} {page.toLocaleString("fa-IR")} {pagination.of}{" "}
-              {totalPages.toLocaleString("fa-IR")}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page <= 1 || isLoading}
-              onClick={onPrevious}
-            >
-              {pagination.previous}
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={page >= totalPages || isLoading}
-              onClick={onNext}
-            >
-              {pagination.next}
-            </Button>
-          </div>
-        ) : null}
       </div>
 
       {isLoading ? (
@@ -77,6 +51,21 @@ export function Company360PaginatedSection({
       ) : (
         children
       )}
+
+      {totalPages > 1 ? (
+        <div className="mt-5 border-t border-[var(--app-divider)] pt-3">
+          <PaginationControls
+            page={page}
+            pageCount={totalPages}
+            total={total}
+            disabled={isLoading}
+            onPageChange={(nextPage) => {
+              if (nextPage > page) onNext?.()
+              if (nextPage < page) onPrevious?.()
+            }}
+          />
+        </div>
+      ) : null}
     </section>
   )
 }

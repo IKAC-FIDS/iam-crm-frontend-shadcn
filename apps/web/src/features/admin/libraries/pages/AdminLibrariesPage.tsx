@@ -810,6 +810,7 @@ export function AdminLibrariesPage() {
       ),
     },
   ]
+  const SectionIcon = section.icon
   return (
     <EntityListPage>
       <PageHero
@@ -974,6 +975,40 @@ export function AdminLibrariesPage() {
                 getRowKey={(r) => r.id}
                 onRowClick={(r) => canManage && setProductEditing(r)}
                 emptyState={<Empty />}
+                mobile={{
+                  title: (r) => r.name,
+                  subtitle: (r) => r.code,
+                  avatar: () => <Package className="size-5" />,
+                  status: (r) => (
+                    <StatusBadge tone={r.isActive ? "success" : "neutral"}>
+                      {r.isActive
+                        ? uiText.common.active
+                        : uiText.common.inactive}
+                    </StatusBadge>
+                  ),
+                  fields: [
+                    {
+                      id: "type",
+                      label: uiText.products.type,
+                      render: (r) => uiText.products.types[r.type] ?? "—",
+                    },
+                    {
+                      id: "category",
+                      label: "دسته‌بندی",
+                      render: (r) => r.category || "—",
+                    },
+                    {
+                      id: "in",
+                      label: "قیمت حضوری",
+                      render: (r) => money(r.inPersonPriceIrr),
+                    },
+                    {
+                      id: "digi",
+                      label: "قیمت دیجی‌کالا",
+                      render: (r) => money(r.digikalaPriceIrr),
+                    },
+                  ],
+                }}
               />
               <PaginationControls
                 page={page}
@@ -993,6 +1028,30 @@ export function AdminLibrariesPage() {
                 getRowKey={(r) => r.id}
                 onRowClick={(r) => canManage && setEditing(r)}
                 emptyState={<Empty />}
+                mobile={{
+                  title: (r) => r.label,
+                  subtitle: (r) => r.code || r.description || "—",
+                  avatar: () => <SectionIcon className="size-5" />,
+                  status: (r) => (
+                    <StatusBadge tone={r.isActive ? "success" : "neutral"}>
+                      {r.isActive
+                        ? uiText.common.active
+                        : uiText.common.inactive}
+                    </StatusBadge>
+                  ),
+                  fields: [
+                    {
+                      id: "category",
+                      label: "دسته‌بندی",
+                      render: (r) => r.category || "—",
+                    },
+                    {
+                      id: "description",
+                      label: "توضیحات",
+                      render: (r) => r.description || "—",
+                    },
+                  ],
+                }}
               />
             </QueryContent>
           )}
