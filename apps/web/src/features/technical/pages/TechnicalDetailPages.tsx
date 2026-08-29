@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router-dom"
 import {
   BookOpen,
@@ -7,6 +7,7 @@ import {
   FolderOpen,
   Gavel,
   PackageOpen,
+  Edit3,
   Plus,
   Trash2,
 } from "lucide-react"
@@ -18,18 +19,15 @@ import { QueryContent } from "@/components/shared/QueryContent"
 import { FormSection } from "@/components/shared/FormSection"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { ErrorState } from "@/components/shared/ErrorState"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
-import {
-  TechnicalForm,
-  type TechnicalFormValues,
-} from "../components/TechnicalForm"
-import { buildPayload } from "../payload"
+import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { TechnicalAttachments } from "../components/TechnicalAttachments"
 import {
   LifecycleActions,
-  TechnicalHeroActions,
   TechnicalStatusBadge,
 } from "../components/TechnicalPrimitives"
 import { technicalApi, technicalLookups } from "../api"
@@ -37,7 +35,6 @@ import {
   useRequirementMutations,
   useRequirements,
   useTechnicalDetail,
-  useTechnicalSave,
   useTechnicalTransition,
   technicalKeys,
 } from "../hooks"
@@ -116,113 +113,22 @@ function DetailShell({
             <Button variant="ghost" onClick={() => nav(`/technical/${kind}`)}>
               بازگشت
             </Button>
-            <TechnicalHeroActions
-              canManage={canManage}
-              onEdit={() => setEditing(true)}
-            />
+            {canManage ? (
+              <Button variant="outline" onClick={() => setEditing(true)}>
+                <Edit3 className="size-4" />
+                ویرایش
+              </Button>
+            ) : null}
           </div>
         }
         metadata={lifecycle}
       />
       {children}
-      {editing ? (
-        <EditorModal
-          kind={kind}
-          item={entity}
-          onClose={() => setEditing(false)}
-        />
-      ) : null}
-    </EntityListPage>
-  )
-}
-function EditorModal({
-  kind,
-  item,
-  onClose,
-}: {
-  kind: TechnicalKind
-  item: { id: string }
-  onClose: () => void
-}) {
-  const nav = useNavigate(),
-    save = useTechnicalSave(kind)
-  async function submit(v: TechnicalFormValues) {
-    const row = await save.mutateAsync({
-      id: item.id,
-      payload: buildPayload(
-        kind,
-        v,
-        "revision" in item && typeof item.revision === "number"
-          ? item.revision
-          : undefined
-      ),
-    })
-    onClose()
-    nav(`/technical/${kind}/${row.id}`)
-  }
-  return (
-    <ResponsiveModal
-      open
-      onClose={onClose}
-      title="ویرایش اطلاعات"
-      description="تغییرات پس از اعتبارسنجی Backend ذخیره می‌شوند."
-      width="max-w-5xl"
-    >
-      <TechnicalForm
+      <TechnicalFormDialog
+        open={editing}
+        onOpenChange={setEditing}
         kind={kind}
-        item={item as never}
-        onSubmit={submit}
-        onCancel={onClose}
-        pending={save.isPending}
-      />
-    </ResponsiveModal>
-  )
-}
-export function TechnicalEntityEditorPage({ kind }: { kind: TechnicalKind }) {
-  const nav = useNavigate(),
-    save = useTechnicalSave(kind)
-  const permissions = usePermissions()
-  const managePermission = {
-    releases: "technical-release:manage",
-    "knowledge-base": "technical-knowledge:manage",
-    documents: "technical-document:manage",
-    resources: "technical-resource:manage",
-    tenders: "technical-tender:manage",
-  }[kind]
-  if (!permissions.includes(managePermission))
-    return (
-      <ErrorState
-        title="دسترسی ایجاد یا ویرایش ندارید"
-        description="برای این عملیات مجوز مدیریت همان ماژول مرکز فنی لازم است."
-      />
-    )
-  async function submit(v: TechnicalFormValues) {
-    const row = await save.mutateAsync({ payload: buildPayload(kind, v) })
-    nav(`/technical/${kind}/${row.id}`)
-  }
-  return (
-    <EntityListPage>
-      <PageHero
-        title="ایجاد مورد جدید"
-        description="اطلاعات را مطابق قرارداد مرکز فنی تکمیل کنید."
-        eyebrow="مرکز فنی"
-        icon={
-          kind === "releases"
-            ? PackageOpen
-            : kind === "knowledge-base"
-              ? BookOpen
-              : kind === "documents"
-                ? FileText
-                : kind === "resources"
-                  ? FolderOpen
-                  : Gavel
-        }
-      />
-      <TechnicalForm
-        kind={kind}
-        onSubmit={submit}
-        onCancel={() => nav(`/technical/${kind}`)}
-        pending={save.isPending}
+        item={entity}
       />
     </EntityListPage>
   )
@@ -678,6 +584,7 @@ function Requirements({
   const q = useRequirements(tender.id),
     m = useRequirementMutations(tender.id),
     [editing, setEditing] = useState<TenderRequirement | null | undefined>(),
+    [statusSearch, setStatusSearch] = useState(""),
     [form, setForm] = useState<RequirementPayload>({
       title: "",
       mandatory: false,
@@ -806,19 +713,19 @@ function Requirements({
           </label>
           <label>
             وضعیت
-            <select
-              className="h-11 w-full rounded-xl border px-3"
+            <SearchableOptionSelect
               value={form.status}
-              onChange={(e) =>
-                setForm({ ...form, status: e.target.value as never })
+              onChange={(value) =>
+                setForm({ ...form, status: (value || "OPEN") as never })
               }
-            >
-              {Object.entries(requirementPresentation.label).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
+              options={Object.entries(requirementPresentation.label)
+                .filter(([, label]) => label.includes(statusSearch.trim()))
+                .map(([id, label]) => ({ id, label }))}
+              search={statusSearch}
+              onSearchChange={setStatusSearch}
+              allowEmpty={false}
+              ariaLabel="وضعیت الزام"
+            />
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -832,10 +739,20 @@ function Requirements({
           </label>
           <label>
             مهلت
-            <Input
-              type="date"
-              value={form.dueDate || ""}
-              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+            <PersianDatePicker
+              value={
+                form.dueDate
+                  ? new Date(`${form.dueDate.slice(0, 10)}T12:00:00`)
+                  : undefined
+              }
+              onChange={(date) =>
+                setForm({
+                  ...form,
+                  dueDate: date
+                    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+                    : "",
+                })
+              }
             />
           </label>
           <label>
@@ -865,17 +782,19 @@ function Deliverables({
     [documentId, setDocumentId] = useState(""),
     [label, setLabel] = useState(""),
     [open, setOpen] = useState(false),
-    [documents, setDocuments] = useState<{ id: string; label: string }[]>([])
-  async function show() {
-    setOpen(true)
-    setDocuments(await technicalLookups("documents"))
-  }
+    [documentSearch, setDocumentSearch] = useState("")
+  const debouncedDocumentSearch = useDebouncedValue(documentSearch, 250)
+  const documents = useQuery({
+    queryKey: ["technical-deliverable-documents", debouncedDocumentSearch],
+    queryFn: () => technicalLookups("documents", debouncedDocumentSearch),
+    enabled: open,
+  })
   return (
     <FormSection
       title="اقلام تحویلی"
       actions={
         canManage ? (
-          <Button size="sm" onClick={() => void show()}>
+          <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             اتصال سند
           </Button>
@@ -939,19 +858,19 @@ function Deliverables({
         >
           <label>
             سند
-            <select
-              required
+            <SearchableOptionSelect
               value={documentId}
-              onChange={(e) => setDocumentId(e.target.value)}
-              className="h-11 rounded-xl border px-3"
-            >
-              <option value="">انتخاب کنید</option>
-              {documents.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setDocumentId(value || "")}
+              options={documents.data ?? []}
+              search={documentSearch}
+              onSearchChange={setDocumentSearch}
+              loading={documents.isLoading || documents.isFetching}
+              emptyText={
+                documents.isError ? "دریافت اسناد انجام نشد." : undefined
+              }
+              allowEmpty={false}
+              ariaLabel="سند فنی"
+            />
           </label>
           <label>
             عنوان تحویل

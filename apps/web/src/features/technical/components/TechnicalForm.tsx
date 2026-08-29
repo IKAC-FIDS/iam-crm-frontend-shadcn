@@ -1,17 +1,27 @@
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   useForm,
   useWatch,
+  Controller,
+  type Control,
+  type FieldPath,
   type UseFormRegister,
   type UseFormRegisterReturn,
 } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
 import { z } from "zod"
-import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { FormSection } from "@/components/shared/FormSection"
+import {
+  FormDialogBody,
+  FormDialogFooter,
+} from "@/components/shared/FormDialogLayout"
+import { FormActions } from "@/components/shared/FormActions"
+import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { technicalApi, technicalLookups } from "../api"
 import type {
   KnowledgeArticle,
@@ -81,10 +91,14 @@ type Entity =
   | TechnicalResource
   | Tender
 const inputClass = "h-11 rounded-xl"
-const selectClass =
-  "h-11 rounded-xl border border-[var(--app-divider)] bg-background px-3 text-sm"
 const dateValue = (v?: string | null) =>
   v ? new Date(v).toISOString().slice(0, 10) : ""
+const dateToValue = (date?: Date) =>
+  date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : ""
+const valueToDate = (value?: unknown) =>
+  value ? new Date(`${String(value).slice(0, 10)}T12:00:00`) : undefined
 function initial(kind: TechnicalKind, item?: Entity): TechnicalFormValues {
   if (!item) return { title: "" }
   const common = { title: item.title }
@@ -189,6 +203,7 @@ export function TechnicalForm({
     handleSubmit,
     reset,
     control,
+    setValue,
     setError,
     formState: { errors },
   } = useForm<TechnicalFormValues>({
@@ -232,137 +247,146 @@ export function TechnicalForm({
     }
   }
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit(submit)} noValidate>
-      <FormSection
-        title="اطلاعات اصلی"
-        description="فیلدهای الزامی و شناسه‌های اصلی را تکمیل کنید."
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="عنوان" error={errors.title?.message}>
-            <Input {...register("title")} className={inputClass} />
-          </Field>
-          {kind === "releases" ? (
-            <>
-              <LookupField
-                kind="products"
-                label="محصول"
-                registration={register("productId")}
-                error={errors.productId?.message}
-              />
-              <Field label="نسخه" error={errors.version?.message}>
-                <Input {...register("version")} className={inputClass} />
-              </Field>
-            </>
-          ) : null}
-          {kind === "knowledge-base" ? (
-            <>
-              <Field label="نامک" error={errors.slug?.message}>
-                <Input dir="ltr" {...register("slug")} className={inputClass} />
-              </Field>
-              <Field label="دسته‌بندی">
-                <Input {...register("category")} className={inputClass} />
-              </Field>
-              <Field label="سطح دسترسی">
-                <Select
-                  reg={register("visibility")}
-                  options={{ INTERNAL: "داخلی", RESTRICTED: "محدود" }}
+    <form className="contents" onSubmit={handleSubmit(submit)} noValidate>
+      <FormDialogBody>
+        <FormSection
+          title="اطلاعات اصلی"
+          description="فیلدهای الزامی و شناسه‌های اصلی را تکمیل کنید."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="عنوان" error={errors.title?.message}>
+              <Input {...register("title")} className={inputClass} />
+            </Field>
+            {kind === "releases" ? (
+              <>
+                <LookupField
+                  kind="products"
+                  label="محصول"
+                  name="productId"
+                  control={control}
+                  error={errors.productId?.message}
+                  onValueChange={() => setValue("releaseId", "")}
                 />
-              </Field>
-            </>
-          ) : null}
-          {kind === "documents" ? (
-            <>
-              <Field label="نوع سند" error={errors.documentType?.message}>
-                <Input {...register("documentType")} className={inputClass} />
-              </Field>
-              <Field label="محرمانگی">
-                <Select
-                  reg={register("confidentiality")}
-                  options={confidentialityLabels}
-                />
-              </Field>
-            </>
-          ) : null}
-          {kind === "resources" ? (
-            <>
-              <Field label="نوع منبع" error={errors.resourceType?.message}>
-                <Select
-                  reg={register("resourceType")}
-                  options={resourceTypeLabels}
-                />
-              </Field>
-              {item ? (
-                <Field label="وضعیت">
-                  <Select
-                    reg={register("status")}
-                    options={resourcePresentation.label}
+                <Field label="نسخه" error={errors.version?.message}>
+                  <Input {...register("version")} className={inputClass} />
+                </Field>
+              </>
+            ) : null}
+            {kind === "knowledge-base" ? (
+              <>
+                <Field label="نامک" error={errors.slug?.message}>
+                  <Input
+                    dir="ltr"
+                    {...register("slug")}
+                    className={inputClass}
                   />
                 </Field>
-              ) : null}
-            </>
-          ) : null}
-          {kind === "tenders" ? (
-            <>
-              <Field label="نوع مناقصه" error={errors.tenderType?.message}>
-                <Select
-                  reg={register("tenderType")}
-                  options={tenderTypeLabels}
-                />
-              </Field>
-              <Field label="شماره مرجع">
-                <Input
-                  {...register("referenceNumber")}
-                  className={inputClass}
-                />
-              </Field>
-            </>
-          ) : null}
-        </div>
-      </FormSection>
-      <Relations
-        kind={kind}
-        register={register}
-        productId={productId}
-        companyId={companyId}
-        errors={errors}
-      />
-      <DomainFields kind={kind} register={register} />
-      {errors.root?.message ? (
-        <p
-          role="alert"
-          className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
-        >
-          {errors.root.message}
-        </p>
-      ) : null}
-      <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 rounded-2xl border bg-background/95 p-3 backdrop-blur">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={pending}
-        >
-          انصراف
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? "در حال ذخیره..." : "ذخیره"}
-        </Button>
-      </div>
+                <Field label="دسته‌بندی">
+                  <Input {...register("category")} className={inputClass} />
+                </Field>
+                <Field label="سطح دسترسی">
+                  <ControlledSelect
+                    name="visibility"
+                    control={control}
+                    options={{ INTERNAL: "داخلی", RESTRICTED: "محدود" }}
+                  />
+                </Field>
+              </>
+            ) : null}
+            {kind === "documents" ? (
+              <>
+                <Field label="نوع سند" error={errors.documentType?.message}>
+                  <Input {...register("documentType")} className={inputClass} />
+                </Field>
+                <Field label="محرمانگی">
+                  <ControlledSelect
+                    name="confidentiality"
+                    control={control}
+                    options={confidentialityLabels}
+                  />
+                </Field>
+              </>
+            ) : null}
+            {kind === "resources" ? (
+              <>
+                <Field label="نوع منبع" error={errors.resourceType?.message}>
+                  <ControlledSelect
+                    name="resourceType"
+                    control={control}
+                    options={resourceTypeLabels}
+                  />
+                </Field>
+                {item ? (
+                  <Field label="وضعیت">
+                    <ControlledSelect
+                      name="status"
+                      control={control}
+                      options={resourcePresentation.label}
+                    />
+                  </Field>
+                ) : null}
+              </>
+            ) : null}
+            {kind === "tenders" ? (
+              <>
+                <Field label="نوع مناقصه" error={errors.tenderType?.message}>
+                  <ControlledSelect
+                    name="tenderType"
+                    control={control}
+                    options={tenderTypeLabels}
+                  />
+                </Field>
+                <Field label="شماره مرجع">
+                  <Input
+                    {...register("referenceNumber")}
+                    className={inputClass}
+                  />
+                </Field>
+              </>
+            ) : null}
+          </div>
+        </FormSection>
+        <Relations
+          kind={kind}
+          control={control}
+          productId={productId}
+          companyId={companyId}
+          errors={errors}
+          clearRelease={() => setValue("releaseId", "")}
+          clearOpportunity={() => setValue("opportunityId", "")}
+        />
+        <DomainFields kind={kind} register={register} control={control} />
+        {errors.root?.message ? (
+          <p
+            role="alert"
+            className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
+          >
+            {errors.root.message}
+          </p>
+        ) : null}
+      </FormDialogBody>
+      <FormDialogFooter>
+        <FormActions onCancel={onCancel} pending={pending} />
+      </FormDialogFooter>
     </form>
   )
 }
 function Relations({
   kind,
-  register,
+  control,
   productId,
   companyId,
   errors,
+  clearRelease,
+  clearOpportunity,
 }: {
   kind: TechnicalKind
-  register: UseFormRegister<TechnicalFormValues>
+  control: Control<TechnicalFormValues>
   productId?: string
   companyId?: string
   errors: Partial<Record<keyof TechnicalFormValues, { message?: string }>>
+  clearRelease: () => void
+  clearOpportunity: () => void
 }) {
   if (kind === "releases") return null
   return (
@@ -376,12 +400,11 @@ function Relations({
             <LookupField
               kind="products"
               label="محصول"
-              registration={register("productId")}
+              name="productId"
+              control={control}
+              onValueChange={clearRelease}
             />
-            <ReleaseSelect
-              productId={productId}
-              registration={register("releaseId")}
-            />
+            <ReleaseSelect productId={productId} control={control} />
           </>
         ) : null}
         {["documents", "tenders"].includes(kind) ? (
@@ -389,13 +412,16 @@ function Relations({
             <LookupField
               kind="companies"
               label="شرکت"
-              registration={register("companyId")}
+              name="companyId"
+              control={control}
+              onValueChange={clearOpportunity}
             />
             <LookupField
               kind="opportunities"
               companyId={companyId}
               label="فرصت"
-              registration={register("opportunityId")}
+              name="opportunityId"
+              control={control}
             />
           </>
         ) : null}
@@ -405,7 +431,8 @@ function Relations({
           <LookupField
             kind="users"
             label="مالک"
-            registration={register("ownerId")}
+            name="ownerId"
+            control={control}
             error={errors.ownerId?.message}
           />
         ) : null}
@@ -414,12 +441,14 @@ function Relations({
             <LookupField
               kind="users"
               label="مسئول فنی"
-              registration={register("technicalLeadId")}
+              name="technicalLeadId"
+              control={control}
             />
             <LookupField
               kind="users"
               label="مسئول تجاری"
-              registration={register("commercialLeadId")}
+              name="commercialLeadId"
+              control={control}
             />
           </>
         ) : null}
@@ -430,9 +459,11 @@ function Relations({
 function DomainFields({
   kind,
   register,
+  control,
 }: {
   kind: TechnicalKind
   register: UseFormRegister<TechnicalFormValues>
+  control: Control<TechnicalFormValues>
 }) {
   return (
     <FormSection title="محتوا و زمان‌بندی">
@@ -441,28 +472,46 @@ function DomainFields({
           <>
             <Area label="خلاصه" reg={register("summary")} />
             <Area label="یادداشت انتشار" reg={register("releaseNotes")} />
-            <DateField label="تاریخ انتشار" reg={register("releaseDate")} />
+            <DateField
+              label="تاریخ انتشار"
+              name="releaseDate"
+              control={control}
+            />
             <DateField
               label="شروع پشتیبانی"
-              reg={register("supportStartDate")}
+              name="supportStartDate"
+              control={control}
             />
             <DateField
               label="پایان پشتیبانی"
-              reg={register("supportEndDate")}
+              name="supportEndDate"
+              control={control}
             />
-            <DateField label="پایان عمر" reg={register("endOfLifeDate")} />
+            <DateField
+              label="پایان عمر"
+              name="endOfLifeDate"
+              control={control}
+            />
           </>
         ) : kind === "knowledge-base" ? (
           <>
             <Area label="خلاصه" reg={register("summary")} />
             <Area label="متن مقاله" reg={register("content")} large />
-            <DateField label="بازبینی بعدی" reg={register("nextReviewAt")} />
+            <DateField
+              label="بازبینی بعدی"
+              name="nextReviewAt"
+              control={control}
+            />
           </>
         ) : kind === "documents" ? (
           <>
             <Area label="توضیحات" reg={register("description")} />
-            <DateField label="تاریخ اثر" reg={register("effectiveFrom")} />
-            <DateField label="انقضا" reg={register("expiresAt")} />
+            <DateField
+              label="تاریخ اثر"
+              name="effectiveFrom"
+              control={control}
+            />
+            <DateField label="انقضا" name="expiresAt" control={control} />
           </>
         ) : kind === "resources" ? (
           <>
@@ -493,12 +542,18 @@ function DomainFields({
             </Field>
             <DateField
               label="مهلت ارسال"
-              reg={register("submissionDeadline")}
+              name="submissionDeadline"
+              control={control}
             />
-            <DateField label="مهلت فنی" reg={register("technicalDeadline")} />
+            <DateField
+              label="مهلت فنی"
+              name="technicalDeadline"
+              control={control}
+            />
             <DateField
               label="تصمیم مورد انتظار"
-              reg={register("expectedDecisionDate")}
+              name="expectedDecisionDate"
+              control={control}
             />
             <Field label="ارزش برآوردی">
               <Input
@@ -534,51 +589,74 @@ function DomainFields({
 function LookupField({
   kind,
   label,
-  registration,
+  name,
+  control,
   companyId,
   error,
+  onValueChange,
 }: {
   kind: "products" | "companies" | "opportunities" | "users"
   label: string
-  registration: UseFormRegisterReturn
+  name: FieldPath<TechnicalFormValues>
+  control: Control<TechnicalFormValues>
   companyId?: string
   error?: string
+  onValueChange?: () => void
 }) {
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
   const q = useQuery({
-    queryKey: ["technical-lookups", kind, companyId],
-    queryFn: () => technicalLookups(kind, "", companyId),
+    queryKey: ["technical-lookups", kind, companyId, debouncedSearch],
+    queryFn: () => technicalLookups(kind, debouncedSearch, companyId),
+    enabled: kind !== "opportunities" || Boolean(companyId),
   })
   return (
     <Field label={label} error={error}>
-      <select
-        {...registration}
-        className={selectClass}
-        disabled={kind === "opportunities" && !companyId}
-      >
-        <option value="">انتخاب کنید</option>
-        {q.data?.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <SearchableOptionSelect
+            value={String(field.value || "") || undefined}
+            onChange={(value) => {
+              field.onChange(value || "")
+              onValueChange?.()
+            }}
+            options={q.data ?? []}
+            search={search}
+            onSearchChange={setSearch}
+            placeholder={
+              kind === "opportunities" && !companyId
+                ? "ابتدا شرکت را انتخاب کنید"
+                : "انتخاب کنید"
+            }
+            ariaLabel={label}
+            disabled={kind === "opportunities" && !companyId}
+            loading={q.isLoading || q.isFetching}
+            emptyText={q.isError ? "دریافت گزینه‌ها انجام نشد." : undefined}
+          />
+        )}
+      />
     </Field>
   )
 }
 function ReleaseSelect({
   productId,
-  registration,
+  control,
 }: {
   productId?: string
-  registration: UseFormRegisterReturn
+  control: Control<TechnicalFormValues>
 }) {
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
   const q = useQuery({
-    queryKey: ["technical-release-options", productId],
+    queryKey: ["technical-release-options", productId, debouncedSearch],
     queryFn: async () => {
       const result = await technicalApi.releases.list({
         page: 1,
         limit: 100,
         productId: productId || undefined,
+        search: debouncedSearch || undefined,
       })
       return result.data
     },
@@ -586,33 +664,71 @@ function ReleaseSelect({
   })
   return (
     <Field label="انتشار">
-      <select {...registration} className={selectClass} disabled={!productId}>
-        <option value="">انتخاب کنید</option>
-        {q.data?.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.version} — {o.title}
-          </option>
-        ))}
-      </select>
+      <Controller
+        name="releaseId"
+        control={control}
+        render={({ field }) => (
+          <SearchableOptionSelect
+            value={String(field.value || "") || undefined}
+            onChange={(value) => field.onChange(value || "")}
+            options={(q.data ?? []).map((option) => ({
+              id: option.id,
+              label: option.title,
+              secondary: option.version,
+            }))}
+            search={search}
+            onSearchChange={setSearch}
+            placeholder={
+              productId ? "انتخاب انتشار" : "ابتدا محصول را انتخاب کنید"
+            }
+            ariaLabel="انتشار"
+            disabled={!productId}
+            loading={q.isLoading || q.isFetching}
+            emptyText={q.isError ? "دریافت انتشارها انجام نشد." : undefined}
+          />
+        )}
+      />
     </Field>
   )
 }
-function Select({
-  reg,
+function ControlledSelect({
+  name,
+  control,
   options,
 }: {
-  reg: UseFormRegisterReturn
+  name: FieldPath<TechnicalFormValues>
+  control: Control<TechnicalFormValues>
   options: Record<string, string>
 }) {
+  const [search, setSearch] = useState("")
+  const normalized = search.trim().toLocaleLowerCase("fa")
+  const visibleOptions = useMemo(
+    () =>
+      Object.entries(options)
+        .filter(
+          ([value, label]) =>
+            !normalized ||
+            value.toLocaleLowerCase("en").includes(normalized) ||
+            label.toLocaleLowerCase("fa").includes(normalized)
+        )
+        .map(([id, label]) => ({ id, label })),
+    [normalized, options]
+  )
   return (
-    <select {...reg} className={selectClass}>
-      <option value="">انتخاب کنید</option>
-      {Object.entries(options).map(([v, l]) => (
-        <option key={v} value={v}>
-          {l}
-        </option>
-      ))}
-    </select>
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => (
+        <SearchableOptionSelect
+          value={String(field.value || "") || undefined}
+          onChange={(value) => field.onChange(value || "")}
+          options={visibleOptions}
+          search={search}
+          onSearchChange={setSearch}
+          placeholder="انتخاب کنید"
+        />
+      )}
+    />
   )
 }
 function Field({
@@ -652,14 +768,25 @@ function Area({
 }
 function DateField({
   label,
-  reg,
+  name,
+  control,
 }: {
   label: string
-  reg: UseFormRegisterReturn
+  name: FieldPath<TechnicalFormValues>
+  control: Control<TechnicalFormValues>
 }) {
   return (
     <Field label={label}>
-      <Input type="date" dir="ltr" {...reg} className={inputClass} />
+      <Controller
+        name={name}
+        control={control}
+        render={({ field }) => (
+          <PersianDatePicker
+            value={valueToDate(field.value)}
+            onChange={(date) => field.onChange(dateToValue(date))}
+          />
+        )}
+      />
     </Field>
   )
 }

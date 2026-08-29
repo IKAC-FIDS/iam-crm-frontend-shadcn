@@ -141,6 +141,44 @@ describe("Technical Center behavior", () => {
     )
   })
 
+  it("opens the shared create dialog instead of navigating to a create page", async () => {
+    useAuthStore.setState({
+      user: {
+        ...user,
+        permissions: ["technical-document:view", "technical-document:manage"],
+      },
+      status: "authenticated",
+    })
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        data: {
+          data: [],
+          meta: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 1,
+            hasNext: false,
+            hasPrevious: false,
+          },
+        },
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={["/technical/documents"]}>
+        <TechnicalDocumentsPage />
+      </MemoryRouter>,
+      { wrapper }
+    )
+
+    await userEvent.click(await screen.findByRole("button", { name: "ایجاد" }))
+    expect(
+      await screen.findByRole("heading", { name: "ایجاد سند فنی" })
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText("تاریخ اثر")).toHaveTextContent("انتخاب تاریخ")
+  })
+
   it("hides lifecycle actions that the permission policy does not allow", () => {
     render(
       <LifecycleActions

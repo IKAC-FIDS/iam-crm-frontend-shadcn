@@ -17,6 +17,8 @@ import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { useAuthStore } from "@/store/authStore"
 import { useTechnicalList } from "../hooks"
 import { technicalLookups } from "../api"
@@ -24,6 +26,7 @@ import {
   TechnicalStatusBadge,
   ResponsiveTechnicalList,
 } from "../components/TechnicalPrimitives"
+import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import {
   confidentialityLabels,
   documentPresentation,
@@ -178,6 +181,7 @@ function Shell<T extends { id: string }>({
     { sp, page, limit, patch } = useListState(),
     canView = usePermission(viewPermission),
     canManage = usePermission(managePermission),
+    createOpen = sp.get("create") === "1",
     search = sp.get("search") || "",
     status = sp.get("status") || "",
     type = sp.get("type") || "",
@@ -246,7 +250,7 @@ function Shell<T extends { id: string }>({
         icon={Icon}
         actions={
           canManage ? (
-            <Button onClick={() => nav(`/technical/${kind}/new`)}>
+            <Button onClick={() => patch({ create: 1 })}>
               <Plus className="size-4" />
               ایجاد
             </Button>
@@ -314,6 +318,12 @@ function Shell<T extends { id: string }>({
           mobile={mobile}
           getKey={(r) => r.id}
           onOpen={(r) => nav(`/technical/${kind}/${r.id}`)}
+          renderRowActions={(r) => (
+            <EntityRowActions
+              label="مشاهده جزئیات"
+              onView={() => nav(`/technical/${kind}/${r.id}`)}
+            />
+          )}
           meta={query.data?.meta}
           pageSize={limit}
           onPage={(p) => patch({ page: p })}
@@ -327,6 +337,12 @@ function Shell<T extends { id: string }>({
           }
         />
       </QueryContent>
+      <TechnicalFormDialog
+        open={canManage && createOpen}
+        onOpenChange={(open) => patch({ create: open ? 1 : undefined })}
+        kind={kind}
+        onSaved={(row) => nav(`/technical/${kind}/${row.id}`)}
+      />
     </EntityListPage>
   )
 }
@@ -470,22 +486,22 @@ function SupportedFilters({
         </select>
       ) : null}
       {kind === "releases" || kind === "tenders" ? (
-        <Input
-          aria-label="از تاریخ"
-          type="date"
-          className={selectClass}
-          value={values.from || ""}
-          onChange={(e) => patch({ from: e.target.value || undefined })}
-        />
+        <div className="min-w-44" aria-label="از تاریخ">
+          <PersianDatePicker
+            value={filterDate(values.from)}
+            onChange={(date) => patch({ from: dateParam(date) })}
+            placeholder="از تاریخ"
+          />
+        </div>
       ) : null}
       {kind === "releases" || kind === "tenders" ? (
-        <Input
-          aria-label="تا تاریخ"
-          type="date"
-          className={selectClass}
-          value={values.to || ""}
-          onChange={(e) => patch({ to: e.target.value || undefined })}
-        />
+        <div className="min-w-44" aria-label="تا تاریخ">
+          <PersianDatePicker
+            value={filterDate(values.to)}
+            onChange={(date) => patch({ to: dateParam(date) })}
+            placeholder="تا تاریخ"
+          />
+        </div>
       ) : null}
       <select
         aria-label="مرتب‌سازی"
@@ -510,6 +526,16 @@ function SupportedFilters({
       </select>
     </>
   )
+}
+
+function filterDate(value?: string) {
+  return value ? new Date(`${value.slice(0, 10)}T12:00:00`) : undefined
+}
+
+function dateParam(date?: Date) {
+  return date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : undefined
 }
 
 export function TechnicalReleasesPage() {

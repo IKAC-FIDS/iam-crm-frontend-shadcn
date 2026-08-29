@@ -1,17 +1,13 @@
 import { useState, type ReactNode } from "react"
-import { ArrowLeft, ChevronLeft, Edit3, Plus } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import {
-  MobileEntityCard,
-  type MobileEntityConfig,
-} from "@/components/shared/MobileEntityCard"
+import type { MobileEntityConfig } from "@/components/shared/MobileEntityCard"
 import {
   DataTableShell,
   type DataTableColumn,
 } from "@/components/shared/DataTableShell"
-import { PaginationControls } from "@/components/shared/PaginationControls"
 import type { PageMeta } from "../types"
 export function TechnicalStatusBadge<T extends string>({
   status,
@@ -37,6 +33,7 @@ export function ResponsiveTechnicalList<Row>({
   onPage,
   onPageSize,
   emptyState,
+  renderRowActions,
 }: {
   rows: Row[]
   columns: DataTableColumn<Row>[]
@@ -48,43 +45,30 @@ export function ResponsiveTechnicalList<Row>({
   onPage: (n: number) => void
   onPageSize: (n: number) => void
   emptyState?: ReactNode
+  renderRowActions?: (row: Row) => ReactNode
 }) {
   return (
-    <>
-      <div className="hidden md:block">
-        <DataTableShell
-          rows={rows}
-          columns={columns}
-          getRowKey={getKey}
-          onRowClick={onOpen}
-          emptyState={emptyState}
-        />
-      </div>
-      <div className="grid gap-3 md:hidden">
-        {rows.map((r) => (
-          <MobileEntityCard
-            key={getKey(r)}
-            row={r}
-            config={mobile}
-            onClick={() => onOpen(r)}
-            actions={<ChevronLeft className="size-4" />}
-          />
-        ))}
-        {!rows.length ? emptyState : null}
-      </div>
-      {meta ? (
-        <div className="mt-3">
-          <PaginationControls
-            page={meta.page}
-            pageCount={meta.totalPages}
-            total={meta.total}
-            pageSize={pageSize}
-            onPageChange={onPage}
-            onPageSizeChange={onPageSize}
-          />
-        </div>
-      ) : null}
-    </>
+    <DataTableShell
+      rows={rows}
+      columns={columns}
+      getRowKey={getKey}
+      onRowClick={onOpen}
+      emptyState={emptyState}
+      mobile={mobile}
+      renderRowActions={renderRowActions}
+      pagination={
+        meta
+          ? {
+              page: meta.page,
+              pageCount: meta.totalPages,
+              total: meta.total,
+              pageSize,
+              onPageChange: onPage,
+              onPageSizeChange: onPageSize,
+            }
+          : undefined
+      }
+    />
   )
 }
 export function LifecycleActions<T extends string>({
@@ -137,34 +121,5 @@ export function LifecycleActions<T extends string>({
         }}
       />
     </>
-  )
-}
-export function TechnicalHeroActions({
-  canManage,
-  onCreate,
-  onEdit,
-  editing = false,
-}: {
-  canManage: boolean
-  onCreate?: () => void
-  onEdit?: () => void
-  editing?: boolean
-}) {
-  if (!canManage) return null
-  return (
-    <div className="flex flex-wrap gap-2">
-      {onCreate ? (
-        <Button onClick={onCreate}>
-          <Plus className="size-4" />
-          ایجاد
-        </Button>
-      ) : null}
-      {onEdit ? (
-        <Button variant="outline" onClick={onEdit}>
-          <Edit3 className="size-4" />
-          {editing ? "ویرایش" : "ویرایش"}
-        </Button>
-      ) : null}
-    </div>
   )
 }

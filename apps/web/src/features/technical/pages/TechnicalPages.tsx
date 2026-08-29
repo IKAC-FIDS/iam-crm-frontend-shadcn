@@ -11,21 +11,21 @@ export {
   TechnicalDocumentDetailPage,
   TechnicalResourceDetailPage,
   TechnicalTenderDetailPage,
-  TechnicalEntityEditorPage,
 } from "./TechnicalDetailPages"
-import { TechnicalEntityEditorPage } from "./TechnicalDetailPages"
+import { Navigate } from "react-router-dom"
+
 export const TechnicalReleaseEditorPage = () => (
-  <TechnicalEntityEditorPage kind="releases" />
+  <Navigate to="/technical/releases?create=1" replace />
 )
 export const TechnicalKnowledgeEditorPage = () => (
-  <TechnicalEntityEditorPage kind="knowledge-base" />
+  <Navigate to="/technical/knowledge-base?create=1" replace />
 )
 export const TechnicalDocumentEditorPage = () => (
-  <TechnicalEntityEditorPage kind="documents" />
+  <Navigate to="/technical/documents?create=1" replace />
 )
 export const TechnicalResourceEditorPage = () => (
-  <TechnicalEntityEditorPage kind="resources" />
+  <Navigate to="/technical/resources?create=1" replace />
 )
 export const TechnicalTenderEditorPage = () => (
-  <TechnicalEntityEditorPage kind="tenders" />
+  <Navigate to="/technical/tenders?create=1" replace />
 )
