@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
@@ -82,7 +81,7 @@ export function AppTopNavigation() {
                     <Sparkles className="size-5" />
                   </span>
                   <div>
-                    <DropdownMenuLabel className="p-0 text-base font-black text-[var(--app-heading)]">فضای کاری یکپارچه</DropdownMenuLabel>
+                    <h2 className="text-base font-black text-[var(--app-heading)]">فضای کاری یکپارچه</h2>
                     <p className="mt-1 text-xs text-[var(--app-text-secondary)]">سریع به تمام ابزارهای موردنیازتان دسترسی پیدا کنید.</p>
                   </div>
                 </div>
@@ -139,7 +138,7 @@ export function AppTopNavigation() {
             {groups.map(({ group, label, routes }) => (
               <div key={group}>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel>{label}</DropdownMenuLabel>
+                <div className="px-1.5 py-1 text-xs font-bold text-muted-foreground">{label}</div>
                 {routes.map((route) => {
                   const Icon = route.icon
                   return <DropdownMenuItem key={route.id} onClick={() => go(route.path)} className="rounded-xl"><Icon className="size-4" />{route.label}</DropdownMenuItem>
