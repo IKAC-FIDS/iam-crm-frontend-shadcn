@@ -18,7 +18,13 @@ beforeEach(() => useAuthStore.getState().clearUser())
 describe("route access", () => {
   it("fails closed for guests and supports any/all policies", () => {
     expect(canAccessRoute(null, technicalCenterAccess)).toBe(false)
-    expect(canAccessRoute(user, technicalCenterAccess)).toBe(true)
+    expect(canAccessRoute(user, technicalCenterAccess)).toBe(false)
+    expect(
+      canAccessRoute(
+        { ...user, permissions: [...user.permissions, "technical-release:view"] },
+        technicalCenterAccess
+      )
+    ).toBe(true)
     expect(
       canAccessRoute(user, {
         type: "permissions",

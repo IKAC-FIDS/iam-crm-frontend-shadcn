@@ -49,19 +49,23 @@ export interface AppMenuRoute {
 
 const authenticated = { type: "authenticated" } as const
 
-// These placeholders expose no data. Replace this shared policy with the
-// technical-center permission when its backend authorization is introduced.
-export const technicalCenterAccess: RouteAccessPolicy = authenticated
+const technicalAny = (permissions: readonly string[]) =>
+  ({ type: "permissions", mode: "any", permissions }) as const
+
+export const technicalCenterAccess: RouteAccessPolicy = technicalAny([
+  "technical-release:view", "technical-knowledge:view", "technical-document:view",
+  "technical-resource:view", "technical-tender:view",
+])
 
 const any = (permissions: readonly string[]) =>
   ({ type: "permissions", mode: "any", permissions }) as const
 
 export const technicalCenterRoutes: readonly AppMenuRoute[] = [
-  { id: "technical-releases", path: "/technical/releases", label: uiText.technicalCenter.releases.title, group: "technical", order: 150, icon: Rocket, access: technicalCenterAccess },
-  { id: "technical-knowledge-base", path: "/technical/knowledge-base", label: uiText.technicalCenter.knowledgeBase.title, group: "technical", order: 160, icon: BookOpen, access: technicalCenterAccess },
-  { id: "technical-tenders", path: "/technical/tenders", label: uiText.technicalCenter.tenders.title, group: "technical", order: 170, icon: Gavel, access: technicalCenterAccess },
-  { id: "technical-documents", path: "/technical/documents", label: uiText.technicalCenter.documents.title, group: "technical", order: 180, icon: FileText, access: technicalCenterAccess },
-  { id: "technical-resources", path: "/technical/resources", label: uiText.technicalCenter.resources.title, group: "technical", order: 190, icon: FolderOpen, access: technicalCenterAccess },
+  { id: "technical-releases", path: "/technical/releases", label: uiText.technicalCenter.releases.title, group: "technical", order: 150, icon: Rocket, access: technicalAny(["technical-release:view"]) },
+  { id: "technical-knowledge-base", path: "/technical/knowledge-base", label: uiText.technicalCenter.knowledgeBase.title, group: "technical", order: 160, icon: BookOpen, access: technicalAny(["technical-knowledge:view"]) },
+  { id: "technical-tenders", path: "/technical/tenders", label: uiText.technicalCenter.tenders.title, group: "technical", order: 170, icon: Gavel, access: technicalAny(["technical-tender:view"]) },
+  { id: "technical-documents", path: "/technical/documents", label: uiText.technicalCenter.documents.title, group: "technical", order: 180, icon: FileText, access: technicalAny(["technical-document:view"]) },
+  { id: "technical-resources", path: "/technical/resources", label: uiText.technicalCenter.resources.title, group: "technical", order: 190, icon: FolderOpen, access: technicalAny(["technical-resource:view"]) },
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
@@ -276,5 +280,3 @@ export function getRouteByPath(pathname: string) {
           pathname.startsWith(`${route.path}/`)),
     )
 }
-
-
