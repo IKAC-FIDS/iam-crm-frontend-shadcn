@@ -741,7 +741,7 @@ function RolesWorkspace({
               onClick={() => onPermissions(role)}
             >
               <ShieldCheck className="ms-2 size-4" />
-              مشاهده دسترسی‌ها
+              {canManage ? "مدیریت دسترسی‌ها" : "مشاهده دسترسی‌ها"}
             </Button>
 
             {canManage && !(role.isSystem || role.scope === "SYSTEM") ? (
@@ -1405,7 +1405,7 @@ function RoleMatrixModal({
   const isSystemRole = Boolean(
     role && (role.isSystem || role.scope === "SYSTEM")
   )
-  const editable = canManageRoles && !isSystemRole
+  const editable = canManageRoles
 
   const query = useQuery({
     queryKey: ["rbac-role-permissions", role?.id],
@@ -1478,7 +1478,7 @@ function RoleMatrixModal({
       title={`ماتریس دسترسی — ${role.name}`}
       description={
         isSystemRole
-          ? "این Role سیستمی است؛ دسترسی‌ها فقط برای مشاهده نمایش داده می‌شوند."
+          ? "این نقش سیستمی است. ادمین می‌تواند دسترسی‌های آن را مدیریت کند؛ دسترسی‌های حیاتی نقش ADMIN قابل حذف نیستند."
           : "Permissionهای مورد نیاز این نقش را به تفکیک گروه مدیریت کنید."
       }
       width="max-w-5xl"
