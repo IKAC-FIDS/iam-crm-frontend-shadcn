@@ -54,6 +54,30 @@ const groupPresentation: Record<
   },
 }
 
+const routeHints: Record<string, string> = {
+  companies: "مدیریت حساب‌های مشتری",
+  opportunities: "پیگیری چرخه و مراحل فروش",
+  tasks: "اقدام‌ها و کارهای روزانه",
+  attention: "پیگیری‌ها و اعلان‌های مهم",
+  people: "مخاطبان و افراد سازمانی",
+  activities: "تاریخچه تعاملات مشتری",
+  reports: "شاخص‌ها و گزارش‌های فروش",
+  "technical-releases": "نسخه‌ها و چرخه پشتیبانی",
+  "technical-knowledge-base": "مقالات و دانش قابل استفاده مجدد",
+  "technical-tenders": "فرایند فنی و تجاری مناقصه",
+  "technical-documents": "اسناد نسخه‌بندی‌شده و محرمانه",
+  "technical-resources": "منابع، SDK و فایل‌های فنی",
+  "admin-users": "کاربران و وضعیت دسترسی",
+  "admin-teams": "ساختار و اعضای تیم‌ها",
+  "admin-exchange-rates": "نرخ‌های ارز سازمان",
+  "admin-permissions": "نقش‌ها و مجوزها",
+  "admin-libraries": "داده‌های مرجع سامانه",
+  "admin-pipeline": "مراحل و قوانین انتقال",
+  "admin-audit-logs": "ردیابی تغییرات و رویدادها",
+  "account-security": "رمز عبور، Passkey و نشست‌ها",
+  "account-usage": "مصرف منابع و سهمیه‌ها",
+}
+
 export function AppTopNavigation() {
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
@@ -119,18 +143,31 @@ export function AppTopNavigation() {
                   align="start"
                   sideOffset={8}
                   dir="rtl"
-                  className="w-[min(92vw,390px)] rounded-2xl border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,.4)] backdrop-blur-2xl"
+                  className="w-[min(92vw,540px)] overflow-hidden rounded-[1.6rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-0 shadow-[0_28px_90px_-32px_rgba(15,23,42,.55)] backdrop-blur-2xl"
                 >
-                  <div className="mb-2 rounded-xl bg-[var(--app-primary-soft)]/55 px-3 py-2.5">
-                    <div className="flex items-center gap-2 font-black text-[var(--app-heading)]">
-                      <GroupIcon className="size-4 text-[var(--app-primary)]" />
-                      {label}
+                  <div className="relative overflow-hidden border-b border-[var(--app-divider)] bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_62%,var(--info-light))] px-5 py-4">
+                    <div className="pointer-events-none absolute -end-8 -top-12 size-32 rounded-full bg-[var(--app-primary)]/15 blur-3xl" />
+                    <div className="pointer-events-none absolute start-10 -bottom-16 size-28 rounded-full bg-[var(--info)]/10 blur-3xl" />
+                    <div className="relative flex items-center gap-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
+                        <GroupIcon className="size-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h2 className="font-black text-[var(--app-heading)]">
+                            {label}
+                          </h2>
+                          <span className="rounded-full bg-[var(--app-surface)]/70 px-2 py-0.5 text-[10px] font-bold text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/10">
+                            {routes.length.toLocaleString("fa-IR")} بخش
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-secondary)]">
+                          {presentation.description}
+                        </p>
+                      </div>
                     </div>
-                    <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-secondary)]">
-                      {presentation.description}
-                    </p>
                   </div>
-                  <div className="grid gap-1 sm:grid-cols-2">
+                  <div className="grid max-h-[58vh] gap-2 overflow-y-auto p-3 sm:grid-cols-2">
                     {routes.map((route) => {
                       const Icon = route.icon
                       const routeActive = isMenuRouteActive(
@@ -142,17 +179,36 @@ export function AppTopNavigation() {
                           key={route.id}
                           onClick={() => go(route.path)}
                           className={[
-                            "group min-h-12 cursor-pointer gap-2.5 rounded-xl p-2.5",
+                            "group relative min-h-[4.75rem] cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3 transition-all",
                             routeActive
-                              ? "bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
-                              : "hover:bg-[var(--app-background)]",
+                              ? "border-[var(--app-primary)]/25 bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)] shadow-[0_10px_30px_-22px_var(--app-primary)]"
+                              : "border-[var(--app-divider)] bg-[var(--app-background)]/35 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/20 hover:bg-[var(--app-surface)] hover:shadow-[var(--app-shadow-card)]",
                           ].join(" ")}
                         >
-                          <Icon className="size-4 text-[var(--app-primary)]" />
-                          <span className="min-w-0 flex-1 truncate text-xs font-bold">
-                            {route.label}
+                          <span
+                            className={[
+                              "grid size-10 shrink-0 place-items-center rounded-xl ring-1 transition-colors",
+                              routeActive
+                                ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] ring-[var(--app-primary)]/20"
+                                : "bg-[var(--app-surface)] text-[var(--app-primary)] ring-[var(--app-divider)] group-hover:bg-[var(--app-primary-soft)]",
+                            ].join(" ")}
+                          >
+                            <Icon className="size-[1.125rem]" />
                           </span>
-                          <ArrowUpLeft className="size-3.5 text-[var(--app-icon-muted)] opacity-0 transition group-hover:opacity-100" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-black">
+                              {route.label}
+                            </span>
+                            <span className="mt-1 block truncate text-[10px] font-normal text-[var(--app-text-secondary)]">
+                              {routeHints[route.id] || "ورود به این بخش"}
+                            </span>
+                          </span>
+                          <span className="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--app-icon-muted)] transition group-hover:bg-[var(--app-primary-soft)] group-hover:text-[var(--app-primary)]">
+                            <ArrowUpLeft className="size-3.5" />
+                          </span>
+                          {routeActive ? (
+                            <span className="absolute end-0 top-3 h-8 w-1 rounded-s-full bg-[var(--app-primary)]" />
+                          ) : null}
                         </DropdownMenuItem>
                       )
                     })}
@@ -200,7 +256,7 @@ export function AppTopNavigation() {
           <DropdownMenuContent
             align="start"
             dir="rtl"
-            className="max-h-[70vh] w-72 overflow-y-auto rounded-2xl p-2"
+            className="max-h-[72vh] w-72 overflow-y-auto rounded-[1.35rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-2 shadow-[0_24px_70px_-28px_rgba(15,23,42,.5)] backdrop-blur-xl"
           >
             {primaryRoutes.map((route) => {
               const Icon = route.icon ?? LayoutDashboard
@@ -208,9 +264,11 @@ export function AppTopNavigation() {
                 <DropdownMenuItem
                   key={route.id}
                   onClick={() => go(route.path)}
-                  className="min-h-11 rounded-xl"
+                  className="min-h-11 rounded-xl font-bold"
                 >
-                  <Icon className="size-4" />
+                  <span className="grid size-8 place-items-center rounded-lg bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                    <Icon className="size-4" />
+                  </span>
                   {route.label}
                 </DropdownMenuItem>
               )
@@ -219,24 +277,44 @@ export function AppTopNavigation() {
               const GroupIcon = groupPresentation[group].icon
               return (
                 <DropdownMenuSub key={group}>
-                  <DropdownMenuSubTrigger className="min-h-11 rounded-xl font-bold">
-                    <GroupIcon className="size-4 text-[var(--app-primary)]" />
+                  <DropdownMenuSubTrigger className="min-h-12 rounded-xl font-bold hover:bg-[var(--app-primary-soft)]">
+                    <span className="grid size-8 place-items-center rounded-lg bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                      <GroupIcon className="size-4" />
+                    </span>
                     {label}
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent
                     dir="rtl"
-                    className="w-64 rounded-2xl p-2"
+                    className="w-72 rounded-[1.35rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,.45)] backdrop-blur-xl"
                   >
                     {routes.map((route) => {
                       const Icon = route.icon
+                      const routeActive = isMenuRouteActive(
+                        route.path,
+                        location.pathname
+                      )
                       return (
                         <DropdownMenuItem
                           key={route.id}
                           onClick={() => go(route.path)}
-                          className="min-h-11 rounded-xl"
+                          className={[
+                            "min-h-14 gap-3 rounded-xl border border-transparent p-2",
+                            routeActive
+                              ? "border-[var(--app-primary)]/20 bg-[var(--app-primary-soft)]"
+                              : "hover:bg-[var(--app-background)]",
+                          ].join(" ")}
                         >
-                          <Icon className="size-4" />
-                          {route.label}
+                          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-background)] text-[var(--app-primary)] ring-1 ring-[var(--app-divider)]">
+                            <Icon className="size-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate text-xs font-bold">
+                              {route.label}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[10px] text-[var(--app-text-secondary)]">
+                              {routeHints[route.id] || "ورود به این بخش"}
+                            </span>
+                          </span>
                         </DropdownMenuItem>
                       )
                     })}

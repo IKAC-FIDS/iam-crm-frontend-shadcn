@@ -51,6 +51,8 @@ it("renders every navigation group as a menu option and keeps meetings at the de
     screen.getByRole("button", { name: uiText.navigation.groups.sales })
   )
   expect(
-    await screen.findByRole("menuitem", { name: uiText.navigation.companies })
+    await screen.findByRole("menuitem", {
+      name: new RegExp(uiText.navigation.companies),
+    })
   ).toBeInTheDocument()
 })
