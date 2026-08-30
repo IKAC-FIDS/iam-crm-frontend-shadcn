@@ -877,6 +877,8 @@ tasks: {
     done: "انجام‌شده",
     cancelled: "لغوشده",
     mine: "کارهای من",
+    team: "کارهای تیم",
+    organization: "کارهای سازمان",
     created: "ایجادشده توسط من",
   },
   statuses: {
@@ -897,7 +899,8 @@ tasks: {
     save: "ذخیره",
     more: "عملیات بیشتر",
     changeStatus: "تغییر وضعیت",
-    assign: "ارجاع",
+    assign: "تغییر مسئول",
+    createSubtask: "ایجاد زیرکار",
     complete: "تکمیل",
     reschedule: "زمان‌بندی مجدد",
     delete: "حذف",

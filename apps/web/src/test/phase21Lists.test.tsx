@@ -71,6 +71,11 @@ it("Tasks preserves priority and server paging when changing page size",async()=
   await userEvent.selectOptions(screen.getByLabelText(uiText.common.pagination.rowsPerPage),"50")
   await waitFor(()=>expectParams("/tasks",{page:1,limit:50,priority:"HIGH"}))
 })
+it("Tasks sends organization-work filters to the server",async()=>{
+  mount(<TasksPage/>,"/tasks?view=list&teamId=t1&dueState=overdue&linkedEntityType=MEETING&quick=organization")
+  expect(await screen.findByRole("table")).toHaveTextContent("کار نمونه")
+  expectParams("/tasks",{teamId:"t1",dueState:"overdue",linkedEntityType:"MEETING",view:"organization"})
+})
 it("Audit deep links preserve every operational filter at the API boundary",async()=>{
   mount(<AdminAuditLogsPage/>,"/admin/audit-logs?entityType=MEETING&entityId=m1&actorId=u1&action=UPDATE&search=demo&requestId=r1&path=%2Fmeetings&ip=127.0.0.1&page=2&limit=50")
   await waitFor(()=>expectParams("/admin/audit-logs",{entityType:"MEETING",entityId:"m1",actorId:"u1",action:"UPDATE",search:"demo",requestId:"r1",requestPath:"/meetings",ipAddress:"127.0.0.1",page:2,limit:50}))

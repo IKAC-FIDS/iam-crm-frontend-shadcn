@@ -15,6 +15,10 @@ import type {
   TaskListQuery,
   TaskPage,
   TaskPayload,
+  TaskOption,
+  TaskReassignPayload,
+  TaskSubtaskPayload,
+  TaskEntityType,
 } from "../types/task.types"
 
 function clean<T extends object>(value: T) {
@@ -102,12 +106,13 @@ export async function deleteTask(id: string) {
   await api.delete(`/tasks/${id}`)
 }
 
-export async function getTaskAssignees(search: string, page: number) {
+export async function getTaskAssignees(search: string, page: number, teamId?: string) {
   const response = await api.get("/users/assignee-options", {
     params: {
       search: search.trim() || undefined,
       page,
       limit: 25,
+      teamId: teamId || undefined,
     },
   })
   const body = response.data as {
@@ -126,6 +131,39 @@ export async function getTaskAssignees(search: string, page: number) {
         hasNext: false,
         hasPrevious: page > 1,
       } satisfies TaskPage["meta"]),
+  }
+}
+
+export async function getTaskTeamOptions(search: string, page: number) {
+  const response = await api.get("/tasks/options/teams", { params: { search: search.trim() || undefined, page, limit: 25 } })
+  return optionPage(response.data, page)
+}
+
+export async function getTaskEntityOptions(type: TaskEntityType, search: string, page: number) {
+  const response = await api.get("/tasks/options/entities", { params: { type, search: search.trim() || undefined, page, limit: 25 } })
+  return optionPage(response.data, page)
+}
+
+export async function reassignTask(id: string, payload: TaskReassignPayload) {
+  const response = await api.post(`/tasks/${id}/reassign`, clean(payload))
+  return unwrapApiResponse<Task>(response.data)
+}
+
+export async function createSubtask(id: string, payload: TaskSubtaskPayload) {
+  const response = await api.post(`/tasks/${id}/subtasks`, clean(payload))
+  return unwrapApiResponse<Task>(response.data)
+}
+
+export async function getSubtasks(id: string) {
+  const response = await api.get(`/tasks/${id}/subtasks`)
+  return unwrapApiResponse<Task[]>(response.data)
+}
+
+function optionPage(body: unknown, page: number) {
+  const value = body as { data?: TaskOption[]; meta?: TaskPage["meta"] }
+  return {
+    data: Array.isArray(value.data) ? value.data : [],
+    meta: value.meta ?? { total: 0, page, limit: 25, totalPages: 0, hasNext: false, hasPrevious: page > 1 },
   }
 }
 

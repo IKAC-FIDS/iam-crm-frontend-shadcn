@@ -21,7 +21,7 @@ import {
   taskStatusLabel,
   taskStatusTone,
 } from "../utils/taskFormatters"
-import { TaskActionsMenu } from "./TaskActionsMenu"
+import { TaskActionsMenu, type TaskDialogAction } from "./TaskActionsMenu"
 
 export function TaskList({
   tasks,
@@ -44,7 +44,7 @@ export function TaskList({
   onEdit: (task: Task) => void
   onAction: (
     task: Task,
-    action: "status" | "assign" | "complete" | "reschedule" | "delete"
+    action: TaskDialogAction
   ) => void
 }) {
   const text = uiText.tasks
@@ -88,9 +88,17 @@ export function TaskList({
       header: text.table.assignee,
       className: "min-w-40",
       cell: (task) =>
-        task.assignedTo?.fullName ||
-        task.assignedTo?.email ||
-        text.labels.unassigned,
+        <div><p>{task.assignedTo?.fullName || task.assignedTo?.email || text.labels.unassigned}</p><p className="text-xs text-[var(--app-text-secondary)]">{task.team?.name || ({ SELF: "شخصی", TEAM: "تیمی", ORGANIZATION: "سازمانی" }[task.assignmentScope || "SELF"])}</p></div>,
+    },
+    {
+      id: "subtasks",
+      header: "زیرکارها",
+      className: "min-w-28",
+      cell: (task) => {
+        const children = task.subtasks ?? []
+        const resolved = children.filter((item) => item.status === "DONE" || item.status === "CANCELLED").length
+        return task.parentTaskId ? "زیرکار" : `${resolved.toLocaleString("fa-IR")} / ${children.length.toLocaleString("fa-IR")}`
+      },
     },
     {
       id: "due",
@@ -158,6 +166,7 @@ export function TaskList({
           fields: [
             { id: "priority", label: text.table.priority, render: (task) => <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>{taskPriorityLabel(task.priority)}</StatusBadge> },
             { id: "assignee", label: text.table.assignee, render: (task) => task.assignedTo?.fullName || task.assignedTo?.email || text.labels.unassigned },
+            { id: "subtasks", label: "زیرکارها", render: (task) => task.parentTaskId ? "زیرکار" : `${(task.subtasks ?? []).filter((item) => item.status === "DONE" || item.status === "CANCELLED").length.toLocaleString("fa-IR")} / ${(task.subtasks?.length ?? 0).toLocaleString("fa-IR")}` },
             { id: "due", label: text.table.dueAt, render: (task) => task.dueAt ? formatJalaliDateTime(task.dueAt) : text.labels.noDueDate },
           ],
         }}

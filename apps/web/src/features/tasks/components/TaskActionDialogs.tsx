@@ -16,14 +16,16 @@ import {
 import { Label } from "@workspace/ui/components/label"
 
 import {
-  useAssignTask,
+  useReassignTask,
   useChangeTaskStatus,
   useCompleteTask,
   useDeleteTask,
   useRescheduleTask,
   useTaskAssignees,
+  useTaskTeams,
+  useCreateSubtask,
 } from "../hooks/useTasks"
-import type { Task, TaskOption, TaskStatus } from "../types/task.types"
+import type { Task, TaskAssignmentScope, TaskOption, TaskPriority, TaskStatus } from "../types/task.types"
 import { type TaskDialogAction } from "./TaskActionsMenu"
 export type { TaskDialogAction } from "./TaskActionsMenu"
 import { TaskOptionSelect } from "./TaskOptionSelect"
@@ -42,6 +44,7 @@ export function TaskActionDialogs({
   if (action === "complete") return <CompleteDialog task={task} onClose={onClose} />
   if (action === "status") return <StatusDialog task={task} onClose={onClose} />
   if (action === "assign") return <AssignDialog task={task} onClose={onClose} />
+  if (action === "subtask") return <SubtaskDialog task={task} onClose={onClose} />
   return <RescheduleDialog task={task} onClose={onClose} />
 }
 
@@ -49,6 +52,7 @@ function CompleteDialog({ task, onClose }: { task: Task; onClose: () => void }) 
   const text = uiText.tasks
   const mutation = useCompleteTask()
   const [note, setNote] = useState("")
+  const incompleteCount = (task.subtasks ?? []).filter((item) => item.status !== "DONE" && item.status !== "CANCELLED").length
   async function submit() {
     try {
       await mutation.mutateAsync({ id: task.id, completionNote: note.trim() || undefined })
@@ -64,9 +68,11 @@ function CompleteDialog({ task, onClose }: { task: Task; onClose: () => void }) 
       description={text.dialogs.completeDescription}
       pending={mutation.isPending}
       submitLabel={text.actions.complete}
+      submitDisabled={incompleteCount > 0}
       onClose={onClose}
       onSubmit={submit}
     >
+      {incompleteCount ? <div className="rounded-xl border border-[var(--destructive)]/25 bg-[var(--destructive-soft)] p-3 text-xs text-[var(--destructive)]">{incompleteCount.toLocaleString("fa-IR")} زیرکار ناتمام باقی مانده است. ابتدا زیرکارها را بررسی کنید.</div> : null}
       <Field label={text.fields.completionNote}>
         <textarea rows={4} value={note} onChange={(e) => setNote(e.target.value)} className={textareaClass} />
       </Field>
@@ -113,7 +119,11 @@ function StatusDialog({ task, onClose }: { task: Task; onClose: () => void }) {
 
 function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
   const text = uiText.tasks
-  const mutation = useAssignTask()
+  const mutation = useReassignTask()
+  const [scope, setScope] = useState<TaskAssignmentScope>(task.assignmentScope || "SELF")
+  const [teamSearch, setTeamSearch] = useState("")
+  const [team, setTeam] = useState<TaskOption | undefined>(task.team ? { id: task.team.id, label: task.team.name, secondary: task.team.code } : undefined)
+  const [reason, setReason] = useState("")
   const [search, setSearch] = useState("")
   const [assignee, setAssignee] = useState<TaskOption | undefined>(
     task.assignedTo
@@ -124,20 +134,22 @@ function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
         }
       : undefined
   )
-  const query = useTaskAssignees(search, true)
+  const query = useTaskAssignees(search, scope !== "SELF", scope === "TEAM" ? team?.id || "" : "")
+  const teamQuery = useTaskTeams(teamSearch, scope === "TEAM")
   const options = useMemo(
     () =>
       query.data?.pages.flatMap((page) => page.data).map((item) => ({
         id: item.id,
         label: item.fullName || item.email || item.id,
-        secondary: item.email || undefined,
+        secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
       })) || [],
     [query.data]
   )
+  const teamOptions = useMemo(() => teamQuery.data?.pages.flatMap((page) => page.data) || [], [teamQuery.data])
   async function submit() {
-    if (!assignee) return
+    if (scope === "TEAM" && !team) return
     try {
-      await mutation.mutateAsync({ id: task.id, assignedToId: assignee.id })
+      await mutation.mutateAsync({ id: task.id, payload: { assignmentScope: scope, teamId: scope === "TEAM" ? team?.id : undefined, assigneeId: scope === "SELF" ? undefined : assignee?.id, reason: reason.trim() || undefined } })
       toast.success(text.feedback.assigned)
       onClose()
     } catch (error) {
@@ -150,11 +162,18 @@ function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
       description={text.dialogs.assignDescription}
       pending={mutation.isPending}
       submitLabel={text.actions.assign}
-      submitDisabled={!assignee}
+      submitDisabled={scope === "TEAM" && !team}
       onClose={onClose}
       onSubmit={submit}
     >
-      <Field label={text.fields.assignee}>
+      <div className="rounded-xl border p-3 text-xs text-[var(--app-text-secondary)]">وضعیت فعلی: {task.assignedTo?.fullName || text.labels.unassigned} · {task.team?.name || "بدون تیم"}</div>
+      <Field label="دامنه واگذاری">
+        <select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}>
+          <option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option>
+        </select>
+      </Field>
+      {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teamQuery.isLoading} hasMore={teamQuery.hasNextPage} loadingMore={teamQuery.isFetchingNextPage} onLoadMore={() => void teamQuery.fetchNextPage()} /></Field> : null}
+      {scope !== "SELF" ? <Field label={text.fields.assignee}>
         <TaskOptionSelect
           value={assignee?.id}
           selectedOption={assignee}
@@ -168,10 +187,48 @@ function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
           hasMore={query.hasNextPage}
           loadingMore={query.isFetchingNextPage}
           onLoadMore={() => void query.fetchNextPage()}
+          disabled={scope === "TEAM" && !team}
         />
-      </Field>
+      </Field> : null}
+      <Field label="دلیل تغییر مسئول"><textarea rows={3} value={reason} onChange={(event) => setReason(event.target.value)} className={textareaClass} /></Field>
     </SimpleDialog>
   )
+}
+
+function SubtaskDialog({ task, onClose }: { task: Task; onClose: () => void }) {
+  const mutation = useCreateSubtask()
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [priority, setPriority] = useState<TaskPriority>(task.priority)
+  const [dueAt, setDueAt] = useState<Date>()
+  const [inheritLinkedEntity, setInheritLinkedEntity] = useState(true)
+  const [scope, setScope] = useState<TaskAssignmentScope>("SELF")
+  const [team, setTeam] = useState<TaskOption>()
+  const [assignee, setAssignee] = useState<TaskOption>()
+  const [teamSearch, setTeamSearch] = useState("")
+  const [assigneeSearch, setAssigneeSearch] = useState("")
+  const teams = useTaskTeams(teamSearch, scope === "TEAM")
+  const assignees = useTaskAssignees(assigneeSearch, scope !== "SELF", scope === "TEAM" ? team?.id || "" : "")
+  const teamOptions = useMemo(() => teams.data?.pages.flatMap((page) => page.data) || [], [teams.data])
+  const assigneeOptions = useMemo(() => assignees.data?.pages.flatMap((page) => page.data).map((item) => ({ id: item.id, label: item.fullName || item.email || item.id, secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") })) || [], [assignees.data])
+  async function submit() {
+    if (!title.trim() || (scope === "TEAM" && !team)) return
+    try {
+      await mutation.mutateAsync({ parentId: task.id, payload: { title: title.trim(), description: description.trim() || undefined, priority, dueAt: dueAt?.toISOString(), assignmentScope: scope, teamId: scope === "TEAM" ? team?.id : undefined, assigneeId: scope === "SELF" ? undefined : assignee?.id, inheritLinkedEntity } })
+      toast.success("زیرکار ایجاد شد.")
+      onClose()
+    } catch (error) { toast.error(getApiErrorMessage(error, uiText.tasks.errors.mutation)) }
+  }
+  return <SimpleDialog title="ایجاد زیرکار" description="یک کار جدید ساخته می‌شود و مسئولیت کار والد تغییر نمی‌کند." pending={mutation.isPending} submitLabel="ایجاد زیرکار" submitDisabled={!title.trim() || (scope === "TEAM" && !team)} onClose={onClose} onSubmit={submit}>
+    <Field label="عنوان زیرکار"><input value={title} onChange={(event) => setTitle(event.target.value)} className={selectClass} maxLength={200} /></Field>
+    <Field label="توضیحات"><textarea rows={3} value={description} onChange={(event) => setDescription(event.target.value)} className={textareaClass} /></Field>
+    <Field label="اولویت"><select value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)} className={selectClass}>{(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map((value) => <option key={value} value={value}>{uiText.tasks.priorities[value]}</option>)}</select></Field>
+    <Field label="موعد انجام"><PersianDateTimePicker value={dueAt} onChange={setDueAt} /></Field>
+    <Field label="دامنه واگذاری"><select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}><option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option></select></Field>
+    {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} /></Field> : null}
+    {scope !== "SELF" ? <Field label="مسئول"><TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder="انتخاب مسئول (اختیاری)" loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={scope === "TEAM" && !team} /></Field> : null}
+    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={inheritLinkedEntity} onChange={(event) => setInheritLinkedEntity(event.target.checked)} />ارتباط تجاری/فنی از کار والد کپی شود</label>
+  </SimpleDialog>
 }
 
 function RescheduleDialog({ task, onClose }: { task: Task; onClose: () => void }) {

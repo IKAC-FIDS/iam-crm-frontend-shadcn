@@ -35,6 +35,7 @@ import { TaskList } from "../components/TaskList"
 import { TaskOptionSelect } from "../components/TaskOptionSelect"
 import {
   useTaskAssignees,
+  useTaskTeams,
   useTaskOpportunityOptions,
   useTasks,
 } from "../hooks/useTasks"
@@ -43,6 +44,7 @@ import type {
   TaskListQuery,
   TaskPriority,
   TaskStatus,
+  TaskEntityType,
 } from "../types/task.types"
 
 type ViewMode = "focus" | "list"
@@ -54,6 +56,8 @@ type QuickFilter =
   | "done"
   | "cancelled"
   | "mine"
+  | "team"
+  | "organization"
   | "created"
 
 export function TasksPage() {
@@ -65,7 +69,7 @@ export function TasksPage() {
   const canView = permissions.includes("task:view")
   const canCreate = permissions.includes("task:create")
   const canUpdate = permissions.includes("task:update")
-  const canAssign = permissions.includes("task:assign")
+  const canAssign = permissions.includes("task:assign") || permissions.includes("task:reassign")
   const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")
 
@@ -78,6 +82,9 @@ export function TasksPage() {
   const assignedToId = params.get("assignedToId") || ""
   const dueFrom = params.get("dueFrom") || ""
   const dueTo = params.get("dueTo") || ""
+  const teamId = params.get("teamId") || ""
+  const dueState = (params.get("dueState") || "") as TaskListQuery["dueState"] | ""
+  const linkedEntityType = (params.get("linkedEntityType") || "") as TaskEntityType | ""
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
@@ -86,6 +93,7 @@ export function TasksPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [assigneeSearch, setAssigneeSearch] = useState("")
   const [opportunitySearch, setOpportunitySearch] = useState("")
+  const [teamSearch, setTeamSearch] = useState("")
 
   const debouncedSearch = useDebouncedValue(search)
   const quickQuery = quickToQuery(quick, user?.id)
@@ -101,13 +109,22 @@ export function TasksPage() {
     createdById: quickQuery.createdById,
     status: quickQuery.status,
     overdueOnly: quickQuery.overdueOnly,
+    view: quickQuery.view,
     dueFrom: dueFrom || undefined,
     dueTo: dueTo || undefined,
+    teamId: teamId || undefined,
+    dueState: dueState || undefined,
+    linkedEntityType: linkedEntityType || undefined,
   }
 
   const tasks = useTasks(query, canView && search === debouncedSearch)
 
   const assignees = useTaskAssignees(assigneeSearch, advancedOpen && canView)
+  const teams = useTaskTeams(teamSearch, advancedOpen && canView)
+  const teamOptions = useMemo(
+    () => teams.data?.pages.flatMap((part) => part.data) || [],
+    [teams.data]
+  )
   const assigneeOptions = useMemo(
     () =>
       assignees.data?.pages
@@ -115,7 +132,7 @@ export function TasksPage() {
         .map((item) => ({
           id: item.id,
           label: item.fullName || item.email || item.id,
-          secondary: item.email || undefined,
+          secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
         })) || [],
     [assignees.data]
   )
@@ -144,6 +161,9 @@ export function TasksPage() {
     assignedToId,
     dueFrom,
     dueTo,
+    teamId,
+    dueState,
+    linkedEntityType,
   ].filter(Boolean).length
 
   function updateParam(key: string, value?: string) {
@@ -170,12 +190,16 @@ export function TasksPage() {
           "assignedToId",
           "dueFrom",
           "dueTo",
+          "teamId",
+          "dueState",
+          "linkedEntityType",
           "quick",
         ].map((key) => [key, undefined])
       )
     )
     setAssigneeSearch("")
     setOpportunitySearch("")
+    setTeamSearch("")
   }
 
   function openAction(task: Task, next: TaskDialogAction) {
@@ -331,6 +355,34 @@ export function TasksPage() {
                   />
 
                   <TaskOptionSelect
+                    value={teamId || undefined}
+                    options={teamOptions}
+                    onChange={(option) => updateParam("teamId", option?.id)}
+                    search={teamSearch}
+                    onSearchChange={setTeamSearch}
+                    placeholder="تیم"
+                    loading={teams.isLoading}
+                    hasMore={teams.hasNextPage}
+                    loadingMore={teams.isFetchingNextPage}
+                    onLoadMore={() => void teams.fetchNextPage()}
+                  />
+
+                  <select aria-label="وضعیت موعد" value={dueState} onChange={(event) => updateParam("dueState", event.target.value || undefined)} className={selectClass}>
+                    <option value="">همه وضعیت‌های موعد</option>
+                    <option value="none">بدون موعد</option>
+                    <option value="upcoming">آینده</option>
+                    <option value="today">امروز</option>
+                    <option value="overdue">گذشته</option>
+                    <option value="completed">تکمیل‌شده</option>
+                  </select>
+
+                  <select aria-label="نوع موجودیت مرتبط" value={linkedEntityType} onChange={(event) => updateParam("linkedEntityType", event.target.value || undefined)} className={selectClass}>
+                    <option value="">همه موجودیت‌های مرتبط</option>
+                    <option value="COMPANY">شرکت</option><option value="OPPORTUNITY">فرصت</option><option value="PERSON">شخص</option>
+                    <option value="MEETING">جلسه</option><option value="ACTIVITY">فعالیت</option><option value="PRODUCT">محصول</option>
+                  </select>
+
+                  <TaskOptionSelect
                     value={assignedToId || undefined}
                     options={assigneeOptions}
                     onChange={(option) =>
@@ -374,7 +426,7 @@ export function TasksPage() {
 
             <div className="col-span-full mt-3 flex flex-col gap-3 border-t border-[var(--app-divider)] pt-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 flex-wrap gap-1.5">
-                {quickFilters.map((item) => (
+                {quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).map((item) => (
                   <button
                     key={item.value}
                     type="button"
@@ -490,6 +542,7 @@ function quickToQuery(quick: QuickFilter, userId?: string) {
     overdueOnly?: boolean
     assignedToId?: string
     createdById?: string
+    view?: TaskListQuery["view"]
   } = {}
 
   if (quick === "overdue") result.overdueOnly = true
@@ -499,6 +552,8 @@ function quickToQuery(quick: QuickFilter, userId?: string) {
   if (quick === "cancelled") result.status = "CANCELLED"
   if (quick === "mine" && userId) result.assignedToId = userId
   if (quick === "created" && userId) result.createdById = userId
+  if (quick === "team") result.view = "team"
+  if (quick === "organization") result.view = "organization"
 
   return result
 }
@@ -511,6 +566,8 @@ const quickFilters: { value: QuickFilter }[] = [
   { value: "done" },
   { value: "cancelled" },
   { value: "mine" },
+  { value: "team" },
+  { value: "organization" },
   { value: "created" },
 ]
 

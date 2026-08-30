@@ -22,8 +22,13 @@ import {
   getTasks,
   rescheduleTask,
   updateTask,
+  reassignTask,
+  createSubtask,
+  getSubtasks,
+  getTaskTeamOptions,
+  getTaskEntityOptions,
 } from "../api/tasks.api"
-import type { Task, TaskListQuery, TaskPayload } from "../types/task.types"
+import type { Task, TaskEntityType, TaskListQuery, TaskPayload, TaskReassignPayload, TaskSubtaskPayload } from "../types/task.types"
 
 export const taskKeys = {
   all: ["tasks"] as const,
@@ -31,8 +36,11 @@ export const taskKeys = {
   list: (query: TaskListQuery) => [...taskKeys.lists(), query] as const,
   details: () => [...taskKeys.all, "detail"] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
-  assignees: (search: string) =>
-    [...taskKeys.all, "assignees", search] as const,
+  assignees: (search: string, teamId = "") =>
+    [...taskKeys.all, "assignees", teamId, search] as const,
+  teams: (search: string) => [...taskKeys.all, "teams", search] as const,
+  entities: (type: TaskEntityType, search: string) => [...taskKeys.all, "entities", type, search] as const,
+  subtasks: (id: string) => [...taskKeys.detail(id), "subtasks"] as const,
   opportunities: (companyId: string, search: string) =>
     [...taskKeys.all, "opportunities", companyId, search] as const,
   people: (companyId: string, search: string) =>
@@ -195,15 +203,51 @@ export function useDeleteTask() {
   })
 }
 
-export function useTaskAssignees(search: string, enabled = true) {
+export function useTaskAssignees(search: string, enabled = true, teamId = "") {
   return useInfiniteQuery({
-    queryKey: [...taskKeys.assignees(search.trim()), useQueryScope()],
-    queryFn: ({ pageParam }) => getTaskAssignees(search, pageParam),
+    queryKey: [...taskKeys.assignees(search.trim(), teamId), useQueryScope()],
+    queryFn: ({ pageParam }) => getTaskAssignees(search, pageParam, teamId || undefined),
     initialPageParam: 1,
     getNextPageParam: (last) =>
       last.meta.hasNext ? last.meta.page + 1 : undefined,
     enabled,
     staleTime: 120_000,
+  })
+}
+
+export function useTaskTeams(search: string, enabled = true) {
+  return useInfiniteQuery({
+    queryKey: [...taskKeys.teams(search.trim()), useQueryScope()],
+    queryFn: ({ pageParam }) => getTaskTeamOptions(search, pageParam), initialPageParam: 1,
+    getNextPageParam: (last) => last.meta.hasNext ? last.meta.page + 1 : undefined,
+    enabled, staleTime: 120_000,
+  })
+}
+
+export function useTaskEntityOptions(type: TaskEntityType, search: string, enabled = true) {
+  return useInfiniteQuery({
+    queryKey: [...taskKeys.entities(type, search.trim()), useQueryScope()],
+    queryFn: ({ pageParam }) => getTaskEntityOptions(type, search, pageParam), initialPageParam: 1,
+    getNextPageParam: (last) => last.meta.hasNext ? last.meta.page + 1 : undefined,
+    enabled, staleTime: 120_000,
+  })
+}
+
+export function useSubtasks(id: string, enabled = true) {
+  return useQuery({ queryKey: [...taskKeys.subtasks(id), useQueryScope()], queryFn: () => getSubtasks(id), enabled: enabled && Boolean(id) })
+}
+
+export function useReassignTask() {
+  const invalidate = useInvalidateTaskDomain()
+  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: TaskReassignPayload }) => reassignTask(id, payload), onSuccess: (task) => invalidate(task) })
+}
+
+export function useCreateSubtask() {
+  const invalidate = useInvalidateTaskDomain()
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ parentId, payload }: { parentId: string; payload: TaskSubtaskPayload }) => createSubtask(parentId, payload),
+    onSuccess: async (task, vars) => { await invalidate(task); await client.invalidateQueries({ queryKey: taskKeys.subtasks(vars.parentId) }); await client.invalidateQueries({ queryKey: taskKeys.detail(vars.parentId) }) },
   })
 }
 

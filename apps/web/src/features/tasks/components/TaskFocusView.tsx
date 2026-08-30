@@ -24,7 +24,7 @@ import {
   taskStatusLabel,
   taskStatusTone,
 } from "../utils/taskFormatters"
-import { TaskActionsMenu } from "./TaskActionsMenu"
+import { TaskActionsMenu, type TaskDialogAction } from "./TaskActionsMenu"
 
 export function TaskFocusView({
   tasks,
@@ -47,7 +47,7 @@ export function TaskFocusView({
   onEdit: (task: Task) => void
   onAction: (
     task: Task,
-    action: "status" | "assign" | "complete" | "reschedule" | "delete"
+    action: TaskDialogAction
   ) => void
 }) {
   const text = uiText.tasks
@@ -160,7 +160,7 @@ function TaskGroup({
   onEdit: (task: Task) => void
   onAction: (
     task: Task,
-    action: "status" | "assign" | "complete" | "reschedule" | "delete"
+    action: TaskDialogAction
   ) => void
 }) {
   return (
@@ -219,7 +219,7 @@ function TaskFocusRow({
   onEdit: (task: Task) => void
   onAction: (
     task: Task,
-    action: "status" | "assign" | "complete" | "reschedule" | "delete"
+    action: TaskDialogAction
   ) => void
 }) {
   const navigate = useNavigate()

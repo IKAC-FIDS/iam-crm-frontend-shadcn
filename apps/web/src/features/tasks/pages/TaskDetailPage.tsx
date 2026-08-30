@@ -14,6 +14,12 @@ import {
   UserRound,
   UserRoundCog,
   XCircle,
+  ListPlus,
+  GitBranch,
+  History,
+  CalendarDays,
+  Activity as ActivityIcon,
+  Package,
 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
@@ -53,12 +59,14 @@ export function TaskDetailPage() {
 
   const canView = permissions.includes("task:view")
   const canUpdate = permissions.includes("task:update")
-  const canAssign = permissions.includes("task:assign")
+  const canAssign = permissions.includes("task:assign") || permissions.includes("task:reassign")
+  const canCreateSubtask = permissions.includes("task:create-subtask") || permissions.includes("task:create")
   const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")
   const canViewCompany = permissions.includes("company:view")
   const canViewOpportunity = permissions.includes("opportunity:view")
   const canViewPerson = permissions.includes("person:view")
+  const canViewAudit = permissions.includes("audit-log:view") || permissions.includes("audit:view")
 
   const taskQuery = useTask(id, canView)
   const [editOpen, setEditOpen] = useState(false)
@@ -136,6 +144,12 @@ export function TaskDetailPage() {
                   {text.actions.assign}
                 </Button>
               ) : null}
+              {canCreateSubtask && !closed ? (
+                <Button variant="outline" className="rounded-xl" onClick={() => setAction("subtask")}>
+                  <ListPlus className="size-4" />
+                  ایجاد زیرکار
+                </Button>
+              ) : null}
               {canComplete && !closed ? (
                 <Button
                   variant="outline"
@@ -182,6 +196,7 @@ export function TaskDetailPage() {
           />
           <DescriptionCard task={task} />
           <OutcomeCard task={task} />
+          <SubtasksCard task={task} canCreate={canCreateSubtask && !closed} onCreate={() => setAction("subtask")} />
         </main>
 
         <aside className="grid min-w-0 gap-4 xl:sticky xl:top-4">
@@ -194,6 +209,7 @@ export function TaskDetailPage() {
           />
           <OwnershipCard task={task} />
           <LifecycleCard task={task} />
+          {canViewAudit ? <AuditLinkCard taskId={task.id} /> : null}
         </aside>
       </div>
 
@@ -459,6 +475,9 @@ function ContextCard({
               : undefined
           }
         />
+        {task.meeting ? <ContextLink icon={<CalendarDays className="size-4" />} label="جلسه" value={task.meeting.title} to={`/meetings/${task.meeting.id}`} /> : null}
+        {task.activity ? <ContextLink icon={<ActivityIcon className="size-4" />} label="فعالیت" value={task.activity.type} to="/activities" /> : null}
+        {task.product ? <ContextLink icon={<Package className="size-4" />} label="محصول" value={`${task.product.name} (${task.product.code})`} to="/admin/libraries/products" /> : null}
         <ContextLink
           icon={<BriefcaseBusiness className="size-4" />}
           label={detail.labels.opportunity}
@@ -522,6 +541,8 @@ function OwnershipCard({ task }: { task: Task }) {
         title={detail.sections.ownership}
       />
       <div className="grid gap-3 p-4">
+        <InfoBox icon={<GitBranch className="size-4" />} label="دامنه واگذاری" value={{ SELF: "خودم", TEAM: "تیم", ORGANIZATION: "سازمان" }[task.assignmentScope || "SELF"]} />
+        {task.team ? <InfoBox icon={<UserRoundCog className="size-4" />} label="تیم" value={`${task.team.name} (${task.team.code})`} /> : null}
         <InfoBox
           icon={<UserRoundCog className="size-4" />}
           label={detail.labels.assignee}
@@ -554,6 +575,19 @@ function OwnershipCard({ task }: { task: Task }) {
       </div>
     </SurfaceCard>
   )
+}
+
+function SubtasksCard({ task, canCreate, onCreate }: { task: Task; canCreate: boolean; onCreate: () => void }) {
+  const children = task.subtasks ?? []
+  const resolved = children.filter((item) => item.status === "DONE" || item.status === "CANCELLED").length
+  const percent = children.length ? Math.round((resolved / children.length) * 100) : 0
+  return <SurfaceCard className="min-w-0 overflow-hidden">
+    <SectionHeader icon={<GitBranch className="size-4" />} title={`زیرکارها · ${resolved.toLocaleString("fa-IR")} از ${children.length.toLocaleString("fa-IR")}`} action={canCreate ? <Button size="sm" variant="outline" className="rounded-xl" onClick={onCreate}><ListPlus className="size-4" />ایجاد زیرکار</Button> : undefined} />
+    <div className="grid gap-3 p-4 sm:p-5">
+      {children.length ? <><div className="h-2 overflow-hidden rounded-full bg-[var(--app-background)]"><div className="h-full bg-[var(--app-primary)]" style={{ width: `${percent}%` }} /></div>{children.map((child) => <Link key={child.id} to={`/tasks/${child.id}`} className="grid gap-2 rounded-xl border p-3 transition hover:bg-[var(--app-primary-soft)]/30 sm:grid-cols-[1fr_auto] sm:items-center"><div><p className="font-bold">{child.title}</p><p className="mt-1 text-xs text-[var(--app-text-secondary)]">{child.assignedTo?.fullName || child.assignedTo?.email || uiText.tasks.labels.unassigned}</p></div><StatusBadge tone={taskStatusTone(child.status)}>{taskStatusLabel(child.status)}</StatusBadge></Link>)}</> : <p className="text-xs text-[var(--app-text-secondary)]">هنوز زیرکاری ثبت نشده است.</p>}
+      {task.parentTask ? <Link to={`/tasks/${task.parentTask.id}`} className="rounded-xl bg-[var(--app-background)] p-3 text-xs text-[var(--app-primary)]">کار والد: {task.parentTask.title}</Link> : null}
+    </div>
+  </SurfaceCard>
 }
 
 function LifecycleCard({ task }: { task: Task }) {
@@ -601,6 +635,17 @@ function LifecycleCard({ task }: { task: Task }) {
       </div>
     </SurfaceCard>
   )
+}
+
+function AuditLinkCard({ taskId }: { taskId: string }) {
+  return <SurfaceCard className="min-w-0 overflow-hidden">
+    <SectionHeader icon={<History className="size-4" />} title="فعالیت و تاریخچه" />
+    <div className="p-4">
+      <Button variant="outline" className="w-full rounded-xl" render={<Link to={`/admin/audit-logs?entityType=task&entityId=${taskId}`} />}>
+        <History className="size-4" />مشاهده رویدادهای ممیزی
+      </Button>
+    </div>
+  </SurfaceCard>
 }
 
 function SectionHeader({

@@ -11,7 +11,7 @@ import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { uiText } from "@/config/uiText"
 import type { Task } from "../types/task.types"
 export type TaskDialogAction =
-  "status" | "assign" | "complete" | "reschedule" | "delete"
+  "status" | "assign" | "subtask" | "complete" | "reschedule" | "delete"
 export function TaskActionsMenu({
   task,
   canUpdate,

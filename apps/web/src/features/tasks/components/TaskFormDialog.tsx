@@ -27,6 +27,8 @@ import {
   useTaskOpportunityOptions,
   useTaskPayments,
   useTaskPeopleOptions,
+  useTaskTeams,
+  useTaskEntityOptions,
   useUpdateTask,
 } from "../hooks/useTasks"
 import type {
@@ -34,6 +36,8 @@ import type {
   TaskOption,
   TaskPayload,
   TaskPriority,
+  TaskAssignmentScope,
+  TaskEntityType,
 } from "../types/task.types"
 import { TaskOptionSelect } from "./TaskOptionSelect"
 
@@ -47,6 +51,10 @@ const formSchema = z.object({
   document: z.custom<TaskOption>().optional(),
   payment: z.custom<TaskOption>().optional(),
   assignee: z.custom<TaskOption>().optional(),
+  assignmentScope: z.enum(["SELF", "TEAM", "ORGANIZATION"]),
+  team: z.custom<TaskOption>().optional(),
+  linkedEntityType: z.enum(["NONE", "MEETING", "ACTIVITY", "PRODUCT"]),
+  linkedEntity: z.custom<TaskOption>().optional(),
   dueAt: z.date().optional(),
   reminderAt: z.date().optional(),
 })
@@ -122,6 +130,10 @@ export function TaskFormDialog({
             secondary: task.assignedTo.email || undefined,
           }
         : undefined,
+      assignmentScope: task?.assignmentScope || "SELF",
+      team: task?.team ? { id: task.team.id, label: task.team.name, secondary: task.team.code } : undefined,
+      linkedEntityType: task?.meetingId ? "MEETING" : task?.activityId ? "ACTIVITY" : task?.productId ? "PRODUCT" : "NONE",
+      linkedEntity: task?.meeting ? { id: task.meeting.id, label: task.meeting.title } : task?.activity ? { id: task.activity.id, label: task.activity.type } : task?.product ? { id: task.product.id, label: task.product.name, secondary: task.product.code } : undefined,
       dueAt: task?.dueAt ? new Date(task.dueAt) : undefined,
       reminderAt: task?.reminderAt ? new Date(task.reminderAt) : undefined,
     }
@@ -146,6 +158,10 @@ export function TaskFormDialog({
     document,
     payment,
     assignee,
+    assignmentScope,
+    team,
+    linkedEntityType,
+    linkedEntity,
     dueAt,
     reminderAt,
   } = useWatch({ control }) as FormValues
@@ -167,6 +183,12 @@ export function TaskFormDialog({
     setValue("payment", value, { shouldDirty: true, shouldValidate: true })
   const setAssignee = (value: FormValues["assignee"]) =>
     setValue("assignee", value, { shouldDirty: true, shouldValidate: true })
+  const setAssignmentScope = (value: FormValues["assignmentScope"]) =>
+    setValue("assignmentScope", value, { shouldDirty: true, shouldValidate: true })
+  const setTeam = (value: FormValues["team"]) =>
+    setValue("team", value, { shouldDirty: true, shouldValidate: true })
+  const setLinkedEntityType = (value: FormValues["linkedEntityType"]) => setValue("linkedEntityType", value, { shouldDirty: true, shouldValidate: true })
+  const setLinkedEntity = (value: FormValues["linkedEntity"]) => setValue("linkedEntity", value, { shouldDirty: true, shouldValidate: true })
   const setDueAt = (value: FormValues["dueAt"]) =>
     setValue("dueAt", value, { shouldDirty: true, shouldValidate: true })
   const setReminderAt = (value: FormValues["reminderAt"]) =>
@@ -175,12 +197,16 @@ export function TaskFormDialog({
   const [opportunitySearch, setOpportunitySearch] = useState("")
   const [personSearch, setPersonSearch] = useState("")
   const [assigneeSearch, setAssigneeSearch] = useState("")
+  const [teamSearch, setTeamSearch] = useState("")
+  const [linkedEntitySearch, setLinkedEntitySearch] = useState("")
   if (previousOpen !== open) {
     setPreviousOpen(open)
     if (open) {
       setOpportunitySearch("")
       setPersonSearch("")
       setAssigneeSearch("")
+      setTeamSearch("")
+      setLinkedEntitySearch("")
     }
   }
   useEffect(() => {
@@ -192,6 +218,8 @@ export function TaskFormDialog({
   const debouncedOpportunity = useDebounced(opportunitySearch)
   const debouncedPerson = useDebounced(personSearch)
   const debouncedAssignee = useDebounced(assigneeSearch)
+  const debouncedTeam = useDebounced(teamSearch)
+  const debouncedLinkedEntity = useDebounced(linkedEntitySearch)
 
   const opportunities = useTaskOpportunityOptions(
     companyId,
@@ -199,7 +227,9 @@ export function TaskFormDialog({
     open
   )
   const people = useTaskPeopleOptions(companyId, debouncedPerson, open)
-  const assignees = useTaskAssignees(debouncedAssignee, open)
+  const assignees = useTaskAssignees(debouncedAssignee, open && assignmentScope !== "SELF", assignmentScope === "TEAM" ? team?.id || "" : "")
+  const teams = useTaskTeams(debouncedTeam, open && assignmentScope === "TEAM")
+  const linkedEntities = useTaskEntityOptions(linkedEntityType === "NONE" ? "MEETING" : linkedEntityType as TaskEntityType, debouncedLinkedEntity, open && linkedEntityType !== "NONE")
   const documents = useTaskDocuments(opportunity?.id || "", open)
   const payments = useTaskPayments(opportunity?.id || "", open)
 
@@ -233,10 +263,15 @@ export function TaskFormDialog({
         .map((item) => ({
           id: item.id,
           label: item.fullName || item.email || item.id,
-          secondary: item.email || undefined,
+          secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
         })) || [],
     [assignees.data]
   )
+  const teamOptions = useMemo(
+    () => teams.data?.pages.flatMap((page) => page.data) || [],
+    [teams.data]
+  )
+  const linkedEntityOptions = useMemo(() => linkedEntities.data?.pages.flatMap((page) => page.data) || [], [linkedEntities.data])
   const documentOptions = useMemo(
     () =>
       documents.data?.data.map((item) => ({
@@ -273,6 +308,7 @@ export function TaskFormDialog({
     if (person && !companyId) return text.validation.companyForPerson
     if ((document || payment) && !opportunity)
       return text.validation.opportunityForCommercialContext
+    if (assignmentScope === "TEAM" && !team) return "برای دامنه تیم، انتخاب تیم الزامی است."
     return ""
   }, [
     companyId,
@@ -284,6 +320,8 @@ export function TaskFormDialog({
     reminderAt,
     text.validation,
     title,
+    assignmentScope,
+    team,
   ])
 
   function changeCompany(next?: string) {
@@ -317,6 +355,11 @@ export function TaskFormDialog({
       commercialDocumentId: document?.id,
       paymentId: payment?.id,
       assignedToId: assignee?.id,
+      assignmentScope,
+      teamId: assignmentScope === "TEAM" ? team?.id : undefined,
+      meetingId: linkedEntityType === "MEETING" ? linkedEntity?.id || null : null,
+      activityId: linkedEntityType === "ACTIVITY" ? linkedEntity?.id || null : null,
+      productId: linkedEntityType === "PRODUCT" ? linkedEntity?.id || null : null,
     }
 
     try {
@@ -345,6 +388,10 @@ export function TaskFormDialog({
           "document",
           "payment",
           "assignee",
+          "assignmentScope",
+          "team",
+          "linkedEntityType",
+          "linkedEntity",
           "dueAt",
           "reminderAt",
         ],
@@ -552,6 +599,12 @@ export function TaskFormDialog({
                     loading={payments.isLoading}
                   />
                 </Field>
+                <Field label="نوع ارتباط تکمیلی">
+                  <select value={linkedEntityType} onChange={(event) => { setLinkedEntityType(event.target.value as FormValues["linkedEntityType"]); setLinkedEntity(undefined) }} className={selectClass}>
+                    <option value="NONE">بدون ارتباط تکمیلی</option><option value="MEETING">جلسه</option><option value="ACTIVITY">فعالیت</option><option value="PRODUCT">محصول</option>
+                  </select>
+                </Field>
+                {linkedEntityType !== "NONE" ? <Field label="موجودیت مرتبط"><TaskOptionSelect value={linkedEntity?.id} selectedOption={linkedEntity} options={linkedEntityOptions} onChange={setLinkedEntity} search={linkedEntitySearch} onSearchChange={setLinkedEntitySearch} placeholder="انتخاب موجودیت مرتبط" loading={linkedEntities.isLoading} hasMore={linkedEntities.hasNextPage} loadingMore={linkedEntities.isFetchingNextPage} onLoadMore={() => void linkedEntities.fetchNextPage()} /></Field> : null}
               </div>
             </FormSection>
 
@@ -559,24 +612,29 @@ export function TaskFormDialog({
               title={text.sections.ownership}
               description={text.sections.ownershipDescription}
             >
-              <Field
-                label={text.fields.assignee}
-                error={errors.assignee?.message}
-              >
-                <TaskOptionSelect
-                  value={assignee?.id}
-                  selectedOption={assignee}
-                  options={assigneeOptions}
-                  onChange={setAssignee}
-                  search={assigneeSearch}
-                  onSearchChange={setAssigneeSearch}
-                  placeholder={text.placeholders.systemAssignee}
-                  loading={assignees.isLoading}
-                  hasMore={assignees.hasNextPage}
-                  loadingMore={assignees.isFetchingNextPage}
-                  onLoadMore={() => void assignees.fetchNextPage()}
-                />
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="دامنه واگذاری" error={errors.assignmentScope?.message}>
+                  <select value={assignmentScope} onChange={(event) => {
+                    const next = event.target.value as TaskAssignmentScope
+                    setAssignmentScope(next)
+                    setTeam(undefined)
+                    setAssignee(undefined)
+                  }} className={selectClass}>
+                    <option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option>
+                  </select>
+                </Field>
+
+                {assignmentScope === "TEAM" ? (
+                  <Field label="تیم" error={errors.team?.message}>
+                    <TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} />
+                  </Field>
+                ) : null}
+                {assignmentScope !== "SELF" ? (
+                  <Field label={text.fields.assignee} error={errors.assignee?.message}>
+                    <TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder={text.placeholders.systemAssignee} loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={assignmentScope === "TEAM" && !team} />
+                  </Field>
+                ) : <p className="self-end rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs text-[var(--app-primary)]">این کار به خود شما واگذار می‌شود.</p>}
+              </div>
             </FormSection>
 
             <FormSection
