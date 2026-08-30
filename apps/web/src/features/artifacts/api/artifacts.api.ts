@@ -4,7 +4,24 @@ import type { Artifact, ArtifactEntityType, ArtifactPage, ArtifactProvider, Arti
 
 export async function getArtifacts(params: { entityType: ArtifactEntityType; entityId: string; page: number; limit: number; type?: ArtifactType; search?: string }) {
   const response = await api.get("/artifacts", { params })
-  return unwrapApiResponse<ArtifactPage>(response.data)
+
+  const raw = response.data as {
+    success?: boolean
+    data?: Artifact[]
+    meta?: ArtifactPage["meta"]
+  }
+
+  return {
+    data: Array.isArray(raw.data) ? raw.data : [],
+    meta: raw.meta ?? {
+      total: 0,
+      page: params.page,
+      limit: params.limit,
+      totalPages: 0,
+      hasNext: false,
+      hasPrevious: false,
+    },
+  }
 }
 
 export async function uploadArtifact(input: { entityType: ArtifactEntityType; entityId: string; file: File; name?: string; description?: string; relationType: ArtifactRelationType; onProgress?: (percent: number) => void }) {
