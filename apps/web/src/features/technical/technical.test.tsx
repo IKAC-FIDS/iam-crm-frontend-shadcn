@@ -227,6 +227,26 @@ describe("Technical Center behavior", () => {
     expect(screen.queryByRole("button", { name: /منتشرشده/ })).toBeNull()
   })
 
+  it("requires and forwards a reason for consequential lifecycle changes", async () => {
+    const transition = vi.fn().mockResolvedValue(undefined)
+    render(
+      <LifecycleActions
+        targets={["CANCELLED"]}
+        presentation={{ label: { CANCELLED: "لغوشده" } }}
+        pending={false}
+        canTarget={() => true}
+        requiresReason={() => true}
+        onTransition={transition}
+      />
+    )
+    await userEvent.click(screen.getByRole("button", { name: /لغوشده/ }))
+    const confirm = screen.getByRole("button", { name: "تأیید" })
+    expect(confirm).toBeDisabled()
+    await userEvent.type(screen.getByLabelText("دلیل تغییر وضعیت"), "تغییر تصمیم مشتری")
+    await userEvent.click(confirm)
+    expect(transition).toHaveBeenCalledWith("CANCELLED", "تغییر تصمیم مشتری")
+  })
+
   it("validates domain-required release fields before save", async () => {
     const save = vi.fn()
     render(

@@ -24,6 +24,8 @@ export function ConfirmDialog({
   isPending = false,
   onConfirm,
   icon,
+  children,
+  confirmDisabled = false,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -35,6 +37,8 @@ export function ConfirmDialog({
   isPending?: boolean
   onConfirm: () => void | Promise<void>
   icon?: ReactNode
+  children?: ReactNode
+  confirmDisabled?: boolean
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +70,8 @@ export function ConfirmDialog({
           ) : null}
         </DialogHeader>
 
+        {children ? <div className="px-5 pb-5">{children}</div> : null}
+
         <DialogFooter className="m-0 rounded-b-[var(--app-radius-feature)] border-t border-[var(--app-divider)] bg-[var(--app-background)]/55 p-4 sm:flex-row sm:justify-end">
           <Button
             type="button"
@@ -85,7 +91,7 @@ export function ConfirmDialog({
                 ? "bg-[var(--destructive)] text-white hover:bg-[var(--destructive)]/90"
                 : "bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]",
             ].join(" ")}
-            disabled={isPending}
+            disabled={isPending || confirmDisabled}
             onClick={() => void onConfirm()}
           >
             {isPending ? uiText.common.processing : confirmLabel}

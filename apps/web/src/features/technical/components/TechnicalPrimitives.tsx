@@ -77,12 +77,14 @@ export function LifecycleActions<T extends string>({
   onTransition,
   pending,
   canTarget,
+  requiresReason = () => false,
 }: {
   targets: T[]
   presentation: { label: Record<T, string> }
   onTransition: (target: T, reason?: string) => Promise<unknown>
   pending: boolean
   canTarget: (target: T) => boolean
+  requiresReason?: (target: T) => boolean
 }) {
   const [target, setTarget] = useState<T>(),
     [reason, setReason] = useState("")
@@ -116,10 +118,26 @@ export function LifecycleActions<T extends string>({
         title={target ? `تغییر وضعیت به «${presentation.label[target]}»` : ""}
         description="این تغییر مطابق سیاست چرخه عمر Backend ثبت می‌شود."
         isPending={pending}
+        confirmDisabled={Boolean(target && requiresReason(target) && !reason.trim())}
         onConfirm={async () => {
           if (target) await onTransition(target, reason)
         }}
-      />
+      >
+        {target && requiresReason(target) ? (
+          <label className="grid gap-2 text-sm font-bold text-[var(--app-heading)]">
+            دلیل تغییر وضعیت
+            <textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              rows={3}
+              required
+              autoFocus
+              className="min-h-24 w-full resize-y rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 py-2 font-normal text-[var(--app-text)] outline-none focus:border-[var(--app-primary)] focus:ring-2 focus:ring-[var(--app-primary-soft)]"
+              placeholder="دلیل را ثبت کنید"
+            />
+          </label>
+        ) : null}
+      </ConfirmDialog>
     </>
   )
 }

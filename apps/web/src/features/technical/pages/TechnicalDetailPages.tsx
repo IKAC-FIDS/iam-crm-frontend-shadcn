@@ -528,6 +528,13 @@ export function TechnicalTenderDetailPage() {
                 ? close
                 : manage
           }
+          requiresReason={(target: TenderStatus) =>
+            target === "LOST" ||
+            target === "CANCELLED" ||
+            (item.status === "TECHNICAL_REVIEW" && target === "PREPARING") ||
+            (item.status === "COMMERCIAL_REVIEW" && target === "TECHNICAL_REVIEW") ||
+            (item.status === "READY_FOR_SUBMISSION" && target === "COMMERCIAL_REVIEW")
+          }
           onTransition={async (status, reason) => {
             await transition.mutateAsync({
               id: item.id,
@@ -680,11 +687,32 @@ function Requirements({
     m = useRequirementMutations(tender.id),
     [editing, setEditing] = useState<TenderRequirement | null | undefined>(),
     [statusSearch, setStatusSearch] = useState(""),
+    [ownerSearch, setOwnerSearch] = useState(""),
+    [filterStatus, setFilterStatus] = useState(""),
+    [filterStatusSearch, setFilterStatusSearch] = useState(""),
+    [filterOwner, setFilterOwner] = useState(""),
+    [filterOwnerSearch, setFilterOwnerSearch] = useState(""),
+    [filterMandatory, setFilterMandatory] = useState(""),
+    [filterMandatorySearch, setFilterMandatorySearch] = useState(""),
+    [filterOverdue, setFilterOverdue] = useState(false),
+    [filterCategory, setFilterCategory] = useState(""),
     [form, setForm] = useState<RequirementPayload>({
       title: "",
       mandatory: false,
       status: "OPEN",
     })
+  const debouncedOwnerSearch = useDebouncedValue(ownerSearch, 250)
+  const debouncedFilterOwnerSearch = useDebouncedValue(filterOwnerSearch, 250)
+  const owners = useQuery({ queryKey: ["technical-requirement-owners", debouncedOwnerSearch], queryFn: () => technicalLookups("users", debouncedOwnerSearch), enabled: editing !== undefined })
+  const filterOwners = useQuery({ queryKey: ["technical-requirement-filter-owners", debouncedFilterOwnerSearch], queryFn: () => technicalLookups("users", debouncedFilterOwnerSearch) })
+  const [now] = useState(() => Date.now())
+  const visibleRequirements = (q.data ?? []).filter((r) =>
+    (!filterStatus || r.status === filterStatus) &&
+    (!filterOwner || r.ownerId === filterOwner) &&
+    (!filterMandatory || r.mandatory === (filterMandatory === "true")) &&
+    (!filterOverdue || (r.status !== "VERIFIED" && Boolean(r.dueDate) && new Date(r.dueDate!).getTime() < now)) &&
+    (!filterCategory.trim() || (r.category ?? "").toLocaleLowerCase("fa").includes(filterCategory.trim().toLocaleLowerCase("fa"))),
+  )
   function open(item?: TenderRequirement) {
     setEditing(item || null)
     setForm(
@@ -718,15 +746,24 @@ function Requirements({
       <QueryContent query={q} errorTitle="دریافت الزامات ناموفق بود">
         {q.data?.length ? (
           <div className="grid gap-3">
-            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
               <Meta label="کل" value={q.data.length.toLocaleString("fa-IR")} />
               <Meta label="الزامی" value={q.data.filter((r) => r.mandatory).length.toLocaleString("fa-IR")} />
               <Meta label="تأییدشده" value={q.data.filter((r) => r.status === "VERIFIED").length.toLocaleString("fa-IR")} />
               <Meta label="در جریان" value={q.data.filter((r) => r.status === "IN_PROGRESS").length.toLocaleString("fa-IR")} />
               <Meta label="مسدود" value={q.data.filter((r) => r.status === "BLOCKED").length.toLocaleString("fa-IR")} />
               <Meta label="بدون مسئول" value={q.data.filter((r) => !r.ownerId).length.toLocaleString("fa-IR")} />
+              <Meta label="باز" value={q.data.filter((r) => r.status === "OPEN").length.toLocaleString("fa-IR")} />
+              <Meta label="سررسید گذشته" value={q.data.filter((r) => r.status !== "VERIFIED" && r.dueDate && new Date(r.dueDate).getTime() < now).length.toLocaleString("fa-IR")} />
             </dl>
-            {q.data.map((r) => (
+            <div className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2 xl:grid-cols-5">
+              <SearchableOptionSelect value={filterStatus} onChange={(value) => setFilterStatus(value || "")} options={Object.entries(requirementPresentation.label).filter(([, label]) => label.includes(filterStatusSearch.trim())).map(([id, label]) => ({ id, label }))} search={filterStatusSearch} onSearchChange={setFilterStatusSearch} placeholder="همه وضعیت‌ها" ariaLabel="فیلتر وضعیت الزام" />
+              <SearchableOptionSelect value={filterOwner} onChange={(value) => setFilterOwner(value || "")} options={filterOwners.data ?? []} search={filterOwnerSearch} onSearchChange={setFilterOwnerSearch} loading={filterOwners.isLoading || filterOwners.isFetching} placeholder="همه مسئولان" ariaLabel="فیلتر مسئول الزام" />
+              <SearchableOptionSelect value={filterMandatory} onChange={(value) => setFilterMandatory(value || "")} options={[{ id: "true", label: "فقط الزامی" }, { id: "false", label: "فقط اختیاری" }].filter((option) => option.label.includes(filterMandatorySearch.trim()))} search={filterMandatorySearch} onSearchChange={setFilterMandatorySearch} placeholder="الزامی و اختیاری" ariaLabel="فیلتر الزامی بودن" />
+              <Input value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} placeholder="فیلتر دسته‌بندی" aria-label="فیلتر دسته‌بندی الزام" />
+              <label className="flex items-center gap-2 rounded-xl border px-3"><input type="checkbox" checked={filterOverdue} onChange={(e) => setFilterOverdue(e.target.checked)} />فقط سررسید گذشته</label>
+            </div>
+            {visibleRequirements.map((r) => (
               <article
                 key={r.id}
                 className="grid gap-3 rounded-xl border p-3 lg:grid-cols-[1fr_auto]"
@@ -748,7 +785,7 @@ function Requirements({
                     {r.description || "بدون توضیح"}
                   </p>
                   <div className="mt-2 text-xs">
-                    مهلت: {faDate(r.dueDate)} · دسته: {r.category || "—"}
+                    مهلت: {faDate(r.dueDate)} · دسته: {r.category || "—"} · مسئول: {relationName(r.owner)}
                   </div>
                   {r.blockedReason ? <p className="mt-2 rounded-lg bg-destructive/10 p-2 text-sm text-destructive">دلیل مسدودی: {r.blockedReason}</p> : null}
                 </div>
@@ -843,6 +880,10 @@ function Requirements({
             الزامی است
           </label>
           <label>
+            مسئول
+            <SearchableOptionSelect value={form.ownerId || ""} onChange={(value) => setForm({ ...form, ownerId: value || "" })} options={owners.data ?? []} search={ownerSearch} onSearchChange={setOwnerSearch} loading={owners.isLoading || owners.isFetching} placeholder="انتخاب مسئول" ariaLabel="مسئول الزام" />
+          </label>
+          <label>
             مهلت
             <PersianDatePicker
               value={
@@ -916,7 +957,11 @@ function Deliverables({
               className="flex items-center justify-between rounded-xl border p-3"
             >
               <div>
-                <b>{d.label || relationName(d.document)}</b>
+                <div className="flex flex-wrap items-center gap-2">
+                  <b>{d.label || relationName(d.document)}</b>
+                  <span className="rounded-full border px-2 py-0.5 text-xs font-bold">{d.required ? "الزامی" : "اختیاری"}</span>
+                  {(() => { const complete = ["APPROVED", "ACTIVE"].includes(d.document?.status || "") && Boolean(d.document?.versions?.some((version) => version.attachmentId)); return <span className={`rounded-full border px-2 py-0.5 text-xs font-bold ${complete ? "text-emerald-700" : "text-amber-700"}`}>{complete ? "کامل" : "ناقص"}</span> })()}
+                </div>
                 <div className="text-xs text-muted-foreground">
                   سند فنی: {relationName(d.document)}
                 </div>

@@ -16,6 +16,7 @@ export type EntityRef = {
   brandName?: string
   fullName?: string
   email?: string
+  versions?: DocumentVersion[]
   status?: string
 }
 export type TechnicalListParams = {
@@ -236,6 +237,7 @@ export type TenderRequirement = {
   mandatory: boolean
   status: RequirementStatus
   ownerId?: string | null
+  owner?: EntityRef | null
   dueDate?: string | null
   response?: string | null
   blockedReason?: string | null

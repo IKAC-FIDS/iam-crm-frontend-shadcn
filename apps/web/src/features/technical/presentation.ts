@@ -219,7 +219,9 @@ export function relationName(
     name?: string
     legalName?: string
     brandName?: string
+    fullName?: string
+    email?: string
   } | null
 ) {
-  return ref?.title || ref?.name || ref?.brandName || ref?.legalName || "—"
+  return ref?.title || ref?.name || ref?.fullName || ref?.brandName || ref?.legalName || ref?.email || "—"
 }
