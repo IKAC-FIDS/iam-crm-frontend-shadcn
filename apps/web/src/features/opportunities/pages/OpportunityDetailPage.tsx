@@ -20,6 +20,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -401,10 +402,10 @@ export function OpportunityDetailPage() {
         />
       ) : null}
       {tab === "files" ? (
-        <OpportunityFilesHistorySection
-          opportunity={opportunity}
-          permissions={permissions}
-        />
+        <div className="grid gap-4">
+          <ArtifactPanel entityType="OPPORTUNITY" entityId={opportunity.id} readOnly={Boolean(opportunity.archivedAt)} />
+          <OpportunityFilesHistorySection opportunity={opportunity} permissions={permissions} hideAttachments />
+        </div>
       ) : null}
 
       {editOpen ? (

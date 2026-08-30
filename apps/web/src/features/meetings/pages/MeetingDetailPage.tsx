@@ -25,6 +25,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import {
   formatJalaliDate,
   formatJalaliDateTime,
@@ -32,7 +33,6 @@ import {
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
-import { MeetingAttachmentsSection } from "../components/MeetingAttachmentsSection"
 import { MeetingFormDialog } from "../components/MeetingFormDialog"
 import { MeetingStatusActionDialog } from "../components/MeetingStatusActionDialog"
 import { useMeeting } from "../hooks/useMeetings"
@@ -187,10 +187,7 @@ export function MeetingDetailPage() {
             empty={detailText.empty.description}
           />
           <OutcomeCard meeting={meeting} />
-          <MeetingAttachmentsSection
-            meeting={meeting}
-            permissions={permissions}
-          />
+          <ArtifactPanel entityType="MEETING" entityId={meeting.id} title="مستندات جلسه" readOnly={meeting.status !== "COMPLETED"} />
         </main>
 
         <aside className="grid min-w-0 gap-4 xl:sticky xl:top-4">

@@ -36,12 +36,14 @@ import { AttachmentUploadDialog } from "./OpportunityResourceDialogs"
 export function OpportunityFilesHistorySection({
   opportunity,
   permissions,
+  hideAttachments = false,
 }: {
   opportunity: Opportunity
   permissions: string[]
+  hideAttachments?: boolean
 }) {
   const text = uiText.opportunities.detail
-  const canView = permissions.includes("attachment:view")
+  const canView = !hideAttachments && permissions.includes("attachment:view")
   const canManage =
     permissions.includes("attachment:manage") && !opportunity.archivedAt
   const [page, setPage] = useState(1)
@@ -88,7 +90,7 @@ export function OpportunityFilesHistorySection({
   }
   return (
     <div className="grid w-full max-w-full min-w-0 gap-4">
-      <Section
+      {!hideAttachments ? <Section
         title={text.sections.attachments}
         count={attachments.data?.meta.total}
         action={
@@ -184,7 +186,7 @@ export function OpportunityFilesHistorySection({
             </Button>
           </div>
         ) : null}
-      </Section>
+      </Section> : null}
       <div className="grid min-w-0 items-stretch gap-4 md:grid-cols-2">
         <Section title={text.sections.stageHistory} balanced>
           {histories.length ? (
@@ -259,13 +261,13 @@ export function OpportunityFilesHistorySection({
           )}
         </Section>
       </div>
-      <AttachmentUploadDialog
+      {!hideAttachments ? <AttachmentUploadDialog
         open={uploadOpen}
         onOpenChange={setUploadOpen}
         pending={upload.isPending}
         onSubmit={uploadFile}
-      />
-      <ConfirmDialog
+      /> : null}
+      {!hideAttachments ? <ConfirmDialog
         open={Boolean(deleteTarget)}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null)
@@ -275,7 +277,7 @@ export function OpportunityFilesHistorySection({
         confirmLabel={text.actions.delete}
         isPending={remove.isPending}
         onConfirm={deleteFile}
-      />
+      /> : null}
     </div>
   )
 }

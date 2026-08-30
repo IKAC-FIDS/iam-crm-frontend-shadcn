@@ -28,6 +28,7 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -893,6 +894,8 @@ export function CompanyDetailPage() {
           </Company360ActionSection>
         </div>
       </div>
+
+      <ArtifactPanel entityType="COMPANY" entityId={companyId} title="مستندات و مراجع شرکت" />
 
       {selectedPersonId ? (
         <Person360WorkspaceDialog
