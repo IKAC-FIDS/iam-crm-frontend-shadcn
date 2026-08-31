@@ -23,6 +23,8 @@ import {
   taskPriorityTone,
   taskStatusLabel,
   taskStatusTone,
+  taskReviewStatusLabel,
+  taskReviewStatusTone,
 } from "../utils/taskFormatters"
 import { TaskActionsMenu, type TaskDialogAction } from "./TaskActionsMenu"
 
@@ -257,6 +259,7 @@ function TaskFocusRow({
             <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>
               {taskPriorityLabel(task.priority)}
             </StatusBadge>
+            <StatusBadge tone={taskReviewStatusTone(task.reviewStatus)}>{taskReviewStatusLabel(task.reviewStatus)}</StatusBadge>
             {overdue ? (
               <span className="rounded-full bg-[var(--destructive-soft)] px-2 py-1 text-xs font-bold text-[var(--destructive)]">
                 {uiText.tasks.labels.overdue}

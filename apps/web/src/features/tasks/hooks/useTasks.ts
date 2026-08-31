@@ -27,6 +27,9 @@ import {
   getSubtasks,
   getTaskTeamOptions,
   getTaskEntityOptions,
+  getTaskReviews,
+  submitTaskReview,
+  decideTaskReview,
 } from "../api/tasks.api"
 import type { Task, TaskEntityType, TaskListQuery, TaskPayload, TaskReassignPayload, TaskSubtaskPayload } from "../types/task.types"
 
@@ -41,6 +44,7 @@ export const taskKeys = {
   teams: (search: string) => [...taskKeys.all, "teams", search] as const,
   entities: (type: TaskEntityType, search: string) => [...taskKeys.all, "entities", type, search] as const,
   subtasks: (id: string) => [...taskKeys.detail(id), "subtasks"] as const,
+  reviews: (id: string) => [...taskKeys.detail(id), "reviews"] as const,
   opportunities: (companyId: string, search: string) =>
     [...taskKeys.all, "opportunities", companyId, search] as const,
   people: (companyId: string, search: string) =>
@@ -235,6 +239,22 @@ export function useTaskEntityOptions(type: TaskEntityType, search: string, enabl
 
 export function useSubtasks(id: string, enabled = true) {
   return useQuery({ queryKey: [...taskKeys.subtasks(id), useQueryScope()], queryFn: () => getSubtasks(id), enabled: enabled && Boolean(id) })
+}
+
+export function useTaskReviews(id: string, enabled = true) {
+  return useQuery({ queryKey: [...taskKeys.reviews(id), useQueryScope()], queryFn: () => getTaskReviews(id), enabled: enabled && Boolean(id) })
+}
+
+export function useSubmitTaskReview() {
+  const invalidate = useInvalidateTaskDomain()
+  const client = useQueryClient()
+  return useMutation({ mutationFn: ({ id, payload }: { id: string; payload: { reviewerId?: string; note?: string; artifactIds?: string[] } }) => submitTaskReview(id, payload), onSuccess: async (task) => { await invalidate(task); await client.invalidateQueries({ queryKey: taskKeys.reviews(task.id) }) } })
+}
+
+export function useDecideTaskReview() {
+  const invalidate = useInvalidateTaskDomain()
+  const client = useQueryClient()
+  return useMutation({ mutationFn: ({ id, decision, comment }: { id: string; decision: "approve" | "request-changes"; comment?: string }) => decideTaskReview(id, decision, comment), onSuccess: async (task) => { await invalidate(task); await client.invalidateQueries({ queryKey: taskKeys.reviews(task.id) }) } })
 }
 
 export function useReassignTask() {

@@ -60,6 +60,7 @@ type QuickFilter =
   | "team"
   | "organization"
   | "created"
+  | "awaitingReview"
 
 export function TasksPage() {
   const text = uiText.tasks
@@ -86,6 +87,8 @@ export function TasksPage() {
   const teamId = params.get("teamId") || ""
   const dueState = (params.get("dueState") || "") as TaskListQuery["dueState"] | ""
   const linkedEntityType = (params.get("linkedEntityType") || "") as TaskEntityType | ""
+  const reviewStatus = (params.get("reviewStatus") || "") as TaskListQuery["reviewStatus"] | ""
+  const reviewerId = params.get("reviewerId") || ""
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
@@ -93,6 +96,7 @@ export function TasksPage() {
   const [action, setAction] = useState<TaskDialogAction>()
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [assigneeSearch, setAssigneeSearch] = useState("")
+  const [reviewerSearch, setReviewerSearch] = useState("")
   const [opportunitySearch, setOpportunitySearch] = useState("")
   const [teamSearch, setTeamSearch] = useState("")
 
@@ -116,11 +120,15 @@ export function TasksPage() {
     teamId: teamId || undefined,
     dueState: dueState || undefined,
     linkedEntityType: linkedEntityType || undefined,
+    reviewStatus: reviewStatus || undefined,
+    reviewerId: reviewerId || undefined,
+    awaitingMyReview: quickQuery.awaitingMyReview,
   }
 
   const tasks = useTasks(query, canView && search === debouncedSearch)
 
   const assignees = useTaskAssignees(assigneeSearch, advancedOpen && canView)
+  const reviewers = useTaskAssignees(reviewerSearch, advancedOpen && canView)
   const teams = useTaskTeams(teamSearch, advancedOpen && canView)
   const teamOptions = useMemo(
     () => teams.data?.pages.flatMap((part) => part.data) || [],
@@ -136,6 +144,17 @@ export function TasksPage() {
           secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
         })) || [],
     [assignees.data]
+  )
+  const reviewerOptions = useMemo(
+    () =>
+      reviewers.data?.pages
+        .flatMap((part) => part.data)
+        .map((item) => ({
+          id: item.id,
+          label: item.fullName || item.email || item.id,
+          secondary: item.email || undefined,
+        })) || [],
+    [reviewers.data]
   )
 
   const opportunities = useTaskOpportunityOptions(
@@ -165,6 +184,8 @@ export function TasksPage() {
     teamId,
     dueState,
     linkedEntityType,
+    reviewStatus,
+    reviewerId,
   ].filter(Boolean).length
 
   function updateParam(key: string, value?: string) {
@@ -194,11 +215,14 @@ export function TasksPage() {
           "teamId",
           "dueState",
           "linkedEntityType",
+          "reviewStatus",
+          "reviewerId",
           "quick",
         ].map((key) => [key, undefined])
       )
     )
     setAssigneeSearch("")
+    setReviewerSearch("")
     setOpportunitySearch("")
     setTeamSearch("")
   }
@@ -383,6 +407,23 @@ export function TasksPage() {
                     <option value="MEETING">جلسه</option><option value="ACTIVITY">فعالیت</option><option value="PRODUCT">محصول</option>
                   </select>
 
+                  <select aria-label="وضعیت بازبینی" value={reviewStatus} onChange={(event) => updateParam("reviewStatus", event.target.value || undefined)} className={selectClass}>
+                    <option value="">همه وضعیت‌های بازبینی</option><option value="NOT_REQUIRED">بدون بازبینی</option><option value="DRAFT">پیش‌نویس</option><option value="PENDING_REVIEW">در انتظار بازبینی</option><option value="CHANGES_REQUESTED">نیازمند اصلاح</option><option value="APPROVED">تأییدشده</option>
+                  </select>
+
+                  <TaskOptionSelect
+                    value={reviewerId || undefined}
+                    options={reviewerOptions}
+                    onChange={(option) => updateParam("reviewerId", option?.id)}
+                    search={reviewerSearch}
+                    onSearchChange={setReviewerSearch}
+                    placeholder="بازبین"
+                    loading={reviewers.isLoading}
+                    hasMore={reviewers.hasNextPage}
+                    loadingMore={reviewers.isFetchingNextPage}
+                    onLoadMore={() => void reviewers.fetchNextPage()}
+                  />
+
                   <TaskOptionSelect
                     value={assignedToId || undefined}
                     options={assigneeOptions}
@@ -427,7 +468,7 @@ export function TasksPage() {
 
             <div className="col-span-full mt-3 flex flex-col gap-3 border-t border-[var(--app-divider)] pt-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex min-w-0 flex-wrap gap-1.5">
-                {quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).map((item) => (
+                {quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).filter((item) => item.value !== "awaitingReview" || permissions.includes("task:review")).map((item) => (
                   <button
                     key={item.value}
                     type="button"
@@ -442,7 +483,7 @@ export function TasksPage() {
                     {item.value === "overdue" ? (
                       <AlertTriangle className="size-3.5" />
                     ) : null}
-                    {text.quick[item.value]}
+                    {item.value === "awaitingReview" ? "در انتظار بازبینی من" : text.quick[item.value]}
                   </button>
                 ))}
               </div>
@@ -544,6 +585,7 @@ function quickToQuery(quick: QuickFilter, userId?: string) {
     assignedToId?: string
     createdById?: string
     view?: TaskListQuery["view"]
+    awaitingMyReview?: boolean
   } = {}
 
   if (quick === "overdue") result.overdueOnly = true
@@ -555,6 +597,7 @@ function quickToQuery(quick: QuickFilter, userId?: string) {
   if (quick === "created" && userId) result.createdById = userId
   if (quick === "team") result.view = "team"
   if (quick === "organization") result.view = "organization"
+  if (quick === "awaitingReview") result.awaitingMyReview = true
 
   return result
 }
@@ -570,6 +613,7 @@ const quickFilters: { value: QuickFilter }[] = [
   { value: "team" },
   { value: "organization" },
   { value: "created" },
+  { value: "awaitingReview" },
 ]
 
 const selectClass =

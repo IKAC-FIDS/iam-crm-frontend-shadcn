@@ -19,6 +19,7 @@ import type {
   TaskReassignPayload,
   TaskSubtaskPayload,
   TaskEntityType,
+  TaskReviewRound,
 } from "../types/task.types"
 
 function clean<T extends object>(value: T) {
@@ -157,6 +158,21 @@ export async function createSubtask(id: string, payload: TaskSubtaskPayload) {
 export async function getSubtasks(id: string) {
   const response = await api.get(`/tasks/${id}/subtasks`)
   return unwrapApiResponse<Task[]>(response.data)
+}
+
+export async function getTaskReviews(id: string) {
+  const response = await api.get(`/tasks/${id}/reviews`)
+  return unwrapApiResponse<TaskReviewRound[]>(response.data)
+}
+
+export async function submitTaskReview(id: string, payload: { reviewerId?: string; note?: string; artifactIds?: string[] }) {
+  const response = await api.post(`/tasks/${id}/submit-review`, clean(payload))
+  return unwrapApiResponse<Task>(response.data)
+}
+
+export async function decideTaskReview(id: string, decision: "approve" | "request-changes", comment?: string) {
+  const response = await api.post(`/tasks/${id}/review/${decision}`, { comment: comment?.trim() || undefined })
+  return unwrapApiResponse<Task>(response.data)
 }
 
 function optionPage(body: unknown, page: number) {

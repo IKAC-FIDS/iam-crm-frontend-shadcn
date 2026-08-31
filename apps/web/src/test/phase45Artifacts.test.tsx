@@ -14,7 +14,7 @@ function wrapper({ children }: { children: ReactNode }) { return <QueryClientPro
 beforeEach(() => {
   vi.clearAllMocks()
   useAuthStore.setState({ user: { ...user, permissions: ["artifact:view", "artifact:create", "artifact:delete", "artifact:link"] }, status: "authenticated" })
-  vi.mocked(api.get).mockResolvedValue(response({ success: true, data: { data: [artifact], meta: { total: 1, page: 1, limit: 10, totalPages: 1, hasNext: false, hasPrevious: false } } }))
+  vi.mocked(api.get).mockResolvedValue(response({ data: [artifact], meta: { total: 1, page: 1, limit: 10, totalPages: 1, hasNext: false, hasPrevious: false } }))
   vi.mocked(api.post).mockResolvedValue(response({ data: artifact }))
   vi.mocked(api.delete).mockResolvedValue(response({ deleted: true }))
 })

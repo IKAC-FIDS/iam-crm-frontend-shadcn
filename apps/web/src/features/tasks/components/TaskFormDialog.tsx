@@ -57,6 +57,8 @@ const formSchema = z.object({
   team: z.custom<TaskOption>().optional(),
   linkedEntityType: z.enum(["NONE", "MEETING", "ACTIVITY", "PRODUCT"]),
   linkedEntity: z.custom<TaskOption>().optional(),
+  requiresReview: z.boolean(),
+  reviewer: z.custom<TaskOption>().optional(),
   dueAt: z.date().optional(),
   reminderAt: z.date().optional(),
 })
@@ -84,6 +86,7 @@ export function TaskFormDialog({
   const text = uiText.tasks
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
   const canAssignOthers = canAssignTaskTargets(permissions)
+  const canAssignReviewer = permissions.includes("task:assign-reviewer")
   const create = useCreateTask()
   const update = useUpdateTask()
   const pending = create.isPending || update.isPending
@@ -138,6 +141,8 @@ export function TaskFormDialog({
       team: task?.team ? { id: task.team.id, label: task.team.name, secondary: task.team.code } : undefined,
       linkedEntityType: task?.meetingId ? "MEETING" : task?.activityId ? "ACTIVITY" : task?.productId ? "PRODUCT" : "NONE",
       linkedEntity: task?.meeting ? { id: task.meeting.id, label: task.meeting.title } : task?.activity ? { id: task.activity.id, label: task.activity.type } : task?.product ? { id: task.product.id, label: task.product.name, secondary: task.product.code } : undefined,
+      requiresReview: task?.requiresReview ?? false,
+      reviewer: task?.reviewer ? { id: task.reviewer.id, label: task.reviewer.fullName || task.reviewer.email || task.reviewer.id } : undefined,
       dueAt: task?.dueAt ? new Date(task.dueAt) : undefined,
       reminderAt: task?.reminderAt ? new Date(task.reminderAt) : undefined,
     }
@@ -166,6 +171,8 @@ export function TaskFormDialog({
     team,
     linkedEntityType,
     linkedEntity,
+    requiresReview,
+    reviewer,
     dueAt,
     reminderAt,
   } = useWatch({ control }) as FormValues
@@ -193,6 +200,8 @@ export function TaskFormDialog({
     setValue("team", value, { shouldDirty: true, shouldValidate: true })
   const setLinkedEntityType = (value: FormValues["linkedEntityType"]) => setValue("linkedEntityType", value, { shouldDirty: true, shouldValidate: true })
   const setLinkedEntity = (value: FormValues["linkedEntity"]) => setValue("linkedEntity", value, { shouldDirty: true, shouldValidate: true })
+  const setRequiresReview = (value: boolean) => setValue("requiresReview", value, { shouldDirty: true, shouldValidate: true })
+  const setReviewer = (value: FormValues["reviewer"]) => setValue("reviewer", value, { shouldDirty: true, shouldValidate: true })
   const setDueAt = (value: FormValues["dueAt"]) =>
     setValue("dueAt", value, { shouldDirty: true, shouldValidate: true })
   const setReminderAt = (value: FormValues["reminderAt"]) =>
@@ -203,6 +212,7 @@ export function TaskFormDialog({
   const [assigneeSearch, setAssigneeSearch] = useState("")
   const [teamSearch, setTeamSearch] = useState("")
   const [linkedEntitySearch, setLinkedEntitySearch] = useState("")
+  const [reviewerSearch, setReviewerSearch] = useState("")
   if (previousOpen !== open) {
     setPreviousOpen(open)
     if (open) {
@@ -211,6 +221,7 @@ export function TaskFormDialog({
       setAssigneeSearch("")
       setTeamSearch("")
       setLinkedEntitySearch("")
+      setReviewerSearch("")
     }
   }
   useEffect(() => {
@@ -224,6 +235,7 @@ export function TaskFormDialog({
   const debouncedAssignee = useDebounced(assigneeSearch)
   const debouncedTeam = useDebounced(teamSearch)
   const debouncedLinkedEntity = useDebounced(linkedEntitySearch)
+  const debouncedReviewer = useDebounced(reviewerSearch)
 
   const opportunities = useTaskOpportunityOptions(
     companyId,
@@ -233,6 +245,7 @@ export function TaskFormDialog({
   const people = useTaskPeopleOptions(companyId, debouncedPerson, open)
   const assignmentControlsEnabled = open && !task && canAssignOthers
   const assignees = useTaskAssignees(debouncedAssignee, assignmentControlsEnabled && assignmentScope !== "SELF", assignmentScope === "TEAM" ? team?.id || "" : "")
+  const reviewers = useTaskAssignees(debouncedReviewer, open && canAssignReviewer)
   const teams = useTaskTeams(debouncedTeam, assignmentControlsEnabled && assignmentScope === "TEAM")
   const linkedEntities = useTaskEntityOptions(linkedEntityType === "NONE" ? "MEETING" : linkedEntityType as TaskEntityType, debouncedLinkedEntity, open && linkedEntityType !== "NONE")
   const documents = useTaskDocuments(opportunity?.id || "", open)
@@ -272,6 +285,7 @@ export function TaskFormDialog({
         })) || [],
     [assignees.data]
   )
+  const reviewerOptions = useMemo(() => reviewers.data?.pages.flatMap((page) => page.data).filter((item) => item.id !== (assignee?.id || task?.assignedToId)).map((item) => ({ id: item.id, label: item.fullName || item.email || item.id, secondary: item.email || undefined })) || [], [reviewers.data, assignee?.id, task?.assignedToId])
   const teamOptions = useMemo(
     () => teams.data?.pages.flatMap((page) => page.data) || [],
     [teams.data]
@@ -314,6 +328,7 @@ export function TaskFormDialog({
     if ((document || payment) && !opportunity)
       return text.validation.opportunityForCommercialContext
     if (!task && canAssignOthers && assignmentScope === "TEAM" && !team) return "برای دامنه تیم، انتخاب تیم الزامی است."
+    if (requiresReview && !reviewer) return "برای کار نیازمند بازبینی، انتخاب بازبین الزامی است."
     return ""
   }, [
     companyId,
@@ -329,6 +344,8 @@ export function TaskFormDialog({
     team,
     task,
     canAssignOthers,
+    requiresReview,
+    reviewer,
   ])
 
   function changeCompany(next?: string) {
@@ -369,6 +386,7 @@ export function TaskFormDialog({
       meetingId: linkedEntityType === "MEETING" ? linkedEntity?.id || null : null,
       activityId: linkedEntityType === "ACTIVITY" ? linkedEntity?.id || null : null,
       productId: linkedEntityType === "PRODUCT" ? linkedEntity?.id || null : null,
+      ...(canAssignReviewer ? { requiresReview, reviewerId: requiresReview ? reviewer?.id : undefined } : {}),
     }
 
     try {
@@ -659,6 +677,13 @@ export function TaskFormDialog({
               </div>
               )}
             </FormSection>
+
+            {canAssignReviewer ? <FormSection title="بازبینی" description="در صورت نیاز، یک بازبین مستقل برای تأیید خروجی کار تعیین کنید.">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm"><input type="checkbox" checked={requiresReview} onChange={(event) => { setRequiresReview(event.target.checked); if (!event.target.checked) setReviewer(undefined) }} />این کار نیازمند بازبینی است</label>
+                {requiresReview ? <Field label="بازبین"><TaskOptionSelect value={reviewer?.id} selectedOption={reviewer} options={reviewerOptions} onChange={setReviewer} search={reviewerSearch} onSearchChange={setReviewerSearch} placeholder="انتخاب بازبین" loading={reviewers.isLoading} hasMore={reviewers.hasNextPage} loadingMore={reviewers.isFetchingNextPage} onLoadMore={() => void reviewers.fetchNextPage()} /></Field> : null}
+              </div>
+            </FormSection> : null}
 
             <FormSection
               title={text.sections.schedule}

@@ -20,6 +20,8 @@ import {
   taskPriorityTone,
   taskStatusLabel,
   taskStatusTone,
+  taskReviewStatusLabel,
+  taskReviewStatusTone,
 } from "../utils/taskFormatters"
 import { TaskActionsMenu, type TaskDialogAction } from "./TaskActionsMenu"
 
@@ -82,6 +84,12 @@ export function TaskList({
           {taskPriorityLabel(task.priority)}
         </StatusBadge>
       ),
+    },
+    {
+      id: "review",
+      header: "بازبینی",
+      className: "min-w-36",
+      cell: (task) => <StatusBadge tone={taskReviewStatusTone(task.reviewStatus)}>{taskReviewStatusLabel(task.reviewStatus)}</StatusBadge>,
     },
     {
       id: "assignee",
@@ -165,6 +173,7 @@ export function TaskList({
           status: (task) => <StatusBadge tone={taskStatusTone(task.status)}>{taskStatusLabel(task.status)}</StatusBadge>,
           fields: [
             { id: "priority", label: text.table.priority, render: (task) => <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>{taskPriorityLabel(task.priority)}</StatusBadge> },
+            { id: "review", label: "بازبینی", render: (task) => <StatusBadge tone={taskReviewStatusTone(task.reviewStatus)}>{taskReviewStatusLabel(task.reviewStatus)}</StatusBadge> },
             { id: "assignee", label: text.table.assignee, render: (task) => task.assignedTo?.fullName || task.assignedTo?.email || text.labels.unassigned },
             { id: "subtasks", label: "زیرکارها", render: (task) => task.parentTaskId ? "زیرکار" : `${(task.subtasks ?? []).filter((item) => item.status === "DONE" || item.status === "CANCELLED").length.toLocaleString("fa-IR")} / ${(task.subtasks?.length ?? 0).toLocaleString("fa-IR")}` },
             { id: "due", label: text.table.dueAt, render: (task) => task.dueAt ? formatJalaliDateTime(task.dueAt) : text.labels.noDueDate },

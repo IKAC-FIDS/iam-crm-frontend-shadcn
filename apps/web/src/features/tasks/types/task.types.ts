@@ -1,6 +1,8 @@
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED"
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
 export type TaskAssignmentScope = "SELF" | "TEAM" | "ORGANIZATION"
+export type TaskReviewStatus = "NOT_REQUIRED" | "DRAFT" | "PENDING_REVIEW" | "CHANGES_REQUESTED" | "APPROVED"
+export type TaskReviewDecision = "PENDING" | "APPROVED" | "CHANGES_REQUESTED" | "CANCELLED"
 export type TaskEntityType = "COMPANY" | "OPPORTUNITY" | "PERSON" | "MEETING" | "ACTIVITY" | "PRODUCT"
 
 export interface TaskUser {
@@ -26,7 +28,7 @@ export interface Task {
   parentTaskId?: string | null
   parentTask?: Pick<Task, "id" | "title" | "status"> | null
   subtasks?: Array<Pick<Task, "id" | "title" | "status" | "priority" | "dueAt" | "assignedTo">>
-  _count?: { subtasks: number }
+  _count?: { subtasks: number; reviewRounds?: number }
   companyId?: string | null
   company?: { id: string; legalName?: string | null; brandName?: string | null; ownerId?: string | null } | null
   personId?: string | null
@@ -45,6 +47,11 @@ export interface Task {
   product?: { id: string; code: string; name: string; isActive?: boolean } | null
   assignedToId?: string | null
   assignedTo?: TaskUser | null
+  requiresReview: boolean
+  reviewStatus: TaskReviewStatus
+  reviewerId?: string | null
+  reviewer?: TaskUser | null
+  reviewRounds?: TaskReviewRound[]
   createdById?: string | null
   createdBy?: TaskUser | null
   completedAt?: string | null
@@ -82,6 +89,9 @@ export interface TaskListQuery {
   view?: "all" | "mine" | "team" | "organization" | "created"
   dueState?: "none" | "upcoming" | "today" | "overdue" | "completed"
   linkedEntityType?: TaskEntityType
+  reviewStatus?: TaskReviewStatus
+  reviewerId?: string
+  awaitingMyReview?: boolean
 }
 
 export interface TaskPayload {
@@ -102,6 +112,21 @@ export interface TaskPayload {
   meetingId?: string | null
   activityId?: string | null
   productId?: string | null
+  requiresReview?: boolean
+  reviewerId?: string
+}
+
+export interface TaskReviewRound {
+  id: string
+  roundNumber: number
+  decision: TaskReviewDecision
+  reviewer: TaskUser
+  submittedBy: TaskUser
+  submittedAt: string
+  submissionNote?: string | null
+  reviewedAt?: string | null
+  reviewComment?: string | null
+  artifacts?: Array<{ artifact: { id: string; name: string; type: "FILE" | "EXTERNAL_URL"; provider: string; mimeType?: string | null; sizeBytes?: number | null; externalUrl?: string | null } }>
 }
 
 export interface TaskReassignPayload {

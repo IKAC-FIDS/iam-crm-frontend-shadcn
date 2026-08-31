@@ -41,6 +41,7 @@ import {
   type TaskDialogAction,
 } from "../components/TaskActionDialogs"
 import { TaskFormDialog } from "../components/TaskFormDialog"
+import { TaskReviewSection } from "../components/TaskReviewSection"
 import { canReassignTask } from "../taskPermissions"
 import { useTask } from "../hooks/useTasks"
 import type { Task } from "../types/task.types"
@@ -157,6 +158,7 @@ export function TaskDetailPage() {
                   variant="outline"
                   className="rounded-xl border-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success-light)]"
                   onClick={() => setAction("complete")}
+                  disabled={task.requiresReview && task.reviewStatus !== "APPROVED"}
                 >
                   <CheckCircle2 className="size-4" />
                   {text.actions.complete}
@@ -199,6 +201,7 @@ export function TaskDetailPage() {
           <DescriptionCard task={task} />
           <OutcomeCard task={task} />
           <SubtasksCard task={task} canCreate={canCreateSubtask && !closed} onCreate={() => setAction("subtask")} />
+          {task.requiresReview ? <TaskReviewSection task={task} /> : null}
           <ArtifactPanel entityType="TASK" entityId={task.id} title="فایل‌ها و مراجع کار" />
         </main>
 

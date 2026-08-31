@@ -1,6 +1,6 @@
 import { uiText } from "@/config/uiText"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
-import type { Task, TaskPriority, TaskStatus } from "../types/task.types"
+import type { Task, TaskPriority, TaskReviewStatus, TaskStatus } from "../types/task.types"
 
 export const taskStatusLabel = (status: TaskStatus) => uiText.tasks.statuses[status]
 export const taskPriorityLabel = (priority: TaskPriority) => uiText.tasks.priorities[priority]
@@ -18,6 +18,9 @@ export function taskPriorityTone(priority: TaskPriority) {
   if (priority === "MEDIUM") return "info" as const
   return "neutral" as const
 }
+
+export const taskReviewStatusLabel = (status: TaskReviewStatus) => ({ NOT_REQUIRED: "بدون بازبینی", DRAFT: "پیش‌نویس", PENDING_REVIEW: "در انتظار بازبینی", CHANGES_REQUESTED: "نیازمند اصلاح", APPROVED: "تأییدشده" })[status]
+export function taskReviewStatusTone(status: TaskReviewStatus) { if (status === "APPROVED") return "success" as const; if (status === "CHANGES_REQUESTED") return "error" as const; if (status === "PENDING_REVIEW") return "warning" as const; if (status === "DRAFT") return "primary" as const; return "neutral" as const }
 
 export const isTaskClosed = (task: Task) =>
   task.status === "DONE" || task.status === "CANCELLED"
