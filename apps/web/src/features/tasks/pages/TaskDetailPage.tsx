@@ -41,6 +41,7 @@ import {
   type TaskDialogAction,
 } from "../components/TaskActionDialogs"
 import { TaskFormDialog } from "../components/TaskFormDialog"
+import { canReassignTask } from "../taskPermissions"
 import { useTask } from "../hooks/useTasks"
 import type { Task } from "../types/task.types"
 import {
@@ -60,7 +61,7 @@ export function TaskDetailPage() {
 
   const canView = permissions.includes("task:view")
   const canUpdate = permissions.includes("task:update")
-  const canAssign = permissions.includes("task:assign") || permissions.includes("task:reassign")
+  const canAssign = canReassignTask(permissions)
   const canCreateSubtask = permissions.includes("task:create-subtask") || permissions.includes("task:create")
   const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")

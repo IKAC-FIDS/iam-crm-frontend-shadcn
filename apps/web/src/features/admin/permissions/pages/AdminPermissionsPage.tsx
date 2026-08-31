@@ -40,6 +40,11 @@ import {
   type ManagedRole,
   type UserRole,
 } from "../api/adminPermissionsApi"
+import {
+  groupName,
+  permissionDescription,
+  permissionLabel,
+} from "../taskPermissionLabels"
 
 const ROLE_LABELS: Record<UserRole, string> = {
   ADMIN: "ادمین",
@@ -56,14 +61,6 @@ function can(permissions: string[] | undefined, permission: string) {
 
 function fa(value: number) {
   return new Intl.NumberFormat("fa-IR").format(value)
-}
-
-function groupName(permission: ManagedPermission) {
-  return permission.group?.trim() || permission.action.split(":")[0] || "سایر"
-}
-
-function actionVerb(permission: ManagedPermission) {
-  return permission.action.split(":")[1] || permission.action
 }
 
 function isCritical(permission: ManagedPermission) {
@@ -600,7 +597,7 @@ function PermissionsCatalog({
                         </span>
                       </div>
                       <div className="mt-2 font-bold">
-                        {item.name || actionVerb(item)}
+                        {permissionLabel(item)}
                       </div>
                     </div>
 
@@ -1228,7 +1225,7 @@ function RoleCreateModal({
                               />
                               <span className="min-w-0">
                                 <span className="block text-sm font-bold">
-                                  {permission.name || actionVerb(permission)}
+                                  {permissionLabel(permission)}
                                 </span>
                                 <code
                                   className="mt-1 block truncate text-xs text-muted-foreground"
@@ -1417,6 +1414,13 @@ function RoleMatrixModal({
   const [matrixSearch, setMatrixSearch] = useState("")
 
   const selectedIds = selected ?? query.data?.assignedPermissionIds ?? []
+  const selectedActions = new Set(
+    (query.data?.permissions ?? [])
+      .filter((permission) => selectedIds.includes(permission.id))
+      .map((permission) => permission.action)
+  )
+  const assignWithoutCreate =
+    selectedActions.has("task:assign") && !selectedActions.has("task:create")
 
   const filteredPermissions = useMemo(() => {
     const needle = matrixSearch.trim().toLocaleLowerCase("fa")
@@ -1522,6 +1526,12 @@ function RoleMatrixModal({
           ) : null}
         </div>
 
+        {assignWithoutCreate ? (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-6 text-amber-900 dark:text-amber-200">
+            مجوز <code dir="ltr">task:assign</code> امکان ارجاع کار را فراهم می‌کند؛ اما برای ایجاد کار جدید، مجوز <code dir="ltr">task:create</code> نیز لازم است.
+          </div>
+        ) : null}
+
         {query.isLoading ? (
           <div className="grid min-h-56 place-items-center text-sm text-muted-foreground">
             در حال دریافت ماتریس دسترسی...
@@ -1602,7 +1612,7 @@ function RoleMatrixModal({
                               ) : (
                                 <X className="size-4 text-muted-foreground" />
                               )}
-                              {permission.name || actionVerb(permission)}
+                              {permissionLabel(permission)}
                             </span>
                             <code
                               className="mt-1 block truncate text-xs text-muted-foreground"
@@ -1610,6 +1620,11 @@ function RoleMatrixModal({
                             >
                               {permission.action}
                             </code>
+                            {permissionDescription(permission) ? (
+                              <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                                {permissionDescription(permission)}
+                              </span>
+                            ) : null}
                           </span>
                         </label>
                       )

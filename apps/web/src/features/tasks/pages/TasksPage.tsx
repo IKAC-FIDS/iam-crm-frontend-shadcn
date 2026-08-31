@@ -31,6 +31,7 @@ import { TaskActionDialogs } from "../components/TaskActionDialogs"
 import type { TaskDialogAction } from "../components/TaskActionsMenu"
 import { TaskFocusView } from "../components/TaskFocusView"
 import { TaskFormDialog } from "../components/TaskFormDialog"
+import { canReassignTask } from "../taskPermissions"
 import { TaskList } from "../components/TaskList"
 import { TaskOptionSelect } from "../components/TaskOptionSelect"
 import {
@@ -69,7 +70,7 @@ export function TasksPage() {
   const canView = permissions.includes("task:view")
   const canCreate = permissions.includes("task:create")
   const canUpdate = permissions.includes("task:update")
-  const canAssign = permissions.includes("task:assign") || permissions.includes("task:reassign")
+  const canAssign = canReassignTask(permissions)
   const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")
 

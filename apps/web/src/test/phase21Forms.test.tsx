@@ -11,6 +11,7 @@ import { PersonFormDialog } from "@/features/people/components/PersonFormDialog"
 import type { Meeting } from "@/features/meetings/types/meeting.types"
 import { api } from "@/lib/api"
 import { uiText } from "@/config/uiText"
+import { useAuthStore } from "@/store/authStore"
 import { response, httpError } from "./fixtures"
 
 vi.mock("@/lib/api",()=>({api:{get:vi.fn(),post:vi.fn(),patch:vi.fn()}}))
@@ -20,6 +21,16 @@ beforeEach(()=>{
   vi.mocked(api.get).mockImplementation(async(url)=>String(url).includes("types/options")?response([meeting.type]):response({data:[],meta:{page:1,limit:25,total:0,totalPages:0}}))
   vi.mocked(api.post).mockResolvedValue(response({id:"new"}))
   vi.mocked(api.patch).mockResolvedValue(response(meeting))
+  useAuthStore.setState({
+    user: {
+      id: "user-1", fullName: "کاربر تست", email: "user@example.com", role: "REP",
+      team: null, teamId: null, teamCode: null, teamName: null,
+      permissions: ["task:create"], organizationId: "org-1", roleId: "role-1",
+      roleCode: "REP", roleName: "کارشناس",
+    },
+    accessToken: "test-token",
+    status: "authenticated",
+  })
 })
 function wrapper({children}:{children:ReactNode}){
   return <QueryClientProvider client={new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}})}><MemoryRouter>{children}</MemoryRouter></QueryClientProvider>
@@ -44,6 +55,21 @@ it("Task create submits unchanged domain payload and displays a 409 business mes
   await userEvent.click(screen.getByRole("button",{name:uiText.common.save}))
   await waitFor(()=>expect(api.post).toHaveBeenCalledWith("/tasks",expect.objectContaining({title:"کار جدید",priority:"MEDIUM"})))
   expect(await screen.findByRole("alert")).toHaveTextContent("این کار قابل ایجاد نیست")
+})
+it("Task create locks assignment to SELF without task:assign",async()=>{
+  render(<TaskFormDialog open onOpenChange={vi.fn()}/>,{wrapper})
+  expect(screen.getByText(/این کار به خود شما واگذار می‌شود/)).toBeInTheDocument()
+  expect(screen.queryByText("دامنه واگذاری")).not.toBeInTheDocument()
+})
+it("Task create exposes full assignment controls with task:assign",async()=>{
+  useAuthStore.setState((state)=>({
+    ...state,
+    user: state.user ? {...state.user,permissions:["task:create","task:assign"]} : null,
+  }))
+  render(<TaskFormDialog open onOpenChange={vi.fn()}/>,{wrapper})
+  expect(screen.getByText("دامنه واگذاری")).toBeInTheDocument()
+  expect(screen.getByRole("option",{name:"تیم"})).toBeInTheDocument()
+  expect(screen.getByRole("option",{name:"سازمان"})).toBeInTheDocument()
 })
 it("Person form preserves company and maps server field errors to the name field",async()=>{
   const onSubmit=vi.fn().mockRejectedValue(httpError(422,{error:{message:"اصلاح کنید",details:{fieldErrors:{fullName:["نام نامعتبر است"]}}}}))

@@ -17,6 +17,7 @@ import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { useAuthStore } from "@/store/authStore"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
@@ -40,6 +41,7 @@ import type {
   TaskEntityType,
 } from "../types/task.types"
 import { TaskOptionSelect } from "./TaskOptionSelect"
+import { canAssignTaskTargets } from "../taskPermissions"
 
 const formSchema = z.object({
   title: z.string().trim().min(1, uiText.tasks.validation.titleRequired),
@@ -80,6 +82,8 @@ export function TaskFormDialog({
   onSaved?: (task: Task) => void
 }) {
   const text = uiText.tasks
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const canAssignOthers = canAssignTaskTargets(permissions)
   const create = useCreateTask()
   const update = useUpdateTask()
   const pending = create.isPending || update.isPending
@@ -227,8 +231,9 @@ export function TaskFormDialog({
     open
   )
   const people = useTaskPeopleOptions(companyId, debouncedPerson, open)
-  const assignees = useTaskAssignees(debouncedAssignee, open && assignmentScope !== "SELF", assignmentScope === "TEAM" ? team?.id || "" : "")
-  const teams = useTaskTeams(debouncedTeam, open && assignmentScope === "TEAM")
+  const assignmentControlsEnabled = open && !task && canAssignOthers
+  const assignees = useTaskAssignees(debouncedAssignee, assignmentControlsEnabled && assignmentScope !== "SELF", assignmentScope === "TEAM" ? team?.id || "" : "")
+  const teams = useTaskTeams(debouncedTeam, assignmentControlsEnabled && assignmentScope === "TEAM")
   const linkedEntities = useTaskEntityOptions(linkedEntityType === "NONE" ? "MEETING" : linkedEntityType as TaskEntityType, debouncedLinkedEntity, open && linkedEntityType !== "NONE")
   const documents = useTaskDocuments(opportunity?.id || "", open)
   const payments = useTaskPayments(opportunity?.id || "", open)
@@ -308,7 +313,7 @@ export function TaskFormDialog({
     if (person && !companyId) return text.validation.companyForPerson
     if ((document || payment) && !opportunity)
       return text.validation.opportunityForCommercialContext
-    if (assignmentScope === "TEAM" && !team) return "برای دامنه تیم، انتخاب تیم الزامی است."
+    if (!task && canAssignOthers && assignmentScope === "TEAM" && !team) return "برای دامنه تیم، انتخاب تیم الزامی است."
     return ""
   }, [
     companyId,
@@ -322,6 +327,8 @@ export function TaskFormDialog({
     title,
     assignmentScope,
     team,
+    task,
+    canAssignOthers,
   ])
 
   function changeCompany(next?: string) {
@@ -354,9 +361,11 @@ export function TaskFormDialog({
       personId: person?.id,
       commercialDocumentId: document?.id,
       paymentId: payment?.id,
-      assignedToId: assignee?.id,
-      assignmentScope,
-      teamId: assignmentScope === "TEAM" ? team?.id : undefined,
+      ...(!task && {
+        assignedToId: canAssignOthers ? assignee?.id : undefined,
+        assignmentScope: canAssignOthers ? assignmentScope : "SELF",
+        teamId: canAssignOthers && assignmentScope === "TEAM" ? team?.id : undefined,
+      }),
       meetingId: linkedEntityType === "MEETING" ? linkedEntity?.id || null : null,
       activityId: linkedEntityType === "ACTIVITY" ? linkedEntity?.id || null : null,
       productId: linkedEntityType === "PRODUCT" ? linkedEntity?.id || null : null,
@@ -612,6 +621,19 @@ export function TaskFormDialog({
               title={text.sections.ownership}
               description={text.sections.ownershipDescription}
             >
+              {task ? (
+                <p className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
+                  تغییر مسئول یا دامنه واگذاری از اقدام «تغییر مسئول کار» انجام می‌شود و به دسترسی
+                  <code className="mx-1" dir="ltr">task:reassign</code>
+                  نیاز دارد.
+                </p>
+              ) : !canAssignOthers ? (
+                <p className="rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs leading-6 text-[var(--app-primary)]">
+                  این کار به خود شما واگذار می‌شود. برای ارجاع کار به سایر کاربران یا تیم‌ها، دسترسی
+                  <code className="mx-1" dir="ltr">task:assign</code>
+                  لازم است.
+                </p>
+              ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="دامنه واگذاری" error={errors.assignmentScope?.message}>
                   <select value={assignmentScope} onChange={(event) => {
@@ -635,6 +657,7 @@ export function TaskFormDialog({
                   </Field>
                 ) : <p className="self-end rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs text-[var(--app-primary)]">این کار به خود شما واگذار می‌شود.</p>}
               </div>
+              )}
             </FormSection>
 
             <FormSection

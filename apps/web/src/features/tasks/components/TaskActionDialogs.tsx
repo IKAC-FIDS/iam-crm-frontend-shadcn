@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -29,6 +30,7 @@ import type { Task, TaskAssignmentScope, TaskOption, TaskPriority, TaskStatus } 
 import { type TaskDialogAction } from "./TaskActionsMenu"
 export type { TaskDialogAction } from "./TaskActionsMenu"
 import { TaskOptionSelect } from "./TaskOptionSelect"
+import { canAssignTaskTargets } from "../taskPermissions"
 
 export function TaskActionDialogs({
   task,
@@ -197,6 +199,9 @@ function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
 
 function SubtaskDialog({ task, onClose }: { task: Task; onClose: () => void }) {
   const mutation = useCreateSubtask()
+  const canAssignOthers = useAuthStore((state) =>
+    canAssignTaskTargets(state.user?.permissions)
+  )
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState<TaskPriority>(task.priority)
@@ -207,26 +212,28 @@ function SubtaskDialog({ task, onClose }: { task: Task; onClose: () => void }) {
   const [assignee, setAssignee] = useState<TaskOption>()
   const [teamSearch, setTeamSearch] = useState("")
   const [assigneeSearch, setAssigneeSearch] = useState("")
-  const teams = useTaskTeams(teamSearch, scope === "TEAM")
-  const assignees = useTaskAssignees(assigneeSearch, scope !== "SELF", scope === "TEAM" ? team?.id || "" : "")
+  const teams = useTaskTeams(teamSearch, canAssignOthers && scope === "TEAM")
+  const assignees = useTaskAssignees(assigneeSearch, canAssignOthers && scope !== "SELF", scope === "TEAM" ? team?.id || "" : "")
   const teamOptions = useMemo(() => teams.data?.pages.flatMap((page) => page.data) || [], [teams.data])
   const assigneeOptions = useMemo(() => assignees.data?.pages.flatMap((page) => page.data).map((item) => ({ id: item.id, label: item.fullName || item.email || item.id, secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") })) || [], [assignees.data])
   async function submit() {
-    if (!title.trim() || (scope === "TEAM" && !team)) return
+    if (!title.trim() || (canAssignOthers && scope === "TEAM" && !team)) return
     try {
-      await mutation.mutateAsync({ parentId: task.id, payload: { title: title.trim(), description: description.trim() || undefined, priority, dueAt: dueAt?.toISOString(), assignmentScope: scope, teamId: scope === "TEAM" ? team?.id : undefined, assigneeId: scope === "SELF" ? undefined : assignee?.id, inheritLinkedEntity } })
+      await mutation.mutateAsync({ parentId: task.id, payload: { title: title.trim(), description: description.trim() || undefined, priority, dueAt: dueAt?.toISOString(), assignmentScope: canAssignOthers ? scope : "SELF", teamId: canAssignOthers && scope === "TEAM" ? team?.id : undefined, assigneeId: canAssignOthers && scope !== "SELF" ? assignee?.id : undefined, inheritLinkedEntity } })
       toast.success("زیرکار ایجاد شد.")
       onClose()
     } catch (error) { toast.error(getApiErrorMessage(error, uiText.tasks.errors.mutation)) }
   }
-  return <SimpleDialog title="ایجاد زیرکار" description="یک کار جدید ساخته می‌شود و مسئولیت کار والد تغییر نمی‌کند." pending={mutation.isPending} submitLabel="ایجاد زیرکار" submitDisabled={!title.trim() || (scope === "TEAM" && !team)} onClose={onClose} onSubmit={submit}>
+  return <SimpleDialog title="ایجاد زیرکار" description="یک کار جدید ساخته می‌شود و مسئولیت کار والد تغییر نمی‌کند." pending={mutation.isPending} submitLabel="ایجاد زیرکار" submitDisabled={!title.trim() || (canAssignOthers && scope === "TEAM" && !team)} onClose={onClose} onSubmit={submit}>
     <Field label="عنوان زیرکار"><input value={title} onChange={(event) => setTitle(event.target.value)} className={selectClass} maxLength={200} /></Field>
     <Field label="توضیحات"><textarea rows={3} value={description} onChange={(event) => setDescription(event.target.value)} className={textareaClass} /></Field>
     <Field label="اولویت"><select value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)} className={selectClass}>{(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map((value) => <option key={value} value={value}>{uiText.tasks.priorities[value]}</option>)}</select></Field>
     <Field label="موعد انجام"><PersianDateTimePicker value={dueAt} onChange={setDueAt} /></Field>
-    <Field label="دامنه واگذاری"><select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}><option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option></select></Field>
-    {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} /></Field> : null}
-    {scope !== "SELF" ? <Field label="مسئول"><TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder="انتخاب مسئول (اختیاری)" loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={scope === "TEAM" && !team} /></Field> : null}
+    {canAssignOthers ? <>
+      <Field label="دامنه واگذاری"><select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}><option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option></select></Field>
+      {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} /></Field> : null}
+      {scope !== "SELF" ? <Field label="مسئول"><TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder="انتخاب مسئول (اختیاری)" loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={scope === "TEAM" && !team} /></Field> : null}
+    </> : <p className="rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs leading-6 text-[var(--app-primary)]">این زیرکار به خود شما واگذار می‌شود. برای ارجاع به سایر کاربران یا تیم‌ها، دسترسی <code dir="ltr">task:assign</code> لازم است.</p>}
     <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={inheritLinkedEntity} onChange={(event) => setInheritLinkedEntity(event.target.checked)} />ارتباط تجاری/فنی از کار والد کپی شود</label>
   </SimpleDialog>
 }
