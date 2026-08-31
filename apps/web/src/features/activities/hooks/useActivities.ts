@@ -13,6 +13,8 @@ import {
   getActivityOpportunityOptions,
   getActivityOwnerOptions,
   getActivityPeopleOptions,
+  getActivityTaskOptions,
+  getTaskActivities,
   updateActivity,
 } from "../api/activities.api"
 import type {
@@ -24,6 +26,8 @@ import type {
 export const activityQueryKeys = {
   all: ["activities"] as const,
   list: (query: ActivityListQuery) => ["activities", "list", query] as const,
+  task: (taskId: string, includeSubtasks: boolean, page: number) =>
+    ["activities", "task", taskId, includeSubtasks, page] as const,
 }
 
 export function useActivityTypes(enabled = true) {
@@ -40,6 +44,32 @@ export function useActivities(query: ActivityListQuery, enabled = true) {
     queryFn: () => getActivities(query),
     enabled,
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useTaskActivities(
+  taskId: string,
+  includeSubtasks: boolean,
+  page: number,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: [
+      ...activityQueryKeys.task(taskId, includeSubtasks, page),
+      useQueryScope(),
+    ],
+    queryFn: () => getTaskActivities(taskId, includeSubtasks, page, 20),
+    enabled: enabled && Boolean(taskId),
+    placeholderData: keepPreviousData,
+  })
+}
+
+export function useActivityTaskOptions(search: string, enabled = true) {
+  return useQuery({
+    queryKey: [...["activities", "task-options", search], useQueryScope()],
+    queryFn: () => getActivityTaskOptions(search),
+    enabled,
+    staleTime: 30_000,
   })
 }
 
@@ -93,6 +123,7 @@ function useInvalidateActivities() {
       client.invalidateQueries({ queryKey: ["dashboard"] }),
       client.invalidateQueries({ queryKey: ["reports"] }),
       client.invalidateQueries({ queryKey: ["companies"] }),
+      client.invalidateQueries({ queryKey: ["tasks"] }),
     ])
 }
 

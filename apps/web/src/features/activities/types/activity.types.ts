@@ -14,6 +14,7 @@ export const MANUAL_ACTIVITY_TYPE_OPTIONS = ACTIVITY_TYPE_OPTIONS.filter(
 
 export type ActivityType = string
 export type ManualActivityType = string
+export type ActivityTargetType = "COMPANY" | "TASK"
 export interface ActivityTypeOption { id: string; code: string; label: string; isActive: boolean; sortOrder: number }
 export type ActivityStatus = "RECORDED" | "COMPLETED"
 
@@ -38,9 +39,20 @@ export interface ActivityCompany {
   brandName?: string | null
 }
 
+export interface ActivityTaskSummary {
+  id: string
+  title: string
+  status?: string | null
+  parentTaskId?: string | null
+  parentTask?: { id: string; title: string } | null
+}
+
 export interface Activity {
   id: string
-  companyId?: string
+  targetType?: ActivityTargetType
+  taskId?: string | null
+  task?: ActivityTaskSummary | null
+  companyId?: string | null
   opportunityId?: string | null
   personId?: string | null
   userId?: string | null
@@ -95,7 +107,9 @@ export interface ActivityListQuery {
 }
 
 export interface CreateActivityPayload {
-  companyId: string
+  targetType?: ActivityTargetType
+  companyId?: string
+  taskId?: string
   opportunityId?: string
   personId?: string
   type: ManualActivityType

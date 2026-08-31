@@ -5,6 +5,7 @@ import {
   getOpportunities,
   getOpportunityOwnerOptions,
 } from "@/features/opportunities/api/opportunities.api"
+import { getTasks } from "@/features/tasks/api/tasks.api"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 
@@ -26,6 +27,16 @@ function clean(value: object) {
   )
 }
 
+const activitySchema = z.custom<Activity>(
+  (value) =>
+    !!value &&
+    typeof value === "object" &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    "type" in value &&
+    typeof value.type === "string"
+)
+
 export async function getActivityTypes() {
   const response = await api.get("/activities/types/options")
   const data = unwrapApiResponse<ActivityTypeOption[]>(response.data)
@@ -41,18 +52,19 @@ export async function getActivities(query: ActivityListQuery) {
         query.unassigned === undefined ? undefined : String(query.unassigned),
     }),
   })
-  return parsePaginatedResponse(
-    response.data,
-    z.custom<Activity>(
-      (value) =>
-        !!value &&
-        typeof value === "object" &&
-        "id" in value &&
-        typeof value.id === "string" &&
-        "type" in value &&
-        typeof value.type === "string"
-    )
-  )
+  return parsePaginatedResponse(response.data, activitySchema)
+}
+
+export async function getTaskActivities(
+  taskId: string,
+  includeSubtasks: boolean,
+  page = 1,
+  limit = 20
+) {
+  const response = await api.get(`/activities/task/${taskId}`, {
+    params: { page, limit, includeSubtasks: String(includeSubtasks) },
+  })
+  return parsePaginatedResponse(response.data, activitySchema)
 }
 
 export async function createActivity(payload: CreateActivityPayload) {
@@ -66,6 +78,24 @@ export async function updateActivity(
 ) {
   const response = await api.patch(`/activities/${id}`, clean(payload))
   return unwrapApiResponse<Activity>(response.data)
+}
+
+export async function getActivityTaskOptions(
+  search: string
+): Promise<ActivityOption[]> {
+  const page = await getTasks({
+    page: 1,
+    limit: 25,
+    search: search.trim() || undefined,
+    view: "all",
+  })
+  return page.data.map((task) => ({
+    id: task.id,
+    label: task.title,
+    secondary: task.parentTask?.title
+      ? `زیرکار «${task.parentTask.title}»`
+      : task.company?.brandName || task.company?.legalName || "کار اصلی",
+  }))
 }
 
 export async function getActivityPeopleOptions(

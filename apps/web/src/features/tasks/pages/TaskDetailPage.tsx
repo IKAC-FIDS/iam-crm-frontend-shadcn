@@ -42,6 +42,7 @@ import {
 } from "../components/TaskActionDialogs"
 import { TaskFormDialog } from "../components/TaskFormDialog"
 import { TaskReviewSection } from "../components/TaskReviewSection"
+import { TaskActivitiesSection } from "../components/TaskActivitiesSection"
 import { canReassignTask } from "../taskPermissions"
 import { useTask } from "../hooks/useTasks"
 import type { Task } from "../types/task.types"
@@ -201,6 +202,7 @@ export function TaskDetailPage() {
           <DescriptionCard task={task} />
           <OutcomeCard task={task} />
           <SubtasksCard task={task} canCreate={canCreateSubtask && !closed} onCreate={() => setAction("subtask")} />
+          <TaskActivitiesSection task={task} />
           {task.requiresReview ? <TaskReviewSection task={task} /> : null}
           <ArtifactPanel entityType="TASK" entityId={task.id} title="فایل‌ها و مراجع کار" />
         </main>
