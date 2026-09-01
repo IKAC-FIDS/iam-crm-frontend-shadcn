@@ -84,6 +84,16 @@ const schema = z.object({
   technicalLeadId: z.string().optional(),
   commercialLeadId: z.string().optional(),
 })
+
+const currencyOptions = [
+  { id: "IRR", label: "ریال ایران (IRR)" },
+  { id: "USD", label: "دلار آمریکا (USD)" },
+  { id: "EUR", label: "یورو (EUR)" },
+  { id: "AED", label: "درهم امارات (AED)" },
+  { id: "GBP", label: "پوند بریتانیا (GBP)" },
+  { id: "CNY", label: "یوان چین (CNY)" },
+  { id: "TRY", label: "لیر ترکیه (TRY)" },
+]
 export type TechnicalFormValues = z.infer<typeof schema>
 type Entity =
   | TechnicalRelease
@@ -569,14 +579,7 @@ function DomainFields({
                 className={inputClass}
               />
             </Field>
-            <Field label="ارز">
-              <Input
-                dir="ltr"
-                maxLength={3}
-                {...register("currency")}
-                className={inputClass}
-              />
-            </Field>
+            <CurrencyField control={control} />
             <Field label="احتمال موفقیت">
               <Input
                 type="number"
@@ -590,6 +593,32 @@ function DomainFields({
         )}
       </div>
     </FormSection>
+  )
+}
+function CurrencyField({ control }: { control: Control<TechnicalFormValues> }) {
+  const [search, setSearch] = useState("")
+  const normalizedSearch = search.trim().toLocaleLowerCase("fa-IR")
+  return (
+    <Field label="ارز">
+      <Controller
+        name="currency"
+        control={control}
+        render={({ field }) => (
+          <SearchableOptionSelect
+            value={typeof field.value === "string" ? field.value : "IRR"}
+            onChange={(value) => field.onChange(value || "IRR")}
+            options={currencyOptions.filter((option) =>
+              `${option.id} ${option.label}`.toLocaleLowerCase("fa-IR").includes(normalizedSearch),
+            )}
+            search={search}
+            onSearchChange={setSearch}
+            allowEmpty={false}
+            placeholder="انتخاب ارز"
+            ariaLabel="ارز"
+          />
+        )}
+      />
+    </Field>
   )
 }
 function ScopedUserField({ label, name, control, error, required }: { label: string; name: FieldPath<TechnicalFormValues>; control: Control<TechnicalFormValues>; error?: string; required?: boolean }) {

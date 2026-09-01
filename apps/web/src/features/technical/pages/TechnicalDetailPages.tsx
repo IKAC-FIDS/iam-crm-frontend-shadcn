@@ -27,6 +27,7 @@ import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { TechnicalAttachments } from "../components/TechnicalAttachments"
@@ -972,7 +973,14 @@ function Requirements({
             <label>صفحه<Input value={form.page || ""} onChange={(e) => setForm({ ...form, page: e.target.value })} /></label>
           </div>
           <label>الزام والد<SearchableOptionSelect value={form.parentRequirementId || ""} onChange={(value) => setForm({ ...form, parentRequirementId: value || "" })} options={(q.data ?? []).filter((r) => r.id !== editing?.id && r.title.includes(parentSearch.trim())).map((r) => ({ id: r.id, label: r.referenceId ? `${r.referenceId} — ${r.title}` : r.title }))} search={parentSearch} onSearchChange={setParentSearch} placeholder="بدون والد" ariaLabel="الزام والد" /></label>
-          <fieldset className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border p-3"><legend className="px-1 text-sm font-bold">وابستگی‌ها</legend>{(q.data ?? []).filter((r) => r.id !== editing?.id).map((r) => <label key={r.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.dependencyIds?.includes(r.id) ?? false} onChange={(e) => setForm({ ...form, dependencyIds: e.target.checked ? [...(form.dependencyIds ?? []), r.id] : (form.dependencyIds ?? []).filter((id) => id !== r.id) })} /><span>{r.referenceId ? `${r.referenceId} — ` : ""}{r.title}</span></label>)}</fieldset>
+          <fieldset className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border p-3">
+            <legend className="px-1 text-sm font-bold">وابستگی به الزامات دیگر</legend>
+            {(q.data ?? []).filter((r) => r.id !== editing?.id).length ? (
+              (q.data ?? []).filter((r) => r.id !== editing?.id).map((r) => <label key={r.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.dependencyIds?.includes(r.id) ?? false} onChange={(e) => setForm({ ...form, dependencyIds: e.target.checked ? [...(form.dependencyIds ?? []), r.id] : (form.dependencyIds ?? []).filter((id) => id !== r.id) })} /><span>{r.referenceId ? `${r.referenceId} — ` : ""}{r.title}</span></label>)
+            ) : (
+              <p className="text-xs leading-6 text-muted-foreground">پس از ثبت یک الزام دیگر در همین مناقصه، می‌توانید وابستگی را هنگام ایجاد یا ویرایش الزام انتخاب کنید.</p>
+            )}
+          </fieldset>
           <label>
             وضعیت
             <SearchableOptionSelect
@@ -1021,17 +1029,20 @@ function Requirements({
               }
             />
           </label>
-          <label>
-            پاسخ
+          <label className="grid gap-1">
+            پاسخ / نحوه تأمین الزام
             <textarea
               className="min-h-28 rounded-xl border p-3"
+              placeholder="پاسخ پیشنهادی یا نحوه برآورده‌سازی این الزام"
               value={form.response || ""}
               onChange={(e) => setForm({ ...form, response: e.target.value })}
             />
+            <span className="text-xs leading-5 text-muted-foreground">متنی که برای پاسخ به الزام یا توضیح نحوه برآورده‌سازی آن استفاده می‌شود.</span>
           </label>
-          <label>یادداشت<textarea className="min-h-20 w-full rounded-xl border p-3" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
+          <label className="grid gap-1">یادداشت داخلی<textarea className="min-h-20 w-full rounded-xl border p-3" placeholder="نکات داخلی تیم درباره این الزام" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /><span className="text-xs leading-5 text-muted-foreground">برای هماهنگی داخلی تیم است و بخشی از پاسخ رسمی مناقصه محسوب نمی‌شود.</span></label>
           {form.status === "BLOCKED" ? <label>دلیل مسدودی<textarea className="min-h-24 w-full rounded-xl border p-3" required value={form.blockedReason || ""} onChange={(e) => setForm({ ...form, blockedReason: e.target.value })} /></label> : null}
-          <Button disabled={!form.title || m.save.isPending}>
+          {m.save.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(m.save.error, "ثبت الزام انجام نشد. دوباره تلاش کنید.")}</p> : null}
+          <Button type="submit" disabled={!form.title.trim() || m.save.isPending}>
             ذخیره الزام
           </Button>
         </form>

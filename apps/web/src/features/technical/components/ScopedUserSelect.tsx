@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { TaskOptionSelect } from "@/features/tasks/components/TaskOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
 import { technicalLookups } from "../api"
@@ -50,36 +50,35 @@ export function ScopedUserSelect({
 
   return (
     <div className="grid gap-2">
-      <SearchableOptionSelect
+      <span className="text-xs text-muted-foreground">دامنه انتخاب</span>
+      <select
         value={scope}
-        onChange={changeScope}
-        options={[
-          { id: "SELF", label: "خودم" },
-          { id: "TEAM", label: "تیم" },
-          { id: "ORGANIZATION", label: "سازمان" },
-        ]}
-        search=""
-        onSearchChange={() => undefined}
-        allowEmpty={false}
-        ariaLabel={`${ariaLabel}؛ دامنه انتخاب`}
-      />
+        onChange={(event) => changeScope(event.target.value)}
+        aria-label={`${ariaLabel}؛ دامنه انتخاب`}
+        className="h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm outline-none focus:border-[var(--app-primary)]"
+      >
+        <option value="SELF">خودم</option>
+        <option value="TEAM">تیم</option>
+        <option value="ORGANIZATION">سازمان</option>
+      </select>
       {scope === "TEAM" ? (
-        <SearchableOptionSelect
+        <TaskOptionSelect
           value={teamId}
-          onChange={(next) => { setTeamId(next || ""); onChange(undefined) }}
+          selectedOption={(teams.data ?? []).find((option) => option.id === teamId)}
+          onChange={(option) => { setTeamId(option?.id || ""); onChange(undefined) }}
           options={teams.data ?? []}
           search={teamSearch}
           onSearchChange={setTeamSearch}
           loading={teams.isLoading || teams.isFetching}
           allowEmpty={false}
           placeholder="انتخاب تیم"
-          ariaLabel={`${ariaLabel}؛ تیم`}
         />
       ) : null}
       {scope !== "SELF" ? (
-        <SearchableOptionSelect
+        <TaskOptionSelect
           value={value || ""}
-          onChange={(next) => onChange(next || undefined)}
+          selectedOption={(users.data ?? []).find((option) => option.id === value)}
+          onChange={(option) => onChange(option?.id)}
           options={users.data ?? []}
           search={userSearch}
           onSearchChange={setUserSearch}
@@ -87,7 +86,6 @@ export function ScopedUserSelect({
           disabled={scope === "TEAM" && !teamId}
           allowEmpty={!required}
           placeholder={scope === "TEAM" ? "انتخاب عضو تیم" : "انتخاب از سازمان"}
-          ariaLabel={ariaLabel}
         />
       ) : null}
     </div>
