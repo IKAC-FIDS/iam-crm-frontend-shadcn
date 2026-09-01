@@ -9,6 +9,16 @@ import { OpportunityExecutiveSummary } from "./OpportunityOverview"
 
 const opportunity = {
   id: "opportunity-1",
+  companyId: "company-1",
+  title: "فرصت آزمایشی",
+  stageId: "stage-1",
+  stage: {
+    id: "stage-1",
+    code: "LEAD",
+    label: "سرنخ",
+    sortOrder: 1,
+  },
+  priority: "MEDIUM",
   estimatedValue: "1500000",
   probability: 50,
   activities: [],

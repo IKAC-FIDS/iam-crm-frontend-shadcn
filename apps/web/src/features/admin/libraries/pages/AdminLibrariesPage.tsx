@@ -158,8 +158,10 @@ const inputClass = "h-11 rounded-xl"
 const selectClass =
   "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none"
 const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n)
-const money = (value: string | number) =>
-  `${new Intl.NumberFormat("fa-IR").format(Number(value || 0))} ریال`
+const money = (value: string | number | null | undefined) =>
+  value == null
+    ? uiText.common.notAvailable
+    : `${new Intl.NumberFormat("fa-IR").format(Number(value || 0))} ریال`
 const safeExternalUrl = (value?: string | null) => {
   if (!value) return undefined
   try {
@@ -1004,12 +1006,12 @@ export function AdminLibrariesPage() {
                     ...(financialVisible ? [{
                       id: "in",
                       label: "قیمت حضوری",
-                      render: (r) => money(r.inPersonPriceIrr),
+                      render: (r: Product) => money(r.inPersonPriceIrr),
                     },
                     {
                       id: "digi",
                       label: "قیمت دیجی‌کالا",
-                      render: (r) => money(r.digikalaPriceIrr),
+                      render: (r: Product) => money(r.digikalaPriceIrr),
                     }] : []),
                   ],
                 }}
