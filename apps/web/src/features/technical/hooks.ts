@@ -16,6 +16,7 @@ import type {
   TechnicalResource,
   Tender,
   TenderPayload,
+  TenderQualificationPayload,
   TenderReviewStatus,
   TenderReviewType,
 } from "./types"
@@ -147,6 +148,7 @@ export function useTenderWorkflowMutations(id: string) {
     void q.invalidateQueries({ queryKey: [...technicalKeys.all, "tenders", "list"] })
   }
   return {
+    saveQualification: useMutation({ mutationFn: (payload: TenderQualificationPayload) => technicalApi.tenders.saveQualification(id, payload), onSuccess: invalidate }),
     requestReview: useMutation({ mutationFn: (payload: { type: TenderReviewType; reviewerId?: string; comment?: string; revision?: number }) => technicalApi.tenders.requestReview(id, payload), onSuccess: invalidate }),
     decideReview: useMutation({ mutationFn: ({ reviewId, ...payload }: { reviewId: string; status: TenderReviewStatus; comment?: string; revision?: number }) => technicalApi.tenders.decideReview(id, reviewId, payload), onSuccess: invalidate }),
   }
@@ -175,6 +177,9 @@ export function useRequirementMutations(id: string) {
         technicalApi.tenders.removeRequirement(id, requirementId),
       onSuccess: invalidate,
     }),
+    linkTask: useMutation({ mutationFn: ({ requirementId, taskId }: { requirementId: string; taskId: string }) => technicalApi.tenders.linkTask(id, requirementId, taskId), onSuccess: invalidate }),
+    createTask: useMutation({ mutationFn: ({ requirementId, payload }: { requirementId: string; payload: { title?: string; description?: string; priority?: string; dueAt?: string; assignedToId?: string } }) => technicalApi.tenders.createTask(id, requirementId, payload), onSuccess: invalidate }),
+    unlinkTask: useMutation({ mutationFn: (requirementId: string) => technicalApi.tenders.unlinkTask(id, requirementId), onSuccess: invalidate }),
     deliver: useMutation({
       mutationFn: (payload: { documentId: string; label?: string; required?: boolean }) =>
         technicalApi.tenders.addDeliverable(id, payload),

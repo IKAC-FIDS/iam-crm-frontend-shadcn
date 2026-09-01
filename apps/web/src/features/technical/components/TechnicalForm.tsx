@@ -23,6 +23,7 @@ import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSele
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { technicalApi, technicalLookups } from "../api"
+import { ScopedUserSelect } from "./ScopedUserSelect"
 import type {
   KnowledgeArticle,
   TechnicalDocument,
@@ -425,7 +426,7 @@ function Relations({
             />
           </>
         ) : null}
-        {["knowledge-base", "documents", "resources", "tenders"].includes(
+        {["knowledge-base", "documents", "resources"].includes(
           kind
         ) ? (
           <LookupField
@@ -438,14 +439,19 @@ function Relations({
         ) : null}
         {kind === "tenders" ? (
           <>
-            <LookupField
-              kind="users"
+            <ScopedUserField
+              label="مالک"
+              name="ownerId"
+              control={control}
+              error={errors.ownerId?.message}
+              required
+            />
+            <ScopedUserField
               label="مسئول فنی"
               name="technicalLeadId"
               control={control}
             />
-            <LookupField
-              kind="users"
+            <ScopedUserField
               label="مسئول تجاری"
               name="commercialLeadId"
               control={control}
@@ -585,6 +591,9 @@ function DomainFields({
       </div>
     </FormSection>
   )
+}
+function ScopedUserField({ label, name, control, error, required }: { label: string; name: FieldPath<TechnicalFormValues>; control: Control<TechnicalFormValues>; error?: string; required?: boolean }) {
+  return <Field label={label} error={error}><Controller name={name} control={control} render={({ field }) => <ScopedUserSelect value={typeof field.value === "string" ? field.value : undefined} onChange={(value) => field.onChange(value || "")} ariaLabel={label} required={required} />} /></Field>
 }
 function LookupField({
   kind,

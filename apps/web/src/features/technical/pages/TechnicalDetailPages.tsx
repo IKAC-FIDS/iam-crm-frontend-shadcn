@@ -12,6 +12,8 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle2,
+  Link2,
+  ListChecks,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -28,6 +30,7 @@ import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { TechnicalAttachments } from "../components/TechnicalAttachments"
+import { ScopedUserSelect } from "../components/ScopedUserSelect"
 import {
   LifecycleActions,
   TechnicalStatusBadge,
@@ -606,11 +609,14 @@ const readinessLabels: Record<string, string> = {
   TENDER_DEADLINE_PASSED: "مهلت ارسال گذشته است",
   REQUIREMENT_DUE_AFTER_SUBMISSION: "مهلت برخی الزامات بعد از مهلت ارسال است",
   REQUIREMENTS_OVERDUE: "برخی الزامات سررسید گذشته‌اند",
+  REQUIREMENT_DEPENDENCIES_UNRESOLVED: "وابستگی برخی الزامات هنوز برآورده نشده است",
+  GO_WITH_UNSATISFIED_REQUIREMENTS: "تصمیم ادامه با الزامات حیاتی برآورده‌نشده ثبت شده است",
 }
 function tenderEventLabel(action: string) {
   const exact: Record<string, string> = {
     "technical-tender.created": "مناقصه ایجاد شد",
     "technical-tender.updated": "اطلاعات مناقصه ویرایش شد",
+    "technical-tender.qualification-updated": "ارزیابی صلاحیت و تصمیم مناقصه تغییر کرد",
     "technical-tender.transitioned": "مرحله گردش کار تغییر کرد",
     "technical-tender.submitted": "مناقصه ارسال شد",
     "technical-tender.won": "مناقصه برنده شد",
@@ -630,13 +636,40 @@ function tenderEventLabel(action: string) {
 function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permissions: string[] }) {
   const workflow = useTenderWorkflow(tender.id), mutations = useTenderWorkflowMutations(tender.id)
   const [dialog, setDialog] = useState<{ type: TenderReviewType; reviewId?: string; status?: "APPROVED" | "REJECTED" }>()
-  const [comment, setComment] = useState(""), [reviewerId, setReviewerId] = useState(""), [reviewerSearch, setReviewerSearch] = useState("")
-  const debouncedReviewerSearch = useDebouncedValue(reviewerSearch, 250)
-  const reviewers = useQuery({ queryKey: ["technical-tender-reviewers", debouncedReviewerSearch], queryFn: () => technicalLookups("users", debouncedReviewerSearch), enabled: Boolean(dialog && !dialog.reviewId) })
+  const [qualificationOpen, setQualificationOpen] = useState(false)
+  const [bidSearch, setBidSearch] = useState(""), [decisionSearch, setDecisionSearch] = useState("")
+  const [qualification, setQualification] = useState({
+    bidDecision: tender.bidDecision,
+    qualificationDecision: tender.qualificationDecision,
+    fitScore: tender.fitScore?.toString() ?? "",
+    riskScore: tender.riskScore?.toString() ?? "",
+    feasibilityScore: tender.feasibilityScore?.toString() ?? "",
+    fitNotes: tender.fitNotes ?? "",
+    riskNotes: tender.riskNotes ?? "",
+    feasibilityNotes: tender.feasibilityNotes ?? "",
+    qualificationSummary: tender.qualificationSummary ?? "",
+    qualificationConditions: tender.qualificationConditions ?? "",
+    decisionReason: tender.decisionReason ?? "",
+  })
+  const [comment, setComment] = useState(""), [reviewerId, setReviewerId] = useState("")
   const readiness = workflow.readiness.data ?? tender.readiness
   const latest = (type: TenderReviewType) => workflow.reviews.data?.find((r) => r.type === type)
   const reviewLabel: Record<string, string> = { NOT_STARTED: "شروع نشده", PENDING: "در انتظار", APPROVED: "تأیید شده", REJECTED: "رد شده", CANCELLED: "لغو شده" }
+  const qualificationNotes = ([['تناسب', tender.fitNotes], ['ریسک', tender.riskNotes], ['امکان‌پذیری', tender.feasibilityNotes]] as const).filter(([, value]) => Boolean(value))
   return <>
+    <FormSection title="ارزیابی و تصمیم مناقصه" actions={permissions.includes("technical-tender:manage") ? <Button size="sm" variant="outline" onClick={() => setQualificationOpen(true)}><Edit3 className="size-4" />ویرایش ارزیابی</Button> : null}>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <Meta label="تصمیم شرکت در مناقصه" value={({ UNDECIDED: "تصمیم‌گیری نشده", BID: "شرکت می‌کنیم", NO_BID: "شرکت نمی‌کنیم" } as Record<string, string>)[tender.bidDecision]} />
+        <Meta label="تصمیم نهایی" value={({ PENDING: "در انتظار", GO: "ادامه", CONDITIONAL_GO: "ادامه مشروط", NO_GO: "عدم ادامه" } as Record<string, string>)[tender.qualificationDecision]} />
+        <Meta label="تناسب" value={tender.fitScore == null ? "—" : `${tender.fitScore.toLocaleString("fa-IR")} از ۱۰۰`} />
+        <Meta label="ریسک (بیشتر = پرریسک‌تر)" value={tender.riskScore == null ? "—" : `${tender.riskScore.toLocaleString("fa-IR")} از ۱۰۰`} />
+        <Meta label="امکان‌پذیری" value={tender.feasibilityScore == null ? "—" : `${tender.feasibilityScore.toLocaleString("fa-IR")} از ۱۰۰`} />
+      </div>
+      {tender.qualificationSummary ? <p className="mt-3 rounded-xl border p-3 text-sm">{tender.qualificationSummary}</p> : null}
+      {qualificationNotes.length ? <dl className="mt-3 grid gap-2 md:grid-cols-3">{qualificationNotes.map(([label, value]) => <Meta key={label} label={`یادداشت ${label}`} value={value} />)}</dl> : null}
+      {tender.qualificationConditions ? <p className="mt-2 rounded-xl bg-amber-50 p-3 text-sm dark:bg-amber-950/20"><b>شرایط:</b> {tender.qualificationConditions}</p> : null}
+      {tender.decisionReason ? <p className="mt-2 text-sm text-muted-foreground"><b>دلیل تصمیم:</b> {tender.decisionReason}</p> : null}
+    </FormSection>
     <FormSection title="آمادگی ارسال">
       {readiness ? <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]">
         <div className={`rounded-2xl border p-4 ${readiness.overallReady ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20" : "border-amber-300 bg-amber-50/60 dark:bg-amber-950/20"}`}>
@@ -669,9 +702,42 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
     </FormSection>
     <ResponsiveModal open={Boolean(dialog)} onClose={() => setDialog(undefined)} title={dialog?.reviewId ? (dialog.status === "APPROVED" ? "تأیید بازبینی" : "رد بازبینی") : "درخواست بازبینی"}>
       <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!dialog) return; if (dialog.reviewId && dialog.status) await mutations.decideReview.mutateAsync({ reviewId: dialog.reviewId, status: dialog.status, comment: comment || undefined, revision: tender.revision }); else await mutations.requestReview.mutateAsync({ type: dialog.type, reviewerId: reviewerId || undefined, comment: comment || undefined, revision: tender.revision }); setDialog(undefined) }}>
-        {!dialog?.reviewId ? <label>بازبین<SearchableOptionSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} options={reviewers.data ?? []} search={reviewerSearch} onSearchChange={setReviewerSearch} loading={reviewers.isLoading || reviewers.isFetching} ariaLabel="بازبین" /></label> : null}
+        {!dialog?.reviewId ? <label>بازبین<ScopedUserSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} ariaLabel="بازبین مناقصه" /></label> : null}
         <label>توضیح<textarea className="min-h-28 w-full rounded-xl border p-3" value={comment} onChange={(e) => setComment(e.target.value)} required={dialog?.status === "REJECTED"} /></label>
         <Button disabled={mutations.requestReview.isPending || mutations.decideReview.isPending || (dialog?.status === "REJECTED" && !comment.trim())}>ثبت تصمیم</Button>
+      </form>
+    </ResponsiveModal>
+    <ResponsiveModal open={qualificationOpen} onClose={() => setQualificationOpen(false)} title="ارزیابی صلاحیت مناقصه">
+      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); await mutations.saveQualification.mutateAsync({
+        bidDecision: qualification.bidDecision,
+        qualificationDecision: qualification.qualificationDecision,
+        fitScore: qualification.fitScore === "" ? undefined : Number(qualification.fitScore),
+        riskScore: qualification.riskScore === "" ? undefined : Number(qualification.riskScore),
+        feasibilityScore: qualification.feasibilityScore === "" ? undefined : Number(qualification.feasibilityScore),
+        fitNotes: qualification.fitNotes || undefined,
+        riskNotes: qualification.riskNotes || undefined,
+        feasibilityNotes: qualification.feasibilityNotes || undefined,
+        qualificationSummary: qualification.qualificationSummary || undefined,
+        qualificationConditions: qualification.qualificationConditions || undefined,
+        decisionReason: qualification.decisionReason || undefined,
+        revision: tender.revision,
+      }); setQualificationOpen(false) }}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label>تصمیم شرکت<SearchableOptionSelect value={qualification.bidDecision} onChange={(value) => setQualification({ ...qualification, bidDecision: (value || "UNDECIDED") as typeof qualification.bidDecision })} options={[{ id: "UNDECIDED", label: "تصمیم‌گیری نشده" }, { id: "BID", label: "شرکت می‌کنیم" }, { id: "NO_BID", label: "شرکت نمی‌کنیم" }].filter((x) => x.label.includes(bidSearch))} search={bidSearch} onSearchChange={setBidSearch} allowEmpty={false} ariaLabel="تصمیم شرکت در مناقصه" /></label>
+          <label>تصمیم نهایی<SearchableOptionSelect value={qualification.qualificationDecision} onChange={(value) => setQualification({ ...qualification, qualificationDecision: (value || "PENDING") as typeof qualification.qualificationDecision })} options={[{ id: "PENDING", label: "در انتظار" }, { id: "GO", label: "ادامه" }, { id: "CONDITIONAL_GO", label: "ادامه مشروط" }, { id: "NO_GO", label: "عدم ادامه" }].filter((x) => x.label.includes(decisionSearch))} search={decisionSearch} onSearchChange={setDecisionSearch} allowEmpty={false} ariaLabel="تصمیم نهایی صلاحیت" /></label>
+          <label>امتیاز تناسب<Input type="number" min={0} max={100} value={qualification.fitScore} onChange={(e) => setQualification({ ...qualification, fitScore: e.target.value })} /></label>
+          <label>امتیاز ریسک<Input type="number" min={0} max={100} value={qualification.riskScore} onChange={(e) => setQualification({ ...qualification, riskScore: e.target.value })} /></label>
+          <label>امتیاز امکان‌پذیری<Input type="number" min={0} max={100} value={qualification.feasibilityScore} onChange={(e) => setQualification({ ...qualification, feasibilityScore: e.target.value })} /></label>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <label>یادداشت تناسب<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.fitNotes} onChange={(e) => setQualification({ ...qualification, fitNotes: e.target.value })} /></label>
+          <label>یادداشت ریسک<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.riskNotes} onChange={(e) => setQualification({ ...qualification, riskNotes: e.target.value })} /></label>
+          <label>یادداشت امکان‌پذیری<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.feasibilityNotes} onChange={(e) => setQualification({ ...qualification, feasibilityNotes: e.target.value })} /></label>
+        </div>
+        <label>جمع‌بندی<textarea className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationSummary} onChange={(e) => setQualification({ ...qualification, qualificationSummary: e.target.value })} /></label>
+        {qualification.qualificationDecision === "CONDITIONAL_GO" ? <label>شرایط ادامه<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationConditions} onChange={(e) => setQualification({ ...qualification, qualificationConditions: e.target.value })} /></label> : null}
+        {qualification.qualificationDecision === "NO_GO" || qualification.bidDecision === "NO_BID" ? <label>دلیل تصمیم<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.decisionReason} onChange={(e) => setQualification({ ...qualification, decisionReason: e.target.value })} /></label> : null}
+        <Button disabled={mutations.saveQualification.isPending}>ذخیره ارزیابی</Button>
       </form>
     </ResponsiveModal>
   </>
@@ -683,11 +749,11 @@ function Requirements({
   tender: Tender
   canManage: boolean
 }) {
+  const nav = useNavigate(), permissions = usePermissions()
   const q = useRequirements(tender.id),
     m = useRequirementMutations(tender.id),
     [editing, setEditing] = useState<TenderRequirement | null | undefined>(),
     [statusSearch, setStatusSearch] = useState(""),
-    [ownerSearch, setOwnerSearch] = useState(""),
     [filterStatus, setFilterStatus] = useState(""),
     [filterStatusSearch, setFilterStatusSearch] = useState(""),
     [filterOwner, setFilterOwner] = useState(""),
@@ -696,23 +762,37 @@ function Requirements({
     [filterMandatorySearch, setFilterMandatorySearch] = useState(""),
     [filterOverdue, setFilterOverdue] = useState(false),
     [filterCategory, setFilterCategory] = useState(""),
+    [filterSearch, setFilterSearch] = useState(""),
+    [parentSearch, setParentSearch] = useState(""),
+    [taskDialog, setTaskDialog] = useState<{ requirement: TenderRequirement; mode: "link" | "create" }>(),
+    [taskSearch, setTaskSearch] = useState(""),
+    [taskId, setTaskId] = useState(""),
+    [taskTitle, setTaskTitle] = useState(""),
     [form, setForm] = useState<RequirementPayload>({
       title: "",
       mandatory: false,
       status: "OPEN",
     })
-  const debouncedOwnerSearch = useDebouncedValue(ownerSearch, 250)
   const debouncedFilterOwnerSearch = useDebouncedValue(filterOwnerSearch, 250)
-  const owners = useQuery({ queryKey: ["technical-requirement-owners", debouncedOwnerSearch], queryFn: () => technicalLookups("users", debouncedOwnerSearch), enabled: editing !== undefined })
   const filterOwners = useQuery({ queryKey: ["technical-requirement-filter-owners", debouncedFilterOwnerSearch], queryFn: () => technicalLookups("users", debouncedFilterOwnerSearch) })
+  const debouncedTaskSearch = useDebouncedValue(taskSearch, 250)
+  const tasks = useQuery({ queryKey: ["technical-requirement-tasks", debouncedTaskSearch], queryFn: () => technicalLookups("tasks", debouncedTaskSearch), enabled: taskDialog?.mode === "link" })
   const [now] = useState(() => Date.now())
-  const visibleRequirements = (q.data ?? []).filter((r) =>
+  const allRequirements = q.data ?? []
+  const parentById = new Map(allRequirements.map((r) => [r.id, r.parentRequirementId]))
+  const depth = (r: TenderRequirement) => { let value = 0, cursor = r.parentRequirementId, guard = 0; while (cursor && guard++ < 20) { value += 1; cursor = parentById.get(cursor) } return value }
+  const orderedRequirements: TenderRequirement[] = []
+  const appended = new Set<string>()
+  const appendBranch = (parentId?: string | null) => allRequirements.filter((r) => (r.parentRequirementId || null) === (parentId || null)).forEach((r) => { if (appended.has(r.id)) return; appended.add(r.id); orderedRequirements.push(r); appendBranch(r.id) })
+  appendBranch(null)
+  allRequirements.forEach((r) => { if (!appended.has(r.id)) orderedRequirements.push(r) })
+  const visibleRequirements = orderedRequirements.filter((r) =>
     (!filterStatus || r.status === filterStatus) &&
     (!filterOwner || r.ownerId === filterOwner) &&
     (!filterMandatory || r.mandatory === (filterMandatory === "true")) &&
     (!filterOverdue || (r.status !== "VERIFIED" && Boolean(r.dueDate) && new Date(r.dueDate!).getTime() < now)) &&
     (!filterCategory.trim() || (r.category ?? "").toLocaleLowerCase("fa").includes(filterCategory.trim().toLocaleLowerCase("fa"))),
-  )
+  ).filter((r) => !filterSearch.trim() || [r.title, r.description, r.referenceId, r.section].some((value) => value?.toLocaleLowerCase("fa").includes(filterSearch.trim().toLocaleLowerCase("fa"))))
   function open(item?: TenderRequirement) {
     setEditing(item || null)
     setForm(
@@ -721,6 +801,12 @@ function Requirements({
             title: item.title,
             category: item.category || "",
             description: item.description || "",
+            section: item.section || "",
+            page: item.page || "",
+            referenceId: item.referenceId || "",
+            notes: item.notes || "",
+            parentRequirementId: item.parentRequirementId || "",
+            dependencyIds: item.dependencies?.map((dependency) => dependency.dependsOnRequirementId) ?? [],
             mandatory: item.mandatory,
             ownerId: item.ownerId || "",
             dueDate: item.dueDate?.slice(0, 10) || "",
@@ -728,7 +814,7 @@ function Requirements({
             blockedReason: item.blockedReason || "",
             status: item.status,
           }
-        : { title: "", mandatory: false, status: "OPEN" }
+        : { title: "", mandatory: false, status: "OPEN", dependencyIds: [] }
     )
   }
   return (
@@ -756,7 +842,8 @@ function Requirements({
               <Meta label="باز" value={q.data.filter((r) => r.status === "OPEN").length.toLocaleString("fa-IR")} />
               <Meta label="سررسید گذشته" value={q.data.filter((r) => r.status !== "VERIFIED" && r.dueDate && new Date(r.dueDate).getTime() < now).length.toLocaleString("fa-IR")} />
             </dl>
-            <div className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="grid gap-2 rounded-xl border p-3 sm:grid-cols-2 xl:grid-cols-6">
+              <Input value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="جستجو در الزامات" aria-label="جستجوی الزام" />
               <SearchableOptionSelect value={filterStatus} onChange={(value) => setFilterStatus(value || "")} options={Object.entries(requirementPresentation.label).filter(([, label]) => label.includes(filterStatusSearch.trim())).map(([id, label]) => ({ id, label }))} search={filterStatusSearch} onSearchChange={setFilterStatusSearch} placeholder="همه وضعیت‌ها" ariaLabel="فیلتر وضعیت الزام" />
               <SearchableOptionSelect value={filterOwner} onChange={(value) => setFilterOwner(value || "")} options={filterOwners.data ?? []} search={filterOwnerSearch} onSearchChange={setFilterOwnerSearch} loading={filterOwners.isLoading || filterOwners.isFetching} placeholder="همه مسئولان" ariaLabel="فیلتر مسئول الزام" />
               <SearchableOptionSelect value={filterMandatory} onChange={(value) => setFilterMandatory(value || "")} options={[{ id: "true", label: "فقط الزامی" }, { id: "false", label: "فقط اختیاری" }].filter((option) => option.label.includes(filterMandatorySearch.trim()))} search={filterMandatorySearch} onSearchChange={setFilterMandatorySearch} placeholder="الزامی و اختیاری" ariaLabel="فیلتر الزامی بودن" />
@@ -768,9 +855,9 @@ function Requirements({
                 key={r.id}
                 className="grid gap-3 rounded-xl border p-3 lg:grid-cols-[1fr_auto]"
               >
-                <div>
+                <div style={{ paddingInlineStart: `${Math.min(depth(r), 6) * 1.25}rem` }}>
                   <div className="flex flex-wrap items-center gap-2">
-                    <b>{r.title}</b>
+                    <b>{depth(r) ? "↳ " : ""}{r.title}</b>
                     {r.mandatory ? (
                       <span className="rounded-full border border-destructive px-2 py-0.5 text-xs font-bold text-destructive">
                         الزامی
@@ -785,13 +872,30 @@ function Requirements({
                     {r.description || "بدون توضیح"}
                   </p>
                   <div className="mt-2 text-xs">
-                    مهلت: {faDate(r.dueDate)} · دسته: {r.category || "—"} · مسئول: {relationName(r.owner)}
+                    مرجع: {r.referenceId || "—"} · بخش/صفحه: {[r.section, r.page].filter(Boolean).join(" / ") || "—"} · مسئول: {relationName(r.owner)}
                   </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>مهلت: {faDate(r.dueDate)}</span><span>دسته: {r.category || "—"}</span><span>وابستگی: {(r.dependencies?.length ?? 0).toLocaleString("fa-IR")}</span>
+                    {r.task ? <button type="button" className="font-bold text-primary underline-offset-4 hover:underline" onClick={() => nav(`/tasks/${r.task!.id}`)}>کار: {r.task.title}</button> : <span>بدون کار متصل</span>}
+                  </div>
+                  {r.notes ? <p className="mt-2 text-sm text-muted-foreground">یادداشت: {r.notes}</p> : null}
                   {r.blockedReason ? <p className="mt-2 rounded-lg bg-destructive/10 p-2 text-sm text-destructive">دلیل مسدودی: {r.blockedReason}</p> : null}
                 </div>
                 {canManage ? (
                   <EntityRowActions
                     actions={[
+                      ...(permissions.includes("task:view") ? [{
+                        id: "task",
+                        label: r.task ? "قطع اتصال کار" : "اتصال کار موجود",
+                        icon: Link2,
+                        onClick: () => r.task ? m.unlinkTask.mutateAsync(r.id) : (setTaskDialog({ requirement: r, mode: "link" }), setTaskId(""), setTaskSearch("")),
+                      }] : []),
+                      ...(permissions.includes("task:create") && !r.task ? [{
+                        id: "create-task",
+                        label: "ایجاد کار",
+                        icon: ListChecks,
+                        onClick: () => { setTaskDialog({ requirement: r, mode: "create" }); setTaskTitle(`پیگیری الزام: ${r.title}`) },
+                      }] : []),
                       {
                         id: "edit",
                         label: "ویرایش الزام",
@@ -832,7 +936,15 @@ function Requirements({
           onSubmit={async (e) => {
             e.preventDefault()
             await m.save.mutateAsync({
-              payload: form,
+              payload: {
+                ...form,
+                ownerId: form.ownerId || (editing ? null : undefined),
+                parentRequirementId: form.parentRequirementId || (editing ? null : undefined),
+                dueDate: form.dueDate || undefined,
+                referenceId: form.referenceId || undefined,
+                section: form.section || undefined,
+                page: form.page || undefined,
+              },
               requirementId: editing?.id,
             })
             setEditing(undefined)
@@ -853,6 +965,14 @@ function Requirements({
               onChange={(e) => setForm({ ...form, category: e.target.value })}
             />
           </label>
+          <label>توضیحات<textarea className="min-h-24 w-full rounded-xl border p-3" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label>شناسه مرجع<Input value={form.referenceId || ""} onChange={(e) => setForm({ ...form, referenceId: e.target.value })} /></label>
+            <label>بخش<Input value={form.section || ""} onChange={(e) => setForm({ ...form, section: e.target.value })} /></label>
+            <label>صفحه<Input value={form.page || ""} onChange={(e) => setForm({ ...form, page: e.target.value })} /></label>
+          </div>
+          <label>الزام والد<SearchableOptionSelect value={form.parentRequirementId || ""} onChange={(value) => setForm({ ...form, parentRequirementId: value || "" })} options={(q.data ?? []).filter((r) => r.id !== editing?.id && r.title.includes(parentSearch.trim())).map((r) => ({ id: r.id, label: r.referenceId ? `${r.referenceId} — ${r.title}` : r.title }))} search={parentSearch} onSearchChange={setParentSearch} placeholder="بدون والد" ariaLabel="الزام والد" /></label>
+          <fieldset className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border p-3"><legend className="px-1 text-sm font-bold">وابستگی‌ها</legend>{(q.data ?? []).filter((r) => r.id !== editing?.id).map((r) => <label key={r.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.dependencyIds?.includes(r.id) ?? false} onChange={(e) => setForm({ ...form, dependencyIds: e.target.checked ? [...(form.dependencyIds ?? []), r.id] : (form.dependencyIds ?? []).filter((id) => id !== r.id) })} /><span>{r.referenceId ? `${r.referenceId} — ` : ""}{r.title}</span></label>)}</fieldset>
           <label>
             وضعیت
             <SearchableOptionSelect
@@ -881,7 +1001,7 @@ function Requirements({
           </label>
           <label>
             مسئول
-            <SearchableOptionSelect value={form.ownerId || ""} onChange={(value) => setForm({ ...form, ownerId: value || "" })} options={owners.data ?? []} search={ownerSearch} onSearchChange={setOwnerSearch} loading={owners.isLoading || owners.isFetching} placeholder="انتخاب مسئول" ariaLabel="مسئول الزام" />
+            <ScopedUserSelect value={form.ownerId} onChange={(value) => setForm({ ...form, ownerId: value || "" })} ariaLabel="مسئول الزام" />
           </label>
           <label>
             مهلت
@@ -909,11 +1029,22 @@ function Requirements({
               onChange={(e) => setForm({ ...form, response: e.target.value })}
             />
           </label>
+          <label>یادداشت<textarea className="min-h-20 w-full rounded-xl border p-3" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></label>
           {form.status === "BLOCKED" ? <label>دلیل مسدودی<textarea className="min-h-24 w-full rounded-xl border p-3" required value={form.blockedReason || ""} onChange={(e) => setForm({ ...form, blockedReason: e.target.value })} /></label> : null}
           <Button disabled={!form.title || m.save.isPending}>
             ذخیره الزام
           </Button>
         </form>
+      </ResponsiveModal>
+      <ResponsiveModal open={Boolean(taskDialog)} onClose={() => setTaskDialog(undefined)} title={taskDialog?.mode === "create" ? "ایجاد کار از الزام" : "اتصال کار موجود"}>
+        {taskDialog?.mode === "link" ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!taskDialog || !taskId) return; await m.linkTask.mutateAsync({ requirementId: taskDialog.requirement.id, taskId }); setTaskDialog(undefined) }}>
+          <label>کار<SearchableOptionSelect value={taskId} onChange={(value) => setTaskId(value || "")} options={tasks.data ?? []} search={taskSearch} onSearchChange={setTaskSearch} loading={tasks.isLoading || tasks.isFetching} placeholder="جستجو و انتخاب کار" ariaLabel="کار موجود" /></label>
+          <Button disabled={!taskId || m.linkTask.isPending}>اتصال کار</Button>
+        </form> : taskDialog ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); await m.createTask.mutateAsync({ requirementId: taskDialog.requirement.id, payload: { title: taskTitle } }); setTaskDialog(undefined) }}>
+          <label>عنوان کار<Input required value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} /></label>
+          <p className="text-sm text-muted-foreground">شرح الزام و مرجع مناقصه به‌صورت خودکار به توضیحات کار افزوده می‌شود.</p>
+          <Button disabled={!taskTitle.trim() || m.createTask.isPending}>ایجاد و اتصال کار</Button>
+        </form> : null}
       </ResponsiveModal>
     </FormSection>
   )

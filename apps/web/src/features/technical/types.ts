@@ -228,16 +228,31 @@ export type TenderStatus =
   | "ARCHIVED"
 export type RequirementStatus =
   "OPEN" | "IN_PROGRESS" | "READY" | "VERIFIED" | "NOT_APPLICABLE" | "BLOCKED"
+export type TenderBidDecision = "UNDECIDED" | "BID" | "NO_BID"
+export type TenderQualificationDecision = "PENDING" | "GO" | "CONDITIONAL_GO" | "NO_GO"
+export type RequirementDependency = {
+  id: string
+  dependsOnRequirementId: string
+  dependsOnRequirement?: Pick<TenderRequirement, "id" | "title" | "referenceId" | "status">
+}
 export type TenderRequirement = {
   id: string
   tenderId: string
   title: string
   category?: string | null
   description?: string | null
+  section?: string | null
+  page?: string | null
+  referenceId?: string | null
+  notes?: string | null
+  parentRequirementId?: string | null
   mandatory: boolean
   status: RequirementStatus
   ownerId?: string | null
   owner?: EntityRef | null
+  taskId?: string | null
+  task?: { id: string; title: string; status: string; assignedToId?: string | null } | null
+  dependencies?: RequirementDependency[]
   dueDate?: string | null
   response?: string | null
   blockedReason?: string | null
@@ -272,6 +287,26 @@ export type TenderReadiness = {
   overallReady: boolean
   blockers: ReadinessIssue[]
   warnings: ReadinessIssue[]
+  qualification: {
+    bidDecision: TenderBidDecision
+    qualificationDecision: TenderQualificationDecision
+    fitScore?: number | null
+    riskScore?: number | null
+    feasibilityScore?: number | null
+    qualificationConditions?: string | null
+    decisionReason?: string | null
+    qualificationSummary?: string | null
+  }
+  requirementSummary: {
+    totalRequirements: number
+    satisfiedRequirements: number
+    openRequirements: number
+    blockedRequirements: number
+    criticalUnsatisfiedRequirements: number
+    requirementsWithoutOwner: number
+    requirementsWithoutTask: number
+    dependencyBlockedRequirements: number
+  }
   checks: {
     mandatoryRequirements: { total: number; satisfied: number; unresolved: number; blocked: number }
     requirements: { total: number; verified: number; inProgress: number; open: number; blocked: number; overdue: number; unassigned: number }
@@ -303,6 +338,17 @@ export type Tender = {
   estimatedValue?: string | null
   currency?: string | null
   probability?: number | null
+  bidDecision: TenderBidDecision
+  qualificationDecision: TenderQualificationDecision
+  fitScore?: number | null
+  riskScore?: number | null
+  feasibilityScore?: number | null
+  fitNotes?: string | null
+  riskNotes?: string | null
+  feasibilityNotes?: string | null
+  qualificationSummary?: string | null
+  qualificationConditions?: string | null
+  decisionReason?: string | null
   technicalLeadId?: string | null
   commercialLeadId?: string | null
   revision: number
@@ -341,12 +387,32 @@ export type RequirementPayload = {
   title: string
   category?: string
   description?: string
+  section?: string
+  page?: string
+  referenceId?: string
+  notes?: string
+  parentRequirementId?: string | null
+  dependencyIds?: string[]
   mandatory?: boolean
-  ownerId?: string
+  ownerId?: string | null
   dueDate?: string
   response?: string
   blockedReason?: string
   status?: RequirementStatus
+}
+export type TenderQualificationPayload = {
+  bidDecision?: TenderBidDecision
+  qualificationDecision?: TenderQualificationDecision
+  fitScore?: number
+  riskScore?: number
+  feasibilityScore?: number
+  fitNotes?: string
+  riskNotes?: string
+  feasibilityNotes?: string
+  qualificationSummary?: string
+  qualificationConditions?: string
+  decisionReason?: string
+  revision?: number
 }
 export type TechnicalKind =
   "releases" | "knowledge-base" | "documents" | "resources" | "tenders"

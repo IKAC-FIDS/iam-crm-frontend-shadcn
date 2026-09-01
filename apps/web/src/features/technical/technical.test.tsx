@@ -13,7 +13,7 @@ import {
   ResponsiveTechnicalList,
   TechnicalStatusBadge,
 } from "./components/TechnicalPrimitives"
-import { technicalApi } from "./api"
+import { technicalApi, technicalLookups } from "./api"
 import { releasePresentation, releaseTransitions } from "./presentation"
 import { TechnicalDocumentsPage } from "./pages/TechnicalListPages"
 import { TechnicalTenderDetailPage } from "./pages/TechnicalDetailPages"
@@ -101,6 +101,23 @@ describe("Technical Center contract", () => {
     expect(api.get).toHaveBeenCalledWith("/technical/tenders/t1/reviews")
     expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/reviews/rv1/decision", expect.objectContaining({ status: "REJECTED", comment: "نیازمند اصلاح" }))
   })
+
+  it("uses qualification, dependency and requirement task endpoints", async () => {
+    vi.mocked(api.patch).mockResolvedValue({ data: { data: { id: "t1" } } })
+    vi.mocked(api.post).mockResolvedValue({ data: { data: { id: "link1" } } })
+    await technicalApi.tenders.saveQualification("t1", { qualificationDecision: "CONDITIONAL_GO", qualificationConditions: "تأیید قیمت" })
+    await technicalApi.tenders.addDependency("t1", "r1", "r2")
+    await technicalApi.tenders.linkTask("t1", "r1", "task1")
+    expect(api.patch).toHaveBeenCalledWith("/technical/tenders/t1/qualification", expect.objectContaining({ qualificationDecision: "CONDITIONAL_GO" }))
+    expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/requirements/r1/dependencies", { dependsOnRequirementId: "r2" })
+    expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/requirements/r1/link-task", { taskId: "task1" })
+  })
+
+  it("requests tender people from the selected server-side team scope", async () => {
+    vi.mocked(api.get).mockResolvedValue({ data: { data: { data: [], meta: { total: 0 } } } })
+    await technicalLookups("tender-users", "علی", undefined, "team-1")
+    expect(api.get).toHaveBeenCalledWith("/users/assignee-options", { params: expect.objectContaining({ search: "علی", teamId: "team-1" }) })
+  })
 })
 
 describe("Technical Center behavior", () => {
@@ -117,13 +134,15 @@ describe("Technical Center behavior", () => {
         submissionDeadline: { value: "2026-09-01", overdue: false }, requiredTenderFields: { complete: true, missing: [] },
       },
     }
-    const tender = { id: "t1", title: "مناقصه تست", tenderType: "RFP", status: "PREPARING", ownerId: "u1", revision: 1, requirements: [], deliverables: [], readiness, createdAt: "2026-08-30", updatedAt: "2026-08-30" }
+    const tender = { id: "t1", title: "مناقصه تست", tenderType: "RFP", status: "PREPARING", ownerId: "u1", revision: 1, bidDecision: "BID", qualificationDecision: "CONDITIONAL_GO", fitScore: 85, riskScore: 35, feasibilityScore: 80, qualificationConditions: "تأیید قیمت", requirements: [], deliverables: [], readiness, createdAt: "2026-08-30", updatedAt: "2026-08-30" }
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: { data: url.endsWith("/readiness") ? readiness : url.endsWith("/reviews") || url.endsWith("/requirements") || url.endsWith("/history") ? [] : tender } }))
     render(<MemoryRouter initialEntries={["/technical/tenders/t1"]}><Routes><Route path="/technical/tenders/:id" element={<TechnicalTenderDetailPage />} /></Routes></MemoryRouter>, { wrapper })
     expect(await screen.findByText("آماده ارسال نیست")).toBeInTheDocument()
     expect(screen.getByText(/الزامات الزامی تکمیل نشده‌اند/)).toBeInTheDocument()
     expect(screen.getByText("بازبینی فنی")).toBeInTheDocument()
     expect(screen.getByText("بازبینی تجاری")).toBeInTheDocument()
+    expect(screen.getByText("ادامه مشروط")).toBeInTheDocument()
+    expect(screen.getByText(/تأیید قیمت/)).toBeInTheDocument()
   })
   it("sends document confidentiality and tender filters from the URL-backed UI", async () => {
     useAuthStore.setState({

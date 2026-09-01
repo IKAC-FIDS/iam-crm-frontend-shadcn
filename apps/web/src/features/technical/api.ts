@@ -17,6 +17,7 @@ import type {
   Tender,
   TenderDeliverable,
   TenderPayload,
+  TenderQualificationPayload,
   TenderRequirement,
   TenderReadiness,
   TenderReview,
@@ -121,6 +122,10 @@ export const technicalApi = {
       revision?: number,
       reason?: string
     ) => transition<Tender>("tenders", id, status, revision, reason),
+    saveQualification: async (id: string, p: TenderQualificationPayload) => {
+      const r = await api.patch(`${root}/tenders/${id}/qualification`, p)
+      return unwrapApiResponse<Tender>(r.data)
+    },
     requirements: async (id: string) => {
       const r = await api.get(`${root}/tenders/${id}/requirements`)
       return unwrapApiResponse<TenderRequirement[]>(r.data)
@@ -157,6 +162,22 @@ export const technicalApi = {
     },
     removeRequirement: (id: string, rid: string) =>
       api.delete(`${root}/tenders/${id}/requirements/${rid}`),
+    addDependency: async (id: string, rid: string, dependsOnRequirementId: string) => {
+      const r = await api.post(`${root}/tenders/${id}/requirements/${rid}/dependencies`, { dependsOnRequirementId })
+      return unwrapApiResponse<{ id: string }>(r.data)
+    },
+    removeDependency: (id: string, rid: string, dependencyId: string) =>
+      api.delete(`${root}/tenders/${id}/requirements/${rid}/dependencies/${dependencyId}`),
+    linkTask: async (id: string, rid: string, taskId: string) => {
+      const r = await api.post(`${root}/tenders/${id}/requirements/${rid}/link-task`, { taskId })
+      return unwrapApiResponse<TenderRequirement>(r.data)
+    },
+    createTask: async (id: string, rid: string, p: { title?: string; description?: string; priority?: string; dueAt?: string; assignedToId?: string }) => {
+      const r = await api.post(`${root}/tenders/${id}/requirements/${rid}/create-task`, p)
+      return unwrapApiResponse<{ requirement: TenderRequirement; task: { id: string; title: string } }>(r.data)
+    },
+    unlinkTask: (id: string, rid: string) =>
+      api.delete(`${root}/tenders/${id}/requirements/${rid}/task`),
     addDeliverable: async (
       id: string,
       p: { documentId: string; label?: string; required?: boolean }
@@ -187,18 +208,25 @@ export async function technicalLookups(
     | "companies"
     | "opportunities"
     | "users"
+    | "tender-users"
+    | "teams"
     | "documents"
-    | "tenders",
+    | "tenders"
+    | "tasks",
   search = "",
-  companyId?: string
+  companyId?: string,
+  teamId?: string
 ): Promise<LookupOption[]> {
   const endpoint = {
     products: "/product-catalog",
     companies: "/companies",
     opportunities: "/opportunities",
     users: "/users/owner-options",
+    "tender-users": "/users/assignee-options",
+    teams: "/teams",
     documents: "/technical/documents",
     tenders: "/technical/tenders",
+    tasks: "/tasks",
   }[kind]
   const r = await api.get(endpoint, {
     params: {
@@ -206,6 +234,7 @@ export async function technicalLookups(
       limit: 50,
       search: search || undefined,
       companyId: companyId || undefined,
+      teamId: teamId || undefined,
     },
   })
   return rows(r.data).map((x) => ({
