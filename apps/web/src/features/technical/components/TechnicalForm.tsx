@@ -85,15 +85,6 @@ const schema = z.object({
   commercialLeadId: z.string().optional(),
 })
 
-const currencyOptions = [
-  { id: "IRR", label: "ریال ایران (IRR)" },
-  { id: "USD", label: "دلار آمریکا (USD)" },
-  { id: "EUR", label: "یورو (EUR)" },
-  { id: "AED", label: "درهم امارات (AED)" },
-  { id: "GBP", label: "پوند بریتانیا (GBP)" },
-  { id: "CNY", label: "یوان چین (CNY)" },
-  { id: "TRY", label: "لیر ترکیه (TRY)" },
-]
 export type TechnicalFormValues = z.infer<typeof schema>
 type Entity =
   | TechnicalRelease
@@ -597,7 +588,11 @@ function DomainFields({
 }
 function CurrencyField({ control }: { control: Control<TechnicalFormValues> }) {
   const [search, setSearch] = useState("")
-  const normalizedSearch = search.trim().toLocaleLowerCase("fa-IR")
+  const debouncedSearch = useDebouncedValue(search, 250)
+  const options = useQuery({
+    queryKey: ["technical-tender-currencies", debouncedSearch],
+    queryFn: () => technicalLookups("currencies", debouncedSearch),
+  })
   return (
     <Field label="ارز">
       <Controller
@@ -607,11 +602,10 @@ function CurrencyField({ control }: { control: Control<TechnicalFormValues> }) {
           <SearchableOptionSelect
             value={typeof field.value === "string" ? field.value : "IRR"}
             onChange={(value) => field.onChange(value || "IRR")}
-            options={currencyOptions.filter((option) =>
-              `${option.id} ${option.label}`.toLocaleLowerCase("fa-IR").includes(normalizedSearch),
-            )}
+            options={options.data ?? []}
             search={search}
             onSearchChange={setSearch}
+            loading={options.isLoading || options.isFetching}
             allowEmpty={false}
             placeholder="انتخاب ارز"
             ariaLabel="ارز"

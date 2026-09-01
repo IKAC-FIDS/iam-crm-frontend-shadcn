@@ -210,6 +210,7 @@ export async function technicalLookups(
     | "users"
     | "tender-users"
     | "teams"
+    | "currencies"
     | "documents"
     | "tenders"
     | "tasks",
@@ -224,6 +225,7 @@ export async function technicalLookups(
     users: "/users/owner-options",
     "tender-users": "/users/assignee-options",
     teams: "/teams",
+    currencies: "/technical/tenders/currency-options",
     documents: "/technical/documents",
     tenders: "/technical/tenders",
     tasks: "/tasks",
