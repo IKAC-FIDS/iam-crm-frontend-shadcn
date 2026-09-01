@@ -88,6 +88,9 @@ export function ActivitiesPage() {
   const permissions = user?.permissions ?? []
 
   const canView = permissions.includes("activity:view")
+  const canViewOrganization = permissions.includes(
+    "activity:view-organization"
+  )
   const canCreate = permissions.includes("activity:create")
   const canUpdate = permissions.includes("activity:update")
   const typeQuery = useActivityTypes(canView)
@@ -108,7 +111,12 @@ export function ActivitiesPage() {
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
   const search = params.get("search") || ""
-  const scope = enumParam(params.get("scope"), ["all", "mine", "team"], "all")
+  const requestedScope = enumParam(
+    params.get("scope"),
+    ["all", "mine", "team"],
+    "all"
+  )
+  const scope = canViewOrganization ? requestedScope : "mine"
   const activityType = params.get("activityType") || ""
   const status = enumParam(
     params.get("status"),
@@ -143,7 +151,7 @@ export function ActivitiesPage() {
   const person =
     people.data?.find((item) => item.id === personId) ??
     (personId ? { id: personId, label: personId } : undefined)
-  const owners = useActivityOwnerOptions(canView)
+  const owners = useActivityOwnerOptions(canView && canViewOrganization)
 
   const ownerOptions = useMemo(
     () =>
@@ -200,8 +208,9 @@ export function ActivitiesPage() {
       status: status || undefined,
       companyId: companyId || undefined,
       personId: person?.id,
-      ownerId: scope === "mine" ? undefined : ownerId || undefined,
-      team: team || undefined,
+      ownerId:
+        canViewOrganization && scope !== "mine" ? ownerId || undefined : undefined,
+      team: canViewOrganization ? team || undefined : undefined,
       mine: scope === "mine" ? true : undefined,
       ownershipScope: scope === "team" ? "team" : "all",
       dateFrom: from?.toISOString(),
@@ -211,6 +220,7 @@ export function ActivitiesPage() {
     }
   }, [
     activityType,
+    canViewOrganization,
     companyId,
     dateRange,
     debouncedSearch,
@@ -227,9 +237,11 @@ export function ActivitiesPage() {
   const stages = usePipelineStages(canView)
   const stageItems = useMemo(() => stages.data ?? [], [stages.data])
 
-  const activeAdvanced = [companyId, person?.id, ownerId, team].filter(
-    Boolean
-  ).length
+  const activeAdvanced = [
+    companyId,
+    person?.id,
+    ...(canViewOrganization ? [ownerId, team] : []),
+  ].filter(Boolean).length
 
   function clearFilters() {
     patch(
@@ -385,7 +397,10 @@ export function ActivitiesPage() {
         filters={
           <>
             <div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              {(["all", "mine", "team"] as const).map((value) => (
+              {(canViewOrganization
+                ? (["all", "mine", "team"] as const)
+                : (["mine"] as const)
+              ).map((value) => (
                 <button
                   key={value}
                   type="button"
@@ -505,7 +520,7 @@ export function ActivitiesPage() {
                     loading={people.isLoading}
                   />
 
-                  <ActivityOptionSelect
+                  {canViewOrganization ? <ActivityOptionSelect
                     value={ownerId || undefined}
                     options={ownerOptions}
                     onChange={(next) => {
@@ -517,9 +532,9 @@ export function ActivitiesPage() {
                     loading={owners.isLoading}
                     searchable={false}
                     disabled={scope === "mine"}
-                  />
+                  /> : null}
 
-                  <select
+                  {canViewOrganization ? <select
                     aria-label={uiText.common.filters.team}
                     className={selectClass}
                     value={team}
@@ -533,7 +548,7 @@ export function ActivitiesPage() {
                         {item}
                       </option>
                     ))}
-                  </select>
+                  </select> : null}
                 </div>
               </PopoverContent>
             </Popover>
