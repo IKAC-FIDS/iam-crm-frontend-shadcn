@@ -34,4 +34,12 @@ describe("operations navigation", () => {
       )
     ).toBe(false)
   })
+
+  it("keeps the compatibility attention route out of navigation", () => {
+    const ids = getVisibleMenuGroups(
+      user(["activity:view", "notification:view"])
+    ).flatMap((item) => item.routes.map((route) => route.id))
+
+    expect(ids).not.toContain("attention")
+  })
 })

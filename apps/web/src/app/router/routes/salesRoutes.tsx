@@ -80,17 +80,15 @@ export const salesRoutes = [
     lazyRoute(
       () => import("@/features/attention/pages/AttentionCenterPage"),
       "AttentionCenterPage"
-    ),
-    [
-      {
-        path: "/follow-ups",
-        element: <Navigate to="/attention?tab=follow-ups" replace />,
-      },
-      {
-        path: "/notifications",
-        element: <Navigate to="/attention?tab=notifications" replace />,
-      },
-    ]
+    )
+  ),
+  routeGroup(
+    "follow-ups",
+    <Navigate to="/attention?tab=follow-ups" replace />
+  ),
+  routeGroup(
+    "notifications",
+    <Navigate to="/attention?tab=notifications" replace />
   ),
   routeGroup(
     "reports",

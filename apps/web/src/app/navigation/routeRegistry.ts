@@ -45,6 +45,7 @@ export interface AppMenuRoute {
   order: number
   icon: LucideIcon
   access: RouteAccessPolicy
+  showInNavigation?: boolean
 }
 
 const authenticated = { type: "authenticated" } as const
@@ -115,6 +116,16 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     order: 20,
     icon: CalendarDays,
     access: any(["meeting:view"]),
+  },
+  {
+    id: "attention",
+    path: "/attention",
+    label: "مرکز پیگیری‌ها و اعلان‌ها",
+    group: null,
+    order: 35,
+    icon: Bell,
+    access: any(["follow-up:view", "activity:view", "notification:view"]),
+    showInNavigation: false,
   },
   {
     id: "follow-ups",

@@ -11,6 +11,7 @@ import {
 export function getVisibleMenuRoutes(user: AuthUser | null | undefined) {
   return appMenuRoutes
     .filter((route) => canAccessRoute(user, route.access))
+    .filter((route) => route.showInNavigation !== false)
     .sort((left, right) => left.order - right.order)
 }
 
