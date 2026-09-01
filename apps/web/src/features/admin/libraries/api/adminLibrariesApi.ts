@@ -58,12 +58,12 @@ export type Product = {
   category?: string | null
   unit?: string | null
   pricingCurrency: "IRR" | "USD"
-  inPersonInputPrice: string | number
-  digikalaInputPrice: string | number
+  inPersonInputPrice: string | number | null
+  digikalaInputPrice: string | number | null
   inPersonProfitPercent?: string | number | null
   digikalaProfitPercent?: string | number | null
-  inPersonPriceIrr: string | number
-  digikalaPriceIrr: string | number
+  inPersonPriceIrr: string | number | null
+  digikalaPriceIrr: string | number | null
   isActive: boolean
   sortOrder: number
 }
@@ -87,8 +87,8 @@ export type ProductPayload = {
 export type ProductPriceHistory = {
   id: string
   pricingCurrency: "IRR" | "USD"
-  inPersonPriceIrr: string | number
-  digikalaPriceIrr: string | number
+  inPersonPriceIrr: string | number | null
+  digikalaPriceIrr: string | number | null
   reason: string
   validFrom: string
   changedBy?: { fullName: string } | null

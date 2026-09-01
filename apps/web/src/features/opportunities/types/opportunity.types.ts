@@ -123,9 +123,9 @@ export interface ProductCatalogOption {
   name: string
   category?: string | null
   unit?: string | null
-  defaultUnitPrice?: number | string
-  inPersonPriceIrr?: number | string
-  digikalaPriceIrr?: number | string
+  defaultUnitPrice?: number | string | null
+  inPersonPriceIrr?: number | string | null
+  digikalaPriceIrr?: number | string | null
   currency?: string
   isActive?: boolean
 }
@@ -139,10 +139,10 @@ export interface OpportunityLineItem {
   salesChannel: SalesChannel
   description?: string | null
   quantity: number | string
-  unitPrice: number | string
-  discountAmount: number | string
-  taxAmount: number | string
-  lineTotal: number | string
+  unitPrice: number | string | null
+  discountAmount: number | string | null
+  taxAmount: number | string | null
+  lineTotal: number | string | null
   sortOrder: number
   createdAt?: string
   updatedAt?: string
@@ -236,7 +236,7 @@ export interface OpportunityPayment {
     title?: string | null
   } | null
   status: PaymentStatus
-  amount: number | string
+  amount: number | string | null
   currency: string
   dueDate?: string | null
   paidAt?: string | null

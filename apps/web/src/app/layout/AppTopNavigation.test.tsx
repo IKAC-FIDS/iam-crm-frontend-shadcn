@@ -15,6 +15,9 @@ beforeEach(() => {
       ...user,
       permissions: [
         "company:view",
+        "task:view",
+        "activity:view",
+        "notification:view",
         "technical-release:view",
         "user:view",
         "meeting:view",
@@ -24,7 +27,7 @@ beforeEach(() => {
   })
 })
 
-it("renders every navigation group as a menu option and keeps meetings at the desktop end", async () => {
+it("renders operations as a permission-aware group without a standalone meetings button", async () => {
   render(
     <MemoryRouter initialEntries={["/dashboard"]}>
       <AppTopNavigation />
@@ -33,6 +36,7 @@ it("renders every navigation group as a menu option and keeps meetings at the de
 
   const labels = [
     uiText.navigation.groups.sales,
+    uiText.navigation.groups.operations,
     uiText.navigation.groups.technical,
     uiText.navigation.groups.management,
     uiText.navigation.groups.account,
@@ -42,10 +46,18 @@ it("renders every navigation group as a menu option and keeps meetings at the de
   )
   expect(screen.queryByRole("button", { name: "همه بخش‌ها" })).toBeNull()
 
-  const meetings = screen.getByRole("button", {
-    name: uiText.navigation.meetings,
-  })
-  expect(meetings).toHaveClass("ms-auto")
+  expect(
+    screen.queryByRole("button", { name: uiText.navigation.meetings })
+  ).toBeNull()
+
+  await userEvent.click(
+    screen.getByRole("button", { name: uiText.navigation.groups.operations })
+  )
+  expect(
+    await screen.findByRole("menuitem", {
+      name: new RegExp(uiText.navigation.meetings),
+    })
+  ).toBeInTheDocument()
 
   await userEvent.click(
     screen.getByRole("button", { name: uiText.navigation.groups.sales })

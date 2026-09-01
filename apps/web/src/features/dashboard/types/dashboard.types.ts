@@ -1,4 +1,4 @@
-export type NumericValue = number | string
+export type NumericValue = number | string | null
 
 export interface DashboardSummary {
   generatedAt: string

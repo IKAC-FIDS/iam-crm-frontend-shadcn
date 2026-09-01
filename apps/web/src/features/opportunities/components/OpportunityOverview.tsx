@@ -16,6 +16,8 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { formatJalaliDate, formatJalaliDateTime } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 import type { Opportunity } from "../types/opportunity.types"
 import {
   formatOpportunityValue,
@@ -27,6 +29,9 @@ export function OpportunityExecutiveSummary({
 }: {
   opportunity: Opportunity
 }) {
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
   const text = uiText.opportunities.detail.summary
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -51,7 +56,7 @@ export function OpportunityExecutiveSummary({
     : []
   return (
     <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      <SummaryCard icon={<CircleDollarSign />} title={text.commercial}>
+      {financialVisible ? <SummaryCard icon={<CircleDollarSign />} title={text.commercial}>
         <Metric
           label={text.estimated}
           value={valueLabel(opportunity.estimatedValue)}
@@ -64,7 +69,7 @@ export function OpportunityExecutiveSummary({
               : valueLabel(weighted)
           }
         />
-      </SummaryCard>
+      </SummaryCard> : null}
       <SummaryCard icon={<CalendarClock />} title={text.timing}>
         <Metric
           label={uiText.opportunities.fields.expectedCloseDate}

@@ -15,6 +15,7 @@ import { useLibraryItems, useProducts } from "../hooks/useLibraries"
 import { useListQueryState, enumParam } from "@/lib/listQuery"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { useState } from "react"
+import { canViewFinancials } from "@/lib/permissions"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import {
@@ -572,6 +573,7 @@ function ProductForm({
 
 export function AdminLibrariesPage() {
   const permissions = useAuthStore((s) => s.user?.permissions ?? [])
+  const financialVisible = canViewFinancials(permissions)
   const available = sections.filter(
     (s) => permissions.includes(s.view) || permissions.includes(s.manage)
   )
@@ -599,6 +601,8 @@ export function AdminLibrariesPage() {
   >()
   const client = useQueryClient()
   const canManage = Boolean(section && permissions.includes(section.manage))
+  const canManageCurrent =
+    canManage && (section?.kind !== "products" || financialVisible)
   const kind = section?.kind !== "products" ? section?.kind : undefined
   const group = section?.group
   const items = useLibraryItems(kind, group)
@@ -741,20 +745,20 @@ export function AdminLibrariesPage() {
         </code>
       ),
     },
-    {
+    ...(financialVisible ? [{
       id: "in",
       header: "قیمت حضوری",
       cell: (r) => (
         <span className="whitespace-nowrap">{money(r.inPersonPriceIrr)}</span>
       ),
-    },
+    } satisfies DataTableColumn<Product>,
     {
       id: "digi",
       header: "قیمت دیجی‌کالا",
       cell: (r) => (
         <span className="whitespace-nowrap">{money(r.digikalaPriceIrr)}</span>
       ),
-    },
+    } satisfies DataTableColumn<Product>] : []),
     {
       id: "status",
       header: "وضعیت",
@@ -775,7 +779,7 @@ export function AdminLibrariesPage() {
               label: "ویرایش محصول",
               icon: Pencil,
               onClick: () => setProductEditing(r),
-              enabled: canManage,
+              enabled: canManageCurrent,
             },
             {
               id: "digikala",
@@ -830,7 +834,7 @@ export function AdminLibrariesPage() {
               <RefreshCcw className="size-4" />
               به‌روزرسانی
             </Button>
-            {canManage ? (
+            {canManageCurrent ? (
               <Button
                 onClick={() =>
                   section.kind === "products"
@@ -973,7 +977,7 @@ export function AdminLibrariesPage() {
                 rows={products.data?.data ?? []}
                 columns={productCols}
                 getRowKey={(r) => r.id}
-                onRowClick={(r) => canManage && setProductEditing(r)}
+                onRowClick={(r) => canManageCurrent && setProductEditing(r)}
                 emptyState={<Empty />}
                 mobile={{
                   title: (r) => r.name,
@@ -997,7 +1001,7 @@ export function AdminLibrariesPage() {
                       label: "دسته‌بندی",
                       render: (r) => r.category || "—",
                     },
-                    {
+                    ...(financialVisible ? [{
                       id: "in",
                       label: "قیمت حضوری",
                       render: (r) => money(r.inPersonPriceIrr),
@@ -1006,7 +1010,7 @@ export function AdminLibrariesPage() {
                       id: "digi",
                       label: "قیمت دیجی‌کالا",
                       render: (r) => money(r.digikalaPriceIrr),
-                    },
+                    }] : []),
                   ],
                 }}
               />
@@ -1066,7 +1070,7 @@ export function AdminLibrariesPage() {
           onClose={() => setEditing(undefined)}
         />
       ) : null}
-      {productEditing !== undefined ? (
+      {financialVisible && productEditing !== undefined ? (
         <ProductForm
           key={productEditing?.id ?? "new-product"}
           item={productEditing ?? undefined}

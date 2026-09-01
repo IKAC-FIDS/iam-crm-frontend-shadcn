@@ -129,7 +129,7 @@ export function OpportunityTrendChart({
 }: {
   data: DashboardSummary["opportunityTrend12m"]
   activeCount: number
-  activeValueIrr: number | string
+  activeValueIrr: number | string | null
 }) {
   const text = uiText.dashboard.trend
   const [mode, setMode] = useState<TrendMode>("count")

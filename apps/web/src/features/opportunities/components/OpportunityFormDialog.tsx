@@ -19,6 +19,8 @@ import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 
 import {
   useOpportunityCompanyPeople,
@@ -82,6 +84,9 @@ export function OpportunityFormDialog({
   ) => void | Promise<void>
 }) {
   const text = uiText.opportunities
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
   const editing = Boolean(opportunity)
   const defaults = useMemo(
     () => initialState(opportunity, initialCompanyId),
@@ -132,8 +137,9 @@ export function OpportunityFormDialog({
       title: state.title.trim(),
       description: state.description.trim() || undefined,
       priority: state.priority,
-      estimatedValue:
-        state.estimatedValue === "" ? undefined : Number(state.estimatedValue),
+      estimatedValue: financialVisible
+        ? state.estimatedValue === "" ? undefined : Number(state.estimatedValue)
+        : undefined,
       expectedCloseDate: toApiDate(state.expectedCloseDate) ?? undefined,
       sourceOptionId: state.sourceOptionId || undefined,
       primaryContactId: state.primaryContactId || undefined,
@@ -306,7 +312,7 @@ export function OpportunityFormDialog({
                   <option value="LOW">{text.priorities.LOW}</option>
                 </select>
               </Field>
-              <Field
+              {financialVisible ? <Field
                 name="estimatedValue"
                 error={errors.estimatedValue?.message}
                 label={text.fields.estimatedValue}
@@ -315,7 +321,7 @@ export function OpportunityFormDialog({
                   value={state.estimatedValue}
                   onValueChange={(estimatedValue) => patch({ estimatedValue })}
                 />
-              </Field>
+              </Field> : null}
               <Field
                 name="expectedCloseDate"
                 error={errors.expectedCloseDate?.message}

@@ -25,6 +25,8 @@ import type {
   ReportFilters,
 } from "../api/reportsApi"
 import { useReportsAnalytics } from "../hooks/useReportsAnalytics"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 
 function fa(value: number, digits = 0) {
   return new Intl.NumberFormat("fa-IR", {
@@ -888,6 +890,9 @@ function InsightCards({ data }: { data: ConversionHealth }) {
 }
 
 export function ReportsPage() {
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
   const [dateRange, setDateRange] = useState<PersianDateRange | undefined>()
   const [scope, setScope] = useState<"all" | "mine">("all")
 
@@ -1046,7 +1051,7 @@ export function ReportsPage() {
             </article>
           </section>
 
-          <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+          {financialVisible ? <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
             <div className="mb-3 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-bold">عملکرد تیم فروش</h2>
@@ -1057,7 +1062,7 @@ export function ReportsPage() {
               <UsersRound className="size-4 text-[var(--app-primary)]" />
             </div>
             <OwnerScatter data={data.owners} />
-          </section>
+          </section> : null}
 
           <InsightCards data={data} />
         </>

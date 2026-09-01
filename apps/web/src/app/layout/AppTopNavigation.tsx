@@ -1,12 +1,12 @@
 import {
   ArrowUpLeft,
   BriefcaseBusiness,
-  CalendarDays,
   ChevronDown,
   CircleUserRound,
   LayoutDashboard,
   Menu,
   Settings2,
+  ListChecks,
   Wrench,
   type LucideIcon,
 } from "lucide-react"
@@ -17,7 +17,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -40,6 +39,10 @@ const groupPresentation: Record<
     description: "مشتریان، تعاملات و جریان کامل فروش",
     icon: BriefcaseBusiness,
   },
+  operations: {
+    description: "کارها، تعاملات، جلسات و پیگیری‌های روزانه",
+    icon: ListChecks,
+  },
   technical: {
     description: "دانش، مستندات و منابع تخصصی",
     icon: Wrench,
@@ -58,7 +61,9 @@ const routeHints: Record<string, string> = {
   companies: "مدیریت حساب‌های مشتری",
   opportunities: "پیگیری چرخه و مراحل فروش",
   tasks: "اقدام‌ها و کارهای روزانه",
-  attention: "پیگیری‌ها و اعلان‌های مهم",
+  meetings: "برنامه‌ریزی و مدیریت جلسات",
+  "follow-ups": "پیگیری اقدام‌های زمان‌بندی‌شده",
+  notifications: "اعلان‌ها و رویدادهای مهم",
   people: "مخاطبان و افراد سازمانی",
   activities: "تاریخچه تعاملات مشتری",
   reports: "شاخص‌ها و گزارش‌های فروش",
@@ -84,10 +89,7 @@ export function AppTopNavigation() {
   const navigate = useNavigate()
   const groups = getVisibleMenuGroups(user)
   const topLevelRoutes = getVisibleTopLevelRoutes(user)
-  const meetingsRoute = topLevelRoutes.find((route) => route.id === "meetings")
-  const primaryRoutes = topLevelRoutes.filter(
-    (route) => route.id !== "meetings"
-  )
+  const primaryRoutes = topLevelRoutes
   const go = (path: string) => navigate(path)
 
   const routeClass = (active: boolean) =>
@@ -218,26 +220,6 @@ export function AppTopNavigation() {
             )
           })}
 
-          {meetingsRoute ? (
-            <Button
-              type="button"
-              variant={
-                isMenuRouteActive(meetingsRoute.path, location.pathname)
-                  ? "default"
-                  : "outline"
-              }
-              className="ms-auto h-10 shrink-0 rounded-xl"
-              onClick={() => go(meetingsRoute.path)}
-              aria-current={
-                isMenuRouteActive(meetingsRoute.path, location.pathname)
-                  ? "page"
-                  : undefined
-              }
-            >
-              <CalendarDays className="size-4" />
-              {meetingsRoute.label}
-            </Button>
-          ) : null}
         </div>
 
         <DropdownMenu>
@@ -322,18 +304,6 @@ export function AppTopNavigation() {
                 </DropdownMenuSub>
               )
             })}
-            {meetingsRoute ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => go(meetingsRoute.path)}
-                  className="min-h-11 rounded-xl bg-[var(--app-primary)] font-bold text-[var(--app-on-primary)] focus:bg-[var(--app-primary)]/90 focus:text-[var(--app-on-primary)]"
-                >
-                  <CalendarDays className="size-4" />
-                  {meetingsRoute.label}
-                </DropdownMenuItem>
-              </>
-            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -26,6 +26,7 @@ import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { formatJalaliDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
+import { canViewFinancials } from "@/lib/permissions"
 
 import {
   useCancelOpportunityPayment,
@@ -70,17 +71,18 @@ export function OpportunityCommercialSection({
   permissions: string[]
 }) {
   const text = uiText.opportunities.detail
+  const financialVisible = canViewFinancials(permissions)
   const canViewItems = permissions.includes("opportunity-line-item:view")
   const canManageItems =
-    permissions.includes("opportunity-line-item:manage") &&
+    financialVisible && permissions.includes("opportunity-line-item:manage") &&
     !opportunity.archivedAt
   const canViewDocuments = permissions.includes("commercial-document:view")
   const canManageDocuments =
-    permissions.includes("commercial-document:manage") &&
+    financialVisible && permissions.includes("commercial-document:manage") &&
     !opportunity.archivedAt
   const canViewPayments = permissions.includes("payment:view")
   const canManagePayments =
-    permissions.includes("payment:manage") && !opportunity.archivedAt
+    financialVisible && permissions.includes("payment:manage") && !opportunity.archivedAt
   const [documentPage, setDocumentPage] = useState(1)
   const [paymentPage, setPaymentPage] = useState(1)
   const lineItems = useOpportunityLineItems(opportunity.id, canViewItems)
@@ -193,7 +195,7 @@ export function OpportunityCommercialSection({
     completePayments?.map((item) => item.currency) ?? []
   )
   const paymentSummary =
-    completePayments && summaryCurrencies.size === 1
+    financialVisible && completePayments && summaryCurrencies.size === 1
       ? {
           total: completePayments.reduce(
             (sum, item) => sum + Number(item.amount || 0),
@@ -235,16 +237,16 @@ export function OpportunityCommercialSection({
           <SectionError onRetry={() => void lineItems.refetch()} />
         ) : lineItems.data?.length ? (
           <div className="w-full max-w-full min-w-0 overflow-x-auto">
-            <table className="w-full min-w-[820px] text-start text-xs">
+            <table className="w-full min-w-[620px] text-start text-xs">
               <thead>
                 <tr className="border-b border-[var(--app-divider)] text-xs text-[var(--app-text-secondary)]">
                   <th className="p-3 text-start">{text.fields.product}</th>
                   <th>{text.fields.quantity}</th>
                   <th>{text.fields.unit}</th>
-                  <th>{text.fields.unitPrice}</th>
+                  {financialVisible ? <><th>{text.fields.unitPrice}</th>
                   <th>{text.fields.discount}</th>
                   <th>{text.fields.tax}</th>
-                  <th>{text.fields.total}</th>
+                  <th>{text.fields.total}</th></> : null}
                   <th />
                 </tr>
               </thead>
@@ -275,10 +277,10 @@ export function OpportunityCommercialSection({
                     <td className="text-center">
                       {item.product?.unit || uiText.common.notAvailable}
                     </td>
-                    <td className="text-center">{money(item.unitPrice)}</td>
+                    {financialVisible ? <><td className="text-center">{money(item.unitPrice)}</td>
                     <td className="text-center">
                       {money(item.discountAmount)}
-                    </td>
+                    </td></> : null}
                     <td className="text-center">{money(item.taxAmount)}</td>
                     <td className="text-center font-bold">
                       {money(item.lineTotal)} {item.product?.currency}
@@ -408,14 +410,14 @@ export function OpportunityCommercialSection({
                     </div>
                   ) : null}
                 </div>
-                <div className="mt-3 flex items-center justify-between text-xs">
+                {financialVisible ? <div className="mt-3 flex items-center justify-between text-xs">
                   <span className="text-[var(--app-text-secondary)]">
                     {text.fields.amount}
                   </span>
                   <span className="font-bold">
                     {money(item.amount)} {item.currency}
                   </span>
-                </div>
+                </div> : null}
                 {Array.isArray(item.payments) && item.payments.length ? (
                   <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
                     {text.fields.relatedPayments}:{" "}
@@ -535,12 +537,12 @@ export function OpportunityCommercialSection({
                       </div>
                     ) : null}
                   </div>
-                  <p className="mt-4 text-lg font-bold break-words text-[var(--app-heading)]">
+                  {financialVisible ? <p className="mt-4 text-lg font-bold break-words text-[var(--app-heading)]">
                     {money(item.amount)}{" "}
                     <span className="text-xs font-normal">
                       {item.currency}
                     </span>
-                  </p>
+                  </p> : null}
                   <div className="mt-2 grid gap-1 text-xs text-[var(--app-text-secondary)]">
                     <p>
                       {text.fields.dueDate}:{" "}

@@ -11,6 +11,8 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { uiText } from "@/config/uiText"
 import { PaginationControls } from "@/components/shared/PaginationControls"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 
 import { useOpportunityList } from "../hooks/useOpportunities"
 import type {
@@ -56,6 +58,9 @@ export function OpportunityListView({
     !isUpdatingFilters
   )
   const rows = Array.isArray(query.data?.data) ? query.data.data : []
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
 
   const columns: DataTableColumn<Opportunity>[] = [
     {
@@ -74,13 +79,13 @@ export function OpportunityListView({
       header: text.table.stage,
       cell: (item) => item.stage?.label || uiText.common.notAvailable,
     },
-    {
+    ...(financialVisible ? [{
       id: "value",
       header: text.table.estimatedValue,
       cell: (item) =>
         `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}`,
       className: "whitespace-nowrap",
-    },
+    } satisfies DataTableColumn<Opportunity>] : []),
     {
       id: "probability",
       header: text.table.probability,
@@ -163,7 +168,7 @@ export function OpportunityListView({
             fields: [
               { id: "stage", label: text.table.stage, render: (item) => item.stage?.label || uiText.common.notAvailable },
               { id: "owner", label: text.table.owner, render: (item) => item.owner?.fullName || text.fields.noOwner },
-              { id: "value", label: text.table.estimatedValue, render: (item) => `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}` },
+              ...(financialVisible ? [{ id: "value", label: text.table.estimatedValue, render: (item: Opportunity) => `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}` }] : []),
               { id: "close", label: text.table.closeDate, render: (item) => formatOpportunityDate(item.expectedCloseDate) },
             ],
           }}

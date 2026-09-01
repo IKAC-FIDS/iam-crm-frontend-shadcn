@@ -14,6 +14,7 @@ import { Button } from "@workspace/ui/components/button"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { canViewFinancials as hasFinancialVisibility } from "@/lib/permissions"
 import { useAuthStore } from "@/store/authStore"
 
 import {
@@ -47,6 +48,7 @@ export function DashboardPage() {
   const permissions = user?.permissions ?? []
 
   const canViewReports = hasPermission(permissions, "report:view")
+  const canViewFinancials = hasFinancialVisibility(permissions)
   const canViewActivities =
     canViewReports && hasPermission(permissions, "activity:view")
   const canViewOpportunities = hasPermission(permissions, "opportunity:view")
@@ -178,7 +180,7 @@ export function DashboardPage() {
         />
       ) : summary ? (
         <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {canViewFinancials ? <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <DashboardKpiCard
               title={text.kpis.totalPortfolio.title}
               value={compactIrr(summary.portfolio.total.estimatedValueIrr)}
@@ -214,16 +216,16 @@ export function DashboardPage() {
               icon={BarChart3}
               tone="info"
             />
-          </section>
+          </section> : null}
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,0.75fr)]">
-            <OpportunityTrendChart
+          <div className={canViewFinancials ? "grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,0.75fr)]" : "grid gap-5"}>
+            {canViewFinancials ? <OpportunityTrendChart
               data={summary.opportunityTrend12m}
               activeCount={summary.current.activeOpportunities.count}
               activeValueIrr={
                 summary.current.activeOpportunities.estimatedValueIrr
               }
-            />
+            /> : null}
             <OpportunityStatusDonut portfolio={summary.portfolio} />
           </div>
 

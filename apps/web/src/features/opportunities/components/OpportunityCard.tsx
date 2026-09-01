@@ -5,6 +5,8 @@ import { uiText } from "@/config/uiText"
 import type { Opportunity } from "../types/opportunity.types"
 import { formatOpportunityDate, formatOpportunityValue, opportunityCompanyName, priorityLabel } from "../utils/opportunityFormatters"
 import { OpportunityActionsMenu, type OpportunityActionPermissions } from "./OpportunityActionsMenu"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 
 export function OpportunityCard({
   opportunity,
@@ -29,6 +31,9 @@ export function OpportunityCard({
   onChangeStage: () => void
   onArchiveToggle: () => void
 }) {
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
   const canDrag = permissions.changeStage && !opportunity.archivedAt
   return (
     <article
@@ -57,11 +62,11 @@ export function OpportunityCard({
         {opportunity.probability !== null && opportunity.probability !== undefined ? <span className="text-xs font-bold text-[var(--app-heading)]">{opportunity.probability.toLocaleString("fa-IR")}%</span> : null}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
+      {financialVisible ? <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
         <CircleDollarSign className="size-3.5 text-[var(--app-primary)]" />
         {formatOpportunityValue(opportunity.estimatedValue)}
         <span className="text-xs font-normal text-[var(--app-text-secondary)]">{uiText.opportunities.fields.valueUnit}</span>
-      </div>
+      </div> : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--app-divider)] pt-2.5 text-xs text-[var(--app-text-secondary)]">
         <span className="flex min-w-0 items-center gap-1"><UserRound className="size-3 shrink-0" /><span className="truncate">{opportunity.owner?.fullName || uiText.opportunities.fields.noOwner}</span></span>

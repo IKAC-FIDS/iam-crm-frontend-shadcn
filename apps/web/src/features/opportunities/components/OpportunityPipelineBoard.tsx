@@ -10,6 +10,8 @@ import type { Opportunity, OpportunityFilters, OpportunityStage, OpportunityTran
 import { formatOpportunityValue } from "../utils/opportunityFormatters"
 import { OpportunityCard } from "./OpportunityCard"
 import type { OpportunityActionPermissions } from "./OpportunityActionsMenu"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
 
 type Action = (opportunity: Opportunity) => void
 
@@ -38,6 +40,9 @@ export function OpportunityPipelineBoard({
   onArchiveToggle: Action
   onDropStage: (opportunity: Opportunity, target: OpportunityStage) => void
 }) {
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
   const [dragged, setDragged] = useState<Opportunity | null>(null)
   const validTargetIds = useMemo(() => {
     if (!dragged || !transitions) return new Set<string>()
@@ -69,6 +74,7 @@ export function OpportunityPipelineBoard({
             onChangeOwner={onChangeOwner}
             onChangeStage={onChangeStage}
             onArchiveToggle={onArchiveToggle}
+            financialVisible={financialVisible}
             onDragStart={(event, opportunity) => {
               event.dataTransfer.effectAllowed = "move"
               event.dataTransfer.setData("text/plain", opportunity.id)
@@ -101,6 +107,7 @@ function PipelineLane({
   onDragStart,
   onDragEnd,
   onDrop,
+  financialVisible,
 }: {
   stage: OpportunityStage
   filters: OpportunityFilters
@@ -116,6 +123,7 @@ function PipelineLane({
   onDragStart: (event: DragEvent<HTMLElement>, opportunity: Opportunity) => void
   onDragEnd: () => void
   onDrop: () => void
+  financialVisible: boolean
 }) {
   const text = uiText.opportunities.pipeline
   const query = usePipelineColumn(stage.id, filters)
@@ -150,11 +158,11 @@ function PipelineLane({
           </div>
           <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{total.toLocaleString("fa-IR")} {text.count}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
+        {financialVisible ? <div className="mt-2 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
           <span>{text.loadedValue}</span>
           <span className="font-bold text-[var(--app-heading)]">{formatOpportunityValue(loadedValue)} {uiText.opportunities.fields.valueUnit}</span>
-        </div>
-        {items.length < total ? <p className="mt-1 text-[8px] text-[var(--app-text-secondary)]">{text.partialValue}</p> : null}
+        </div> : null}
+        {financialVisible && items.length < total ? <p className="mt-1 text-[8px] text-[var(--app-text-secondary)]">{text.partialValue}</p> : null}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">

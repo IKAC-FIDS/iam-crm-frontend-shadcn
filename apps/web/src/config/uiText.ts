@@ -77,6 +77,7 @@
   navigation: {
     groups: {
       sales: "عملیات فروش",
+      operations: "عملیات",
       technical: "مرکز فنی",
       management: "مدیریت",
       account: "حساب",
