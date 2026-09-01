@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -126,14 +126,20 @@ export function OpportunityTrendChart({
   data,
   activeCount,
   activeValueIrr,
+  canViewValues = true,
 }: {
   data: DashboardSummary["opportunityTrend12m"]
   activeCount: number
   activeValueIrr: number | string | null
+  canViewValues?: boolean
 }) {
   const text = uiText.dashboard.trend
   const [mode, setMode] = useState<TrendMode>("count")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!canViewValues && mode === "value") setMode("count")
+  }, [canViewValues, mode])
 
   const points = useMemo(
     () =>
@@ -189,7 +195,7 @@ export function OpportunityTrendChart({
         <h3 className="ui-section-title">{text.title}</h3>
 
         <div className="flex w-fit rounded-xl bg-[var(--app-background)] p-1">
-          {(["count", "value"] as const).map((item) => (
+          {(canViewValues ? (["count", "value"] as const) : (["count"] as const)).map((item) => (
             <Button
               key={item}
               type="button"

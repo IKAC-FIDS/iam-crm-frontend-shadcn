@@ -218,14 +218,15 @@ export function DashboardPage() {
             />
           </section> : null}
 
-          <div className={canViewFinancials ? "grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,0.75fr)]" : "grid gap-5"}>
-            {canViewFinancials ? <OpportunityTrendChart
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_minmax(320px,0.75fr)]">
+            <OpportunityTrendChart
               data={summary.opportunityTrend12m}
               activeCount={summary.current.activeOpportunities.count}
               activeValueIrr={
                 summary.current.activeOpportunities.estimatedValueIrr
               }
-            /> : null}
+              canViewValues={canViewFinancials}
+            />
             <OpportunityStatusDonut portfolio={summary.portfolio} />
           </div>
 

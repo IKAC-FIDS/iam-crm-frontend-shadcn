@@ -52,7 +52,7 @@ describe("dashboard financial visibility", () => {
 
     expect(screen.getByTestId("status-donut")).toBeInTheDocument()
     expect(screen.queryByTestId("financial-kpi")).toBeNull()
-    expect(screen.queryByTestId("financial-trend")).toBeNull()
+    expect(screen.getByTestId("financial-trend")).toBeInTheDocument()
   })
 
   it("shows financial widgets with financial:view", () => {
