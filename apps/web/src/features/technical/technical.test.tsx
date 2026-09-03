@@ -36,9 +36,44 @@ beforeEach(() => {
 })
 
 describe("Technical Center contract", () => {
+  it("preserves pagination metadata from the standard API envelope", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: [{ id: "t1", title: "مناقصه نمونه" }],
+        meta: {
+          total: 1,
+          page: 1,
+          limit: 20,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      },
+    })
+
+    const result = await technicalApi.tenders.list({ page: 1, limit: 20 })
+
+    expect(result.data).toEqual([
+      expect.objectContaining({ id: "t1", title: "مناقصه نمونه" }),
+    ])
+    expect(result.meta).toEqual(expect.objectContaining({ total: 1, page: 1 }))
+  })
+
   it("sends supported list filters and transition payload to backend routes", async () => {
     vi.mocked(api.get).mockResolvedValue({
-      data: { data: { data: [], meta: { page: 2, limit: 10, total: 0 } } },
+      data: {
+        success: true,
+        data: [],
+        meta: {
+          page: 2,
+          limit: 10,
+          total: 0,
+          totalPages: 0,
+          hasNext: false,
+          hasPrevious: true,
+        },
+      },
     })
     await technicalApi.releases.list({
       page: 2,

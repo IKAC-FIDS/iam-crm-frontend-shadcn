@@ -1,11 +1,12 @@
+import { z } from "zod"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
+import { parsePaginatedResponse } from "@/lib/pagination"
 import type {
   DocumentPayload,
   DocumentVersion,
   KnowledgeArticle,
   KnowledgePayload,
-  Page,
   ReleasePayload,
   RequirementPayload,
   ResourcePayload,
@@ -27,7 +28,7 @@ import type {
 const root = "/technical"
 async function list<T>(kind: TechnicalKind, params: TechnicalListParams) {
   const r = await api.get(`${root}/${kind}`, { params })
-  return unwrapApiResponse<Page<T>>(r.data)
+  return parsePaginatedResponse<T>(r.data, z.unknown() as z.ZodType<T>)
 }
 async function get<T>(kind: TechnicalKind, id: string) {
   const r = await api.get(`${root}/${kind}/${id}`)
