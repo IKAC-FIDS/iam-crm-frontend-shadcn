@@ -936,19 +936,23 @@ function Requirements({
           className="grid gap-3"
           onSubmit={async (e) => {
             e.preventDefault()
-            await m.save.mutateAsync({
-              payload: {
-                ...form,
-                ownerId: form.ownerId || (editing ? null : undefined),
-                parentRequirementId: form.parentRequirementId || (editing ? null : undefined),
-                dueDate: form.dueDate || undefined,
-                referenceId: form.referenceId || undefined,
-                section: form.section || undefined,
-                page: form.page || undefined,
-              },
-              requirementId: editing?.id,
-            })
-            setEditing(undefined)
+            try {
+              await m.save.mutateAsync({
+                payload: {
+                  ...form,
+                  ownerId: form.ownerId || (editing ? null : undefined),
+                  parentRequirementId: form.parentRequirementId || (editing ? null : undefined),
+                  dueDate: form.dueDate || undefined,
+                  referenceId: form.referenceId || undefined,
+                  section: form.section || undefined,
+                  page: form.page || undefined,
+                },
+                requirementId: editing?.id,
+              })
+              setEditing(undefined)
+            } catch {
+              // The mutation exposes the normalized API error inside the form.
+            }
           }}
         >
           <label>
