@@ -389,7 +389,10 @@ function DocumentVersions({
       description="هر نسخه با فایل اصلی خود ثبت می‌شود و تاریخچه نسخه‌های قبلی باقی می‌ماند."
       actions={
         canAddVersion ? (
-          <Button size="sm" onClick={() => setOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => setOpen(true)}
+          >
             <Plus className="size-4" />
             نسخه جدید
           </Button>
@@ -1212,11 +1215,11 @@ function Requirements({
       <ResponsiveModal open={Boolean(taskDialog)} onClose={() => setTaskDialog(undefined)} title={taskDialog?.mode === "create" ? "ایجاد کار از الزام" : "اتصال کار موجود"}>
         {taskDialog?.mode === "link" ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!taskDialog || !taskId) return; await m.linkTask.mutateAsync({ requirementId: taskDialog.requirement.id, taskId }); setTaskDialog(undefined) }}>
           <label>کار<SearchableOptionSelect value={taskId} onChange={(value) => setTaskId(value || "")} options={tasks.data ?? []} search={taskSearch} onSearchChange={setTaskSearch} loading={tasks.isLoading || tasks.isFetching} placeholder="جستجو و انتخاب کار" ariaLabel="کار موجود" /></label>
-          <Button disabled={!taskId || m.linkTask.isPending}>اتصال کار</Button>
+          <Button type="submit" disabled={!taskId || m.linkTask.isPending}>اتصال کار</Button>
         </form> : taskDialog ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); await m.createTask.mutateAsync({ requirementId: taskDialog.requirement.id, payload: { title: taskTitle } }); setTaskDialog(undefined) }}>
           <label>عنوان کار<Input required value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} /></label>
           <p className="text-sm text-muted-foreground">شرح الزام و مرجع مناقصه به‌صورت خودکار به توضیحات کار افزوده می‌شود.</p>
-          <Button disabled={!taskTitle.trim() || m.createTask.isPending}>ایجاد و اتصال کار</Button>
+          <Button type="submit" disabled={!taskTitle.trim() || m.createTask.isPending}>ایجاد و اتصال کار</Button>
         </form> : null}
       </ResponsiveModal>
     </FormSection>
@@ -1241,12 +1244,24 @@ function Deliverables({
     queryFn: () => technicalLookups("documents", debouncedDocumentSearch),
     enabled: open,
   })
+  const availableDocuments = (documents.data ?? []).filter(
+    (document) =>
+      !tender.deliverables?.some(
+        (deliverable) => deliverable.documentId === document.id
+      )
+  )
   return (
     <FormSection
       title="اقلام تحویلی"
       actions={
         canManage ? (
-          <Button size="sm" onClick={() => setOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              m.deliver.reset()
+              setOpen(true)
+            }}
+          >
             <Plus className="size-4" />
             اتصال سند
           </Button>
@@ -1298,19 +1313,40 @@ function Deliverables({
       )}
       <ResponsiveModal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={() => {
+          if (!m.deliver.isPending) {
+            m.deliver.reset()
+            setOpen(false)
+            setDocumentId("")
+            setLabel("")
+            setRequired(true)
+            setDocumentSearch("")
+          }
+        }}
         title="اتصال سند فنی"
+        description="یک سند موجود را به‌عنوان قلم تحویلی این مناقصه انتخاب کنید."
       >
         <form
           className="grid gap-3"
           onSubmit={async (e) => {
             e.preventDefault()
-            await m.deliver.mutateAsync({
-              documentId,
-              label: label || undefined,
-              required,
-            })
-            setOpen(false)
+            if (!documentId) return
+            try {
+              await m.deliver.mutateAsync({
+                documentId,
+                label: label.trim() || undefined,
+                required,
+              })
+              toast.success("سند فنی به مناقصه متصل شد.")
+              m.deliver.reset()
+              setOpen(false)
+              setDocumentId("")
+              setLabel("")
+              setRequired(true)
+              setDocumentSearch("")
+            } catch {
+              // The normalized mutation error is rendered below the form.
+            }
           }}
         >
           <label>
@@ -1318,12 +1354,16 @@ function Deliverables({
             <SearchableOptionSelect
               value={documentId}
               onChange={(value) => setDocumentId(value || "")}
-              options={documents.data ?? []}
+              options={availableDocuments}
               search={documentSearch}
               onSearchChange={setDocumentSearch}
               loading={documents.isLoading || documents.isFetching}
               emptyText={
-                documents.isError ? "دریافت اسناد انجام نشد." : undefined
+                documents.isError
+                  ? "دریافت اسناد انجام نشد."
+                  : availableDocuments.length === 0 && !documents.isLoading
+                    ? "سند قابل اتصالی پیدا نشد."
+                    : undefined
               }
               allowEmpty={false}
               ariaLabel="سند فنی"
@@ -1334,7 +1374,17 @@ function Deliverables({
             <Input value={label} onChange={(e) => setLabel(e.target.value)} />
           </label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />قلم تحویلی الزامی است</label>
-          <Button disabled={!documentId || m.deliver.isPending}>اتصال</Button>
+          {m.deliver.error ? (
+            <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+              {getApiErrorMessage(m.deliver.error, "اتصال سند فنی انجام نشد.")}
+            </p>
+          ) : null}
+          <Button
+            type="submit"
+            disabled={!documentId || m.deliver.isPending}
+          >
+            {m.deliver.isPending ? "در حال اتصال..." : "اتصال"}
+          </Button>
         </form>
       </ResponsiveModal>
     </FormSection>
