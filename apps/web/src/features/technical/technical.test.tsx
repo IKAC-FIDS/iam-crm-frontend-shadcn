@@ -16,7 +16,10 @@ import {
 import { technicalApi, technicalLookups } from "./api"
 import { releasePresentation, releaseTransitions } from "./presentation"
 import { TechnicalDocumentsPage } from "./pages/TechnicalListPages"
-import { TechnicalTenderDetailPage } from "./pages/TechnicalDetailPages"
+import {
+  TechnicalDocumentDetailPage,
+  TechnicalTenderDetailPage,
+} from "./pages/TechnicalDetailPages"
 
 vi.mock("@/lib/api", () => ({
   api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -172,6 +175,59 @@ describe("Technical Center contract", () => {
 })
 
 describe("Technical Center behavior", () => {
+  it("submits the selected file from the document version dialog", async () => {
+    useAuthStore.setState({
+      user: {
+        ...user,
+        permissions: [
+          "technical-document:view",
+          "technical-document:manage",
+          "attachment:view",
+        ],
+      },
+      status: "authenticated",
+    })
+    const document = {
+      id: "d1",
+      title: "سند معماری",
+      documentType: "ARCHITECTURE",
+      status: "DRAFT",
+      confidentiality: "INTERNAL",
+      ownerId: "u1",
+      revision: 1,
+      versions: [],
+      createdAt: "2026-09-01",
+      updatedAt: "2026-09-01",
+    }
+    vi.mocked(api.get).mockResolvedValue({ data: { data: document } })
+    vi.mocked(api.post).mockResolvedValue({
+      data: { data: { id: "v1", documentId: "d1", version: "1.0", createdAt: "2026-09-03" } },
+    })
+
+    render(
+      <MemoryRouter initialEntries={["/technical/documents/d1"]}>
+        <Routes>
+          <Route path="/technical/documents/:id" element={<TechnicalDocumentDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+      { wrapper }
+    )
+
+    await userEvent.click(await screen.findByRole("button", { name: "نسخه جدید" }))
+    await userEvent.type(screen.getByLabelText("شماره نسخه"), "1.0")
+    const file = new File(["content"], "architecture.pdf", { type: "application/pdf" })
+    await userEvent.upload(screen.getByLabelText("فایل نسخه"), file)
+    await userEvent.click(screen.getByRole("button", { name: "بارگذاری و ثبت نسخه" }))
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        "/technical/documents/d1/versions/upload",
+        expect.any(FormData),
+        expect.any(Object)
+      )
+    )
+  })
+
   it("renders actionable tender readiness blockers and separate reviews", async () => {
     useAuthStore.setState({ user: { ...user, permissions: ["technical-tender:view"] }, status: "authenticated" })
     const readiness = {

@@ -516,7 +516,10 @@ function DocumentVersions({
               <span className="text-xs text-muted-foreground">{progress.toLocaleString("fa-IR")}٪ بارگذاری شده</span>
             </div>
           ) : null}
-          <Button disabled={!version.trim() || !file || submitting}>
+          <Button
+            type="submit"
+            disabled={!version.trim() || !file || submitting}
+          >
             <UploadCloud className="size-4" />
             {submitting ? "در حال بارگذاری..." : "بارگذاری و ثبت نسخه"}
           </Button>
