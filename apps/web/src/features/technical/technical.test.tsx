@@ -178,6 +178,9 @@ describe("Technical Center behavior", () => {
     expect(screen.getByText("بازبینی تجاری")).toBeInTheDocument()
     expect(screen.getByText("ادامه مشروط")).toBeInTheDocument()
     expect(screen.getByText(/تأیید قیمت/)).toBeInTheDocument()
+    expect(screen.getByText("مسیر عملیاتی مناقصه")).toBeInTheDocument()
+    expect(screen.getByText("پاسخ مناقصه را آماده کنید")).toBeInTheDocument()
+    expect(screen.getByText(/در وضعیت فعلی اقدامی متناسب با دسترسی‌های شما وجود ندارد/)).toBeInTheDocument()
   })
   it("sends document confidentiality and tender filters from the URL-backed UI", async () => {
     useAuthStore.setState({
@@ -279,6 +282,21 @@ describe("Technical Center behavior", () => {
       />
     )
     expect(screen.queryByRole("button", { name: /منتشرشده/ })).toBeNull()
+  })
+
+  it("explains why an allowed lifecycle action is not ready yet", () => {
+    render(
+      <LifecycleActions
+        targets={["COMMERCIAL_REVIEW"]}
+        presentation={{ label: { COMMERCIAL_REVIEW: "بازبینی تجاری" } }}
+        pending={false}
+        canTarget={() => true}
+        getTargetBlockReason={() => "تأیید فنی هنوز ثبت نشده است."}
+        onTransition={vi.fn()}
+      />
+    )
+    expect(screen.getByRole("button", { name: /بازبینی تجاری/ })).toBeDisabled()
+    expect(screen.getByText(/تأیید فنی هنوز ثبت نشده است/)).toBeInTheDocument()
   })
 
   it("requires and forwards a reason for consequential lifecycle changes", async () => {

@@ -78,6 +78,7 @@ export function LifecycleActions<T extends string>({
   pending,
   canTarget,
   requiresReason = () => false,
+  getTargetBlockReason = () => undefined,
 }: {
   targets: T[]
   presentation: { label: Record<T, string> }
@@ -85,6 +86,7 @@ export function LifecycleActions<T extends string>({
   pending: boolean
   canTarget: (target: T) => boolean
   requiresReason?: (target: T) => boolean
+  getTargetBlockReason?: (target: T) => string | undefined
 }) {
   const [target, setTarget] = useState<T>(),
     [reason, setReason] = useState("")
@@ -93,20 +95,32 @@ export function LifecycleActions<T extends string>({
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {allowed.map((t) => (
+        {allowed.map((t) => {
+          const blockReason = getTargetBlockReason(t)
+          return (
           <Button
             key={t}
             type="button"
             variant="outline"
             size="sm"
             onClick={() => setTarget(t)}
-            disabled={pending}
+            disabled={pending || Boolean(blockReason)}
+            title={blockReason}
           >
             <ArrowLeft className="size-4" />
             {presentation.label[t]}
           </Button>
-        ))}
+          )
+        })}
       </div>
+      {allowed.some((item) => getTargetBlockReason(item)) ? (
+        <ul className="mt-3 grid gap-2 text-xs leading-5 text-muted-foreground">
+          {allowed.map((item) => {
+            const reason = getTargetBlockReason(item)
+            return reason ? <li key={item}>برای «{presentation.label[item]}»: {reason}</li> : null
+          })}
+        </ul>
+      ) : null}
       <ConfirmDialog
         open={Boolean(target)}
         onOpenChange={(o) => {

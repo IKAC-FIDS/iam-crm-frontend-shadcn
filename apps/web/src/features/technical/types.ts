@@ -330,6 +330,7 @@ export type Tender = {
   teamId?: string | null
   team?: EntityRef | null
   ownerId: string
+  owner?: EntityRef | null
   source?: string | null
   description?: string | null
   submissionDeadline?: string | null
@@ -350,7 +351,11 @@ export type Tender = {
   qualificationConditions?: string | null
   decisionReason?: string | null
   technicalLeadId?: string | null
+  technicalLead?: EntityRef | null
   commercialLeadId?: string | null
+  commercialLead?: EntityRef | null
+  result?: "WON" | "LOST" | "CANCELLED" | null
+  resultReason?: string | null
   revision: number
   requirements?: TenderRequirement[]
   deliverables?: TenderDeliverable[]

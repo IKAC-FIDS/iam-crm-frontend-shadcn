@@ -32,6 +32,7 @@ import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { TechnicalAttachments } from "../components/TechnicalAttachments"
 import { ScopedUserSelect } from "../components/ScopedUserSelect"
+import { TenderProcessGuide } from "../components/TenderProcessGuide"
 import {
   LifecycleActions,
   TechnicalStatusBadge,
@@ -503,6 +504,13 @@ export function TechnicalTenderDetailPage() {
     const manage = p.includes("technical-tender:manage"),
       submit = p.includes("technical-tender:submit"),
       close = p.includes("technical-tender:close")
+    const canTransitionTo = (target: TenderStatus) =>
+      target === "SUBMITTED"
+        ? submit
+        : ["WON", "LOST", "CANCELLED", "ARCHIVED"].includes(target)
+          ? close
+          : manage
+    const hasAvailableTransition = tenderTransitions[item.status].some(canTransitionTo)
     return (
       <DetailShell
         kind="tenders"
@@ -521,41 +529,53 @@ export function TechnicalTenderDetailPage() {
           </>
         }
       >
-        <LifecycleActions
-          targets={tenderTransitions[item.status]}
-          presentation={tenderPresentation}
-          pending={transition.isPending}
-          canTarget={(t: TenderStatus) =>
-            t === "SUBMITTED"
-              ? submit
-              : ["WON", "LOST", "CANCELLED", "ARCHIVED"].includes(t)
-                ? close
-                : manage
-          }
-          requiresReason={(target: TenderStatus) =>
-            target === "LOST" ||
-            target === "CANCELLED" ||
-            (item.status === "TECHNICAL_REVIEW" && target === "PREPARING") ||
-            (item.status === "COMMERCIAL_REVIEW" && target === "TECHNICAL_REVIEW") ||
-            (item.status === "READY_FOR_SUBMISSION" && target === "COMMERCIAL_REVIEW")
-          }
-          onTransition={async (status, reason) => {
-            await transition.mutateAsync({
-              id: item.id,
-              status,
-              revision: item.revision,
-              reason,
-            })
-          }}
-        />
+        <TenderProcessGuide tender={item} />
+        <FormSection
+          title="تغییر مرحله مناقصه"
+          description="فقط مرحله‌های مجاز بعدی نمایش داده می‌شوند. بازگشت برای اصلاح و همچنین لغو یا ثبت نتیجه «از دست رفته» به دلیل نیاز دارد."
+        >
+          <LifecycleActions
+            targets={tenderTransitions[item.status]}
+            presentation={tenderPresentation}
+            pending={transition.isPending}
+            canTarget={canTransitionTo}
+            getTargetBlockReason={(target: TenderStatus) => {
+              if (item.status === "QUALIFICATION" && target === "PREPARING") {
+                if (item.bidDecision !== "BID") return "ابتدا تصمیم شرکت را روی «شرکت می‌کنیم» قرار دهید."
+                if (!["GO", "CONDITIONAL_GO"].includes(item.qualificationDecision)) return "ابتدا نتیجه ارزیابی را روی «ادامه» یا «ادامه مشروط» قرار دهید."
+              }
+              if (item.status === "TECHNICAL_REVIEW" && target === "COMMERCIAL_REVIEW" && item.readiness?.checks.technicalReview.status !== "APPROVED") return "تأیید فنی هنوز ثبت نشده است."
+              if (["READY_FOR_SUBMISSION", "SUBMITTED"].includes(target) && !item.readiness?.overallReady) return "موانع بخش آمادگی ارسال را برطرف کنید."
+              return undefined
+            }}
+            requiresReason={(target: TenderStatus) =>
+              target === "LOST" ||
+              target === "CANCELLED" ||
+              (item.status === "TECHNICAL_REVIEW" && target === "PREPARING") ||
+              (item.status === "COMMERCIAL_REVIEW" && target === "TECHNICAL_REVIEW") ||
+              (item.status === "READY_FOR_SUBMISSION" && target === "COMMERCIAL_REVIEW")
+            }
+            onTransition={async (status, reason) => {
+              await transition.mutateAsync({
+                id: item.id,
+                status,
+                revision: item.revision,
+                reason,
+              })
+            }}
+          />
+          {!hasAvailableTransition ? <p className="text-sm leading-6 text-muted-foreground">در وضعیت فعلی اقدامی متناسب با دسترسی‌های شما وجود ندارد. مسئول مرحله یا مدیر دسترسی‌ها باید ادامه فرایند را انجام دهد.</p> : null}
+          {transition.error ? <div className="mt-3"><TenderTransitionError error={transition.error} /></div> : null}
+        </FormSection>
+        <div id="tender-overview" className="scroll-mt-28">
         <FormSection title="نمای کلی و روابط CRM">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="شرکت" value={relationName(item.company)} />
             <Meta label="فرصت" value={relationName(item.opportunity)} />
             <Meta label="تیم" value={relationName(item.team)} />
-            <Meta label="مالک" value={item.ownerId} />
-            <Meta label="مسئول فنی" value={item.technicalLeadId} />
-            <Meta label="مسئول تجاری" value={item.commercialLeadId} />
+            <Meta label="مالک" value={relationName(item.owner)} />
+            <Meta label="مسئول فنی" value={relationName(item.technicalLead)} />
+            <Meta label="مسئول تجاری" value={relationName(item.commercialLead)} />
             <Meta
               label="ارزش"
               value={
@@ -575,35 +595,42 @@ export function TechnicalTenderDetailPage() {
           </dl>
           <Readable value={item.description} />
         </FormSection>
+        </div>
         <FormSection title="زمان‌بندی">
-          <dl className="grid gap-3 sm:grid-cols-3">
+          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Meta label="مهلت ارسال" value={faDate(item.submissionDeadline)} />
             <Meta label="مهلت فنی" value={faDate(item.technicalDeadline)} />
             <Meta
               label="تصمیم مورد انتظار"
               value={faDate(item.expectedDecisionDate)}
             />
+            <Meta label="زمان ارسال واقعی" value={faDate(item.submittedAt)} />
+            <Meta label="زمان بسته‌شدن" value={faDate(item.closedAt)} />
           </dl>
+          {item.resultReason ? <p className="mt-3 rounded-xl border p-3 text-sm"><b>دلیل نتیجه:</b> {item.resultReason}</p> : null}
         </FormSection>
         <TenderWorkflowPanels tender={item} permissions={p} />
-        <Requirements tender={item} canManage={manage} />
-        <Deliverables tender={item} canManage={manage} />
+        <div id="tender-requirements" className="scroll-mt-28"><Requirements tender={item} canManage={manage} /></div>
+        <div id="tender-deliverables" className="scroll-mt-28"><Deliverables tender={item} canManage={manage} /></div>
       </DetailShell>
     )
   }
 }
 function TenderTransitionError({ error }: { error: unknown }) {
-  const payload = (error as { response?: { data?: { details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string } } })?.response?.data
+  const response = (error as { response?: { data?: { error?: { details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string }; details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string } } })?.response?.data
+  const payload = response?.error ?? response
   const blockers = payload?.details?.blockers
   return <div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
     <b>امکان انجام این تغییر وجود ندارد.</b>
-    {blockers?.length ? <ul className="mt-2 grid gap-1">{blockers.map((issue) => <li key={issue.code}>• {readinessLabels[issue.code] ?? issue.code}{issue.count ? ` (${issue.count.toLocaleString("fa-IR")})` : ""}</li>)}</ul> : <p className="mt-2">{payload?.message || (error instanceof Error ? error.message : "خطای ناشناخته")}</p>}
+    {blockers?.length ? <ul className="mt-2 grid gap-1">{blockers.map((issue) => <li key={issue.code}>• {readinessIssueLabel(issue)}</li>)}</ul> : <p className="mt-2">{payload?.message || (error instanceof Error ? error.message : "خطای ناشناخته")}</p>}
   </div>
 }
 const readinessLabels: Record<string, string> = {
   MANDATORY_REQUIREMENTS_INCOMPLETE: "الزامات الزامی تکمیل نشده‌اند",
   MANDATORY_REQUIREMENTS_UNASSIGNED: "الزامات الزامی بدون مسئول هستند",
   REQUIRED_DELIVERABLES_INCOMPLETE: "اقلام تحویلی الزامی کامل نیستند",
+  TENDER_BID_DECISION_REQUIRED: "تصمیم شرکت در مناقصه هنوز «شرکت می‌کنیم» نیست",
+  TENDER_QUALIFICATION_APPROVAL_REQUIRED: "ارزیابی اولیه هنوز مجوز ادامه نداده است",
   TECHNICAL_REVIEW_NOT_APPROVED: "بازبینی فنی تأیید نشده است",
   COMMERCIAL_REVIEW_NOT_APPROVED: "بازبینی تجاری تأیید نشده است",
   REQUIRED_TENDER_FIELDS_INCOMPLETE: "اطلاعات ضروری مناقصه ناقص است",
@@ -612,6 +639,20 @@ const readinessLabels: Record<string, string> = {
   REQUIREMENTS_OVERDUE: "برخی الزامات سررسید گذشته‌اند",
   REQUIREMENT_DEPENDENCIES_UNRESOLVED: "وابستگی برخی الزامات هنوز برآورده نشده است",
   GO_WITH_UNSATISFIED_REQUIREMENTS: "تصمیم ادامه با الزامات حیاتی برآورده‌نشده ثبت شده است",
+}
+const tenderRequiredFieldLabels: Record<string, string> = {
+  title: "عنوان",
+  ownerId: "مالک",
+  tenderType: "نوع مناقصه",
+  companyId: "شرکت",
+  submissionDeadline: "مهلت ارسال",
+}
+function readinessIssueLabel(issue: { code: string; count?: number; fields?: string[] }) {
+  const count = issue.count ? ` (${issue.count.toLocaleString("fa-IR")})` : ""
+  const fields = issue.fields?.length
+    ? `: ${issue.fields.map((field) => tenderRequiredFieldLabels[field] ?? field).join("، ")}`
+    : ""
+  return `${readinessLabels[issue.code] ?? issue.code}${count}${fields}`
 }
 function tenderEventLabel(action: string) {
   const exact: Record<string, string> = {
@@ -658,7 +699,8 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
   const reviewLabel: Record<string, string> = { NOT_STARTED: "شروع نشده", PENDING: "در انتظار", APPROVED: "تأیید شده", REJECTED: "رد شده", CANCELLED: "لغو شده" }
   const qualificationNotes = ([['تناسب', tender.fitNotes], ['ریسک', tender.riskNotes], ['امکان‌پذیری', tender.feasibilityNotes]] as const).filter(([, value]) => Boolean(value))
   return <>
-    <FormSection title="ارزیابی و تصمیم مناقصه" actions={permissions.includes("technical-tender:manage") ? <Button size="sm" variant="outline" onClick={() => setQualificationOpen(true)}><Edit3 className="size-4" />ویرایش ارزیابی</Button> : null}>
+    <div id="tender-qualification" className="scroll-mt-28">
+    <FormSection title="ارزیابی و تصمیم مناقصه" description="در این گام مشخص می‌کنید آیا شرکت در مناقصه منطقی و امکان‌پذیر است. برای ورود به آماده‌سازی، تصمیم شرکت باید «شرکت می‌کنیم» و نتیجه نهایی «ادامه» یا «ادامه مشروط» باشد." actions={permissions.includes("technical-tender:manage") ? <Button size="sm" variant="outline" onClick={() => { mutations.saveQualification.reset(); setQualificationOpen(true) }}><Edit3 className="size-4" />ویرایش ارزیابی</Button> : null}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Meta label="تصمیم شرکت در مناقصه" value={({ UNDECIDED: "تصمیم‌گیری نشده", BID: "شرکت می‌کنیم", NO_BID: "شرکت نمی‌کنیم" } as Record<string, string>)[tender.bidDecision]} />
         <Meta label="تصمیم نهایی" value={({ PENDING: "در انتظار", GO: "ادامه", CONDITIONAL_GO: "ادامه مشروط", NO_GO: "عدم ادامه" } as Record<string, string>)[tender.qualificationDecision]} />
@@ -671,12 +713,15 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
       {tender.qualificationConditions ? <p className="mt-2 rounded-xl bg-amber-50 p-3 text-sm dark:bg-amber-950/20"><b>شرایط:</b> {tender.qualificationConditions}</p> : null}
       {tender.decisionReason ? <p className="mt-2 text-sm text-muted-foreground"><b>دلیل تصمیم:</b> {tender.decisionReason}</p> : null}
     </FormSection>
-    <FormSection title="آمادگی ارسال">
+    </div>
+    <div id="tender-readiness" className="scroll-mt-28">
+    <FormSection title="آمادگی ارسال" description="این کنترل به‌صورت خودکار از روی اطلاعات مناقصه، الزامات، مدارک و دو تأییدیه محاسبه می‌شود.">
       {readiness ? <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]">
         <div className={`rounded-2xl border p-4 ${readiness.overallReady ? "border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20" : "border-amber-300 bg-amber-50/60 dark:bg-amber-950/20"}`}>
           <div className="flex items-center gap-2 font-black">{readiness.overallReady ? <CheckCircle2 className="size-5 text-emerald-600" /> : <AlertTriangle className="size-5 text-amber-600" />}{readiness.overallReady ? "آماده ارسال" : "آماده ارسال نیست"}</div>
           <ul className="mt-3 grid gap-2 text-sm" aria-label="موانع آمادگی ارسال">
-            {[...readiness.blockers, ...readiness.warnings].map((issue) => <li key={issue.code} className="flex gap-2"><span aria-hidden>•</span><span>{readinessLabels[issue.code] ?? issue.code}{issue.count ? ` (${issue.count.toLocaleString("fa-IR")})` : ""}</span></li>)}
+            {readiness.blockers.map((issue) => <li key={issue.code} className="flex gap-2"><span className="font-black text-destructive" aria-hidden>×</span><span>{readinessIssueLabel(issue)}</span></li>)}
+            {readiness.warnings.map((issue) => <li key={issue.code} className="flex gap-2"><span className="font-black text-amber-600" aria-hidden>!</span><span>{readinessIssueLabel(issue)} <span className="text-muted-foreground">(هشدار)</span></span></li>)}
             {readiness.overallReady ? <li>تمام کنترل‌های الزامی با موفقیت عبور کرده‌اند.</li> : null}
           </ul>
         </div>
@@ -688,28 +733,34 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
         </dl>
       </div> : <p className="text-sm text-muted-foreground">در حال محاسبه آمادگی…</p>}
     </FormSection>
-    <FormSection title="بازبینی‌های فنی و تجاری">
+    </div>
+    <div id="tender-reviews" className="scroll-mt-28">
+    <FormSection title="تأییدیه‌های فنی و تجاری" description="هر تأییدیه فقط در مرحله خودش فعال می‌شود: ابتدا تأیید فنی و سپس تأیید تجاری. انتخاب بازبین، ارسال درخواست و ثبت نتیجه همگی در همین بخش انجام می‌شوند.">
       <div className="grid gap-3 md:grid-cols-2">{(["TECHNICAL", "COMMERCIAL"] as TenderReviewType[]).map((type) => {
         const review = latest(type), allowed = permissions.includes(type === "TECHNICAL" ? "technical-tender:review-technical" : "technical-tender:review-commercial"), inStage = tender.status === (type === "TECHNICAL" ? "TECHNICAL_REVIEW" : "COMMERCIAL_REVIEW")
+        const permissionLabel = type === "TECHNICAL" ? "بازبینی فنی مناقصه" : "بازبینی تجاری مناقصه"
         return <article key={type} className="rounded-2xl border p-4">
           <div className="flex flex-wrap items-center justify-between gap-2"><b>{type === "TECHNICAL" ? "بازبینی فنی" : "بازبینی تجاری"}</b><span className="rounded-full border px-2 py-1 text-xs font-bold">{reviewLabel[review?.status ?? "NOT_STARTED"]}</span></div>
           <dl className="mt-3 grid gap-2 text-sm"><div>بازبین: {relationName(review?.reviewer)}</div><div>درخواست: {faDate(review?.requestedAt)}</div><div>تصمیم: {faDate(review?.reviewedAt)}</div>{review?.comment ? <div>توضیح: {review.comment}</div> : null}</dl>
-          {allowed && inStage ? <div className="mt-4 flex flex-wrap gap-2">{!review || review.status !== "PENDING" ? <Button size="sm" variant="outline" onClick={() => { setDialog({ type }); setComment(""); setReviewerId("") }}>درخواست بازبینی</Button> : <><Button size="sm" onClick={() => { setDialog({ type, reviewId: review.id, status: "APPROVED" }); setComment("") }}>تأیید</Button><Button size="sm" variant="destructive" onClick={() => { setDialog({ type, reviewId: review.id, status: "REJECTED" }); setComment("") }}>رد</Button></>}</div> : null}
+          {allowed && inStage ? <div className="mt-4 flex flex-wrap gap-2">{!review || review.status !== "PENDING" ? <Button size="sm" variant="outline" onClick={() => { mutations.requestReview.reset(); mutations.decideReview.reset(); setDialog({ type }); setComment(""); setReviewerId("") }}>درخواست بازبینی</Button> : <><Button size="sm" onClick={() => { mutations.requestReview.reset(); mutations.decideReview.reset(); setDialog({ type, reviewId: review.id, status: "APPROVED" }); setComment("") }}>تأیید</Button><Button size="sm" variant="destructive" onClick={() => { mutations.requestReview.reset(); mutations.decideReview.reset(); setDialog({ type, reviewId: review.id, status: "REJECTED" }); setComment("") }}>رد</Button></>}</div> : null}
+          {!inStage ? <p className="mt-4 rounded-xl bg-muted/50 p-3 text-xs leading-5 text-muted-foreground">این بخش پس از ورود مناقصه به مرحله «{type === "TECHNICAL" ? "بازبینی فنی" : "بازبینی تجاری"}» فعال می‌شود.</p> : !allowed ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">برای اقدام، دسترسی «{permissionLabel}» لازم است.</p> : review?.status === "PENDING" ? <p className="mt-3 text-xs text-muted-foreground">درخواست ارسال شده و اکنون باید تأیید یا رد شود.</p> : null}
         </article>
       })}</div>
     </FormSection>
+    </div>
     <FormSection title="تاریخچه گردش کار">
       {workflow.history.data?.length ? <ol className="grid gap-2">{workflow.history.data.map((event) => <li key={event.id} className="flex flex-col gap-1 rounded-xl border p-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span>{tenderEventLabel(event.action)}</span><span className="text-muted-foreground">{faDate(event.createdAt)}</span></li>)}</ol> : <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p>}
     </FormSection>
     <ResponsiveModal open={Boolean(dialog)} onClose={() => setDialog(undefined)} title={dialog?.reviewId ? (dialog.status === "APPROVED" ? "تأیید بازبینی" : "رد بازبینی") : "درخواست بازبینی"}>
-      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!dialog) return; if (dialog.reviewId && dialog.status) await mutations.decideReview.mutateAsync({ reviewId: dialog.reviewId, status: dialog.status, comment: comment || undefined, revision: tender.revision }); else await mutations.requestReview.mutateAsync({ type: dialog.type, reviewerId: reviewerId || undefined, comment: comment || undefined, revision: tender.revision }); setDialog(undefined) }}>
-        {!dialog?.reviewId ? <label>بازبین<ScopedUserSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} ariaLabel="بازبین مناقصه" /></label> : null}
-        <label>توضیح<textarea className="min-h-28 w-full rounded-xl border p-3" value={comment} onChange={(e) => setComment(e.target.value)} required={dialog?.status === "REJECTED"} /></label>
-        <Button disabled={mutations.requestReview.isPending || mutations.decideReview.isPending || (dialog?.status === "REJECTED" && !comment.trim())}>ثبت تصمیم</Button>
+      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!dialog) return; try { if (dialog.reviewId && dialog.status) await mutations.decideReview.mutateAsync({ reviewId: dialog.reviewId, status: dialog.status, comment: comment || undefined, revision: tender.revision }); else await mutations.requestReview.mutateAsync({ type: dialog.type, reviewerId: reviewerId || undefined, comment: comment || undefined, revision: tender.revision }); setDialog(undefined) } catch { /* Mutation error is rendered below. */ } }}>
+        {!dialog?.reviewId ? <label className="grid gap-1">بازبین<ScopedUserSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} ariaLabel="بازبین مناقصه" required /><span className="text-xs leading-5 text-muted-foreground">درخواست برای این فرد ثبت می‌شود و اعلان دریافت خواهد کرد.</span></label> : null}
+        <label className="grid gap-1">توضیح<textarea className="min-h-28 w-full rounded-xl border p-3" placeholder={dialog?.status === "REJECTED" ? "دلیل رد و اصلاحات موردنیاز را بنویسید" : "توضیح اختیاری برای بازبین یا نتیجه بررسی"} value={comment} onChange={(e) => setComment(e.target.value)} required={dialog?.status === "REJECTED"} /></label>
+        {mutations.requestReview.error || mutations.decideReview.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(mutations.requestReview.error || mutations.decideReview.error, "ثبت بازبینی انجام نشد.")}</p> : null}
+        <Button type="submit" disabled={mutations.requestReview.isPending || mutations.decideReview.isPending || (!dialog?.reviewId && !reviewerId) || (dialog?.status === "REJECTED" && !comment.trim())}>{dialog?.reviewId ? "ثبت نتیجه بازبینی" : "ارسال درخواست بازبینی"}</Button>
       </form>
     </ResponsiveModal>
     <ResponsiveModal open={qualificationOpen} onClose={() => setQualificationOpen(false)} title="ارزیابی صلاحیت مناقصه">
-      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); await mutations.saveQualification.mutateAsync({
+      <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); try { await mutations.saveQualification.mutateAsync({
         bidDecision: qualification.bidDecision,
         qualificationDecision: qualification.qualificationDecision,
         fitScore: qualification.fitScore === "" ? undefined : Number(qualification.fitScore),
@@ -722,7 +773,7 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
         qualificationConditions: qualification.qualificationConditions || undefined,
         decisionReason: qualification.decisionReason || undefined,
         revision: tender.revision,
-      }); setQualificationOpen(false) }}>
+      }); setQualificationOpen(false) } catch { /* Mutation error is rendered below. */ } }}>
         <div className="grid gap-3 sm:grid-cols-2">
           <label>تصمیم شرکت<SearchableOptionSelect value={qualification.bidDecision} onChange={(value) => setQualification({ ...qualification, bidDecision: (value || "UNDECIDED") as typeof qualification.bidDecision })} options={[{ id: "UNDECIDED", label: "تصمیم‌گیری نشده" }, { id: "BID", label: "شرکت می‌کنیم" }, { id: "NO_BID", label: "شرکت نمی‌کنیم" }].filter((x) => x.label.includes(bidSearch))} search={bidSearch} onSearchChange={setBidSearch} allowEmpty={false} ariaLabel="تصمیم شرکت در مناقصه" /></label>
           <label>تصمیم نهایی<SearchableOptionSelect value={qualification.qualificationDecision} onChange={(value) => setQualification({ ...qualification, qualificationDecision: (value || "PENDING") as typeof qualification.qualificationDecision })} options={[{ id: "PENDING", label: "در انتظار" }, { id: "GO", label: "ادامه" }, { id: "CONDITIONAL_GO", label: "ادامه مشروط" }, { id: "NO_GO", label: "عدم ادامه" }].filter((x) => x.label.includes(decisionSearch))} search={decisionSearch} onSearchChange={setDecisionSearch} allowEmpty={false} ariaLabel="تصمیم نهایی صلاحیت" /></label>
@@ -738,7 +789,8 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
         <label>جمع‌بندی<textarea className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationSummary} onChange={(e) => setQualification({ ...qualification, qualificationSummary: e.target.value })} /></label>
         {qualification.qualificationDecision === "CONDITIONAL_GO" ? <label>شرایط ادامه<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationConditions} onChange={(e) => setQualification({ ...qualification, qualificationConditions: e.target.value })} /></label> : null}
         {qualification.qualificationDecision === "NO_GO" || qualification.bidDecision === "NO_BID" ? <label>دلیل تصمیم<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.decisionReason} onChange={(e) => setQualification({ ...qualification, decisionReason: e.target.value })} /></label> : null}
-        <Button disabled={mutations.saveQualification.isPending}>ذخیره ارزیابی</Button>
+        {mutations.saveQualification.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(mutations.saveQualification.error, "ذخیره ارزیابی انجام نشد.")}</p> : null}
+        <Button type="submit" disabled={mutations.saveQualification.isPending}>ذخیره ارزیابی</Button>
       </form>
     </ResponsiveModal>
   </>
