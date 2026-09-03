@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { useNavigate, useParams } from "react-router-dom"
 import {
   BookOpen,
@@ -14,6 +15,8 @@ import {
   CheckCircle2,
   Link2,
   ListChecks,
+  Download,
+  UploadCloud,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -24,10 +27,12 @@ import { FormSection } from "@/components/shared/FormSection"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { api } from "@/lib/api"
 import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { TechnicalAttachments } from "../components/TechnicalAttachments"
@@ -65,6 +70,7 @@ import {
 } from "../presentation"
 import type {
   DocumentStatus,
+  DocumentVersion,
   KnowledgeArticle,
   KnowledgeStatus,
   ReleaseStatus,
@@ -305,6 +311,12 @@ export function TechnicalDocumentDetailPage() {
           canTarget={(t: DocumentStatus) =>
             ["APPROVED", "ACTIVE", "SUPERSEDED"].includes(t) ? approve : manage
           }
+          getTargetBlockReason={(target: DocumentStatus) =>
+            ["IN_REVIEW", "APPROVED"].includes(target) &&
+            (!item.versions?.[0]?.attachment || item.versions[0].attachment.deletedAt)
+              ? "ابتدا یک نسخه دارای فایل بارگذاری کنید."
+              : undefined
+          }
           onTransition={async (status, reason) => {
             await transition.mutateAsync({
               id: item.id,
@@ -314,10 +326,15 @@ export function TechnicalDocumentDetailPage() {
             })
           }}
         />
+        {transition.error ? <TenderTransitionError error={transition.error} /> : null}
         <FormSection title="حاکمیت و ارتباطات">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="نوع سند" value={item.documentType} />
-            <Meta label="محرمانگی" value={item.confidentiality} />
+            <Meta label="محرمانگی" value={
+              item.confidentiality === "INTERNAL" ? "داخلی" :
+                item.confidentiality === "CONFIDENTIAL" ? "محرمانه" : "محدود"
+            } />
+            <Meta label="مالک سند" value={relationName(item.owner)} />
             <Meta label="محصول" value={relationName(item.product)} />
             <Meta label="انتشار" value={relationName(item.release)} />
             <Meta label="شرکت" value={relationName(item.company)} />
@@ -326,13 +343,11 @@ export function TechnicalDocumentDetailPage() {
             <Meta label="انقضا" value={faDate(item.expiresAt)} />
           </dl>
         </FormSection>
-        <TechnicalAttachments
-          entityId={item.id}
-          entityType="TECHNICAL_DOCUMENT"
-          canView={p.includes("attachment:view")}
-          canManage={manage && p.includes("attachment:manage")}
+        <DocumentVersions
+          item={item}
+          canManage={manage}
+          canDownload={p.includes("attachment:view")}
         />
-        <DocumentVersions item={item} canManage={manage} />
       </DetailShell>
     )
   }
@@ -340,19 +355,40 @@ export function TechnicalDocumentDetailPage() {
 function DocumentVersions({
   item,
   canManage,
+  canDownload,
 }: {
   item: TechnicalDocument
   canManage: boolean
+  canDownload: boolean
 }) {
+  const canAddVersion = canManage && ["DRAFT", "IN_REVIEW"].includes(item.status)
   const [open, setOpen] = useState(false),
     [version, setVersion] = useState(""),
-    [attachmentId, setAttachmentId] = useState(""),
+    [file, setFile] = useState<File>(),
+    [progress, setProgress] = useState(0),
+    [submitting, setSubmitting] = useState(false),
     queryClient = useQueryClient()
+  async function download(attachment: NonNullable<DocumentVersion["attachment"]>) {
+    try {
+      const response = await api.get<Blob>(`/attachments/${attachment.id}/download`, { responseType: "blob" })
+      const url = URL.createObjectURL(response.data)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = attachment.originalFileName
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error("دانلود فایل انجام نشد.")
+    }
+  }
   return (
     <FormSection
-      title="تاریخچه نسخه‌ها"
+      title="نسخه‌ها و فایل سند"
+      description="هر نسخه با فایل اصلی خود ثبت می‌شود و تاریخچه نسخه‌های قبلی باقی می‌ماند."
       actions={
-        canManage ? (
+        canAddVersion ? (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="size-4" />
             نسخه جدید
@@ -360,17 +396,50 @@ function DocumentVersions({
         ) : null
       }
     >
+      {!canAddVersion && canManage ? (
+        <p className="mb-3 rounded-xl bg-muted/60 p-3 text-xs leading-6 text-muted-foreground">
+          تاریخچه این سند قفل شده است. نسخه جدید فقط در وضعیت پیش‌نویس یا در حال بازبینی ثبت می‌شود.
+        </p>
+      ) : null}
       {item.versions?.length ? (
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           {item.versions.map((v) => (
-            <div
+            <article
               key={v.id}
-              className="grid gap-2 rounded-xl border p-3 sm:grid-cols-3"
+              className="flex min-w-0 flex-col gap-3 rounded-2xl border border-[var(--app-divider)] p-4 sm:flex-row sm:items-center"
             >
-              <b dir="ltr">{v.version}</b>
-              <span>{v.attachmentId ? "دارای پیوست" : "بدون پیوست"}</span>
-              <span>{faDate(v.createdAt)}</span>
-            </div>
+              <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                <FileText className="size-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <b dir="ltr">نسخه {v.version}</b>
+                  <StatusBadge tone={v.approvedAt ? "success" : "neutral"} dot={false}>
+                    {v.approvedAt ? "تأییدشده" : "در انتظار تأیید"}
+                  </StatusBadge>
+                </div>
+                <p className="mt-1 truncate text-xs text-muted-foreground">
+                  {v.attachment && !v.attachment.deletedAt
+                    ? v.attachment.originalFileName
+                    : "فایل این نسخه در دسترس نیست"}
+                  {v.attachment && !v.attachment.deletedAt
+                    ? ` · ${formatBytes(v.attachment.sizeBytes)}`
+                    : ""}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  ثبت در {faDate(v.createdAt)}
+                  {v.createdBy ? ` · توسط ${relationName(v.createdBy)}` : ""}
+                </p>
+              </div>
+              {v.attachment && !v.attachment.deletedAt && canDownload ? (
+                <EntityRowActions actions={[{
+                  id: "download",
+                  label: "دانلود فایل نسخه",
+                  icon: Download,
+                  onClick: () => download(v.attachment!),
+                }]} />
+              ) : null}
+            </article>
           ))}
         </div>
       ) : (
@@ -382,46 +451,75 @@ function DocumentVersions({
       )}
       <ResponsiveModal
         open={open}
-        onClose={() => setOpen(false)}
-        title="نسخه جدید"
+        onClose={() => {
+          if (!submitting) {
+            setOpen(false)
+            setVersion("")
+            setFile(undefined)
+            setProgress(0)
+          }
+        }}
+        title="بارگذاری نسخه جدید"
+        description="شماره نسخه و فایل اصلی سند را انتخاب کنید."
+        icon={UploadCloud}
       >
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
             e.preventDefault()
-            await technicalApi.documents.addVersion(item.id, {
-              version,
-              attachmentId: attachmentId || undefined,
-            })
-            await queryClient.invalidateQueries({
-              queryKey: technicalKeys.detail("documents", item.id),
-            })
-            setVersion("")
-            setAttachmentId("")
-            setOpen(false)
+            if (!file || !version.trim()) return
+            setSubmitting(true)
+            try {
+              await technicalApi.documents.uploadVersion(item.id, {
+                version,
+                file,
+                onProgress: setProgress,
+              })
+              await queryClient.invalidateQueries({ queryKey: technicalKeys.detail("documents", item.id) })
+              toast.success("نسخه و فایل سند با موفقیت ثبت شد.")
+              setVersion("")
+              setFile(undefined)
+              setProgress(0)
+              setOpen(false)
+            } catch (error) {
+              toast.error(getApiErrorMessage(error, "بارگذاری نسخه انجام نشد."))
+            } finally {
+              setSubmitting(false)
+            }
           }}
         >
-          <label>
-            نسخه
+          <label className="grid gap-2 text-sm font-bold">
+            شماره نسخه
             <Input
               value={version}
               onChange={(e) => setVersion(e.target.value)}
               required
             />
           </label>
-          <label>
-            شناسه پیوست موجود
+          <label className="grid gap-2 text-sm font-bold">
+            فایل نسخه
             <Input
-              value={attachmentId}
-              onChange={(e) => setAttachmentId(e.target.value)}
-              dir="ltr"
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.json,.xml,.txt,.csv,.md,.png,.jpg,.jpeg,.webp"
+              required
+              onChange={(e) => setFile(e.target.files?.[0])}
             />
           </label>
           <p className="text-xs text-muted-foreground">
-            پیوست باید قبلاً با زیرساخت پیوست و نوع TECHNICAL_DOCUMENT به همین
-            سند متصل شده باشد.
+            حداکثر حجم فایل ۲۵ مگابایت است. فرمت‌های PDF، Word، Excel، تصویر و فایل متنی پشتیبانی می‌شوند.
           </p>
-          <Button disabled={!version}>ثبت نسخه</Button>
+          {submitting ? (
+            <div className="grid gap-1" aria-live="polite">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary transition-[width]" style={{ width: `${progress}%` }} />
+              </div>
+              <span className="text-xs text-muted-foreground">{progress.toLocaleString("fa-IR")}٪ بارگذاری شده</span>
+            </div>
+          ) : null}
+          <Button disabled={!version.trim() || !file || submitting}>
+            <UploadCloud className="size-4" />
+            {submitting ? "در حال بارگذاری..." : "بارگذاری و ثبت نسخه"}
+          </Button>
         </form>
       </ResponsiveModal>
     </FormSection>
@@ -615,6 +713,11 @@ export function TechnicalTenderDetailPage() {
       </DetailShell>
     )
   }
+}
+function formatBytes(value: number) {
+  if (value < 1024) return `${value.toLocaleString("fa-IR")} بایت`
+  if (value < 1024 ** 2) return `${(value / 1024).toLocaleString("fa-IR", { maximumFractionDigits: 1 })} KB`
+  return `${(value / 1024 ** 2).toLocaleString("fa-IR", { maximumFractionDigits: 1 })} MB`
 }
 function TenderTransitionError({ error }: { error: unknown }) {
   const response = (error as { response?: { data?: { error?: { details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string }; details?: { blockers?: Array<{ code: string; count?: number }> }; message?: string } } })?.response?.data

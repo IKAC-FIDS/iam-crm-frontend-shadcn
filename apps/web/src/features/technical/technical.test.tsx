@@ -137,6 +137,22 @@ describe("Technical Center contract", () => {
     expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/reviews/rv1/decision", expect.objectContaining({ status: "REJECTED", comment: "نیازمند اصلاح" }))
   })
 
+  it("uploads a technical document file and version in one request", async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { data: { id: "v1", version: "2.0" } } })
+    const file = new File(["content"], "architecture.pdf", { type: "application/pdf" })
+
+    await technicalApi.documents.uploadVersion("d1", { version: "2.0", file })
+
+    expect(api.post).toHaveBeenCalledWith(
+      "/technical/documents/d1/versions/upload",
+      expect.any(FormData),
+      expect.objectContaining({ onUploadProgress: expect.any(Function) })
+    )
+    const form = vi.mocked(api.post).mock.calls[0]?.[1] as FormData
+    expect(form.get("version")).toBe("2.0")
+    expect(form.get("file")).toBe(file)
+  })
+
   it("uses qualification, dependency and requirement task endpoints", async () => {
     vi.mocked(api.patch).mockResolvedValue({ data: { data: { id: "t1" } } })
     vi.mocked(api.post).mockResolvedValue({ data: { data: { id: "link1" } } })

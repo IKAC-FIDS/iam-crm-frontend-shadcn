@@ -105,6 +105,21 @@ export const technicalApi = {
       const r = await api.post(`${root}/documents/${id}/versions`, p)
       return unwrapApiResponse<DocumentVersion>(r.data)
     },
+    uploadVersion: async (
+      id: string,
+      input: { version: string; file: File; contentHash?: string; onProgress?: (percent: number) => void }
+    ) => {
+      const form = new FormData()
+      form.append("version", input.version.trim())
+      form.append("file", input.file)
+      if (input.contentHash?.trim()) form.append("contentHash", input.contentHash.trim())
+      const r = await api.post(`${root}/documents/${id}/versions/upload`, form, {
+        onUploadProgress: (event) => input.onProgress?.(
+          event.total ? Math.round((event.loaded / event.total) * 100) : 0
+        ),
+      })
+      return unwrapApiResponse<DocumentVersion>(r.data)
+    },
   },
   resources: {
     list: (p: TechnicalListParams) => list<TechnicalResource>("resources", p),

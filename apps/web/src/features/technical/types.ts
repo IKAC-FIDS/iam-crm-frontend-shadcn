@@ -120,7 +120,21 @@ export type DocumentVersion = {
   documentId: string
   version: string
   attachmentId?: string | null
+  attachment?: {
+    id: string
+    name?: string | null
+    originalFileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256?: string | null
+    deletedAt?: string | null
+    createdAt: string
+  } | null
   contentHash?: string | null
+  approvalNote?: string | null
+  approvedAt?: string | null
+  createdBy?: EntityRef | null
+  approvedBy?: EntityRef | null
   createdAt: string
 }
 export type TechnicalDocument = {
@@ -140,6 +154,7 @@ export type TechnicalDocument = {
   opportunity?: EntityRef | null
   tenderId?: string | null
   ownerId: string
+  owner?: EntityRef | null
   effectiveFrom?: string | null
   expiresAt?: string | null
   revision: number

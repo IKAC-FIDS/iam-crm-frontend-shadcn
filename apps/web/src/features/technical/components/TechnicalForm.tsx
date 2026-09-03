@@ -253,7 +253,11 @@ export function TechnicalForm({
       <FormDialogBody>
         <FormSection
           title="اطلاعات اصلی"
-          description="فیلدهای الزامی و شناسه‌های اصلی را تکمیل کنید."
+          description={
+            kind === "documents" && !item
+              ? "ابتدا مشخصات سند را ذخیره کنید؛ سپس در صفحه سند، شماره نسخه و فایل اصلی را یکجا بارگذاری می‌کنید."
+              : "فیلدهای الزامی و شناسه‌های اصلی را تکمیل کنید."
+          }
         >
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="عنوان" error={errors.title?.message}>
