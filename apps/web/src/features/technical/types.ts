@@ -214,12 +214,17 @@ export type TechnicalResource = {
   resourceType: ResourceType
   status: ResourceStatus
   productId?: string | null
+  product?: EntityRef | null
   releaseId?: string | null
+  release?: EntityRef | null
   url?: string | null
   version?: string | null
   checksum?: string | null
   attachmentId?: string | null
+  attachment?: { id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null; sha256?: string | null; deletedAt?: string | null } | null
+  artifactCount?: number
   ownerId?: string | null
+  owner?: EntityRef | null
   createdAt: string
   updatedAt: string
 }

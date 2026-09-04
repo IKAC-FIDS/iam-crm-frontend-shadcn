@@ -35,7 +35,7 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
-import { TechnicalAttachments } from "../components/TechnicalAttachments"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { ScopedUserSelect } from "../components/ScopedUserSelect"
 import { TenderProcessGuide } from "../components/TenderProcessGuide"
 import {
@@ -771,10 +771,10 @@ export function TechnicalResourceDetailPage() {
                 label="Checksum"
                 value={<span dir="ltr">{q.data.checksum || "—"}</span>}
               />
-              <Meta label="محصول" value={q.data.productId} />
-              <Meta label="انتشار" value={q.data.releaseId} />
-              <Meta label="مالک" value={q.data.ownerId} />
-              <Meta label="پیوست" value={q.data.attachmentId} />
+              <Meta label="محصول" value={relationName(q.data.product)} />
+              <Meta label="انتشار" value={relationName(q.data.release)} />
+              <Meta label="مالک" value={relationName(q.data.owner)} />
+              <Meta label="فایل‌ها و لینک‌ها" value={(q.data.artifactCount ?? 0).toLocaleString("fa-IR")} />
               <Meta label="آخرین تغییر" value={faDate(q.data.updatedAt)} />
             </dl>
             {q.data.url ? (
@@ -788,15 +788,7 @@ export function TechnicalResourceDetailPage() {
               </a>
             ) : null}
           </FormSection>
-          <TechnicalAttachments
-            entityId={q.data.id}
-            entityType="TECHNICAL_RESOURCE"
-            canView={p.includes("attachment:view")}
-            canManage={
-              p.includes("technical-resource:manage") &&
-              p.includes("attachment:manage")
-            }
-          />
+          <ArtifactPanel entityId={q.data.id} entityType="TECHNICAL_RESOURCE" title="فایل‌ها و لینک‌های منبع" />
         </DetailShell>
       ) : null}
     </QueryContent>

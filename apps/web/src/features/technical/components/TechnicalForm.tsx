@@ -22,6 +22,7 @@ import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { useAuthStore } from "@/store/authStore"
 import { technicalApi, technicalLookups } from "../api"
 import { ScopedUserSelect } from "./ScopedUserSelect"
 import type {
@@ -72,6 +73,7 @@ const schema = z.object({
     .union([z.literal(""), z.string().url("آدرس معتبر وارد کنید")])
     .optional(),
   checksum: z.string().max(128).optional(),
+  resourceFile: z.custom<File>().optional(),
   status: z.string().optional(),
   tenderType: z.string().optional(),
   referenceNumber: z.string().max(100).optional(),
@@ -258,6 +260,10 @@ export function TechnicalForm({
         setError("externalUrl", { message: "آدرس منبع الزامی است" })
         invalid = true
       }
+    }
+    if (kind === "resources" && v.resourceType === "EXTERNAL_LINK" && !v.url?.trim()) {
+      setError("url", { message: "برای پیوند خارجی، ثبت URL الزامی است" })
+      invalid = true
     }
     if (kind === "releases") {
       const schedule: Array<{
@@ -544,6 +550,10 @@ function DomainFields({
   errors: Partial<Record<keyof TechnicalFormValues, { message?: string }>>
 }) {
   const contentType = useWatch({ control, name: "contentType" }) || "ARTICLE"
+  const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const canUploadResource =
+    permissions.includes("artifact:create") ||
+    permissions.includes("attachment:manage")
   return (
     <FormSection title="محتوا و زمان‌بندی">
       <div className="grid gap-4 md:grid-cols-2">
@@ -604,7 +614,7 @@ function DomainFields({
         ) : kind === "resources" ? (
           <>
             <Area label="توضیحات" reg={register("description")} />
-            <Field label="URL">
+            <Field label="URL" error={errors.url?.message}>
               <Input dir="ltr" {...register("url")} className={inputClass} />
             </Field>
             <Field label="نسخه">
@@ -621,6 +631,18 @@ function DomainFields({
                 className={inputClass}
               />
             </Field>
+            {canUploadResource ? (
+              <Field label="فایل منبع" className="md:col-span-2">
+                <Input
+                  type="file"
+                  {...register("resourceFile")}
+                  className="h-auto min-h-11 py-2"
+                />
+                <span className="text-xs font-normal leading-5 text-muted-foreground">
+                  فایل پس از ذخیره مشخصات، به همین منبع متصل می‌شود. حداکثر حجم مجاز ۲۵ مگابایت است.
+                </span>
+              </Field>
+            ) : null}
           </>
         ) : (
           <>

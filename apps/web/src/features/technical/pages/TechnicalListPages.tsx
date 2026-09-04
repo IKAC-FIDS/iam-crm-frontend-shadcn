@@ -907,8 +907,8 @@ export function TechnicalResourcesPage() {
           >
             پیوند خارجی
           </a>
-        ) : r.attachmentId ? (
-          "فایل پیوست"
+        ) : (r.artifactCount ?? 0) > 0 || r.attachmentId ? (
+          `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک`
         ) : (
           "—"
         ),
@@ -941,7 +941,7 @@ export function TechnicalResourcesPage() {
           {
             id: "source",
             label: "منبع",
-            render: (r) => (r.url ? "پیوند" : r.attachmentId ? "پیوست" : "—"),
+            render: (r) => (r.url ? "پیوند" : (r.artifactCount ?? 0) > 0 || r.attachmentId ? `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک` : "—"),
           },
         ],
       }}

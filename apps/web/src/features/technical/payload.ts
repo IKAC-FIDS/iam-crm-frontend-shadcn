@@ -9,7 +9,7 @@ export function buildPayload(
   const clean = Object.fromEntries(
     Object.entries(value).map(([key, item]) => [
       key,
-      item === "" ? undefined : item,
+      item === "" || key === "resourceFile" ? undefined : item,
     ])
   )
   if (kind === "releases")
