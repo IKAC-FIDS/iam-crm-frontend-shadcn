@@ -263,10 +263,11 @@ export function TechnicalForm({
           value: v.supportEndDate,
         },
         { field: "endOfLifeDate", label: "پایان عمر", value: v.endOfLifeDate },
-      ].filter((entry) => Boolean(entry.value))
-      for (let index = 1; index < schedule.length; index += 1) {
-        const currentDate = schedule[index]
-        const previousDate = schedule[index - 1]
+      ]
+      const populatedSchedule = schedule.filter((entry) => Boolean(entry.value))
+      for (let index = 1; index < populatedSchedule.length; index += 1) {
+        const currentDate = populatedSchedule[index]
+        const previousDate = populatedSchedule[index - 1]
         if (
           currentDate?.value &&
           previousDate?.value &&
