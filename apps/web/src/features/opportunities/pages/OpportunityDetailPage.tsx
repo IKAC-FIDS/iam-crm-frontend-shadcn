@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
 Archive,  BriefcaseBusiness,
   Building2,
   CircleDollarSign,
@@ -321,119 +320,6 @@ export function OpportunityDetailPage() {
         }
         secondaryActions={heroActions}
       />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-8 w-fit rounded-lg px-2 text-[var(--app-text-secondary)]"
-        onClick={() => navigate(backTo)}
-      >
-        <ArrowRight className="size-4" />
-        {detailText.back}
-      </Button>
-
-      <header
-        className={
-          archived
-            ? "max-w-full min-w-0 rounded-[24px] border border-[var(--warning)]/35 bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
-            : "max-w-full min-w-0 rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 shadow-[var(--app-shadow-card)] sm:p-5"
-        }
-      >
-        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge tone={archived ? "warning" : "success"}>
-                {archived ? text.status.archived : text.status.active}
-              </StatusBadge>
-              <StatusBadge tone="neutral">
-                {text.priorities[opportunity.priority]}
-              </StatusBadge>
-            </div>
-            <h1 className="mt-2 max-w-full text-xl font-bold break-words text-[var(--app-heading)] sm:text-2xl">
-              {opportunity.title}
-            </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--app-text-secondary)]">
-              <span className="flex max-w-full min-w-0 items-center gap-1.5">
-                <Building2 className="size-3.5 shrink-0" />
-                <span className="min-w-0 break-words">
-                  {opportunityCompanyName(opportunity)}
-                </span>
-              </span>
-              <span className="flex max-w-full min-w-0 items-center gap-1.5">
-                <Layers3 className="size-3.5 shrink-0" />
-                <span className="min-w-0 break-words">
-                  {opportunity.stage?.label || uiText.common.notAvailable}
-                </span>
-              </span>
-            </div>
-            {archived && opportunity.archiveReason ? (
-              <p className="mt-2 rounded-lg bg-[var(--warning-light)] px-3 py-1.5 text-xs text-[var(--app-text-secondary)]">
-                {opportunity.archiveReason}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex max-w-full shrink-0 flex-wrap gap-1.5">
-            {canUpdate && !archived ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-lg"
-                onClick={() => setEditOpen(true)}
-              >
-                <Pencil className="size-4" />
-                {text.actions.edit}
-              </Button>
-            ) : null}
-            {canChangeStage && !archived ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-lg"
-                disabled={
-                  transitionsQuery.isLoading ||
-                  transitionsQuery.isError ||
-                  !targets.length
-                }
-                onClick={() => setStageOpen(true)}
-              >
-                <Waypoints className="size-4" />
-                {text.actions.changeStage}
-              </Button>
-            ) : null}
-            {canChangeOwner && !archived ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-lg"
-                onClick={() => setOwnerOpen(true)}
-              >
-                <UserRoundCog className="size-4" />
-                {text.actions.changeOwner}
-              </Button>
-            ) : null}
-            {archived && canRestore ? (
-              <Button
-                size="sm"
-                className="h-9 rounded-lg bg-[var(--app-primary)]"
-                onClick={() => setArchiveOpen(true)}
-              >
-                <RotateCcw className="size-4" />
-                {text.actions.restore}
-              </Button>
-            ) : !archived && canArchive ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 rounded-lg text-[var(--destructive)]"
-                onClick={() => setArchiveOpen(true)}
-              >
-                <Archive className="size-4" />
-                {text.actions.archive}
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </header>
 
       <OpportunityExecutiveSummary opportunity={opportunity} />
       <OpportunityProgressRail opportunity={opportunity} stages={stages} />
