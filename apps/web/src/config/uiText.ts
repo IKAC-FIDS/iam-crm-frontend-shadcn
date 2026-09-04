@@ -106,6 +106,7 @@
 
   technicalCenter: {
     comingSoon: "این بخش در حال آماده‌سازی است.",
+    library: { title: "مستندات و منابع فنی", description: "نسخه‌ها، اسناد، فایل‌ها و لینک‌های فنی" },
     releases: { title: "نسخه‌ها و انتشارها", description: "فضای نسخه‌ها و انتشارهای محصولات نرم‌افزاری" },
     knowledgeBase: { title: "پایگاه دانش", description: "مرجع دانش، راهنماها و تجربه‌های فنی تیم" },
     tenders: { title: "مناقصات", description: "فضای اطلاعات و پیگیری فنی مناقصات" },

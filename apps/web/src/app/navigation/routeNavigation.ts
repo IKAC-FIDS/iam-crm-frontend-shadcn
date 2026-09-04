@@ -32,6 +32,13 @@ export function getVisibleMenuGroups(user: AuthUser | null | undefined) {
 }
 
 export function isMenuRouteActive(routePath: string, pathname: string) {
+  if (
+    routePath === "/technical/library" &&
+    ["/technical/releases", "/technical/documents", "/technical/resources"].some(
+      (path) => pathname === path || pathname.startsWith(`${path}/`)
+    )
+  )
+    return true
   return (
     pathname === routePath ||
     (routePath !== "/dashboard" && pathname.startsWith(`${routePath}/`))

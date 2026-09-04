@@ -5,6 +5,7 @@ export {
   TechnicalResourcesPage,
   TechnicalTendersPage,
 } from "./TechnicalListPages"
+export { TechnicalLibraryPage } from "./TechnicalLibraryPage"
 export {
   TechnicalReleaseDetailPage,
   TechnicalKnowledgeDetailPage,

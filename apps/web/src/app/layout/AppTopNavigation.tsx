@@ -68,6 +68,7 @@ const routeHints: Record<string, string> = {
   activities: "تاریخچه تعاملات مشتری",
   reports: "شاخص‌ها و گزارش‌های فروش",
   "technical-releases": "نسخه‌ها و چرخه پشتیبانی",
+  "technical-library": "نسخه‌ها، اسناد، فایل‌ها و لینک‌های فنی",
   "technical-knowledge-base": "مقالات و دانش قابل استفاده مجدد",
   "technical-tenders": "فرایند فنی و تجاری مناقصه",
   "technical-documents": "اسناد نسخه‌بندی‌شده و محرمانه",

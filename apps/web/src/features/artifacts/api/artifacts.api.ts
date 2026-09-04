@@ -24,11 +24,14 @@ export async function getArtifacts(params: { entityType: ArtifactEntityType; ent
   }
 }
 
-export async function uploadArtifact(input: { entityType: ArtifactEntityType; entityId: string; file: File; name?: string; description?: string; relationType: ArtifactRelationType; onProgress?: (percent: number) => void }) {
+export async function uploadArtifact(input: { entityType: ArtifactEntityType; entityId: string; file: File; name?: string; description?: string; versionLabel?: string; category?: string; confidentiality?: string; relationType: ArtifactRelationType; onProgress?: (percent: number) => void }) {
   const form = new FormData()
   form.append("file", input.file); form.append("entityType", input.entityType); form.append("entityId", input.entityId); form.append("relationType", input.relationType)
   if (input.name?.trim()) form.append("name", input.name.trim())
   if (input.description?.trim()) form.append("description", input.description.trim())
+  if (input.versionLabel?.trim()) form.append("versionLabel", input.versionLabel.trim())
+  if (input.category?.trim()) form.append("category", input.category.trim())
+  if (input.confidentiality?.trim()) form.append("confidentiality", input.confidentiality.trim())
   const response = await api.post("/artifacts/upload", form, { onUploadProgress: (event) => input.onProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : 0) })
   return unwrapApiResponse<Artifact>(response.data)
 }

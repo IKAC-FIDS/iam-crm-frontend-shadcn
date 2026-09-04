@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { AuthUser } from "@/store/authStore"
 import { getVisibleMenuGroups } from "./routeNavigation"
+import { isMenuRouteActive } from "./routeNavigation"
 
 function user(permissions: string[]) {
   return { id: "user-1", permissions } as AuthUser
@@ -41,5 +42,11 @@ describe("operations navigation", () => {
     ).flatMap((item) => item.routes.map((route) => route.id))
 
     expect(ids).not.toContain("attention")
+  })
+
+  it("keeps the unified technical library active on its legacy child routes", () => {
+    expect(isMenuRouteActive("/technical/library", "/technical/resources/r1")).toBe(true)
+    expect(isMenuRouteActive("/technical/library", "/technical/documents/d1")).toBe(true)
+    expect(isMenuRouteActive("/technical/library", "/technical/releases/v1")).toBe(true)
   })
 })

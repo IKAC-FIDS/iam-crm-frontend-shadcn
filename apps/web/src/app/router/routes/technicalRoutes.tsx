@@ -3,6 +3,10 @@ import { routeGroup } from "./routeGroup"
 const technical = () => import("@/features/technical/pages/TechnicalPages")
 export const technicalRoutes = [
   routeGroup(
+    "technical-library",
+    lazyRoute(technical, "TechnicalLibraryPage")
+  ),
+  routeGroup(
     "technical-releases",
     lazyRoute(technical, "TechnicalReleasesPage"),
     [

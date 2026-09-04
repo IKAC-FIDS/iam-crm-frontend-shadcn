@@ -8,8 +8,10 @@ import {
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+import { toast } from "sonner"
 
 import { useTechnicalSave } from "../hooks"
+import { uploadArtifact } from "@/features/artifacts/api/artifacts.api"
 import { buildPayload } from "../payload"
 import type { TechnicalKind } from "../types"
 import { TechnicalForm, type TechnicalFormValues } from "./TechnicalForm"
@@ -76,6 +78,21 @@ export function TechnicalFormDialog({
       id: item?.id,
       payload: buildPayload(kind, values, item?.revision),
     })
+    const selectedFile = values.resourceFile
+    const file = selectedFile instanceof FileList ? selectedFile.item(0) : selectedFile
+    if (kind === "resources" && file instanceof File) {
+      try {
+        await uploadArtifact({
+          entityType: "TECHNICAL_RESOURCE",
+          entityId: row.id,
+          file,
+          versionLabel: values.version || undefined,
+          relationType: "ATTACHMENT",
+        })
+      } catch {
+        toast.error("مشخصات منبع ذخیره شد، اما بارگذاری فایل انجام نشد؛ از صفحه جزئیات دوباره تلاش کنید.")
+      }
+    }
     onOpenChange(false)
     onSaved?.(row)
   }
