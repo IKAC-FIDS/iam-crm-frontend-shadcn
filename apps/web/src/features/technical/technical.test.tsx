@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import userEvent from "@testing-library/user-event"
 import { axe, toHaveNoViolations } from "jest-axe"
@@ -296,8 +296,15 @@ describe("Technical Center behavior", () => {
     await userEvent.click(await screen.findByRole("button", { name: "نسخه جدید" }))
     await userEvent.type(screen.getByLabelText("شماره نسخه"), "1.0")
     const file = new File(["content"], "architecture.pdf", { type: "application/pdf" })
-    await userEvent.upload(screen.getByLabelText("فایل نسخه"), file)
-    await userEvent.click(screen.getByRole("button", { name: "بارگذاری و ثبت نسخه" }))
+    const fileInput = screen.getByLabelText("فایل نسخه")
+    fireEvent.change(fileInput, { target: { files: [file] } })
+
+    const submitButton = screen.getByRole("button", { name: "بارگذاری و ثبت نسخه" })
+    await waitFor(() => expect(submitButton).toBeEnabled())
+
+    const form = submitButton.closest("form")
+    expect(form).not.toBeNull()
+    fireEvent.submit(form!)
 
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(

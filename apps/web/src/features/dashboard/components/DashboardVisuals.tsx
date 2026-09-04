@@ -151,7 +151,7 @@ const points = useMemo(
         lost:
           mode === "count" ? item.lostCount : toFiniteNumber(item.lostValueIrr),
       })),
-    [data, effectiveMode, mode],
+    [data, mode],
   )
 
   const rawMax = Math.max(

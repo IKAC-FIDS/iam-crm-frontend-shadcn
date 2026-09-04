@@ -134,6 +134,34 @@ export function TaskDetailPage() {
               ) : null}
             </>
           }
+          facts={[
+            {
+              id: "due",
+              label: detail.labels.due,
+              value: task.dueAt
+                ? formatJalaliDateTime(task.dueAt)
+                : uiText.tasks.labels.noDueDate,
+              icon: CalendarClock,
+              tone: isTaskOverdue(task) ? "danger" : "default",
+            },
+            {
+              id: "reminder",
+              label: detail.labels.reminder,
+              value: task.reminderAt
+                ? formatJalaliDateTime(task.reminderAt)
+                : detail.labels.noReminder,
+              icon: Bell,
+            },
+            {
+              id: "assignee",
+              label: detail.labels.assignee,
+              value:
+                task.assignedTo?.fullName ||
+                task.assignedTo?.email ||
+                uiText.tasks.labels.unassigned,
+              icon: UserRound,
+            },
+          ]}
           actions={
             <>
               {canUpdate ? (
@@ -198,9 +226,7 @@ export function TaskDetailPage() {
         />
       </div>
 
-      <TaskHero task={task} />
-
-      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(310px,380px)]">
+<div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(310px,380px)]">
         <main className="grid min-w-0 gap-4">
           <ScheduleCard
             task={task}
@@ -255,60 +281,6 @@ export function TaskDetailPage() {
         }}
       />
     </div>
-  )
-}
-
-function TaskHero({ task }: { task: Task }) {
-  const detail = uiText.tasks.detail
-  const overdue = isTaskOverdue(task)
-  return (
-    <SurfaceCard className="relative min-w-0 overflow-hidden">
-      <div
-        className={[
-          "absolute inset-y-0 start-0 w-1",
-          overdue ? "bg-[var(--destructive)]" : "bg-[var(--app-primary)]",
-        ].join(" ")}
-      />
-      <div className="grid min-w-0 gap-4 p-4 ps-5 sm:p-5 sm:ps-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="min-w-0">
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
-            <span className="inline-flex items-center gap-2">
-              <CalendarClock className="size-4 text-[var(--app-primary)]" />
-              {detail.labels.due}:{" "}
-              <strong
-                className={
-                  overdue
-                    ? "text-[var(--destructive)]"
-                    : "text-[var(--app-heading)]"
-                }
-              >
-                {task.dueAt
-                  ? formatJalaliDateTime(task.dueAt)
-                  : uiText.tasks.labels.noDueDate}
-              </strong>
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Bell className="size-4 text-[var(--app-primary-alt)]" />
-              {detail.labels.reminder}:{" "}
-              {task.reminderAt
-                ? formatJalaliDateTime(task.reminderAt)
-                : detail.labels.noReminder}
-            </span>
-          </div>
-        </div>
-
-        <div className="min-w-0 rounded-2xl bg-[var(--app-background)] px-4 py-3">
-          <p className="text-xs text-[var(--app-text-secondary)]">
-            {detail.labels.assignee}
-          </p>
-          <p className="mt-1 truncate text-xs font-bold text-[var(--app-heading)]">
-            {task.assignedTo?.fullName ||
-              task.assignedTo?.email ||
-              uiText.tasks.labels.unassigned}
-          </p>
-        </div>
-      </div>
-    </SurfaceCard>
   )
 }
 

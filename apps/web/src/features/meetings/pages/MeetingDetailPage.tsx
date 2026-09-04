@@ -125,6 +125,28 @@ export function MeetingDetailPage() {
               </StatusBadge>
             </>
           }
+          facts={[
+            {
+              id: "date",
+              label: detailText.labels.date,
+              value: formatJalaliDate(meeting.startAt),
+              icon: CalendarClock,
+            },
+            {
+              id: "time",
+              label: detailText.labels.time,
+              value: meetingTimeRange(meeting),
+              icon: Clock3,
+            },
+            {
+              id: "reminder",
+              label: detailText.labels.reminder,
+              value: meeting.reminderAt
+                ? formatJalaliDateTime(meeting.reminderAt)
+                : detailText.labels.noReminder,
+              icon: Bell,
+            },
+          ]}
           description={
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span>{meetingCompanyName(meeting)}</span>
@@ -175,9 +197,7 @@ export function MeetingDetailPage() {
         />
       </div>
 
-      <MeetingHero meeting={meeting} />
-
-      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
+<div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]">
         <main className="grid min-w-0 gap-4">
           <ScheduleCard meeting={meeting} />
           <NarrativeCard
@@ -239,55 +259,6 @@ export function MeetingDetailPage() {
         }}
       />
     </div>
-  )
-}
-
-function MeetingHero({ meeting }: { meeting: Meeting }) {
-  const text = uiText.meetings.detail
-  return (
-    <SurfaceCard className="relative min-w-0 overflow-hidden">
-      <div className="absolute inset-y-0 start-0 w-1 bg-[var(--app-primary)]" />
-      <div className="grid min-w-0 gap-4 p-4 ps-5 sm:p-5 sm:ps-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="min-w-0">
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
-            <span className="inline-flex items-center gap-2">
-              <CalendarClock className="size-4 text-[var(--app-primary)]" />
-              {formatJalaliDate(meeting.startAt)}
-            </span>
-            <span className="inline-flex items-center gap-2 font-bold text-[var(--app-heading)]">
-              <Clock3 className="size-4 text-[var(--app-primary)]" />
-              {meetingTimeRange(meeting)}
-            </span>
-            {meeting.reminderAt ? (
-              <span className="inline-flex items-center gap-2">
-                <Bell className="size-4 text-[var(--app-primary-alt)]" />
-                {text.labels.reminder}:{" "}
-                {formatJalaliDateTime(meeting.reminderAt)}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2">
-                <Bell className="size-4 text-[var(--app-text-secondary)]" />
-                {text.labels.noReminder}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {meeting.meetingUrl &&
-        (meeting.mode === "ONLINE" || meeting.mode === "HYBRID") ? (
-          <a
-            href={meeting.meetingUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[var(--app-primary)] px-4 text-xs font-bold text-[var(--app-on-primary)] transition-opacity hover:opacity-90"
-          >
-            <Video className="size-4" />
-            {text.actions.join}
-            <ExternalLink className="size-3.5" />
-          </a>
-        ) : null}
-      </div>
-    </SurfaceCard>
   )
 }
 
