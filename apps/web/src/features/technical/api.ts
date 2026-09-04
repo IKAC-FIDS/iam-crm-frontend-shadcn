@@ -222,6 +222,7 @@ export async function technicalLookups(
   kind:
     | "products"
     | "releases"
+    | "knowledge-categories"
     | "companies"
     | "opportunities"
     | "users"
@@ -238,6 +239,7 @@ export async function technicalLookups(
   const endpoint = {
     products: "/product-catalog",
     releases: "/technical/releases",
+    "knowledge-categories": "/technical/knowledge-base/category-options",
     companies: "/companies",
     opportunities: "/opportunities",
     users: "/users/owner-options",
@@ -260,6 +262,7 @@ export async function technicalLookups(
   return rows(r.data).map((x) => {
     const baseLabel = String(
       x.name ??
+        x.label ??
         x.title ??
         x.brandName ??
         x.legalName ??

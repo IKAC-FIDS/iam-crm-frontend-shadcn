@@ -14,6 +14,7 @@ import {
   TechnicalStatusBadge,
 } from "./components/TechnicalPrimitives"
 import { technicalApi, technicalLookups } from "./api"
+import { buildPayload } from "./payload"
 import { releasePresentation, releaseTransitions } from "./presentation"
 import { TechnicalDocumentsPage } from "./pages/TechnicalListPages"
 import {
@@ -115,6 +116,21 @@ describe("Technical Center contract", () => {
         tenderId: "t1",
       }),
     })
+
+    await technicalApi.knowledge.list({
+      page: 1,
+      limit: 20,
+      category: "راهنما",
+      visibility: "RESTRICTED",
+      reviewDue: "false",
+    })
+    expect(api.get).toHaveBeenLastCalledWith("/technical/knowledge-base", {
+      params: expect.objectContaining({
+        category: "راهنما",
+        visibility: "RESTRICTED",
+        reviewDue: "false",
+      }),
+    })
   })
 
   it("uses the tender requirement and deliverable relationship endpoints", async () => {
@@ -159,6 +175,49 @@ describe("Technical Center contract", () => {
     expect(api.get).toHaveBeenCalledWith("/technical/releases", {
       params: expect.objectContaining({ search: "2.4" }),
     })
+  })
+
+  it("loads knowledge categories from the tenant-scoped lookup route", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: { success: true, data: [{ id: "راهنما", label: "راهنما" }] },
+    })
+
+    await expect(
+      technicalLookups("knowledge-categories", "راه")
+    ).resolves.toEqual([
+      { id: "راهنما", label: "راهنما", companyId: undefined },
+    ])
+    expect(api.get).toHaveBeenCalledWith(
+      "/technical/knowledge-base/category-options",
+      { params: expect.objectContaining({ search: "راه" }) }
+    )
+  })
+
+  it("keeps explicit clears for optional knowledge metadata", () => {
+    expect(
+      buildPayload("knowledge-base", {
+        title: "راهنما",
+        slug: "guide",
+        content: "محتوا",
+        summary: "",
+        category: "",
+        productId: "",
+        releaseId: "",
+        ownerId: "",
+        reviewerId: "",
+        nextReviewAt: "",
+      })
+    ).toEqual(
+      expect.objectContaining({
+        summary: null,
+        category: null,
+        productId: null,
+        releaseId: null,
+        ownerId: null,
+        reviewerId: null,
+        nextReviewAt: null,
+      })
+    )
   })
 
   it("uploads a technical document file and version in one request", async () => {

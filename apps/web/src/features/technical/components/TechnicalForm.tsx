@@ -827,13 +827,15 @@ function Field({
   label,
   children,
   error,
+  className,
 }: {
   label: string
   children: React.ReactNode
   error?: string
+  className?: string
 }) {
   return (
-    <label className="grid gap-2 text-sm font-bold">
+    <label className={`grid gap-2 text-sm font-bold ${className || ""}`}>
       {label}
       {children}
       {error ? <span className="text-xs text-destructive">{error}</span> : null}
@@ -850,10 +852,10 @@ function Area({
   large?: boolean
 }) {
   return (
-    <Field label={label}>
+    <Field label={label} className={large ? "md:col-span-2" : undefined}>
       <textarea
         {...reg}
-        className={`${large ? "min-h-72 md:col-span-2" : "min-h-28"} rounded-xl border bg-background p-3 text-sm`}
+        className={`${large ? "min-h-72" : "min-h-28"} rounded-xl border bg-background p-3 text-sm`}
       />
     </Field>
   )

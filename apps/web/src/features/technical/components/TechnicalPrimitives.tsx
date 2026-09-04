@@ -8,7 +8,7 @@ import {
   DataTableShell,
   type DataTableColumn,
 } from "@/components/shared/DataTableShell"
-import type { PageMeta, TechnicalRelease } from "../types"
+import type { KnowledgeArticle, PageMeta, TechnicalRelease } from "../types"
 export function TechnicalStatusBadge<T extends string>({
   status,
   presentation,
@@ -61,6 +61,36 @@ export function ReleaseSupportBadge({
     )
   }
   return <StatusBadge tone="neutral">زمان‌بندی نشده</StatusBadge>
+}
+
+export function KnowledgeVisibilityBadge({
+  visibility,
+}: {
+  visibility: KnowledgeArticle["visibility"]
+}) {
+  return (
+    <StatusBadge tone={visibility === "RESTRICTED" ? "warning" : "info"}>
+      {visibility === "RESTRICTED" ? "محدود" : "داخلی"}
+    </StatusBadge>
+  )
+}
+
+export function KnowledgeReviewBadge({
+  nextReviewAt,
+}: {
+  nextReviewAt?: string | null
+}) {
+  if (!nextReviewAt) {
+    return <StatusBadge tone="neutral">بدون برنامه بازبینی</StatusBadge>
+  }
+  const dueAt = new Date(nextReviewAt).getTime()
+  if (dueAt <= Date.now()) {
+    return <StatusBadge tone="error">بازبینی سررسید شده</StatusBadge>
+  }
+  if (dueAt - Date.now() <= 30 * 24 * 60 * 60 * 1000) {
+    return <StatusBadge tone="warning">بازبینی نزدیک</StatusBadge>
+  }
+  return <StatusBadge tone="success">بازبینی برنامه‌ریزی‌شده</StatusBadge>
 }
 export function ResponsiveTechnicalList<Row>({
   rows,

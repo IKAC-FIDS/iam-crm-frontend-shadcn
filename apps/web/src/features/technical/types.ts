@@ -35,6 +35,7 @@ export type TechnicalListParams = {
   confidentiality?: TechnicalDocument["confidentiality"]
   version?: string
   category?: string
+  visibility?: "INTERNAL" | "RESTRICTED"
   authorId?: string
   reviewDue?: string
   sort?: string
@@ -91,10 +92,15 @@ export type KnowledgeArticle = {
   visibility: "INTERNAL" | "RESTRICTED"
   status: KnowledgeStatus
   productId?: string | null
+  product?: EntityRef | null
   releaseId?: string | null
+  release?: EntityRef | null
   ownerId?: string | null
+  owner?: EntityRef | null
   authorId: string
+  author?: EntityRef | null
   reviewerId?: string | null
+  reviewer?: EntityRef | null
   nextReviewAt?: string | null
   lastReviewedAt?: string | null
   publishedAt?: string | null
@@ -105,14 +111,14 @@ export type KnowledgePayload = {
   title: string
   slug: string
   content: string
-  summary?: string
-  category?: string
+  summary?: string | null
+  category?: string | null
   visibility?: "INTERNAL" | "RESTRICTED"
-  productId?: string
-  releaseId?: string
-  ownerId?: string
-  reviewerId?: string
-  nextReviewAt?: string
+  productId?: string | null
+  releaseId?: string | null
+  ownerId?: string | null
+  reviewerId?: string | null
+  nextReviewAt?: string | null
 }
 export type DocumentStatus =
   | "DRAFT"

@@ -25,6 +25,8 @@ import { useAuthStore } from "@/store/authStore"
 import { useTechnicalList } from "../hooks"
 import { technicalLookups } from "../api"
 import {
+  KnowledgeReviewBadge,
+  KnowledgeVisibilityBadge,
   ReleaseSupportBadge,
   TechnicalStatusBadge,
   ResponsiveTechnicalList,
@@ -217,6 +219,7 @@ function Shell<T extends { id: string }>({
     ownerId = sp.get("ownerId") || "",
     version = sp.get("version") || "",
     category = sp.get("category") || "",
+    visibility = sp.get("visibility") || "",
     reviewDue = sp.get("reviewDue") || "",
     from = sp.get("from") || "",
     to = sp.get("to") || "",
@@ -240,6 +243,8 @@ function Shell<T extends { id: string }>({
       ownerId: ownerId || undefined,
       version: version || undefined,
       category: category || undefined,
+      visibility:
+        (visibility as "INTERNAL" | "RESTRICTED") || undefined,
       reviewDue: reviewDue || undefined,
       from: from || undefined,
       to: to || undefined,
@@ -260,6 +265,7 @@ function Shell<T extends { id: string }>({
       ownerId,
       version,
       category,
+      visibility,
       reviewDue,
       from,
       to,
@@ -300,6 +306,7 @@ function Shell<T extends { id: string }>({
           ownerId ||
           version ||
           category ||
+          visibility ||
           reviewDue ||
           from ||
           to
@@ -313,6 +320,7 @@ function Shell<T extends { id: string }>({
           ownerId: undefined,
           version: undefined,
           category: undefined,
+          visibility: undefined,
           reviewDue: undefined,
           from: undefined,
           to: undefined,
@@ -331,6 +339,7 @@ function Shell<T extends { id: string }>({
               ownerId,
               version,
               category,
+              visibility,
               reviewDue,
               from,
               to,
@@ -484,12 +493,19 @@ function SupportedFilters({
         />
       ) : null}
       {kind === "knowledge-base" ? (
-        <Input
-          aria-label="دسته‌بندی"
-          className={selectClass}
-          value={values.category || ""}
-          onChange={(e) => patch({ category: e.target.value || undefined })}
-          placeholder="دسته‌بندی"
+        <LookupFilter
+          kind="knowledge-categories"
+          label="دسته‌بندی"
+          value={values.category}
+          onChange={(value) => patch({ category: value })}
+        />
+      ) : null}
+      {kind === "knowledge-base" ? (
+        <StaticFilterSelect
+          label="سطح دسترسی"
+          value={values.visibility || ""}
+          options={{ INTERNAL: "داخلی", RESTRICTED: "محدود" }}
+          onChange={(value) => patch({ visibility: value })}
         />
       ) : null}
       {kind === "knowledge-base" ? (
@@ -540,7 +556,13 @@ function LookupFilter({
   value,
   onChange,
 }: {
-  kind: "products" | "releases" | "companies" | "users" | "tenders"
+  kind:
+    | "products"
+    | "releases"
+    | "knowledge-categories"
+    | "companies"
+    | "users"
+    | "tenders"
   label: string
   value?: string
   onChange: (value?: string) => void
@@ -673,6 +695,11 @@ export function TechnicalKnowledgeBasePage() {
     },
     { id: "category", header: "دسته", cell: (r) => r.category || "—" },
     {
+      id: "product",
+      header: "محصول",
+      cell: (r) => relationName(r.product),
+    },
+    {
       id: "status",
       header: "وضعیت",
       cell: (r) => (
@@ -685,12 +712,19 @@ export function TechnicalKnowledgeBasePage() {
     {
       id: "visibility",
       header: "دسترسی",
-      cell: (r) => (r.visibility === "RESTRICTED" ? "محدود" : "داخلی"),
+      cell: (r) => <KnowledgeVisibilityBadge visibility={r.visibility} />,
     },
     {
       id: "review",
       header: "بازبینی بعدی",
-      cell: (r) => faDate(r.nextReviewAt),
+      cell: (r) => (
+        <div className="grid gap-1.5 text-xs">
+          <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />
+          <span className="text-muted-foreground">
+            {faDate(r.nextReviewAt)}
+          </span>
+        </div>
+      ),
     },
     { id: "updated", header: "آخرین تغییر", cell: (r) => faDate(r.updatedAt) },
   ]
@@ -706,7 +740,10 @@ export function TechnicalKnowledgeBasePage() {
       columns={columns}
       mobile={{
         title: (r) => r.title,
-        subtitle: (r) => r.summary || r.category || "—",
+        subtitle: (r) =>
+          [r.category, relationName(r.product)]
+            .filter((value) => value && value !== "—")
+            .join(" · ") || r.summary || "—",
         avatar: () => <BookOpen className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
@@ -716,6 +753,23 @@ export function TechnicalKnowledgeBasePage() {
         ),
         fields: [
           { id: "category", label: "دسته", render: (r) => r.category || "—" },
+          {
+            id: "visibility",
+            label: "دسترسی",
+            render: (r) => (
+              <KnowledgeVisibilityBadge visibility={r.visibility} />
+            ),
+          },
+          {
+            id: "review",
+            label: "بازبینی",
+            render: (r) => <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />,
+          },
+          {
+            id: "owner",
+            label: "مالک",
+            render: (r) => relationName(r.owner),
+          },
           {
             id: "updated",
             label: "آخرین تغییر",

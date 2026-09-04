@@ -39,6 +39,8 @@ import { TechnicalAttachments } from "../components/TechnicalAttachments"
 import { ScopedUserSelect } from "../components/ScopedUserSelect"
 import { TenderProcessGuide } from "../components/TenderProcessGuide"
 import {
+  KnowledgeReviewBadge,
+  KnowledgeVisibilityBadge,
   LifecycleActions,
   ReleaseSupportBadge,
   TechnicalStatusBadge,
@@ -357,7 +359,11 @@ export function TechnicalKnowledgeDetailPage() {
   )
   function Knowledge({ item }: { item: KnowledgeArticle }) {
     const manage = p.includes("technical-knowledge:manage"),
-      publish = p.includes("technical-knowledge:publish")
+      publish = p.includes("technical-knowledge:publish"),
+      nextReviewAt = item.nextReviewAt ? new Date(item.nextReviewAt) : undefined,
+      knowledgeSteps = Object.keys(
+        knowledgePresentation.label
+      ) as KnowledgeStatus[]
     return (
       <DetailShell
         kind="knowledge-base"
@@ -365,7 +371,7 @@ export function TechnicalKnowledgeDetailPage() {
         description={item.summary}
         icon={BookOpen}
         entity={item}
-        canManage={manage}
+        canManage={manage && item.status !== "PUBLISHED"}
         lifecycle={
           <TechnicalStatusBadge
             status={item.status}
@@ -380,23 +386,82 @@ export function TechnicalKnowledgeDetailPage() {
           canTarget={(t: KnowledgeStatus) =>
             t === "PUBLISHED" ? publish : manage
           }
+          requiresReason={(target) => target === "ARCHIVED"}
+          getTargetBlockReason={(target) =>
+            target === "PUBLISHED" &&
+            nextReviewAt &&
+            nextReviewAt.getTime() <= Date.now()
+              ? "تاریخ بازبینی بعدی گذشته است؛ ابتدا تاریخ آینده‌ای انتخاب کنید."
+              : undefined
+          }
           onTransition={async (status, reason) => {
             await transition.mutateAsync({ id: item.id, status, reason })
           }}
         />
+        {transition.error ? <TenderTransitionError error={transition.error} /> : null}
+        {item.status === "PUBLISHED" && manage ? (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-muted-foreground">
+            برای حفظ نسخه منتشرشده، ویرایش مستقیم غیرفعال است. ابتدا وضعیت
+            مقاله را به «در بازبینی» برگردانید.
+          </div>
+        ) : null}
+        <FormSection
+          title="روند انتشار مقاله"
+          description="مقاله از پیش‌نویس وارد بازبینی می‌شود و پس از تأیید منتشر خواهد شد."
+        >
+          <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {knowledgeSteps.map((status, index) => {
+              const active = status === item.status
+              return (
+                <li
+                  key={status}
+                  aria-current={active ? "step" : undefined}
+                  className={`flex min-h-14 items-center justify-between gap-2 rounded-xl border px-3 py-2 ${
+                    active
+                      ? "border-primary bg-primary/5"
+                      : "border-[var(--app-divider)] bg-[var(--app-background)]"
+                  }`}
+                >
+                  <span className="text-xs text-muted-foreground">
+                    {index + 1}
+                  </span>
+                  <TechnicalStatusBadge
+                    status={status}
+                    presentation={knowledgePresentation}
+                  />
+                </li>
+              )
+            })}
+          </ol>
+        </FormSection>
         <FormSection title="فراداده مقاله">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="دسته‌بندی" value={item.category} />
             <Meta
               label="دسترسی"
-              value={item.visibility === "RESTRICTED" ? "محدود" : "داخلی"}
+              value={<KnowledgeVisibilityBadge visibility={item.visibility} />}
             />
-            <Meta label="انتشار" value={faDate(item.publishedAt)} />
+            <Meta label="نامک" value={<span dir="ltr">{item.slug}</span>} />
+            <Meta label="محصول" value={relationName(item.product)} />
+            <Meta
+              label="انتشار فنی"
+              value={
+                item.release
+                  ? `${relationName(item.release)}${item.release.version ? ` · ${item.release.version}` : ""}`
+                  : "—"
+              }
+            />
+            <Meta label="مالک" value={relationName(item.owner)} />
+            <Meta label="نویسنده" value={relationName(item.author)} />
+            <Meta label="بازبین" value={relationName(item.reviewer)} />
+            <Meta label="تاریخ انتشار" value={faDate(item.publishedAt)} />
+            <Meta label="آخرین بازبینی" value={faDate(item.lastReviewedAt)} />
+            <Meta
+              label="وضعیت بازبینی"
+              value={<KnowledgeReviewBadge nextReviewAt={item.nextReviewAt} />}
+            />
             <Meta label="بازبینی بعدی" value={faDate(item.nextReviewAt)} />
-            <Meta label="محصول" value={item.productId} />
-            <Meta label="انتشار فنی" value={item.releaseId} />
-            <Meta label="نویسنده" value={item.authorId} />
-            <Meta label="بازبین" value={item.reviewerId} />
+            <Meta label="آخرین تغییر" value={faDate(item.updatedAt)} />
           </dl>
         </FormSection>
         <FormSection title="محتوا">
@@ -1522,7 +1587,9 @@ function Deliverables({
 }
 function Readable({ value }: { value?: string | null }) {
   return value ? (
-    <div className="mt-3 text-sm leading-8 whitespace-pre-wrap">{value}</div>
+    <div className="mt-3 min-w-0 break-words text-sm leading-8 whitespace-pre-wrap">
+      {value}
+    </div>
   ) : (
     <p className="text-sm text-muted-foreground">محتوایی ثبت نشده است.</p>
   )

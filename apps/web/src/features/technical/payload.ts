@@ -17,11 +17,24 @@ export function buildPayload(
       "productId", "version", "title", "summary", "releaseNotes",
       "releaseDate", "supportStartDate", "supportEndDate", "endOfLifeDate",
     ])
-  if (kind === "knowledge-base")
-    return pick(clean, [
+  if (kind === "knowledge-base") {
+    const knowledge: Record<string, unknown> = { ...clean }
+    for (const key of [
+      "summary",
+      "category",
+      "productId",
+      "releaseId",
+      "ownerId",
+      "reviewerId",
+      "nextReviewAt",
+    ]) {
+      if (value[key as keyof TechnicalFormValues] === "") knowledge[key] = null
+    }
+    return pick(knowledge, [
       "title", "slug", "content", "summary", "category", "visibility",
       "productId", "releaseId", "ownerId", "reviewerId", "nextReviewAt",
     ])
+  }
   if (kind === "documents")
     return withRevision(clean, revision, [
       "title", "documentType", "ownerId", "description", "confidentiality",
