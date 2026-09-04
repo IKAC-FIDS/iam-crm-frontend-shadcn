@@ -8,7 +8,7 @@ import {
   DataTableShell,
   type DataTableColumn,
 } from "@/components/shared/DataTableShell"
-import type { PageMeta } from "../types"
+import type { PageMeta, TechnicalRelease } from "../types"
 export function TechnicalStatusBadge<T extends string>({
   status,
   presentation,
@@ -21,6 +21,46 @@ export function TechnicalStatusBadge<T extends string>({
       {presentation.label[status]}
     </StatusBadge>
   )
+}
+
+export function ReleaseSupportBadge({
+  release,
+}: {
+  release: TechnicalRelease
+}) {
+  const now = Date.now()
+  const supportStart = release.supportStartDate
+    ? new Date(release.supportStartDate).getTime()
+    : undefined
+  const supportEnd = release.supportEndDate
+    ? new Date(release.supportEndDate).getTime()
+    : undefined
+  const endOfLife = release.endOfLifeDate
+    ? new Date(release.endOfLifeDate).getTime()
+    : undefined
+
+  if (
+    release.status === "END_OF_LIFE" ||
+    (endOfLife !== undefined && endOfLife <= now)
+  ) {
+    return <StatusBadge tone="error">پایان عمر</StatusBadge>
+  }
+  if (supportEnd !== undefined && supportEnd <= now) {
+    return <StatusBadge tone="warning">پشتیبانی پایان یافته</StatusBadge>
+  }
+  if (supportStart !== undefined && supportStart > now) {
+    return <StatusBadge tone="info">پشتیبانی شروع نشده</StatusBadge>
+  }
+  if (release.status === "RELEASED" || release.status === "DEPRECATED") {
+    return (
+      <StatusBadge
+        tone={release.status === "DEPRECATED" ? "warning" : "success"}
+      >
+        در حال پشتیبانی
+      </StatusBadge>
+    )
+  }
+  return <StatusBadge tone="neutral">زمان‌بندی نشده</StatusBadge>
 }
 export function ResponsiveTechnicalList<Row>({
   rows,

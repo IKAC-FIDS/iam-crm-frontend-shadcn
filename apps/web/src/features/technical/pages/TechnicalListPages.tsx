@@ -25,6 +25,7 @@ import { useAuthStore } from "@/store/authStore"
 import { useTechnicalList } from "../hooks"
 import { technicalLookups } from "../api"
 import {
+  ReleaseSupportBadge,
   TechnicalStatusBadge,
   ResponsiveTechnicalList,
 } from "../components/TechnicalPrimitives"
@@ -209,6 +210,7 @@ function Shell<T extends { id: string }>({
     status = sp.get("status") || "",
     type = sp.get("type") || "",
     productId = sp.get("productId") || "",
+    releaseId = sp.get("releaseId") || "",
     companyId = sp.get("companyId") || "",
     tenderId = sp.get("tenderId") || "",
     confidentiality = sp.get("confidentiality") || "",
@@ -229,6 +231,7 @@ function Shell<T extends { id: string }>({
       status: status || undefined,
       type: type || undefined,
       productId: productId || undefined,
+      releaseId: releaseId || undefined,
       companyId: companyId || undefined,
       tenderId: tenderId || undefined,
       confidentiality:
@@ -250,6 +253,7 @@ function Shell<T extends { id: string }>({
       status,
       type,
       productId,
+      releaseId,
       companyId,
       tenderId,
       confidentiality,
@@ -289,6 +293,7 @@ function Shell<T extends { id: string }>({
         patch={patch}
         hasExtra={Boolean(
           productId ||
+          releaseId ||
           companyId ||
           tenderId ||
           confidentiality ||
@@ -301,6 +306,7 @@ function Shell<T extends { id: string }>({
         )}
         clearExtra={{
           productId: undefined,
+          releaseId: undefined,
           companyId: undefined,
           tenderId: undefined,
           confidentiality: undefined,
@@ -318,6 +324,7 @@ function Shell<T extends { id: string }>({
             kind={kind}
             values={{
               productId,
+              releaseId,
               companyId,
               tenderId,
               confidentiality,
@@ -380,6 +387,7 @@ function SupportedFilters({
   patch: (v: Record<string, string | number | undefined>) => void
 }) {
   const usesProduct = kind !== "tenders",
+    usesRelease = ["knowledge-base", "documents", "resources"].includes(kind),
     usesCompany = kind === "documents" || kind === "tenders",
     usesOwner = [
       "knowledge-base",
@@ -424,6 +432,14 @@ function SupportedFilters({
           label="محصول"
           value={values.productId}
           onChange={(value) => patch({ productId: value })}
+        />
+      ) : null}
+      {usesRelease ? (
+        <LookupFilter
+          kind="releases"
+          label="انتشار"
+          value={values.releaseId}
+          onChange={(value) => patch({ releaseId: value })}
         />
       ) : null}
       {usesCompany ? (
@@ -524,7 +540,7 @@ function LookupFilter({
   value,
   onChange,
 }: {
-  kind: "products" | "companies" | "users" | "tenders"
+  kind: "products" | "releases" | "companies" | "users" | "tenders"
   label: string
   value?: string
   onChange: (value?: string) => void
@@ -593,12 +609,12 @@ export function TechnicalReleasesPage() {
     },
     {
       id: "support",
-      header: "پشتیبانی / پایان عمر",
+      header: "چرخه پشتیبانی",
       cell: (r) => (
-        <div className="text-xs">
-          <div>{faDate(r.supportEndDate)}</div>
+        <div className="grid gap-1.5 text-xs">
+          <ReleaseSupportBadge release={r} />
           <div className="text-muted-foreground">
-            EOL: {faDate(r.endOfLifeDate)}
+            پایان پشتیبانی: {faDate(r.supportEndDate)}
           </div>
         </div>
       ),
@@ -627,6 +643,11 @@ export function TechnicalReleasesPage() {
         ),
         fields: [
           { id: "date", label: "انتشار", render: (r) => faDate(r.releaseDate) },
+          {
+            id: "support-state",
+            label: "چرخه پشتیبانی",
+            render: (r) => <ReleaseSupportBadge release={r} />,
+          },
           {
             id: "support",
             label: "پایان پشتیبانی",

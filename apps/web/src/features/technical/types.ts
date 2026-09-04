@@ -58,6 +58,13 @@ export type TechnicalRelease = {
   supportEndDate?: string | null
   endOfLifeDate?: string | null
   revision: number
+  createdBy?: EntityRef | null
+  updatedBy?: EntityRef | null
+  _count?: {
+    knowledgeArticles: number
+    technicalDocuments: number
+    technicalResources: number
+  }
   createdAt: string
   updatedAt: string
 }

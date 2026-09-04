@@ -83,11 +83,16 @@ describe("Technical Center contract", () => {
       limit: 10,
       productId: "p1",
       status: "PLANNED",
+      version: "2.4",
       from: "2026-08-01",
       to: "2026-08-31",
     })
     expect(api.get).toHaveBeenCalledWith("/technical/releases", {
-      params: expect.objectContaining({ productId: "p1", status: "PLANNED" }),
+      params: expect.objectContaining({
+        productId: "p1",
+        status: "PLANNED",
+        version: "2.4",
+      }),
     })
 
     vi.mocked(api.post).mockResolvedValue({ data: { data: { id: "r1" } } })
@@ -138,6 +143,22 @@ describe("Technical Center contract", () => {
     expect(api.get).toHaveBeenCalledWith("/technical/tenders/t1/readiness")
     expect(api.get).toHaveBeenCalledWith("/technical/tenders/t1/reviews")
     expect(api.post).toHaveBeenCalledWith("/technical/tenders/t1/reviews/rv1/decision", expect.objectContaining({ status: "REJECTED", comment: "نیازمند اصلاح" }))
+  })
+
+  it("loads release lookup options with a distinguishable version label", async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: [{ id: "r1", title: "نسخه پایدار", version: "2.4.0" }],
+      },
+    })
+
+    await expect(technicalLookups("releases", "2.4")).resolves.toEqual([
+      { id: "r1", label: "نسخه پایدار · 2.4.0", companyId: undefined },
+    ])
+    expect(api.get).toHaveBeenCalledWith("/technical/releases", {
+      params: expect.objectContaining({ search: "2.4" }),
+    })
   })
 
   it("uploads a technical document file and version in one request", async () => {

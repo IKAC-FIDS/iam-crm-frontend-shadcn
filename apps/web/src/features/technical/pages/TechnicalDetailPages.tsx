@@ -40,6 +40,7 @@ import { ScopedUserSelect } from "../components/ScopedUserSelect"
 import { TenderProcessGuide } from "../components/TenderProcessGuide"
 import {
   LifecycleActions,
+  ReleaseSupportBadge,
   TechnicalStatusBadge,
 } from "../components/TechnicalPrimitives"
 import { technicalApi, technicalLookups } from "../api"
@@ -152,6 +153,7 @@ function DetailShell({
 
 export function TechnicalReleaseDetailPage() {
   const { id } = useParams(),
+    nav = useNavigate(),
     q = useTechnicalDetail("releases", id),
     p = usePermissions(),
     transition = useTechnicalTransition("releases")
@@ -162,7 +164,9 @@ export function TechnicalReleaseDetailPage() {
   )
   function ReleaseDetail({ item }: { item: TechnicalRelease }) {
     const canManage = p.includes("technical-release:manage"),
-      canPublish = p.includes("technical-release:publish")
+      canPublish = p.includes("technical-release:publish"),
+      releaseDate = item.releaseDate ? new Date(item.releaseDate) : undefined,
+      releaseSteps = Object.keys(releasePresentation.label) as ReleaseStatus[]
     return (
       <DetailShell
         kind="releases"
@@ -183,10 +187,33 @@ export function TechnicalReleaseDetailPage() {
           presentation={releasePresentation}
           pending={transition.isPending}
           canTarget={(target: ReleaseStatus) =>
-            ["RELEASED", "DEPRECATED", "END_OF_LIFE"].includes(target)
+            target === "RELEASED" ||
+            target === "DEPRECATED" ||
+            target === "END_OF_LIFE"
               ? canPublish
               : canManage
           }
+          requiresReason={(target) =>
+            target === "DEPRECATED" ||
+            target === "END_OF_LIFE" ||
+            target === "ARCHIVED"
+          }
+          getTargetBlockReason={(target) => {
+            if (target === "PLANNED" && !releaseDate) {
+              return "ابتدا تاریخ انتشار را در فرم ویرایش مشخص کنید."
+            }
+            if (target === "RELEASED" && !releaseDate) {
+              return "ابتدا تاریخ انتشار را در فرم ویرایش مشخص کنید."
+            }
+            if (
+              target === "RELEASED" &&
+              releaseDate &&
+              releaseDate.getTime() > Date.now()
+            ) {
+              return "تاریخ برنامه‌ریزی‌شده انتشار هنوز فرا نرسیده است."
+            }
+            return undefined
+          }}
           onTransition={async (status, reason) => {
             await transition.mutateAsync({
               id: item.id,
@@ -197,23 +224,126 @@ export function TechnicalReleaseDetailPage() {
           }}
         />
         {transition.error ? <TenderTransitionError error={transition.error} /> : null}
-        <FormSection title="هویت و چرخه انتشار">
+        <FormSection
+          title="روند انتشار"
+          description="وضعیت جاری و مسیر استاندارد نسخه را در یک نگاه ببینید. بازگشت از برنامه‌ریزی به پیش‌نویس نیز از بخش عملیات بالا ممکن است."
+        >
+          <ol className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+            {releaseSteps.map((status, index) => {
+              const active = status === item.status
+              return (
+                <li
+                  key={status}
+                  aria-current={active ? "step" : undefined}
+                  className={`flex min-h-14 items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm ${
+                    active
+                      ? "border-primary bg-primary/5"
+                      : "border-[var(--app-divider)] bg-[var(--app-background)]"
+                  }`}
+                >
+                  <span className="text-xs text-muted-foreground">
+                    {index + 1}
+                  </span>
+                  <TechnicalStatusBadge
+                    status={status}
+                    presentation={releasePresentation}
+                  />
+                </li>
+              )
+            })}
+          </ol>
+        </FormSection>
+        <FormSection title="هویت انتشار">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="محصول" value={relationName(item.product)} />
-            <Meta label="نسخه" value={item.version} />
+            <Meta label="نسخه" value={<span dir="ltr">{item.version}</span>} />
+            <Meta label="ایجادکننده" value={relationName(item.createdBy)} />
+            <Meta label="آخرین ویرایش‌کننده" value={relationName(item.updatedBy)} />
+            <Meta label="آخرین تغییر" value={faDate(item.updatedAt)} />
+          </dl>
+        </FormSection>
+        <FormSection
+          title="زمان‌بندی و پشتیبانی"
+          description="ترتیب معتبر تاریخ‌ها: انتشار، شروع پشتیبانی، پایان پشتیبانی و سپس پایان عمر."
+        >
+          <div className="mb-3">
+            <ReleaseSupportBadge release={item} />
+          </div>
+          <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Meta label="تاریخ انتشار" value={faDate(item.releaseDate)} />
             <Meta label="شروع پشتیبانی" value={faDate(item.supportStartDate)} />
             <Meta label="پایان پشتیبانی" value={faDate(item.supportEndDate)} />
             <Meta label="پایان عمر" value={faDate(item.endOfLifeDate)} />
-            <Meta label="آخرین تغییر" value={faDate(item.updatedAt)} />
           </dl>
         </FormSection>
+        {p.includes("technical-knowledge:view") ||
+        p.includes("technical-document:view") ||
+        p.includes("technical-resource:view") ? (
+          <FormSection
+            title="محتوای مرتبط"
+            description="برای مشاهده یا مدیریت موارد مرتبط، وارد فهرست فیلترشده همان بخش شوید."
+          >
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {p.includes("technical-knowledge:view") ? (
+                <RelatedReleaseLink
+                  label="مقالات دانش فنی"
+                  count={item._count?.knowledgeArticles ?? 0}
+                  onClick={() =>
+                    nav(`/technical/knowledge-base?releaseId=${item.id}`)
+                  }
+                />
+              ) : null}
+              {p.includes("technical-document:view") ? (
+                <RelatedReleaseLink
+                  label="اسناد فنی"
+                  count={item._count?.technicalDocuments ?? 0}
+                  onClick={() =>
+                    nav(`/technical/documents?releaseId=${item.id}`)
+                  }
+                />
+              ) : null}
+              {p.includes("technical-resource:view") ? (
+                <RelatedReleaseLink
+                  label="منابع فنی"
+                  count={item._count?.technicalResources ?? 0}
+                  onClick={() =>
+                    nav(`/technical/resources?releaseId=${item.id}`)
+                  }
+                />
+              ) : null}
+            </div>
+          </FormSection>
+        ) : null}
         <FormSection title="یادداشت انتشار">
           <Readable value={item.releaseNotes} />
         </FormSection>
       </DetailShell>
     )
   }
+}
+
+function RelatedReleaseLink({
+  label,
+  count,
+  onClick,
+}: {
+  label: string
+  count: number
+  onClick: () => void
+}) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="h-auto min-h-16 justify-between rounded-xl px-4 py-3"
+      onClick={onClick}
+    >
+      <span>{label}</span>
+      <StatusBadge tone={count ? "info" : "neutral"}>
+        {count.toLocaleString("fa-IR")}
+      </StatusBadge>
+    </Button>
+  )
 }
 export function TechnicalKnowledgeDetailPage() {
   const { id } = useParams(),

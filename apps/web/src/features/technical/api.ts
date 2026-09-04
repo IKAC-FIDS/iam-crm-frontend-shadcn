@@ -221,6 +221,7 @@ function rows(value: unknown): Record<string, unknown>[] {
 export async function technicalLookups(
   kind:
     | "products"
+    | "releases"
     | "companies"
     | "opportunities"
     | "users"
@@ -236,6 +237,7 @@ export async function technicalLookups(
 ): Promise<LookupOption[]> {
   const endpoint = {
     products: "/product-catalog",
+    releases: "/technical/releases",
     companies: "/companies",
     opportunities: "/opportunities",
     users: "/users/owner-options",
@@ -255,9 +257,8 @@ export async function technicalLookups(
       teamId: teamId || undefined,
     },
   })
-  return rows(r.data).map((x) => ({
-    id: String(x.id),
-    label: String(
+  return rows(r.data).map((x) => {
+    const baseLabel = String(
       x.name ??
         x.title ??
         x.brandName ??
@@ -265,7 +266,14 @@ export async function technicalLookups(
         x.fullName ??
         x.email ??
         x.id
-    ),
-    companyId: typeof x.companyId === "string" ? x.companyId : undefined,
-  }))
+    )
+    return {
+      id: String(x.id),
+      label:
+        kind === "releases" && x.version
+          ? `${baseLabel} · ${String(x.version)}`
+          : baseLabel,
+      companyId: typeof x.companyId === "string" ? x.companyId : undefined,
+    }
+  })
 }

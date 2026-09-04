@@ -215,6 +215,12 @@ export function TechnicalForm({
   useEffect(() => reset(initial(kind, item)), [item, kind, reset])
   const productId = useWatch({ control, name: "productId" }),
     companyId = useWatch({ control, name: "companyId" })
+  const releaseIdentityLocked =
+    kind === "releases" &&
+    item !== undefined &&
+    ["RELEASED", "DEPRECATED", "END_OF_LIFE"].includes(
+      (item as TechnicalRelease).status
+    )
   async function submit(v: TechnicalFormValues) {
     const required: Partial<Record<keyof TechnicalFormValues, string>> =
       kind === "releases"
@@ -239,6 +245,41 @@ export function TechnicalForm({
         invalid = true
       }
     })
+    if (kind === "releases") {
+      const schedule: Array<{
+        field: keyof TechnicalFormValues
+        label: string
+        value?: string
+      }> = [
+        { field: "releaseDate", label: "تاریخ انتشار", value: v.releaseDate },
+        {
+          field: "supportStartDate",
+          label: "شروع پشتیبانی",
+          value: v.supportStartDate,
+        },
+        {
+          field: "supportEndDate",
+          label: "پایان پشتیبانی",
+          value: v.supportEndDate,
+        },
+        { field: "endOfLifeDate", label: "پایان عمر", value: v.endOfLifeDate },
+      ].filter((entry) => Boolean(entry.value))
+      for (let index = 1; index < schedule.length; index += 1) {
+        const currentDate = schedule[index]
+        const previousDate = schedule[index - 1]
+        if (
+          currentDate?.value &&
+          previousDate?.value &&
+          currentDate.value < previousDate.value
+        ) {
+          setError(currentDate.field, {
+            message: `${currentDate.label} نمی‌تواند قبل از ${previousDate.label} باشد`,
+          })
+          invalid = true
+          break
+        }
+      }
+    }
     if (invalid) return
     try {
       await onSubmit(v)
@@ -272,10 +313,22 @@ export function TechnicalForm({
                   control={control}
                   error={errors.productId?.message}
                   onValueChange={() => setValue("releaseId", "")}
+                  disabled={releaseIdentityLocked}
                 />
                 <Field label="نسخه" error={errors.version?.message}>
-                  <Input {...register("version")} className={inputClass} />
+                  <Input
+                    dir="ltr"
+                    {...register("version")}
+                    className={inputClass}
+                    disabled={releaseIdentityLocked}
+                  />
                 </Field>
+                {releaseIdentityLocked ? (
+                  <p className="text-xs leading-5 text-muted-foreground md:col-span-2">
+                    محصول و شماره نسخه پس از انتشار ثابت می‌مانند؛ سایر
+                    اطلاعات و زمان‌بندی همچنان قابل ویرایش‌اند.
+                  </p>
+                ) : null}
               </>
             ) : null}
             {kind === "knowledge-base" ? (
@@ -630,6 +683,7 @@ function LookupField({
   companyId,
   error,
   onValueChange,
+  disabled = false,
 }: {
   kind: "products" | "companies" | "opportunities" | "users"
   label: string
@@ -638,6 +692,7 @@ function LookupField({
   companyId?: string
   error?: string
   onValueChange?: () => void
+  disabled?: boolean
 }) {
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebouncedValue(search, 250)
@@ -667,7 +722,7 @@ function LookupField({
                 : "انتخاب کنید"
             }
             ariaLabel={label}
-            disabled={kind === "opportunities" && !companyId}
+            disabled={disabled || (kind === "opportunities" && !companyId)}
             loading={q.isLoading || q.isFetching}
             emptyText={q.isError ? "دریافت گزینه‌ها انجام نشد." : undefined}
           />
@@ -812,17 +867,17 @@ function DateField({
   control: Control<TechnicalFormValues>
 }) {
   return (
-    <Field label={label}>
-      <Controller
-        name={name}
-        control={control}
-        render={({ field }) => (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field label={label} error={fieldState.error?.message}>
           <PersianDatePicker
             value={valueToDate(field.value)}
             onChange={(date) => field.onChange(dateToValue(date))}
           />
-        )}
-      />
-    </Field>
+        </Field>
+      )}
+    />
   )
 }
