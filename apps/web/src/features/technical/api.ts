@@ -250,10 +250,11 @@ export async function technicalLookups(
     tenders: "/technical/tenders",
     tasks: "/tasks",
   }[kind]
+  const compactLookup = kind === "knowledge-categories" || kind === "currencies"
   const r = await api.get(endpoint, {
     params: {
-      page: 1,
-      limit: 50,
+      page: compactLookup ? undefined : 1,
+      limit: compactLookup ? undefined : 50,
       search: search || undefined,
       companyId: companyId || undefined,
       teamId: teamId || undefined,

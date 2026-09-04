@@ -355,9 +355,7 @@ export function TechnicalForm({
                     className={inputClass}
                   />
                 </Field>
-                <Field label="دسته‌بندی">
-                  <Input {...register("category")} className={inputClass} />
-                </Field>
+                <KnowledgeCategoryField control={control} />
                 <Field label="سطح دسترسی">
                   <ControlledSelect
                     name="visibility"
@@ -502,8 +500,7 @@ function Relations({
         {["knowledge-base", "documents", "resources"].includes(
           kind
         ) ? (
-          <LookupField
-            kind="users"
+          <ScopedUserField
             label="مالک"
             name="ownerId"
             control={control}
@@ -701,6 +698,38 @@ function CurrencyField({ control }: { control: Control<TechnicalFormValues> }) {
 }
 function ScopedUserField({ label, name, control, error, required }: { label: string; name: FieldPath<TechnicalFormValues>; control: Control<TechnicalFormValues>; error?: string; required?: boolean }) {
   return <Field label={label} error={error}><Controller name={name} control={control} render={({ field }) => <ScopedUserSelect value={typeof field.value === "string" ? field.value : undefined} onChange={(value) => field.onChange(value || "")} ariaLabel={label} required={required} />} /></Field>
+}
+function KnowledgeCategoryField({ control }: { control: Control<TechnicalFormValues> }) {
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
+  const q = useQuery({
+    queryKey: ["technical-knowledge-categories", debouncedSearch],
+    queryFn: () => technicalLookups("knowledge-categories", debouncedSearch),
+  })
+  return (
+    <Field label="دسته‌بندی">
+      <Controller
+        name="category"
+        control={control}
+        render={({ field }) => (
+          <SearchableOptionSelect
+            value={typeof field.value === "string" ? field.value : undefined}
+            onChange={(value) => field.onChange(value || "")}
+            options={q.data ?? []}
+            search={search}
+            onSearchChange={setSearch}
+            loading={q.isLoading || q.isFetching}
+            placeholder="انتخاب یا ایجاد دسته‌بندی"
+            searchPlaceholder="جست‌وجو یا نوشتن دسته جدید..."
+            emptyText="دسته‌ای ثبت نشده است؛ نام دسته جدید را بنویسید."
+            allowCustom
+            customLabel="ایجاد دسته‌بندی"
+            ariaLabel="دسته‌بندی"
+          />
+        )}
+      />
+    </Field>
+  )
 }
 function LookupField({
   kind,

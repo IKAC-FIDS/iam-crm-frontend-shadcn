@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown, Loader2, Search, X } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Plus, Search, X } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -28,6 +28,8 @@ export function SearchableOptionSelect({
   disabled = false,
   allowEmpty = true,
   ariaLabel,
+  allowCustom = false,
+  customLabel = "استفاده از مقدار جدید",
 }: {
   value?: string
   options: SearchableOption[]
@@ -41,6 +43,8 @@ export function SearchableOptionSelect({
   disabled?: boolean
   allowEmpty?: boolean
   ariaLabel?: string
+  allowCustom?: boolean
+  customLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const selected = options.find((option) => option.id === value)
@@ -86,6 +90,20 @@ export function SearchableOptionSelect({
         </div>
 
         <div className="max-h-72 overflow-y-auto overscroll-contain">
+          {allowCustom && search.trim() && !options.some((option) => option.id === search.trim()) ? (
+            <button
+              type="button"
+              className="mb-1 flex min-h-11 w-full items-center gap-2 rounded-xl px-3 py-2 text-start text-xs font-bold text-[var(--app-primary)] hover:bg-[var(--app-primary-soft)]"
+              onClick={() => {
+                onChange(search.trim())
+                onSearchChange("")
+                setOpen(false)
+              }}
+            >
+              <Plus className="size-4" />
+              {customLabel}: «{search.trim()}»
+            </button>
+          ) : null}
           {allowEmpty && value ? (
             <button
               type="button"
