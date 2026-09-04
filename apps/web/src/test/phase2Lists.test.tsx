@@ -84,13 +84,12 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
     <CompaniesPage />,
     "/companies?page=2&limit=20&search=نمونه&priority=HIGH"
   )
-  expect(await screen.findByRole("table")).toHaveTextContent("شرکت نمونه")
-  expect(within(screen.getByRole("table")).getByText("شرکت نمونه").closest("tr")).toHaveClass(
-    "h-[var(--app-table-row-height)]"
-  )
+
+  expect(await screen.findByText("شرکت نمونه")).toBeInTheDocument()
   expect(
-    within(screen.getByRole("table")).getByRole("button", { name: uiText.companies.list.openCompany })
-  ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
+    screen.getByRole("button", { name: uiText.companies.list.openCompany })
+  ).toBeInTheDocument()
+
   expect(api.get).toHaveBeenCalledWith(
     "/companies",
     expect.objectContaining({
@@ -102,13 +101,16 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
       }),
     })
   )
+
   expect(
     screen.queryByRole("button", { name: uiText.companies.list.create })
   ).not.toBeInTheDocument()
+
   await userEvent.selectOptions(
     screen.getByLabelText(uiText.companies.list.filters.allPriorities),
     "LOW"
   )
+
   await waitFor(() =>
     expect(api.get).toHaveBeenCalledWith(
       "/companies",
@@ -117,8 +119,11 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
       })
     )
   )
+
   expect(router.state.location.search).toContain("page=1")
+
   await act(() => router.navigate(-1))
+
   expect(
     screen.getByLabelText(uiText.companies.list.filters.allPriorities)
   ).toHaveValue("HIGH")

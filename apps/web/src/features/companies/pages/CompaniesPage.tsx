@@ -1,12 +1,9 @@
+import { EntityCardList, type EntityCardField } from "@/components/shared/EntityCardList"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useMemo, useState } from "react"
 import { Building2, Plus, UsersRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -67,12 +64,13 @@ export function CompaniesPage() {
     archivedOnly: archiveMode === "ARCHIVED",
   })
 
-  const columns = useMemo<DataTableColumn<Company>[]>(
+  const fields = useMemo<EntityCardField<Company>[]>(
     () => [
       {
         id: "company",
-        header: text.columns.company,
-        cell: (company) => (
+        label: text.columns.company,
+        priority: "primary",
+        render: (company) => (
           <EntityTableCell
             title={companyDisplayName(company.legalName, company.brandName)}
             subtitle={
@@ -90,31 +88,29 @@ export function CompaniesPage() {
       },
       {
         id: "industry",
-        header: text.columns.industry,
-        cell: (company) =>
+        label: text.columns.industry,
+        render: (company) =>
           company.industryRef?.name ||
           company.industry ||
           uiText.common.notAvailable,
       },
       {
         id: "priority",
-        header: text.columns.priority,
-        cell: (company) => <CompanyPriorityBadge priority={company.priority} />,
-      },
-      {
-        id: "owner",
-        header: text.columns.owner,
-        cell: (company) => (
-          <span className="inline-flex items-center gap-2">
-            <UsersRound className="size-3.5 text-[var(--app-icon-muted)]" />
-            {company.owner?.fullName || text.unassigned}
-          </span>
+        label: text.columns.priority,
+        render: (company) => (
+          <CompanyPriorityBadge priority={company.priority} />
         ),
       },
       {
+        id: "owner",
+        label: text.columns.owner,
+        icon: UsersRound,
+        render: (company) => company.owner?.fullName || text.unassigned,
+      },
+      {
         id: "status",
-        header: text.columns.status,
-        cell: (company) =>
+        label: text.columns.status,
+        render: (company) =>
           company.archivedAt ? (
             <StatusBadge tone="warning">{text.archived}</StatusBadge>
           ) : (
@@ -123,22 +119,12 @@ export function CompaniesPage() {
       },
       {
         id: "updatedAt",
-        header: text.columns.updatedAt,
-        cell: (company) => formatCompanyDate(company.updatedAt),
-      },
-      {
-        id: "actions",
-        header: "عملیات",
-        headerClassName: "w-28 text-end",
-        cell: (company) => (
-          <EntityRowActions
-            label={text.openCompany}
-            onView={() => navigate(`/companies/${company.id}`)}
-          />
-        ),
+        label: text.columns.updatedAt,
+        priority: "secondary",
+        render: (company) => formatCompanyDate(company.updatedAt),
       },
     ],
-    [navigate, text]
+    [text],
   )
 
   const hasActiveFilters =
@@ -248,23 +234,17 @@ export function CompaniesPage() {
       />
 
       <QueryContent query={query} errorTitle={text.errorTitle}>
-        <DataTableShell
-          entityRows
+        <EntityCardList
           rows={query.data?.data ?? []}
-          columns={columns}
+          fields={fields}
           getRowKey={(company) => company.id}
           onRowClick={(company) => navigate(`/companies/${company.id}`)}
-          mobile={{
-            title: (company) => companyDisplayName(company.legalName, company.brandName),
-            subtitle: (company) => company.industryRef?.name || company.industry || undefined,
-            avatar: (company) => companyDisplayName(company.legalName, company.brandName).trim().slice(0, 1) || <Building2 className="size-5" />,
-            status: (company) => company.archivedAt ? <StatusBadge tone="warning">{text.archived}</StatusBadge> : <StatusBadge tone="success">{text.active}</StatusBadge>,
-            fields: [
-              { id: "owner", label: text.columns.owner, render: (company) => company.owner?.fullName || text.unassigned },
-              { id: "priority", label: text.columns.priority, render: (company) => <CompanyPriorityBadge priority={company.priority} /> },
-              { id: "updatedAt", label: text.columns.updatedAt, render: (company) => formatCompanyDate(company.updatedAt) },
-            ],
-          }}
+          actions={(company) => (
+            <EntityRowActions
+              label={text.openCompany}
+              onView={() => navigate(`/companies/${company.id}`)}
+            />
+          )}
           emptyState={
             <EmptyState
               icon={Building2}
