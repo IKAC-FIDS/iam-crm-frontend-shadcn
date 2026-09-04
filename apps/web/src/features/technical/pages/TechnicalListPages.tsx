@@ -177,6 +177,7 @@ function Shell<T extends { id: string }>({
   kind,
   viewPermission,
   managePermission,
+  createLabel = "ایجاد",
   statuses,
   types,
   columns,
@@ -188,6 +189,7 @@ function Shell<T extends { id: string }>({
   kind: "releases" | "knowledge-base" | "documents" | "resources" | "tenders"
   viewPermission: string
   managePermission: string
+  createLabel?: string
   statuses: Record<string, string>
   types?: Record<string, string>
   columns: DataTableColumn<T>[]
@@ -285,7 +287,7 @@ function Shell<T extends { id: string }>({
           canManage ? (
             <Button onClick={() => patch({ create: 1 })}>
               <Plus className="size-4" />
-              ایجاد
+              {createLabel}
             </Button>
           ) : null
         }
@@ -737,6 +739,7 @@ export function TechnicalKnowledgeBasePage() {
       kind="knowledge-base"
       viewPermission="technical-knowledge:view"
       managePermission="technical-knowledge:manage"
+      createLabel="ایجاد دانش"
       statuses={knowledgePresentation.label}
       columns={columns}
       mobile={{
@@ -1005,6 +1008,7 @@ export function TechnicalTendersPage() {
       kind="tenders"
       viewPermission="technical-tender:view"
       managePermission="technical-tender:manage"
+      createLabel="ایجاد مناقصه"
       statuses={tenderPresentation.label}
       types={tenderTypeLabels}
       columns={columns}

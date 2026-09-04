@@ -34,7 +34,7 @@ export function TechnicalLibraryPage() {
         eyebrow="مرکز فنی"
         icon={FolderOpen}
         description="نسخه‌های محصول، اسناد کنترل‌شده، فایل‌ها و لینک‌های فنی را از یک فضای واحد مدیریت کنید."
-        actions={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="size-4" />افزودن</Button> : null}
+        actions={canCreate ? <Button onClick={() => setCreateOpen(true)}><Plus className="size-4" />افزودن منابع</Button> : null}
       />
       <section className="grid gap-4 lg:grid-cols-3">
         {definitions.filter((item) => permissions.includes(item.permission)).map((item) => {

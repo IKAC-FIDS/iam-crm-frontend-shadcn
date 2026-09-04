@@ -134,6 +134,15 @@ export function AdminPipelinePage() {
         description="مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین مراحل را مدیریت کنید."
         onRefresh={refresh}
         refreshing={stagesQuery.isFetching || transitionsQuery.isFetching}
+        primaryAction={
+          canManage
+            ? {
+                label: "ایجاد مرحله",
+                icon: Plus,
+                onClick: () => setEditor("NEW"),
+              }
+            : undefined
+        }
       />
 
       <section className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">
@@ -359,15 +368,6 @@ function StagesDesigner({
               </>
             ) : null}
 
-            {canManage ? (
-              <Button
-                className="col-span-2 w-full sm:w-auto"
-                onClick={() => setEditor("NEW")}
-              >
-                <Plus className="ms-2 size-4" />
-                ایجاد مرحله
-              </Button>
-            ) : null}
           </div>
         </div>
 
