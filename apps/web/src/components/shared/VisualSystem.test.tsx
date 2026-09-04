@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { expect, it, vi } from "vitest"
 import { Eye, Pencil, Trash2, Plus } from "lucide-react"
+import { MemoryRouter } from "react-router-dom"
 import { EntityRowActions } from "./EntityRowActions"
 import { PageHero } from "./PageHero"
 import { DataTableShell } from "./DataTableShell"
@@ -10,14 +11,22 @@ import { uiText } from "@/config/uiText"
 
 it("Hero omits absent actions and supports composed secondary and primary actions", async () => {
   const create = vi.fn()
-  const { rerender } = render(<PageHero title="عنوان" />)
-  expect(screen.queryByRole("button")).not.toBeInTheDocument()
+  const { rerender } = render(
+    <MemoryRouter initialEntries={["/companies"]}>
+      <PageHero title="عنوان" description="توضیحات صفحه" />
+    </MemoryRouter>
+  )
+  expect(screen.queryByRole("button", { name: "ایجاد" })).not.toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: "خروجی" })).not.toBeInTheDocument()
   rerender(
-    <PageHero
-      title="عنوان"
-      primaryAction={{ label: "ایجاد", icon: Plus, onClick: create }}
-      actions={<button>خروجی</button>}
-    />
+    <MemoryRouter initialEntries={["/companies"]}>
+      <PageHero
+        title="عنوان"
+        description="توضیحات صفحه"
+        primaryAction={{ label: "ایجاد", icon: Plus, onClick: create }}
+        actions={<button>خروجی</button>}
+      />
+    </MemoryRouter>
   )
   await userEvent.click(screen.getByRole("button", { name: "ایجاد" }))
   expect(create).toHaveBeenCalledOnce()
