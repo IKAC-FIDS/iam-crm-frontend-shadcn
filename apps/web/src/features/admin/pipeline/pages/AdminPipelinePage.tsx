@@ -92,6 +92,9 @@ export function AdminPipelinePage() {
   const [tab, setTab] = useState<"stages" | "transitions">(
     canViewStages ? "stages" : "transitions"
   )
+  const [stageEditor, setStageEditor] = useState<
+    PipelineStage | "NEW" | null
+  >(null)
 
   const stagesQuery = useQuery({
     queryKey: ["admin-pipeline-stages"],
@@ -135,11 +138,14 @@ export function AdminPipelinePage() {
         onRefresh={refresh}
         refreshing={stagesQuery.isFetching || transitionsQuery.isFetching}
         primaryAction={
-          canManage
+          canManageStages
             ? {
                 label: "ایجاد مرحله",
                 icon: Plus,
-                onClick: () => setEditor("NEW"),
+                onClick: () => {
+                  setTab("stages")
+                  setStageEditor("NEW")
+                },
               }
             : undefined
         }
@@ -205,6 +211,8 @@ export function AdminPipelinePage() {
           error={stagesQuery.isError}
           canManage={canManageStages}
           onRefresh={refresh}
+          editor={stageEditor}
+          onEditorChange={setStageEditor}
         />
       ) : (
         <TransitionDesigner
@@ -226,14 +234,18 @@ function StagesDesigner({
   error,
   canManage,
   onRefresh,
+  editor,
+  onEditorChange,
 }: {
   stages: PipelineStage[]
   loading: boolean
   error: boolean
   canManage: boolean
   onRefresh: () => Promise<void>
+  editor: PipelineStage | "NEW" | null
+  onEditorChange: (value: PipelineStage | "NEW" | null) => void
 }) {
-  const [editor, setEditor] = useState<PipelineStage | "NEW" | null>(null)
+  const setEditor = onEditorChange
   const [deactivateTarget, setDeactivateTarget] =
     useState<PipelineStage | null>(null)
   const [replacementStageId, setReplacementStageId] = useState("")
