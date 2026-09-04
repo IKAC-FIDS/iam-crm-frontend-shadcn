@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Layers3 } from "lucide-react"
+import { Layers3, type LucideIcon } from "lucide-react"
 import { PageHero } from "./PageHero"
 
 export function PageHeader({
@@ -10,6 +10,8 @@ export function PageHeader({
   onRefresh,
   refreshing,
   accessLabel = "جزئیات",
+  accessIcon = Layers3,
+  metadata,
 }: {
   title: ReactNode
   description?: ReactNode
@@ -18,15 +20,18 @@ export function PageHeader({
   onRefresh?: () => void | Promise<unknown>
   refreshing?: boolean
   accessLabel?: ReactNode
+  accessIcon?: LucideIcon
+  metadata?: ReactNode
 }) {
   return (
     <PageHero
       title={title}
       description={description || "اطلاعات و عملیات این بخش را مشاهده و مدیریت کنید."}
-      accessBadge={{ label: accessLabel, icon: Layers3 }}
+      accessBadge={{ label: accessLabel, icon: accessIcon }}
       onBack={onBack}
       onRefresh={onRefresh}
       refreshing={refreshing}
+      metadata={metadata}
       actions={actions}
     />
   )

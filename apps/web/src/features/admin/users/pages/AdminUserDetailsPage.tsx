@@ -1,6 +1,4 @@
-import {
-  ArrowRight,
-  BadgeCheck,
+import {  BadgeCheck,
   Ban,
   Clock3,
   KeyRound,
@@ -36,15 +34,6 @@ import {
 
 const can = (permissions: string[], action: string) =>
   permissions.includes(action)
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase() || "U"
-
 function formatDate(value?: string) {
   if (!value) return "—"
   try {
@@ -217,62 +206,43 @@ export function AdminUserDetailsPage() {
         description="نقش، تیم، وضعیت حساب و رویدادهای مدیریتی این کاربر"
         accessBadge={{ label: "مدیریت کاربران", icon: UserRoundCog }}
         backFallback="/admin/users"
-        onRefresh={() => Promise.all([userQuery.refetch(), teams.refetch(), roles.refetch(), audit.refetch()])}
-        refreshing={userQuery.isFetching || teams.isFetching || roles.isFetching || audit.isFetching}
-        metadata={<><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{user.isActive ? "فعال" : "غیرفعال"}</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs">{roleName}</span></>}
+        onRefresh={() =>
+          Promise.all([
+            userQuery.refetch(),
+            teams.refetch(),
+            roles.refetch(),
+            audit.refetch(),
+          ])
+        }
+        refreshing={
+          userQuery.isFetching ||
+          teams.isFetching ||
+          roles.isFetching ||
+          audit.isFetching
+        }
+        metadata={
+          <>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+              {user.isActive ? "فعال" : "غیرفعال"}
+            </span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{roleName}</span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{teamName}</span>
+            <span className="rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-muted-foreground" dir="ltr">{user.email}</span>
+          </>
+        }
+        secondaryActions={
+          canToggle
+            ? [{
+                id: "toggle-status",
+                label: user.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد",
+                icon: user.isActive ? Ban : BadgeCheck,
+                variant: user.isActive ? "destructive" : "default",
+                disabled: statusMutation.isPending,
+                onClick: () => statusMutation.mutate(),
+              }]
+            : []
+        }
       />
-      <section className="rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="flex items-start gap-4">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => navigate("/admin/users")}
-            >
-              <ArrowRight className="size-4" />
-            </Button>
-            <div className="grid size-16 shrink-0 place-items-center rounded-[22px] bg-[var(--app-primary-soft)] text-xl font-black text-[var(--app-primary)]">
-              {initials(user.fullName)}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black">{user.fullName}</h1>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                >
-                  {user.isActive ? "فعال" : "غیرفعال"}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
-                {user.email}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <span className="rounded-full bg-violet-500/10 px-2.5 py-1 text-xs font-bold text-violet-700">
-                  {roleName}
-                </span>
-                <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                  {teamName}
-                </span>
-              </div>
-            </div>
-          </div>
-          {canToggle ? (
-            <Button
-              variant={user.isActive ? "outline" : "default"}
-              onClick={() => statusMutation.mutate()}
-              disabled={statusMutation.isPending}
-            >
-              {user.isActive ? (
-                <Ban className="ms-2 size-4" />
-              ) : (
-                <BadgeCheck className="ms-2 size-4" />
-              )}
-              {user.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد"}
-            </Button>
-          ) : null}
-        </div>
-      </section>
-
       <section className="grid gap-5 xl:grid-cols-2">
         <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
           <div className="mb-4 flex items-center gap-2">

@@ -5,9 +5,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useTeamDetailQueries } from "../hooks/useTeams"
-import {
-  ArrowRight,
-  BadgeCheck,
+import {  BadgeCheck,
   Ban,
   Clock3,
   Plus,
@@ -248,65 +246,38 @@ export function AdminTeamDetailsPage() {
     <div className="grid gap-5" dir="rtl">
       <PageHero
         title={team.name}
-        description="اعضا، مدیر، تنظیمات و سابقه تغییرات این تیم را مدیریت کنید."
+        description={team.description || "اعضا، مدیر، تنظیمات و سابقه تغییرات این تیم را مدیریت کنید."}
         accessBadge={{ label: "مدیریت تیم‌ها", icon: UsersRound }}
         backFallback="/admin/teams"
         onRefresh={refreshTeam}
-        refreshing={teamQuery.isFetching || membersQuery.isFetching || usersQuery.isFetching || auditQuery.isFetching}
-        metadata={<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{team.isActive ? "فعال" : "غیرفعال"}</span>}
+        refreshing={
+          teamQuery.isFetching ||
+          membersQuery.isFetching ||
+          usersQuery.isFetching ||
+          auditQuery.isFetching
+        }
+        metadata={
+          <>
+            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+              {team.isActive ? "فعال" : "غیرفعال"}
+            </span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs" dir="ltr">{team.code}</span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">مدیر: {team.manager?.fullName || "بدون مدیر"}</span>
+          </>
+        }
+        secondaryActions={
+          canManage
+            ? [{
+                id: "toggle-status",
+                label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد",
+                icon: team.isActive ? Ban : BadgeCheck,
+                variant: team.isActive ? "destructive" : "default",
+                disabled: statusMutation.isPending,
+                onClick: () => statusMutation.mutate(),
+              }]
+            : []
+        }
       />
-      <section className="rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="flex items-start gap-4">
-            <Button
-              size="icon-sm"
-              variant="ghost"
-              onClick={() => navigate("/admin/teams")}
-            >
-              <ArrowRight className="size-4" />
-            </Button>
-            <div className="grid size-16 place-items-center rounded-[22px] bg-[var(--app-primary-soft)] text-xl font-black text-[var(--app-primary)]">
-              {team.name
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((item) => item[0])
-                .join("")}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black">{team.name}</h1>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                >
-                  {team.isActive ? "فعال" : "غیرفعال"}
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
-                {team.code}
-              </p>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
-                {team.description || "توضیحی برای این تیم ثبت نشده است."}
-              </p>
-            </div>
-          </div>
-
-          {canManage ? (
-            <Button
-              variant={team.isActive ? "outline" : "default"}
-              onClick={() => statusMutation.mutate()}
-              disabled={statusMutation.isPending}
-            >
-              {team.isActive ? (
-                <Ban className="ms-2 size-4" />
-              ) : (
-                <BadgeCheck className="ms-2 size-4" />
-              )}
-              {team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد"}
-            </Button>
-          ) : null}
-        </div>
-      </section>
-
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
           <div className="text-xs text-muted-foreground">کل اعضا</div>

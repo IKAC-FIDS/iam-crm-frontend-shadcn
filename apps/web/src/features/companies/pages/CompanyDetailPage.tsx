@@ -1,8 +1,6 @@
 import { QueryContent } from "@/components/shared/QueryContent"
 import {
-  Archive,
-  ArrowRight,
-  Building2,
+  Archive,  Building2,
   CalendarClock,
   CircleDollarSign,
   ExternalLink,
@@ -25,19 +23,17 @@ import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
-import { PageHero } from "@/components/shared/PageHero"
+import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
 import { useAuthStore } from "@/store/authStore"
-import { Button } from "@workspace/ui/components/button"
 
 import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { Company360ActionSection } from "../components/Company360ActionSection"
-import { CompanyAvatar } from "../components/CompanyAvatar"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
 import { CompanyMetricCard } from "../components/CompanyMetricCard"
@@ -220,6 +216,38 @@ export function CompanyDetailPage() {
       : `https://${company.website}`
     : null
 
+  const heroActions: PageAction[] = []
+  if (permissions.includes("company:update")) {
+    heroActions.push({
+      id: "edit",
+      label: text.edit,
+      icon: Pencil,
+      variant: "outline",
+      onClick: () => setEditOpen(true),
+    })
+  }
+  if (permissions.includes("company:change-owner")) {
+    heroActions.push({
+      id: "change-owner",
+      label: text.fields.owner,
+      icon: UserRoundCog,
+      variant: "outline",
+      onClick: () => setOwnerOpen(true),
+    })
+  }
+  if (
+    (!company.archivedAt && permissions.includes("company:archive")) ||
+    (company.archivedAt && permissions.includes("company:restore"))
+  ) {
+    heroActions.push({
+      id: company.archivedAt ? "restore" : "archive",
+      label: company.archivedAt ? text.active : text.archived,
+      icon: Archive,
+      variant: company.archivedAt ? "outline" : "destructive",
+      onClick: () => setArchiveOpen(true),
+    })
+  }
+
   const overview = overviewQuery.data?.summary
   const peopleCount = overview?.peopleCount ?? peopleQuery.data?.meta.total ?? 0
   const activeTaskCount =
@@ -242,106 +270,32 @@ export function CompanyDetailPage() {
         description="نمای ۳۶۰ درجه اطلاعات، تعاملات و وضعیت همکاری با این شرکت"
         accessBadge={{ label: "مدیریت حساب‌های مشتری", icon: Building2 }}
         backFallback="/companies"
-        onRefresh={() => Promise.all([query.refetch(), overviewQuery.refetch()])}
+        onRefresh={() =>
+          Promise.all([query.refetch(), overviewQuery.refetch()])
+        }
         refreshing={query.isFetching || overviewQuery.isFetching}
-        metadata={<><StatusBadge tone={company.archivedAt ? "warning" : "success"}>{company.archivedAt ? text.archived : text.active}</StatusBadge><CompanyPriorityBadge priority={company.priority} /></>}
+        metadata={
+          <>
+            <StatusBadge tone={company.archivedAt ? "warning" : "success"}>
+              {company.archivedAt ? text.archived : text.active}
+            </StatusBadge>
+            <CompanyPriorityBadge priority={company.priority} />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+              <Building2 className="size-3.5" />
+              {company.industryRef?.name || company.industry || text.notSpecified}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+              <UsersRound className="size-3.5" />
+              {company.owner?.fullName || text.unassigned}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+              <MapPin className="size-3.5" />
+              {company.headOfficeCity || text.notSpecified}
+            </span>
+          </>
+        }
+        secondaryActions={heroActions}
       />
-      <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-        <div className="pointer-events-none absolute -start-16 -top-20 size-52 rounded-full bg-[var(--app-primary-soft)]/75 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />
-        <div className="relative px-5 py-5 sm:px-6">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="flex min-w-0 items-start gap-4">
-              <CompanyAvatar name={displayName} />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="truncate text-xl font-bold text-[var(--app-heading)] sm:text-2xl">
-                    {displayName}
-                  </h1>
-                  {company.archivedAt ? (
-                    <StatusBadge tone="warning">{text.archived}</StatusBadge>
-                  ) : (
-                    <StatusBadge tone="success">{text.active}</StatusBadge>
-                  )}
-                  <CompanyPriorityBadge priority={company.priority} />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Building2 className="size-3.5" />
-                    {company.industryRef?.name ||
-                      company.industry ||
-                      text.notSpecified}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <UsersRound className="size-3.5" />
-                    {company.owner?.fullName || text.unassigned}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="size-3.5" />
-                    {company.headOfficeCity || text.notSpecified}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {permissions.includes("company:update") ? (
-                <Button
-                  type="button"
-                  className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                  onClick={() => setEditOpen(true)}
-                >
-                  <Pencil className="size-4" />
-                  {text.edit}
-                </Button>
-              ) : null}
-
-              {permissions.includes("company:change-owner") ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setOwnerOpen(true)}
-                >
-                  <UserRoundCog className="size-4" />
-                  {text.fields.owner}
-                </Button>
-              ) : null}
-
-              {(!company.archivedAt &&
-                permissions.includes("company:archive")) ||
-              (company.archivedAt &&
-                permissions.includes("company:restore")) ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={[
-                    "rounded-xl",
-                    company.archivedAt
-                      ? ""
-                      : "border-[var(--destructive)]/30 text-[var(--destructive)] hover:bg-[var(--destructive-soft)]",
-                  ].join(" ")}
-                  onClick={() => setArchiveOpen(true)}
-                >
-                  <Archive className="size-4" />
-                  {company.archivedAt ? text.active : text.archived}
-                </Button>
-              ) : null}
-
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => navigate("/companies")}
-              >
-                <ArrowRight className="size-4" />
-                {text.back}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <CompanyMetricCard
           icon={CircleDollarSign}

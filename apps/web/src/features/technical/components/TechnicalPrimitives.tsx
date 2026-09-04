@@ -28,7 +28,7 @@ export function ReleaseSupportBadge({
 }: {
   release: TechnicalRelease
 }) {
-  const now = Date.now()
+  const [now] = useState(() => Date.now())
   const supportStart = release.supportStartDate
     ? new Date(release.supportStartDate).getTime()
     : undefined
@@ -80,14 +80,15 @@ export function KnowledgeReviewBadge({
 }: {
   nextReviewAt?: string | null
 }) {
+  const [reviewNow] = useState(() => Date.now())
   if (!nextReviewAt) {
     return <StatusBadge tone="neutral">بدون برنامه بازبینی</StatusBadge>
   }
   const dueAt = new Date(nextReviewAt).getTime()
-  if (dueAt <= Date.now()) {
+if (dueAt <= reviewNow) {
     return <StatusBadge tone="error">بازبینی سررسید شده</StatusBadge>
   }
-  if (dueAt - Date.now() <= 30 * 24 * 60 * 60 * 1000) {
+  if (dueAt - reviewNow <= 30 * 24 * 60 * 60 * 1000) {
     return <StatusBadge tone="warning">بازبینی نزدیک</StatusBadge>
   }
   return <StatusBadge tone="success">بازبینی برنامه‌ریزی‌شده</StatusBadge>

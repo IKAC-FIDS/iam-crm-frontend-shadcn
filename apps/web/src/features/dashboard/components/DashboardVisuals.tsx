@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import type { LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -137,11 +137,8 @@ export function OpportunityTrendChart({
   const [mode, setMode] = useState<TrendMode>("count")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  useEffect(() => {
-    if (!canViewValues && mode === "value") setMode("count")
-  }, [canViewValues, mode])
-
-  const points = useMemo(
+  const effectiveMode: TrendMode = canViewValues ? mode : "count"
+const points = useMemo(
     () =>
       data.map((item) => ({
         label: formatPersianMonth(item.periodStart),
@@ -154,7 +151,7 @@ export function OpportunityTrendChart({
         lost:
           mode === "count" ? item.lostCount : toFiniteNumber(item.lostValueIrr),
       })),
-    [data, mode],
+    [data, effectiveMode, mode],
   )
 
   const rawMax = Math.max(
@@ -201,7 +198,7 @@ export function OpportunityTrendChart({
               type="button"
               variant="ghost"
               className={
-                mode === item
+                effectiveMode === item
                   ? "h-8 rounded-lg bg-[var(--app-surface)] px-3 text-[var(--app-primary)] shadow-sm hover:bg-[var(--app-surface)]"
                   : "h-8 rounded-lg px-3 text-[var(--app-text-secondary)]"
               }

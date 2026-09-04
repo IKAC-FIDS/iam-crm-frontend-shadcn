@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react"
+import { MemoryRouter } from "react-router-dom"
 import type { ReactNode } from "react"
 import { axe, toHaveNoViolations } from "jest-axe"
 import { expect, test } from "vitest"
@@ -13,7 +14,7 @@ import { EntityRowActions } from "./EntityRowActions"
 
 expect.extend(toHaveNoViolations)
 const accessible = async (ui: ReactNode) => {
-  const { container, unmount } = render(ui)
+  const { container, unmount } = render(<MemoryRouter>{ui}</MemoryRouter>)
   expect(await axe(container)).toHaveNoViolations()
   unmount()
 }

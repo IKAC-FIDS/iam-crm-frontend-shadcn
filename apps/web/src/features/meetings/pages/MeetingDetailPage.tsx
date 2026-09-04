@@ -112,6 +112,19 @@ export function MeetingDetailPage() {
           onBack={() => navigate("/meetings")}
           onRefresh={() => meetingQuery.refetch()}
           refreshing={meetingQuery.isFetching}
+          metadata={
+            <>
+              <StatusBadge tone={meetingStatusTone(meeting.status)}>
+                {meetingStatusLabel(meeting.status)}
+              </StatusBadge>
+              <StatusBadge tone="primary" dot={false}>
+                {meetingTypeLabel(meeting.type)}
+              </StatusBadge>
+              <StatusBadge tone="neutral" dot={false}>
+                {meetingModeLabel(meeting.mode)}
+              </StatusBadge>
+            </>
+          }
           description={
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span>{meetingCompanyName(meeting)}</span>
@@ -236,17 +249,6 @@ function MeetingHero({ meeting }: { meeting: Meeting }) {
       <div className="absolute inset-y-0 start-0 w-1 bg-[var(--app-primary)]" />
       <div className="grid min-w-0 gap-4 p-4 ps-5 sm:p-5 sm:ps-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={meetingStatusTone(meeting.status)}>
-              {meetingStatusLabel(meeting.status)}
-            </StatusBadge>
-            <StatusBadge tone="primary" dot={false}>
-              {meetingTypeLabel(meeting.type)}
-            </StatusBadge>
-            <StatusBadge tone="neutral" dot={false}>
-              {meetingModeLabel(meeting.mode)}
-            </StatusBadge>
-          </div>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
             <span className="inline-flex items-center gap-2">
               <CalendarClock className="size-4 text-[var(--app-primary)]" />

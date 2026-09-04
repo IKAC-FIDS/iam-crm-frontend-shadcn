@@ -1,7 +1,6 @@
 import {
-  Archive,
   ArrowRight,
-  BriefcaseBusiness,
+Archive,  BriefcaseBusiness,
   Building2,
   CircleDollarSign,
   FileClock,
@@ -20,7 +19,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { PageHero } from "@/components/shared/PageHero"
+import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { uiText } from "@/config/uiText"
@@ -228,6 +227,56 @@ export function OpportunityDetailPage() {
     { id: "files", label: detailText.nav.files, icon: FileClock },
   ]
 
+  const heroActions: PageAction[] = []
+  if (canUpdate && !archived) {
+    heroActions.push({
+      id: "edit",
+      label: text.actions.edit,
+      icon: Pencil,
+      variant: "outline",
+      onClick: () => setEditOpen(true),
+    })
+  }
+  if (canChangeStage && !archived) {
+    heroActions.push({
+      id: "change-stage",
+      label: text.actions.changeStage,
+      icon: Waypoints,
+      variant: "outline",
+      disabled:
+        transitionsQuery.isLoading ||
+        transitionsQuery.isError ||
+        !targets.length,
+      onClick: () => setStageOpen(true),
+    })
+  }
+  if (canChangeOwner && !archived) {
+    heroActions.push({
+      id: "change-owner",
+      label: text.actions.changeOwner,
+      icon: UserRoundCog,
+      variant: "outline",
+      onClick: () => setOwnerOpen(true),
+    })
+  }
+  if (archived && canRestore) {
+    heroActions.push({
+      id: "restore",
+      label: text.actions.restore,
+      icon: RotateCcw,
+      variant: "default",
+      onClick: () => setArchiveOpen(true),
+    })
+  } else if (!archived && canArchive) {
+    heroActions.push({
+      id: "archive",
+      label: text.actions.archive,
+      icon: Archive,
+      variant: "destructive",
+      onClick: () => setArchiveOpen(true),
+    })
+  }
+
   return (
     <div className="mx-auto grid w-full max-w-[1440px] min-w-0 gap-4" dir="rtl">
       <PageHero
@@ -235,9 +284,42 @@ export function OpportunityDetailPage() {
         description="جزئیات تجاری، مرحله فروش، اجرای تعهدات و تاریخچه این فرصت"
         accessBadge={{ label: "مدیریت فرصت‌های فروش", icon: BriefcaseBusiness }}
         onBack={() => navigate(backTo)}
-        onRefresh={() => Promise.all([opportunityQuery.refetch(), stagesQuery.refetch(), transitionsQuery.refetch()])}
-        refreshing={opportunityQuery.isFetching || stagesQuery.isFetching || transitionsQuery.isFetching}
-        metadata={<><StatusBadge tone={archived ? "warning" : "success"}>{archived ? text.status.archived : text.status.active}</StatusBadge><StatusBadge tone="neutral">{opportunity.stage?.label || uiText.common.notAvailable}</StatusBadge></>}
+        onRefresh={() =>
+          Promise.all([
+            opportunityQuery.refetch(),
+            stagesQuery.refetch(),
+            transitionsQuery.refetch(),
+          ])
+        }
+        refreshing={
+          opportunityQuery.isFetching ||
+          stagesQuery.isFetching ||
+          transitionsQuery.isFetching
+        }
+        metadata={
+          <>
+            <StatusBadge tone={archived ? "warning" : "success"}>
+              {archived ? text.status.archived : text.status.active}
+            </StatusBadge>
+            <StatusBadge tone="neutral">
+              {text.priorities[opportunity.priority]}
+            </StatusBadge>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+              <Building2 className="size-3.5" />
+              {opportunityCompanyName(opportunity)}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+              <Layers3 className="size-3.5" />
+              {opportunity.stage?.label || uiText.common.notAvailable}
+            </span>
+            {archived && opportunity.archiveReason ? (
+              <span className="rounded-full bg-[var(--warning-light)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
+                {opportunity.archiveReason}
+              </span>
+            ) : null}
+          </>
+        }
+        secondaryActions={heroActions}
       />
       <Button
         type="button"

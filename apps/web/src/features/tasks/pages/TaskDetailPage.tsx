@@ -119,6 +119,21 @@ export function TaskDetailPage() {
           onBack={() => navigate("/tasks")}
           onRefresh={() => taskQuery.refetch()}
           refreshing={taskQuery.isFetching}
+          metadata={
+            <>
+              <StatusBadge tone={taskStatusTone(task.status)}>
+                {taskStatusLabel(task.status)}
+              </StatusBadge>
+              <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>
+                {taskPriorityLabel(task.priority)}
+              </StatusBadge>
+              {isTaskOverdue(task) ? (
+                <span className="rounded-full bg-[var(--destructive-soft)] px-2.5 py-1 text-xs font-bold text-[var(--destructive)]">
+                  {uiText.tasks.labels.overdue}
+                </span>
+              ) : null}
+            </>
+          }
           actions={
             <>
               {canUpdate ? (
@@ -256,20 +271,6 @@ function TaskHero({ task }: { task: Task }) {
       />
       <div className="grid min-w-0 gap-4 p-4 ps-5 sm:p-5 sm:ps-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge tone={taskStatusTone(task.status)}>
-              {taskStatusLabel(task.status)}
-            </StatusBadge>
-            <StatusBadge tone={taskPriorityTone(task.priority)} dot={false}>
-              {taskPriorityLabel(task.priority)}
-            </StatusBadge>
-            {overdue ? (
-              <span className="rounded-full bg-[var(--destructive-soft)] px-2.5 py-1 text-xs font-bold text-[var(--destructive)]">
-                {uiText.tasks.labels.overdue}
-              </span>
-            ) : null}
-          </div>
-
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--app-text-secondary)]">
             <span className="inline-flex items-center gap-2">
               <CalendarClock className="size-4 text-[var(--app-primary)]" />
