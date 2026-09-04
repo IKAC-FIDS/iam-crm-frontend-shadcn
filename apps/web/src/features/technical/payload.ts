@@ -46,7 +46,7 @@ export function buildPayload(
   if (kind === "resources")
     return pick(clean, [
       "title", "resourceType", "description", "productId", "releaseId",
-      "url", "version", "checksum", "ownerId", "status",
+      "url", "version", "ownerId", "status",
     ])
   return {
     ...withRevision(clean, revision, [

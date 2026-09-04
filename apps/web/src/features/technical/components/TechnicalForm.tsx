@@ -10,6 +10,7 @@ import {
   type UseFormRegisterReturn,
 } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
+import { UploadCloud } from "lucide-react"
 import { z } from "zod"
 import { Input } from "@workspace/ui/components/input"
 import { FormSection } from "@/components/shared/FormSection"
@@ -69,10 +70,10 @@ const schema = z.object({
   effectiveFrom: z.string().optional(),
   expiresAt: z.string().optional(),
   resourceType: z.string().optional(),
+  resourceSourceMode: z.enum(["FILE", "LINK"]).optional(),
   url: z
     .union([z.literal(""), z.string().url("آدرس معتبر وارد کنید")])
     .optional(),
-  checksum: z.string().max(128).optional(),
   resourceFile: z.custom<File>().optional(),
   status: z.string().optional(),
   tenderType: z.string().optional(),
@@ -106,7 +107,12 @@ const dateToValue = (date?: Date) =>
 const valueToDate = (value?: unknown) =>
   value ? new Date(`${String(value).slice(0, 10)}T12:00:00`) : undefined
 function initial(kind: TechnicalKind, item?: Entity): TechnicalFormValues {
-  if (!item) return { title: "", contentType: kind === "knowledge-base" ? "ARTICLE" : undefined }
+  if (!item)
+    return {
+      title: "",
+      contentType: kind === "knowledge-base" ? "ARTICLE" : undefined,
+      resourceSourceMode: kind === "resources" ? "FILE" : undefined,
+    }
   const common = { title: item.title }
   if (kind === "releases") {
     const x = item as TechnicalRelease
@@ -162,13 +168,13 @@ function initial(kind: TechnicalKind, item?: Entity): TechnicalFormValues {
     return {
       ...common,
       resourceType: x.resourceType,
+      resourceSourceMode: x.resourceType === "EXTERNAL_LINK" ? "LINK" : "FILE",
       status: x.status,
       description: x.description || "",
       productId: x.productId || "",
       releaseId: x.releaseId || "",
       url: x.url || "",
       version: x.version || "",
-      checksum: x.checksum || "",
       ownerId: x.ownerId || "",
     }
   }
@@ -220,7 +226,19 @@ export function TechnicalForm({
   })
   useEffect(() => reset(initial(kind, item)), [item, kind, reset])
   const productId = useWatch({ control, name: "productId" }),
-    companyId = useWatch({ control, name: "companyId" })
+    companyId = useWatch({ control, name: "companyId" }),
+    resourceSourceMode = useWatch({ control, name: "resourceSourceMode" }) || "FILE"
+  const resourceType = useWatch({ control, name: "resourceType" })
+  useEffect(() => {
+    if (kind !== "resources") return
+    if (resourceSourceMode === "LINK") {
+      setValue("resourceType", "EXTERNAL_LINK")
+      setValue("resourceFile", undefined)
+    } else {
+      if (resourceType === "EXTERNAL_LINK") setValue("resourceType", "")
+      setValue("url", "")
+    }
+  }, [kind, resourceSourceMode, resourceType, setValue])
   const releaseIdentityLocked =
     kind === "releases" &&
     item !== undefined &&
@@ -239,7 +257,9 @@ export function TechnicalForm({
                 ownerId: "مالک سند الزامی است",
               }
             : kind === "resources"
-              ? { resourceType: "نوع منبع الزامی است" }
+              ? resourceSourceMode === "FILE"
+                ? { resourceType: "نوع منبع الزامی است" }
+                : {}
               : {
                   tenderType: "نوع مناقصه الزامی است",
                   ownerId: "مالک مناقصه الزامی است",
@@ -263,6 +283,15 @@ export function TechnicalForm({
     }
     if (kind === "resources" && v.resourceType === "EXTERNAL_LINK" && !v.url?.trim()) {
       setError("url", { message: "برای پیوند خارجی، ثبت URL الزامی است" })
+      invalid = true
+    }
+    if (
+      kind === "resources" &&
+      resourceSourceMode === "FILE" &&
+      !item &&
+      !(v.resourceFile instanceof File)
+    ) {
+      setError("resourceFile", { message: "انتخاب فایل منبع الزامی است" })
       invalid = true
     }
     if (kind === "releases") {
@@ -387,13 +416,26 @@ export function TechnicalForm({
             ) : null}
             {kind === "resources" ? (
               <>
-                <Field label="نوع منبع" error={errors.resourceType?.message}>
+                <Field label="روش افزودن منبع">
                   <ControlledSelect
-                    name="resourceType"
+                    name="resourceSourceMode"
                     control={control}
-                    options={resourceTypeLabels}
+                    options={{ FILE: "بارگذاری فایل", LINK: "ثبت لینک" }}
                   />
                 </Field>
+                {resourceSourceMode === "FILE" ? (
+                  <Field label="نوع فایل فنی" error={errors.resourceType?.message}>
+                    <ControlledSelect
+                      name="resourceType"
+                      control={control}
+                      options={Object.fromEntries(
+                        Object.entries(resourceTypeLabels).filter(
+                          ([value]) => value !== "EXTERNAL_LINK"
+                        )
+                      )}
+                    />
+                  </Field>
+                ) : null}
                 {item ? (
                   <Field label="وضعیت">
                     <ControlledSelect
@@ -433,7 +475,13 @@ export function TechnicalForm({
           clearRelease={() => setValue("releaseId", "")}
           clearOpportunity={() => setValue("opportunityId", "")}
         />
-        <DomainFields kind={kind} register={register} control={control} errors={errors} />
+        <DomainFields
+          kind={kind}
+          register={register}
+          control={control}
+          errors={errors}
+          resourceSourceMode={resourceSourceMode}
+        />
         {errors.root?.message ? (
           <p
             role="alert"
@@ -543,11 +591,13 @@ function DomainFields({
   register,
   control,
   errors,
+  resourceSourceMode,
 }: {
   kind: TechnicalKind
   register: UseFormRegister<TechnicalFormValues>
   control: Control<TechnicalFormValues>
   errors: Partial<Record<keyof TechnicalFormValues, { message?: string }>>
+  resourceSourceMode: "FILE" | "LINK"
 }) {
   const contentType = useWatch({ control, name: "contentType" }) || "ARTICLE"
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
@@ -614,9 +664,6 @@ function DomainFields({
         ) : kind === "resources" ? (
           <>
             <Area label="توضیحات" reg={register("description")} />
-            <Field label="URL" error={errors.url?.message}>
-              <Input dir="ltr" {...register("url")} className={inputClass} />
-            </Field>
             <Field label="نسخه">
               <Input
                 dir="ltr"
@@ -624,24 +671,35 @@ function DomainFields({
                 className={inputClass}
               />
             </Field>
-            <Field label="Checksum">
-              <Input
-                dir="ltr"
-                {...register("checksum")}
-                className={inputClass}
-              />
-            </Field>
-            {canUploadResource ? (
-              <Field label="فایل منبع" className="md:col-span-2">
-                <Input
-                  type="file"
-                  {...register("resourceFile")}
-                  className="h-auto min-h-11 py-2"
-                />
-                <span className="text-xs font-normal leading-5 text-muted-foreground">
-                  فایل پس از ذخیره مشخصات، به همین منبع متصل می‌شود. حداکثر حجم مجاز ۲۵ مگابایت است.
-                </span>
+            {resourceSourceMode === "LINK" ? (
+              <Field label="آدرس منبع" error={errors.url?.message} className="md:col-span-2">
+                <Input dir="ltr" inputMode="url" placeholder="https://..." {...register("url")} className={inputClass} />
               </Field>
+            ) : canUploadResource ? (
+              <div className="grid gap-2 text-sm font-bold md:col-span-2">
+                <span>فایل منبع</span>
+                <Controller
+                  name="resourceFile"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--app-divider)] bg-[var(--app-background)]/45 px-4 py-5 text-center transition hover:border-[var(--app-primary)]/35 hover:bg-[var(--app-primary-soft)]/40">
+                      <UploadCloud className="size-6 text-[var(--app-primary)]" />
+                      <span>{value instanceof File ? value.name : "فایل را انتخاب کنید"}</span>
+                      <input
+                        type="file"
+                        className="sr-only"
+                        onChange={(event) => onChange(event.target.files?.[0])}
+                      />
+                    </label>
+                  )}
+                />
+                {errors.resourceFile?.message ? (
+                  <span className="text-xs text-destructive">{errors.resourceFile.message}</span>
+                ) : null}
+                <span className="text-xs font-normal leading-5 text-muted-foreground">
+                  فایل پس از ذخیره مشخصات به همین منبع متصل می‌شود. اثر انگشت SHA-256 نیز به‌صورت خودکار در سرور محاسبه خواهد شد.
+                </span>
+              </div>
             ) : null}
           </>
         ) : (
