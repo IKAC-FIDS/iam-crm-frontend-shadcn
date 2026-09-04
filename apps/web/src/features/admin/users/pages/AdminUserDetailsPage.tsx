@@ -18,6 +18,7 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
+import { PageHero } from "@/components/shared/PageHero"
 import {
   USER_ROLES,
   USER_ROLE_LABELS,
@@ -211,6 +212,15 @@ export function AdminUserDetailsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
+      <PageHero
+        title={user.fullName}
+        description="نقش، تیم، وضعیت حساب و رویدادهای مدیریتی این کاربر"
+        accessBadge={{ label: "مدیریت کاربران", icon: UserRoundCog }}
+        backFallback="/admin/users"
+        onRefresh={() => Promise.all([userQuery.refetch(), teams.refetch(), roles.refetch(), audit.refetch()])}
+        refreshing={userQuery.isFetching || teams.isFetching || roles.isFetching || audit.isFetching}
+        metadata={<><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{user.isActive ? "فعال" : "غیرفعال"}</span><span className="rounded-full bg-muted px-2.5 py-1 text-xs">{roleName}</span></>}
+      />
       <section className="rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex items-start gap-4">

@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Bell,
   BriefcaseBusiness,
   Building2,
@@ -107,18 +106,12 @@ export function MeetingDetailPage() {
   return (
     <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-4">
       <div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-2 rounded-xl text-[var(--app-text-secondary)]"
-          onClick={() => navigate("/meetings")}
-        >
-          <ArrowRight className="size-4" />
-          {detailText.actions.back}
-        </Button>
-
         <PageHeader
           title={meeting.title}
+          accessLabel="عملیات جلسات"
+          onBack={() => navigate("/meetings")}
+          onRefresh={() => meetingQuery.refetch()}
+          refreshing={meetingQuery.isFetching}
           description={
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <span>{meetingCompanyName(meeting)}</span>

@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Bell,
   BriefcaseBusiness,
   Building2,
@@ -113,19 +112,13 @@ export function TaskDetailPage() {
   return (
     <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-4">
       <div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-2 rounded-xl text-[var(--app-text-secondary)]"
-          onClick={() => navigate("/tasks")}
-        >
-          <ArrowRight className="size-4" />
-          {detail.actions.back}
-        </Button>
-
         <PageHeader
           title={task.title}
           description={detail.description}
+          accessLabel="عملیات و مدیریت کار"
+          onBack={() => navigate("/tasks")}
+          onRefresh={() => taskQuery.refetch()}
+          refreshing={taskQuery.isFetching}
           actions={
             <>
               {canUpdate ? (

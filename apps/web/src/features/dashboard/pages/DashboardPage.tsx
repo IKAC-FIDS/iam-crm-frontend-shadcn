@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@workspace/ui/components/button"
 
 import { ErrorState } from "@/components/shared/ErrorState"
+import { PageHero } from "@/components/shared/PageHero"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { canViewFinancials as hasFinancialVisibility } from "@/lib/permissions"
@@ -69,6 +70,14 @@ export function DashboardPage() {
 
   return (
     <div className="grid gap-5 pb-6">
+      <PageHero
+        title="داشبورد"
+        description="نمای یکپارچه عملکرد فروش، فعالیت‌های اخیر و موارد نیازمند توجه شما."
+        accessBadge={{ label: "مرکز فرمان CRM", icon: CircleGauge }}
+        onBack={() => navigate("/dashboard")}
+        onRefresh={() => Promise.all([summaryQuery.refetch(), activitiesQuery.refetch()])}
+        refreshing={summaryQuery.isFetching || activitiesQuery.isFetching}
+      />
       <section className="relative isolate overflow-hidden rounded-[var(--app-radius-hero)] border border-[var(--app-primary)]/15 bg-[linear-gradient(135deg,var(--app-on-primary-container)_0%,var(--app-primary-active)_52%,var(--app-primary)_100%)] px-5 py-6 text-[var(--app-on-primary)] shadow-[var(--app-shadow-hero)] sm:px-7 sm:py-7 lg:px-9">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -end-20 -top-28 size-80 rounded-full border border-[var(--app-on-primary)]/10" />

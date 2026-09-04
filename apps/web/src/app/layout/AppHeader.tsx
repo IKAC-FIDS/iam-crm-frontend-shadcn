@@ -1,14 +1,9 @@
 import {
-  ChevronLeft,
   LogOut,
   Settings,
   UserRound,
 } from "lucide-react"
-import {
-  Link,
-  useLocation,
-  useNavigate,
-} from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -33,7 +28,7 @@ export function AppHeader() {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const { logout, isLoggingOut } = useAuth()
-  const { title, breadcrumbs } = getRoutePresentation(location.pathname)
+  const { title } = getRoutePresentation(location.pathname)
 
   const initial =
     user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial
@@ -48,31 +43,6 @@ export function AppHeader() {
               {title}
             </h1>
 
-            <div className="hidden h-4 w-px bg-[var(--app-divider)] sm:block" />
-
-            <nav className="hidden min-w-0 items-center gap-1 text-xs text-[var(--app-text-secondary)] sm:flex">
-              {breadcrumbs.map((item, index) => (
-                <div
-                  key={`${item.label}-${index}`}
-                  className="flex min-w-0 items-center gap-1"
-                >
-                  {index > 0 ? (
-                    <ChevronLeft className="size-3 shrink-0 text-[var(--app-outline)]" />
-                  ) : null}
-
-                  {item.to ? (
-                    <Link
-                      to={item.to}
-                      className="truncate transition hover:text-[var(--app-primary)]"
-                    >
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <span className="truncate">{item.label}</span>
-                  )}
-                </div>
-              ))}
-            </nav>
           </div>
 
           <p className="mt-1 hidden text-xs text-[var(--app-text-secondary)] lg:block">

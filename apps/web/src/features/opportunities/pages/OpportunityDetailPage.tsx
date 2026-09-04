@@ -20,6 +20,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { PageHero } from "@/components/shared/PageHero"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { uiText } from "@/config/uiText"
@@ -229,6 +230,15 @@ export function OpportunityDetailPage() {
 
   return (
     <div className="mx-auto grid w-full max-w-[1440px] min-w-0 gap-4" dir="rtl">
+      <PageHero
+        title={opportunity.title}
+        description="جزئیات تجاری، مرحله فروش، اجرای تعهدات و تاریخچه این فرصت"
+        accessBadge={{ label: "مدیریت فرصت‌های فروش", icon: BriefcaseBusiness }}
+        onBack={() => navigate(backTo)}
+        onRefresh={() => Promise.all([opportunityQuery.refetch(), stagesQuery.refetch(), transitionsQuery.refetch()])}
+        refreshing={opportunityQuery.isFetching || stagesQuery.isFetching || transitionsQuery.isFetching}
+        metadata={<><StatusBadge tone={archived ? "warning" : "success"}>{archived ? text.status.archived : text.status.active}</StatusBadge><StatusBadge tone="neutral">{opportunity.stage?.label || uiText.common.notAvailable}</StatusBadge></>}
+      />
       <Button
         type="button"
         variant="ghost"

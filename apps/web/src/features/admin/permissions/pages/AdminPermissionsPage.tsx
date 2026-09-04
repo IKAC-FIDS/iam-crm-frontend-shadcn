@@ -6,10 +6,8 @@ import {
   LockKeyhole,
   Pencil,
   Plus,
-  RefreshCcw,
   Search,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UserCog,
   UsersRound,
@@ -22,6 +20,7 @@ import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
+import { PageHero } from "@/components/shared/PageHero"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -240,41 +239,19 @@ export function AdminPermissionsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
-              <Sparkles className="size-4" />
-              RBAC Administration
-            </div>
-            <h1 className="ui-page-title">نقش‌ها و مجوزهای دسترسی</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              مدیریت کاتالوگ مجوزها، نقش‌های سازمانی و ماتریس دسترسی هر نقش
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => void refresh()}>
-              <RefreshCcw className="ms-2 size-4" />
-              به‌روزرسانی
-            </Button>
-
-            {tab === "permissions" && canManagePermissions ? (
-              <Button onClick={() => setPermissionEditor("NEW")}>
-                <Plus className="ms-2 size-4" />
-                ایجاد مجوز
-              </Button>
-            ) : null}
-            {tab === "roles" && canManageRoles ? (
-              <Button onClick={() => setRoleCreateOpen(true)}>
-                <Plus className="ms-2 size-4" />
-                ایجاد نقش
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="نقش‌ها و مجوزهای دسترسی"
+        description="کاتالوگ مجوزها، نقش‌های سازمانی و ماتریس دسترسی هر نقش را مدیریت کنید."
+        accessBadge={{ label: "کنترل دسترسی", icon: ShieldCheck }}
+        onRefresh={refresh}
+        primaryAction={
+          tab === "permissions" && canManagePermissions
+            ? { id: "create-permission", label: "ایجاد مجوز", icon: Plus, onClick: () => setPermissionEditor("NEW") }
+            : tab === "roles" && canManageRoles
+              ? { id: "create-role", label: "ایجاد نقش", icon: Plus, onClick: () => setRoleCreateOpen(true) }
+              : undefined
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

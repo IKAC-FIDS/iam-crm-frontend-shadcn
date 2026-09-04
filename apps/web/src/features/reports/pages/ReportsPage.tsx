@@ -3,7 +3,6 @@ import {
   ArrowDown,
   ArrowUp,
   CircleAlert,
-  RefreshCcw,
   RotateCcw,
   Target,
   TimerReset,
@@ -13,6 +12,7 @@ import {
 import { useMemo, useState } from "react"
 
 import { ErrorState } from "@/components/shared/ErrorState"
+import { PageHero } from "@/components/shared/PageHero"
 import {
   PersianDateRangePicker,
   type PersianDateRange,
@@ -910,34 +910,13 @@ export function ReportsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
-      <section className="relative overflow-hidden rounded-[30px] border border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-6 shadow-[var(--app-shadow-card)] sm:px-7">
-        <div className="pointer-events-none absolute -end-16 -top-20 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl" />
-        <div className="relative flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <div className="ui-eyebrow mb-3 inline-flex items-center gap-2">
-              <TrendingUp className="size-4" />هوش فروش
-            </div>
-            <h1 className="ui-page-title">
-              تحلیل فروش و سلامت مسیر
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">
-              در این صفحه می‌بینید چند درصد سرنخ‌ها مشتری شده‌اند، فرصت‌ها در چه
-              وضعیتی هستند، تیم فروش چگونه عمل کرده و هر سرنخ در کدام فاز فانل قرار
-              می‌گیرد.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => void query.refetch()}
-            disabled={query.isFetching}
-          >
-            <RefreshCcw
-              className={`ms-2 size-4 ${query.isFetching ? "animate-spin" : ""}`}
-            />
-            به‌روزرسانی
-          </Button>
-        </div>
-      </section>
+      <PageHero
+        title="تحلیل فروش و سلامت مسیر"
+        description="نرخ تبدیل سرنخ‌ها، وضعیت فرصت‌ها، عملکرد تیم فروش و سلامت مراحل فانل را تحلیل کنید."
+        accessBadge={{ label: "تحلیل و گزارش", icon: TrendingUp }}
+        onRefresh={() => query.refetch()}
+        refreshing={query.isFetching}
+      />
 
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">

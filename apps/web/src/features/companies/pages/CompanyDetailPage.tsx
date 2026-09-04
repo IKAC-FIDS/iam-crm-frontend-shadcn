@@ -25,6 +25,7 @@ import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { PageHero } from "@/components/shared/PageHero"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
@@ -236,6 +237,15 @@ export function CompanyDetailPage() {
 
   return (
     <div className="grid gap-5">
+      <PageHero
+        title={displayName}
+        description="نمای ۳۶۰ درجه اطلاعات، تعاملات و وضعیت همکاری با این شرکت"
+        accessBadge={{ label: "مدیریت حساب‌های مشتری", icon: Building2 }}
+        backFallback="/companies"
+        onRefresh={() => Promise.all([query.refetch(), overviewQuery.refetch()])}
+        refreshing={query.isFetching || overviewQuery.isFetching}
+        metadata={<><StatusBadge tone={company.archivedAt ? "warning" : "success"}>{company.archivedAt ? text.archived : text.active}</StatusBadge><CompanyPriorityBadge priority={company.priority} /></>}
+      />
       <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
         <div className="pointer-events-none absolute -start-16 -top-20 size-52 rounded-full bg-[var(--app-primary-soft)]/75 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-[var(--app-primary)] via-[var(--app-info)] to-[var(--app-primary-soft)]" />

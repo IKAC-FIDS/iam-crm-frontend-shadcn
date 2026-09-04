@@ -13,6 +13,7 @@ import {
 
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
+import { PageHero } from "@/components/shared/PageHero"
 
 const profileText = uiText.profile
 
@@ -21,6 +22,12 @@ export function AccountProfilePage() {
 
   return (
     <div className="grid gap-6">
+      <PageHero
+        title={profileText.title}
+        description={profileText.description}
+        accessBadge={{ label: "حساب کاربری", icon: UserRound }}
+        backFallback="/dashboard"
+      />
       <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-primary-soft)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-elevated)] sm:p-8">
         <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
 
@@ -29,12 +36,8 @@ export function AccountProfilePage() {
             {user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial}
           </div>
 
-          <div className="min-w-0">
-            <h2 className="ui-page-title truncate">{profileText.title}</h2>
-
-            <p className="mt-2 text-sm leading-7 text-[var(--app-text-secondary)]">
-              {profileText.description}
-            </p>
+          <div className="min-w-0 text-sm leading-7 text-[var(--app-text-secondary)]">
+            اطلاعات هویتی و دسترسی فعال شما
           </div>
         </div>
       </section>

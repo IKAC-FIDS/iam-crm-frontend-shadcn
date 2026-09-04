@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { PaginationControls } from "@/components/shared/PaginationControls"
+import { PageHero } from "@/components/shared/PageHero"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -245,6 +246,15 @@ export function AdminTeamDetailsPage() {
 
   return (
     <div className="grid gap-5" dir="rtl">
+      <PageHero
+        title={team.name}
+        description="اعضا، مدیر، تنظیمات و سابقه تغییرات این تیم را مدیریت کنید."
+        accessBadge={{ label: "مدیریت تیم‌ها", icon: UsersRound }}
+        backFallback="/admin/teams"
+        onRefresh={refreshTeam}
+        refreshing={teamQuery.isFetching || membersQuery.isFetching || usersQuery.isFetching || auditQuery.isFetching}
+        metadata={<span className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{team.isActive ? "فعال" : "غیرفعال"}</span>}
+      />
       <section className="rounded-[28px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex items-start gap-4">
