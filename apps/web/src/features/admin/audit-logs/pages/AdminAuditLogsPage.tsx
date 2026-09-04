@@ -15,7 +15,6 @@ import {
   Download,
   Filter,
   History,
-  RefreshCcw,
   RotateCcw,
   ShieldCheck,
   UserRoundCheck,
@@ -347,14 +346,7 @@ export function AdminAuditLogsPage() {
         icon={ShieldCheck}
         description="ردیابی تغییرات، درخواست‌ها و فعالیت‌های کاربران سازمان در یک نمای قابل جست‌وجو و خروجی‌گیری."
         actions={
-          <>
-            <Button variant="outline" className="rounded-xl" onClick={refresh}>
-              <RefreshCcw
-                className={`size-4 ${logs.isFetching ? "animate-spin" : ""}`}
-              />
-              به‌روزرسانی
-            </Button>
-            <Button
+          <Button
               className="rounded-xl"
               disabled={exporting}
               onClick={() => void doExport("xlsx")}
@@ -362,8 +354,9 @@ export function AdminAuditLogsPage() {
               <Download className="size-4" />
               خروجی اکسل
             </Button>
-          </>
         }
+        onRefresh={refresh}
+        refreshing={logs.isFetching || summary.isFetching}
       />
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard

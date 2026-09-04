@@ -32,7 +32,6 @@ import {
   Package,
   Pencil,
   Plus,
-  RefreshCcw,
   Settings2,
   Sparkles,
   Tag,
@@ -825,18 +824,7 @@ export function AdminLibrariesPage() {
         icon={LibraryBig}
         description="داده‌های مرجع فرم‌ها، فرایند فروش و کاتالوگ محصولات را از یک فضای منظم مدیریت کنید."
         actions={
-          <>
-            <Button
-              variant="outline"
-              onClick={() => {
-                void items.refetch()
-                void products.refetch()
-              }}
-            >
-              <RefreshCcw className="size-4" />
-              به‌روزرسانی
-            </Button>
-            {canManageCurrent ? (
+          canManageCurrent ? (
               <Button
                 onClick={() =>
                   section.kind === "products"
@@ -847,9 +835,10 @@ export function AdminLibrariesPage() {
                 <Plus className="size-4" />
                 افزودن {section.label}
               </Button>
-            ) : null}
-          </>
+          ) : null
         }
+        onRefresh={() => Promise.all([items.refetch(), products.refetch()])}
+        refreshing={items.isFetching || products.isFetching}
       />
       <section className="grid gap-3 sm:grid-cols-3">
         <MetricCard

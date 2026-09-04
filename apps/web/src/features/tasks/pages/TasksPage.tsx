@@ -250,6 +250,16 @@ export function TasksPage() {
         icon={ListChecks}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {canCreate ? (
+              <Button
+                type="button"
+                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus className="size-4" />
+                {text.actions.create}
+              </Button>
+            ) : null}
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
                 type="button"
@@ -282,16 +292,6 @@ export function TasksPage() {
               </Button>
             </div>
 
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
           </div>
         }
       />

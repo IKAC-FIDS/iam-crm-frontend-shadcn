@@ -7,7 +7,6 @@ import {
   CalendarClock,
   CircleDollarSign,
   History,
-  RefreshCcw,
   UserRound,
 } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -250,12 +249,8 @@ export function AdminExchangeRatesPage() {
         eyebrow="مرکز مدیریت نرخ ارز"
         icon={CircleDollarSign}
         description="نرخ مبنای تبدیل قیمت محصولات دلاری به ریال و تاریخچه تغییرات آن"
-        actions={
-          <Button variant="outline" onClick={() => void refresh()}>
-            <RefreshCcw className="size-4" />
-            به‌روزرسانی
-          </Button>
-        }
+        onRefresh={refresh}
+        refreshing={currentQuery.isFetching || historyQuery.isFetching}
         primaryAction={
           canManage
             ? {

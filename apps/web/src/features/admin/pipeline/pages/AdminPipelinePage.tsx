@@ -6,7 +6,6 @@ import {
   GripVertical,
   Pencil,
   Plus,
-  RefreshCcw,
   Save,
   ShieldCheck,
   Sparkles,
@@ -133,16 +132,8 @@ export function AdminPipelinePage() {
         icon={Sparkles}
         title="طراح پایپ‌لاین فروش"
         description="مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین مراحل را مدیریت کنید."
-        actions={
-          <Button
-            className="w-full sm:w-auto"
-            variant="outline"
-            onClick={() => void refresh()}
-          >
-            <RefreshCcw className="ms-2 size-4" />
-            به‌روزرسانی
-          </Button>
-        }
+        onRefresh={refresh}
+        refreshing={stagesQuery.isFetching || transitionsQuery.isFetching}
       />
 
       <section className="grid grid-cols-1 gap-3 min-[430px]:grid-cols-2 sm:gap-4 xl:grid-cols-4">

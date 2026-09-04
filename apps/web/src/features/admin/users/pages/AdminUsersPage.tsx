@@ -27,7 +27,6 @@ import {
   CircleGauge,
   MoreHorizontal,
   Plus,
-  RefreshCcw,
   Sparkles,
   UserCheck,
   UsersRound,
@@ -235,18 +234,20 @@ export function AdminUsersPage() {
         icon={Sparkles}
         description="کاربران، نقش‌ها، تیم‌ها، وضعیت دسترسی و تاریخچه تغییرات را از یک فضای واحد مدیریت کنید."
         actions={
-          <>
-            <Button variant="outline" onClick={() => void refresh()}>
-              <RefreshCcw className="ms-2 size-4" />
-              {uiText.common.refresh}
+          canCreate ? (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="ms-2 size-4" />
+              {uiText.adminUsers.create}
             </Button>
-            {canCreate ? (
-              <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="ms-2 size-4" />
-                {uiText.adminUsers.create}
-              </Button>
-            ) : null}
-          </>
+          ) : null
+        }
+        onRefresh={refresh}
+        refreshing={
+          users.isFetching ||
+          activeCount.isFetching ||
+          inactiveCount.isFetching ||
+          teams.isFetching ||
+          roles.isFetching
         }
       />
 

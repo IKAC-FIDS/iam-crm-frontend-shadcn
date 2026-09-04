@@ -88,6 +88,7 @@ export function AttentionCenterPage() {
   const followUps = useDueFollowUps(page, pageSize, canFollow)
   const preview = useDueFollowUps(1, 50, canFollow)
   const unread = useUnreadCount(canNotifications)
+  const readAll = useReadAll()
 
   const stats = useMemo(() => {
     const items = preview.data?.data ?? []
@@ -127,48 +128,61 @@ export function AttentionCenterPage() {
         icon={Bell}
         description="موارد نیازمند اقدام، پیگیری و اعلان‌های مهم را در یک نمای متمرکز مدیریت کنید."
         actions={
-          <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-            {canFollow ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {canManageNotifications ? (
               <Button
                 type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  tab === "follow-ups"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() =>
-                  patch({ tab: "follow-ups", page: "1", quick: null })
-                }
+                variant="outline"
+                onClick={() => void readAll.mutateAsync()}
+                disabled={readAll.isPending || stats.unread === 0}
               >
-                <ClipboardCheck className="size-4" />
-                پیگیری‌ها
+                <CheckCircle2 className="size-4" />
+                خواندن همه
               </Button>
             ) : null}
-            {canNotifications ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  tab === "notifications"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() =>
-                  patch({ tab: "notifications", page: "1", quick: null })
-                }
-              >
-                <Bell className="size-4" />
-                اعلان‌ها
-                {stats.unread > 0 ? (
-                  <span className="rounded-full bg-[var(--destructive)] px-1.5 text-xs text-white">
-                    {stats.unread.toLocaleString("fa-IR")}
-                  </span>
-                ) : null}
-              </Button>
-            ) : null}
+            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
+              {canFollow ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={
+                    tab === "follow-ups"
+                      ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                      : "rounded-lg"
+                  }
+                  onClick={() =>
+                    patch({ tab: "follow-ups", page: "1", quick: null })
+                  }
+                >
+                  <ClipboardCheck className="size-4" />
+                  پیگیری‌ها
+                </Button>
+              ) : null}
+              {canNotifications ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className={
+                    tab === "notifications"
+                      ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
+                      : "rounded-lg"
+                  }
+                  onClick={() =>
+                    patch({ tab: "notifications", page: "1", quick: null })
+                  }
+                >
+                  <Bell className="size-4" />
+                  اعلان‌ها
+                  {stats.unread > 0 ? (
+                    <span className="rounded-full bg-[var(--destructive)] px-1.5 text-xs text-white">
+                      {stats.unread.toLocaleString("fa-IR")}
+                    </span>
+                  ) : null}
+                </Button>
+              ) : null}
+            </div>
           </div>
         }
       />
@@ -597,8 +611,7 @@ function NotificationList({
     },
     search === debouncedSearch
   )
-  const readAll = useReadAll(),
-    markRead = useMarkRead(),
+  const markRead = useMarkRead(),
     markUnread = useMarkUnread(),
     archive = useArchive(),
     unarchive = useUnarchive(),
@@ -746,18 +759,6 @@ function NotificationList({
               </Button>
             ))}
           </div>
-        }
-        actions={
-          canManage ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void readAll.mutateAsync()}
-              disabled={readAll.isPending}
-            >
-              خواندن همه
-            </Button>
-          ) : null
         }
       />
 

@@ -249,6 +249,16 @@ export function OpportunityWorkspacePage() {
         description={text.hero.description}
         actions={
           <>
+            {canCreate ? (
+              <Button
+                type="button"
+                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                onClick={() => setFormOpportunity(null)}
+              >
+                <Plus className="size-4" />
+                {text.actions.create}
+              </Button>
+            ) : null}
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
                 type="button"
@@ -279,16 +289,6 @@ export function OpportunityWorkspacePage() {
                 {text.views.list}
               </Button>
             </div>
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setFormOpportunity(null)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
           </>
         }
       />

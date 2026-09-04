@@ -229,6 +229,16 @@ export function MeetingsPage() {
         icon={CalendarDays}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {canCreate ? (
+              <Button
+                type="button"
+                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
+                onClick={() => setFormMeeting(null)}
+              >
+                <Plus className="size-4" />
+                {text.actions.create}
+              </Button>
+            ) : null}
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
                 type="button"
@@ -261,16 +271,6 @@ export function MeetingsPage() {
               </Button>
             </div>
 
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setFormMeeting(null)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
           </div>
         }
       />

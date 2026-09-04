@@ -165,6 +165,12 @@ export function AdminTeamsPage() {
         icon={Sparkles}
         actions={
           <div className="flex flex-wrap gap-2">
+            {canManage ? (
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="ms-2 size-4" />
+                ایجاد تیم
+              </Button>
+            ) : null}
             <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
               <Button
                 size="sm"
@@ -195,18 +201,10 @@ export function AdminTeamsPage() {
                 جدول
               </Button>
             </div>
-            <Button variant="outline" onClick={() => void refreshAll()}>
-              <RefreshCcw className="ms-2 size-4" />
-              به‌روزرسانی
-            </Button>
-            {canManage ? (
-              <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="ms-2 size-4" />
-                ایجاد تیم
-              </Button>
-            ) : null}
           </div>
         }
+        onRefresh={refreshAll}
+        refreshing={teamsQuery.isFetching || usersQuery.isFetching}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
