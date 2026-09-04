@@ -51,6 +51,8 @@ const schema = z.object({
   endOfLifeDate: z.string().optional(),
   slug: z.string().max(160).optional(),
   content: z.string().optional(),
+  contentType: z.enum(["ARTICLE", "EXTERNAL_LINK"]).optional(),
+  externalUrl: z.union([z.literal(""), z.string().url("آدرس معتبر وارد کنید")]).optional(),
   category: z.string().max(120).optional(),
   visibility: z.string().optional(),
   releaseId: z.string().optional(),
@@ -102,7 +104,7 @@ const dateToValue = (date?: Date) =>
 const valueToDate = (value?: unknown) =>
   value ? new Date(`${String(value).slice(0, 10)}T12:00:00`) : undefined
 function initial(kind: TechnicalKind, item?: Entity): TechnicalFormValues {
-  if (!item) return { title: "" }
+  if (!item) return { title: "", contentType: kind === "knowledge-base" ? "ARTICLE" : undefined }
   const common = { title: item.title }
   if (kind === "releases") {
     const x = item as TechnicalRelease
@@ -123,7 +125,9 @@ function initial(kind: TechnicalKind, item?: Entity): TechnicalFormValues {
     return {
       ...common,
       slug: x.slug,
-      content: x.content,
+      content: x.content || "",
+      contentType: x.contentType || "ARTICLE",
+      externalUrl: x.externalUrl || "",
       summary: x.summary || "",
       category: x.category || "",
       visibility: x.visibility,
@@ -226,7 +230,7 @@ export function TechnicalForm({
       kind === "releases"
         ? { productId: "محصول الزامی است", version: "نسخه الزامی است" }
         : kind === "knowledge-base"
-          ? { slug: "نامک الزامی است", content: "محتوا الزامی است" }
+          ? { slug: "نامک الزامی است" }
           : kind === "documents"
             ? {
                 documentType: "نوع سند الزامی است",
@@ -245,6 +249,16 @@ export function TechnicalForm({
         invalid = true
       }
     })
+    if (kind === "knowledge-base") {
+      if ((v.contentType || "ARTICLE") === "ARTICLE" && !v.content?.trim()) {
+        setError("content", { message: "متن مقاله الزامی است" })
+        invalid = true
+      }
+      if (v.contentType === "EXTERNAL_LINK" && !v.externalUrl?.trim()) {
+        setError("externalUrl", { message: "آدرس منبع الزامی است" })
+        invalid = true
+      }
+    }
     if (kind === "releases") {
       const schedule: Array<{
         field: keyof TechnicalFormValues
@@ -415,7 +429,7 @@ export function TechnicalForm({
           clearRelease={() => setValue("releaseId", "")}
           clearOpportunity={() => setValue("opportunityId", "")}
         />
-        <DomainFields kind={kind} register={register} control={control} />
+        <DomainFields kind={kind} register={register} control={control} errors={errors} />
         {errors.root?.message ? (
           <p
             role="alert"
@@ -525,11 +539,14 @@ function DomainFields({
   kind,
   register,
   control,
+  errors,
 }: {
   kind: TechnicalKind
   register: UseFormRegister<TechnicalFormValues>
   control: Control<TechnicalFormValues>
+  errors: Partial<Record<keyof TechnicalFormValues, { message?: string }>>
 }) {
+  const contentType = useWatch({ control, name: "contentType" }) || "ARTICLE"
   return (
     <FormSection title="محتوا و زمان‌بندی">
       <div className="grid gap-4 md:grid-cols-2">
@@ -561,7 +578,16 @@ function DomainFields({
         ) : kind === "knowledge-base" ? (
           <>
             <Area label="خلاصه" reg={register("summary")} />
-            <Area label="متن مقاله" reg={register("content")} large />
+            <Field label="شیوه ارائه محتوا">
+              <ControlledSelect name="contentType" control={control} options={{ ARTICLE: "متن داخل سامانه", EXTERNAL_LINK: "لینک خارجی" }} />
+            </Field>
+            {contentType === "EXTERNAL_LINK" ? (
+              <Field label="لینک مقاله، Google Docs یا Google Sheets" error={errors.externalUrl?.message} className="md:col-span-2">
+                <Input dir="ltr" inputMode="url" placeholder="https://docs.google.com/..." {...register("externalUrl")} className={inputClass} />
+              </Field>
+            ) : (
+              <Area label="متن مقاله" reg={register("content")} large error={errors.content?.message} />
+            )}
             <DateField
               label="بازبینی بعدی"
               name="nextReviewAt"
@@ -846,13 +872,15 @@ function Area({
   label,
   reg,
   large,
+  error,
 }: {
   label: string
   reg: UseFormRegisterReturn
   large?: boolean
+  error?: string
 }) {
   return (
-    <Field label={label} className={large ? "md:col-span-2" : undefined}>
+    <Field label={label} error={error} className={large ? "md:col-span-2" : undefined}>
       <textarea
         {...reg}
         className={`${large ? "min-h-72" : "min-h-28"} rounded-xl border bg-background p-3 text-sm`}

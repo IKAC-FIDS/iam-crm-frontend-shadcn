@@ -27,11 +27,13 @@ export function buildPayload(
       "ownerId",
       "reviewerId",
       "nextReviewAt",
+      "content",
+      "externalUrl",
     ]) {
       if (value[key as keyof TechnicalFormValues] === "") knowledge[key] = null
     }
     return pick(knowledge, [
-      "title", "slug", "content", "summary", "category", "visibility",
+      "title", "slug", "content", "contentType", "externalUrl", "summary", "category", "visibility",
       "productId", "releaseId", "ownerId", "reviewerId", "nextReviewAt",
     ])
   }

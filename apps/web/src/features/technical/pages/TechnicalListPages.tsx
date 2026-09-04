@@ -694,6 +694,7 @@ export function TechnicalKnowledgeBasePage() {
       ),
     },
     { id: "category", header: "دسته", cell: (r) => r.category || "—" },
+    { id: "contentType", header: "محتوا", cell: (r) => r.contentType === "EXTERNAL_LINK" ? "لینک خارجی" : "متن داخلی" },
     {
       id: "product",
       header: "محصول",

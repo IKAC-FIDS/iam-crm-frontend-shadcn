@@ -82,11 +82,14 @@ export type ReleasePayload = {
   revision?: number
 }
 export type KnowledgeStatus = "DRAFT" | "IN_REVIEW" | "PUBLISHED" | "ARCHIVED"
+export type KnowledgeContentType = "ARTICLE" | "EXTERNAL_LINK"
 export type KnowledgeArticle = {
   id: string
   title: string
   slug: string
-  content: string
+  content?: string | null
+  contentType: KnowledgeContentType
+  externalUrl?: string | null
   summary?: string | null
   category?: string | null
   visibility: "INTERNAL" | "RESTRICTED"
@@ -110,7 +113,9 @@ export type KnowledgeArticle = {
 export type KnowledgePayload = {
   title: string
   slug: string
-  content: string
+  content?: string | null
+  contentType?: KnowledgeContentType
+  externalUrl?: string | null
   summary?: string | null
   category?: string | null
   visibility?: "INTERNAL" | "RESTRICTED"
