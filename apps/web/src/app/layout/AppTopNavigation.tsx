@@ -40,7 +40,7 @@ const groupPresentation: Record<
     icon: BriefcaseBusiness,
   },
   operations: {
-    description: "کارها، تعاملات، جلسات و پیگیری‌های روزانه",
+    description: "فروش، کارها، جلسات، پیگیری‌ها و مرکز فنی",
     icon: ListChecks,
   },
   technical: {
@@ -146,7 +146,7 @@ export function AppTopNavigation() {
                   align="start"
                   sideOffset={8}
                   dir="rtl"
-                  className="w-[min(92vw,540px)] overflow-hidden rounded-[1.6rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-0 shadow-[0_28px_90px_-32px_rgba(15,23,42,.55)] backdrop-blur-2xl"
+                  className="w-[min(94vw,820px)] overflow-hidden rounded-[1.6rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-0 shadow-[0_28px_90px_-32px_rgba(15,23,42,.55)] backdrop-blur-2xl"
                 >
                   <div className="relative overflow-hidden border-b border-[var(--app-divider)] bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_62%,var(--info-light))] px-5 py-4">
                     <div className="pointer-events-none absolute -end-8 -top-12 size-32 rounded-full bg-[var(--app-primary)]/15 blur-3xl" />
@@ -170,7 +170,7 @@ export function AppTopNavigation() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid max-h-[58vh] gap-2 overflow-y-auto p-3 sm:grid-cols-2">
+                  <div className="grid max-h-[58vh] gap-2 overflow-y-auto p-3 sm:grid-cols-3">
                     {routes.map((route) => {
                       const Icon = route.icon
                       const routeActive = isMenuRouteActive(

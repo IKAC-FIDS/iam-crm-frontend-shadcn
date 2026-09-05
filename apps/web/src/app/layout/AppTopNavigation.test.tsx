@@ -35,9 +35,7 @@ it("renders operations as a permission-aware group without a standalone meetings
   )
 
   const labels = [
-    uiText.navigation.groups.sales,
     uiText.navigation.groups.operations,
-    uiText.navigation.groups.technical,
     uiText.navigation.groups.management,
     uiText.navigation.groups.account,
   ]
@@ -59,12 +57,11 @@ it("renders operations as a permission-aware group without a standalone meetings
     })
   ).toBeInTheDocument()
 
-  await userEvent.click(
-    screen.getByRole("button", { name: uiText.navigation.groups.sales })
-  )
   expect(
     await screen.findByRole("menuitem", {
       name: new RegExp(uiText.navigation.companies),
     })
   ).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: uiText.navigation.groups.sales })).toBeNull()
+  expect(screen.queryByRole("button", { name: uiText.navigation.groups.technical })).toBeNull()
 })

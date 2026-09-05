@@ -11,15 +11,18 @@ function user(permissions: string[]) {
 describe("operations navigation", () => {
   it("keeps each operational route under the permission-aware Operations group", () => {
     const operations = getVisibleMenuGroups(
-      user(["task:view", "activity:view", "meeting:view", "notification:view"])
+      user(["company:view", "opportunity:view", "task:view", "activity:view", "meeting:view", "notification:view", "technical-knowledge:view"])
     ).find((item) => item.group === "operations")
 
     expect(operations?.routes.map((route) => [route.id, route.path])).toEqual([
       ["tasks", "/tasks"],
+      ["companies", "/companies"],
       ["meetings", "/meetings"],
+      ["opportunities", "/opportunities"],
       ["activities", "/activities"],
       ["follow-ups", "/follow-ups"],
       ["notifications", "/notifications"],
+      ["technical-knowledge-base", "/technical/knowledge-base"],
     ])
   })
 
@@ -33,7 +36,7 @@ describe("operations navigation", () => {
       getVisibleMenuGroups(user(["company:view"])).some(
         (item) => item.group === "operations"
       )
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it("keeps the compatibility attention route out of navigation", () => {

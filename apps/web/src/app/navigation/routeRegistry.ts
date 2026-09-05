@@ -62,12 +62,12 @@ const any = (permissions: readonly string[]) =>
   ({ type: "permissions", mode: "any", permissions }) as const
 
 export const technicalCenterRoutes: readonly AppMenuRoute[] = [
-  { id: "technical-library", path: "/technical/library", label: uiText.technicalCenter.library.title, group: "technical", order: 150, icon: FolderOpen, access: technicalAny(["technical-release:view", "technical-document:view", "technical-resource:view"]) },
-  { id: "technical-releases", path: "/technical/releases", label: uiText.technicalCenter.releases.title, group: "technical", order: 151, icon: Rocket, access: technicalAny(["technical-release:view"]), showInNavigation: false },
-  { id: "technical-knowledge-base", path: "/technical/knowledge-base", label: uiText.technicalCenter.knowledgeBase.title, group: "technical", order: 160, icon: BookOpen, access: technicalAny(["technical-knowledge:view"]) },
-  { id: "technical-tenders", path: "/technical/tenders", label: uiText.technicalCenter.tenders.title, group: "technical", order: 170, icon: Gavel, access: technicalAny(["technical-tender:view"]) },
-  { id: "technical-documents", path: "/technical/documents", label: uiText.technicalCenter.documents.title, group: "technical", order: 180, icon: FileText, access: technicalAny(["technical-document:view"]), showInNavigation: false },
-  { id: "technical-resources", path: "/technical/resources", label: uiText.technicalCenter.resources.title, group: "technical", order: 190, icon: FolderOpen, access: technicalAny(["technical-resource:view"]), showInNavigation: false },
+  { id: "technical-library", path: "/technical/library", label: uiText.technicalCenter.library.title, group: "operations", order: 150, icon: FolderOpen, access: technicalAny(["technical-release:view", "technical-document:view", "technical-resource:view"]) },
+  { id: "technical-releases", path: "/technical/releases", label: uiText.technicalCenter.releases.title, group: "operations", order: 151, icon: Rocket, access: technicalAny(["technical-release:view"]), showInNavigation: false },
+  { id: "technical-knowledge-base", path: "/technical/knowledge-base", label: uiText.technicalCenter.knowledgeBase.title, group: "operations", order: 160, icon: BookOpen, access: technicalAny(["technical-knowledge:view"]) },
+  { id: "technical-tenders", path: "/technical/tenders", label: uiText.technicalCenter.tenders.title, group: "operations", order: 170, icon: Gavel, access: technicalAny(["technical-tender:view"]) },
+  { id: "technical-documents", path: "/technical/documents", label: uiText.technicalCenter.documents.title, group: "operations", order: 180, icon: FileText, access: technicalAny(["technical-document:view"]), showInNavigation: false },
+  { id: "technical-resources", path: "/technical/resources", label: uiText.technicalCenter.resources.title, group: "operations", order: 190, icon: FolderOpen, access: technicalAny(["technical-resource:view"]), showInNavigation: false },
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
@@ -86,7 +86,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     id: "companies",
     path: "/companies",
     label: navText.companies,
-    group: "sales",
+    group: "operations",
     order: 20,
     icon: Building2,
     access: any(["company:view"]),
@@ -95,7 +95,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     id: "opportunities",
     path: "/opportunities",
     label: navText.opportunities,
-    group: "sales",
+    group: "operations",
     order: 30,
     icon: BriefcaseBusiness,
     access: any(["opportunity:view"]),
@@ -150,7 +150,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     id: "people",
     path: "/people",
     label: navText.people,
-    group: "sales",
+    group: "operations",
     order: 90,
     icon: UserRound,
     access: any(["people:directory:view"]),
@@ -168,7 +168,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     id: "reports",
     path: "/reports",
     label: navText.reports,
-    group: "sales",
+    group: "operations",
     order: 110,
     icon: ChartNoAxesCombined,
     access: any(["report:view"]),
@@ -285,9 +285,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
 ] as const
 
 export const navigationGroups: readonly NavigationGroupKey[] = [
-  "sales",
   "operations",
-  "technical",
   "management",
   "account",
 ]
