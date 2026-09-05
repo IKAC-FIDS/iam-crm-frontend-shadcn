@@ -35,6 +35,7 @@ export type AdminUser = {
   isActive: boolean
   createdAt?: string
   updatedAt?: string
+  avatarObjectKey?: string | null
 }
 
 export type PageMeta = PaginationMeta

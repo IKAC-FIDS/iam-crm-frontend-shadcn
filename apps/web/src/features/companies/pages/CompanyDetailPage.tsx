@@ -24,6 +24,7 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { PageHero, type PageAction } from "@/components/shared/PageHero"
+import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
@@ -296,6 +297,17 @@ export function CompanyDetailPage() {
         }
         secondaryActions={heroActions}
       />
+      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+        <ProfileMediaEditor
+          name={displayName}
+          mediaPath={`/companies/${company.id}/logo`}
+          hasMedia={Boolean(company.logoObjectKey)}
+          mediaVersion={company.logoObjectKey}
+          canEdit={permissions.includes("company:update")}
+          label="لوگوی شرکت"
+          onChanged={() => query.refetch()}
+        />
+      </section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <CompanyMetricCard
           icon={CircleDollarSign}
@@ -915,6 +927,7 @@ export function CompanyDetailPage() {
         company={company}
         isPending={updateMutation.isPending}
         submitError={updateMutation.error}
+        onMediaChanged={() => query.refetch()}
         onSubmit={async (payload) => {
           await updateMutation.mutateAsync(payload)
           setEditOpen(false)

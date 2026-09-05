@@ -14,6 +14,7 @@ export interface AuthUser {
   roleId: string | null
   roleCode: string
   roleName: string
+  avatarObjectKey: string | null
 }
 export type SessionStatus = "loading" | "authenticated" | "anonymous" | "error"
 interface AuthState {
@@ -24,6 +25,7 @@ interface AuthState {
   setSession: (user: AuthUser, accessToken: string, replace?: boolean) => void
   setStatus: (status: SessionStatus) => void
   clearUser: () => void
+  patchUser: (patch: Partial<AuthUser>) => void
 }
 function nullableString(value: unknown): string | null {
   return typeof value === "string" ? value : null
@@ -56,6 +58,7 @@ export function normalizeAuthUser(value: unknown): AuthUser | null {
     roleId: nullableString(c.roleId),
     roleCode: typeof c.roleCode === "string" ? c.roleCode : c.role,
     roleName: typeof c.roleName === "string" ? c.roleName : c.role,
+    avatarObjectKey: nullableString(c.avatarObjectKey),
   }
 }
 export function removeLegacySessionStorage() {
@@ -79,6 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       revision: state.revision + Number(replace),
     })),
   setStatus: (status) => set({ status }),
+  patchUser: (patch) => set((state) => ({ user: state.user ? { ...state.user, ...patch } : null })),
   clearUser: () => {
     removeLegacySessionStorage()
     queryClient.clear()

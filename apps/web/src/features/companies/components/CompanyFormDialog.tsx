@@ -18,6 +18,7 @@ import { Label } from "@workspace/ui/components/label"
 
 import { PersianDatePicker } from "@/components/shared/date"
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
+import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import { CurrencyInput, NumberInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -36,6 +37,7 @@ import {
   companyFormSchema,
   type CompanyFormValues,
 } from "../types/companyForm.schema"
+import { companyDisplayName } from "../utils/companyFormatters"
 
 type CompanyFormDialogProps = {
   open: boolean
@@ -45,6 +47,7 @@ type CompanyFormDialogProps = {
   isPending?: boolean
   submitError?: unknown
   onSubmit: (payload: CompanyMutationPayload) => void | Promise<void>
+  onMediaChanged?: () => void | Promise<void>
 }
 
 function toFormValues(company?: Company | null): CompanyFormValues {
@@ -83,6 +86,7 @@ export function CompanyFormDialog({
   isPending = false,
   submitError,
   onSubmit,
+  onMediaChanged,
 }: CompanyFormDialogProps) {
   const text = uiText.companies.form
   const defaultValues = useMemo(() => toFormValues(company), [company])
@@ -231,6 +235,19 @@ export function CompanyFormDialog({
             >
               <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
                 <div className="grid gap-6">
+                  {mode === "edit" && company ? (
+                    <div className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/55 p-4">
+                      <ProfileMediaEditor
+                        name={companyDisplayName(company.legalName, company.brandName)}
+                        mediaPath={`/companies/${company.id}/logo`}
+                        hasMedia={Boolean(company.logoObjectKey)}
+                        mediaVersion={company.logoObjectKey}
+                        canEdit
+                        label="لوگوی شرکت"
+                        onChanged={onMediaChanged ?? (() => undefined)}
+                      />
+                    </div>
+                  ) : null}
                   <FormSectionBlock
                     number="01"
                     title={text.sections.identity}

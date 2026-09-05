@@ -17,6 +17,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { PageHero } from "@/components/shared/PageHero"
+import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import {
   USER_ROLES,
   USER_ROLE_LABELS,
@@ -243,6 +244,17 @@ export function AdminUserDetailsPage() {
             : []
         }
       />
+      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+        <ProfileMediaEditor
+          name={user.fullName}
+          mediaPath={`/users/${user.id}/avatar`}
+          hasMedia={Boolean(user.avatarObjectKey)}
+          mediaVersion={user.avatarObjectKey}
+          canEdit={canResetPassword}
+          label="تصویر کاربر"
+          onChanged={() => userQuery.refetch()}
+        />
+      </section>
       <section className="grid gap-5 xl:grid-cols-2">
         <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
           <div className="mb-4 flex items-center gap-2">

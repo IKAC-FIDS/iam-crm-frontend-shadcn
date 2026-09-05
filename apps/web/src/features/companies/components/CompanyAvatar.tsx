@@ -1,11 +1,6 @@
 import { Building2 } from "lucide-react"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 
-export function CompanyAvatar({ name }: { name: string }) {
-  const initial = name.trim().slice(0, 1)
-
-  return (
-    <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] text-sm font-bold text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/10">
-      {initial || <Building2 className="size-5" />}
-    </div>
-  )
+export function CompanyAvatar({ name, companyId, hasLogo }: { name: string; companyId?: string; hasLogo?: boolean }) {
+  return <IdentityAvatar name={name} mediaPath={companyId ? `/companies/${companyId}/logo` : null} hasMedia={hasLogo} fallbackIcon={<Building2 className="size-5" />} className="size-11 text-sm" />
 }

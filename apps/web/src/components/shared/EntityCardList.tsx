@@ -25,6 +25,9 @@ export type EntityCardListProps<T> = {
   density?: "compact" | "comfortable"
   className?: string
   cardClassName?: string
+  title?: (item: T) => ReactNode
+  subtitle?: (item: T) => ReactNode
+  media?: (item: T) => ReactNode
 }
 
 function fieldPriorityClass(priority: EntityCardField<unknown>["priority"]) {
@@ -48,6 +51,9 @@ export function EntityCardList<T>({
   density = "comfortable",
   className,
   cardClassName,
+  title,
+  subtitle,
+  media,
 }: EntityCardListProps<T>) {
   if (!rows.length) return <>{emptyState || null}</>
 
@@ -88,7 +94,17 @@ export function EntityCardList<T>({
                 compact ? "p-3" : "p-4 sm:p-5",
               )}
             >
-              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {title || subtitle || media ? (
+                <div className="relative overflow-hidden rounded-2xl border border-[var(--app-primary)]/10 bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_72%)] px-4 py-5 text-center">
+                  <div className="pointer-events-none absolute -end-8 -top-10 size-28 rounded-full bg-[var(--app-primary)]/10 blur-2xl" />
+                  <div className="relative grid justify-items-center gap-2">
+                    {media ? media(item) : null}
+                    {title ? <div className="max-w-full truncate text-base font-extrabold text-[var(--app-heading)]">{title(item)}</div> : null}
+                    {subtitle ? <div className="max-w-full truncate text-xs text-[var(--app-text-secondary)]">{subtitle(item)}</div> : null}
+                  </div>
+                </div>
+              ) : null}
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
                 {fields.map((field) => {
                   const Icon = field.icon
                   return (

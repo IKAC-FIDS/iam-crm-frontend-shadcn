@@ -14,11 +14,13 @@ import {
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { PageHero } from "@/components/shared/PageHero"
+import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 
 const profileText = uiText.profile
 
 export function AccountProfilePage() {
   const user = useAuthStore((state) => state.user)
+  const patchUser = useAuthStore((state) => state.patchUser)
 
   return (
     <div className="grid gap-6">
@@ -32,9 +34,15 @@ export function AccountProfilePage() {
         <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
 
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="grid size-20 shrink-0 place-items-center rounded-[26px] bg-gradient-to-br from-[var(--app-primary)] to-[var(--app-primary-active)] text-2xl font-bold text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
-            {user?.fullName?.trim().charAt(0) || uiText.common.fallbackUserInitial}
-          </div>
+          {user ? <ProfileMediaEditor
+            name={user.fullName}
+            mediaPath={`/users/${user.id}/avatar`}
+            hasMedia={Boolean(user.avatarObjectKey)}
+            mediaVersion={user.avatarObjectKey}
+            canEdit
+            label="تصویر پروفایل"
+            onChanged={async (hasMedia) => patchUser({ avatarObjectKey: hasMedia ? `updated-${Date.now()}` : null })}
+          /> : null}
 
           <div className="min-w-0 text-sm leading-7 text-[var(--app-text-secondary)]">
             اطلاعات هویتی و دسترسی فعال شما

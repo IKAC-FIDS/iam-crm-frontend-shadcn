@@ -33,6 +33,7 @@ export interface CompanyOwner {
   fullName: string
   email?: string | null
   team?: string | null
+  avatarObjectKey?: string | null
 }
 
 export interface IndustryRef {
@@ -99,6 +100,7 @@ export interface Company {
   id: string
   legalName: string
   brandName?: string | null
+  logoObjectKey?: string | null
   industry?: string | null
   industryId?: string | null
   industryRef?: IndustryRef | null

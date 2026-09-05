@@ -15,8 +15,8 @@ import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { useCompanies } from "../hooks/useCompanies"
@@ -67,26 +67,6 @@ export function CompaniesPage() {
   const fields = useMemo<EntityCardField<Company>[]>(
     () => [
       {
-        id: "company",
-        label: text.columns.company,
-        priority: "primary",
-        render: (company) => (
-          <EntityTableCell
-            title={companyDisplayName(company.legalName, company.brandName)}
-            subtitle={
-              company.brandName && company.brandName !== company.legalName
-                ? company.legalName
-                : undefined
-            }
-            avatar={
-              companyDisplayName(company.legalName, company.brandName)
-                .trim()
-                .slice(0, 1) || <Building2 className="size-5" />
-            }
-          />
-        ),
-      },
-      {
         id: "industry",
         label: text.columns.industry,
         render: (company) =>
@@ -105,7 +85,12 @@ export function CompaniesPage() {
         id: "owner",
         label: text.columns.owner,
         icon: UsersRound,
-        render: (company) => company.owner?.fullName || text.unassigned,
+        render: (company) => company.owner ? (
+          <span className="flex items-center gap-2">
+            <IdentityAvatar name={company.owner.fullName} mediaPath={`/users/${company.owner.id}/avatar`} hasMedia={Boolean(company.owner.avatarObjectKey)} className="size-7 rounded-lg text-[10px]" />
+            <span className="truncate">{company.owner.fullName}</span>
+          </span>
+        ) : text.unassigned,
       },
       {
         id: "status",
@@ -239,6 +224,19 @@ export function CompaniesPage() {
           fields={fields}
           getRowKey={(company) => company.id}
           onRowClick={(company) => navigate(`/companies/${company.id}`)}
+          className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+          title={(company) => companyDisplayName(company.legalName, company.brandName)}
+          subtitle={(company) => company.brandName && company.brandName !== company.legalName ? company.legalName : uiText.common.notAvailable}
+          media={(company) => (
+            <IdentityAvatar
+              name={companyDisplayName(company.legalName, company.brandName)}
+              mediaPath={`/companies/${company.id}/logo`}
+              hasMedia={Boolean(company.logoObjectKey)}
+              mediaVersion={company.logoObjectKey}
+              fallbackIcon={<Building2 className="size-6" />}
+              className="size-16 rounded-[22px] text-xl shadow-sm"
+            />
+          )}
           actions={(company) => (
             <EntityRowActions
               label={text.openCompany}
