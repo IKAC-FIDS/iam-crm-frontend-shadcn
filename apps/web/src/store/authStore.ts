@@ -14,7 +14,7 @@ export interface AuthUser {
   roleId: string | null
   roleCode: string
   roleName: string
-  avatarObjectKey: string | null
+  avatarObjectKey?: string | null
 }
 export type SessionStatus = "loading" | "authenticated" | "anonymous" | "error"
 interface AuthState {

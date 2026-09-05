@@ -252,7 +252,7 @@ export function AdminUserDetailsPage() {
           mediaVersion={user.avatarObjectKey}
           canEdit={canResetPassword}
           label="تصویر کاربر"
-          onChanged={() => userQuery.refetch()}
+          onChanged={async () => { await userQuery.refetch() }}
         />
       </section>
       <section className="grid gap-5 xl:grid-cols-2">

@@ -305,7 +305,7 @@ export function CompanyDetailPage() {
           mediaVersion={company.logoObjectKey}
           canEdit={permissions.includes("company:update")}
           label="لوگوی شرکت"
-          onChanged={() => query.refetch()}
+          onChanged={async () => { await query.refetch() }}
         />
       </section>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -927,7 +927,7 @@ export function CompanyDetailPage() {
         company={company}
         isPending={updateMutation.isPending}
         submitError={updateMutation.error}
-        onMediaChanged={() => query.refetch()}
+        onMediaChanged={async () => { await query.refetch() }}
         onSubmit={async (payload) => {
           await updateMutation.mutateAsync(payload)
           setEditOpen(false)
