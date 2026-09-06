@@ -20,6 +20,7 @@ import {
   getMeetings,
   getMeetingTypes,
   updateMeeting,
+  notifyMeetingAssignees,
   uploadMeetingAttachment,
 } from "../api/meetings.api"
 import type {
@@ -152,6 +153,10 @@ export function useCancelMeeting() {
       cancelMeeting(id, reason),
     onSuccess: invalidate,
   })
+}
+
+export function useNotifyMeetingAssignees() {
+  return useMutation({ mutationFn: notifyMeetingAssignees })
 }
 
 export function useMeetingAssignees(search: string, enabled = true) {

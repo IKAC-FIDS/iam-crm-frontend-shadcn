@@ -1095,6 +1095,7 @@ tasks: {
       filters: "فیلترهای بیشتر",
       clear: "پاک کردن فیلترها",
       loadMore: "نمایش موارد بیشتر",
+      notifyAssignees: "ارسال اعلان ایمیل",
     },
     quickFilters: {
       all: "همه",
@@ -1275,11 +1276,17 @@ tasks: {
         deleteAttachmentTitle: "حذف مستند جلسه",
         deleteAttachmentDescription:
           "این فایل از مستندات جلسه حذف می‌شود. این عملیات قابل بازگشت نیست.",
+        notifyTitle: "ارسال اعلان جلسه",
+        notifyDescription: "اعلان ایمیل برای مسئولان این جلسه ارسال خواهد شد. آیا ادامه می‌دهید؟",
+        notifyCount: "اعلان برای {count} مسئول ارسال خواهد شد.",
+        notifyConfirm: "ارسال اعلان",
       },
       feedback: {
         uploaded: "مستند جلسه با موفقیت بارگذاری شد.",
         downloaded: "دانلود فایل آغاز شد.",
         deleted: "مستند جلسه حذف شد.",
+        notifiedAll: "اعلان ایمیل برای {count} نفر ارسال شد.",
+        notifiedPartial: "ارسال اعلان کامل نبود: {sent} موفق، {skipped} بدون ایمیل یا نامعتبر، {failed} ناموفق.",
       },
       errors: {
         permissionTitle: "دسترسی مشاهده جلسه فعال نیست",
@@ -1295,6 +1302,7 @@ tasks: {
         attachmentLoadDescription:
           "فهرست مستندات جلسه در دسترس نیست. دوباره تلاش کنید.",
         attachmentMutation: "ثبت تغییرات مستندات جلسه انجام نشد.",
+        notify: "ارسال اعلان ایمیل جلسه انجام نشد.",
       },
       fileUnits: {
         bytes: "بایت",

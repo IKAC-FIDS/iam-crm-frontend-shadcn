@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileText,
   MapPin,
+  Mail,
   Pencil,
   UserRound,
   Users,
@@ -18,11 +19,13 @@ import { useState, type ReactNode } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 
 import { ErrorState } from "@/components/shared/ErrorState"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
+import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import {
@@ -31,10 +34,11 @@ import {
 } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
+import { toast } from "sonner"
 
 import { MeetingFormDialog } from "../components/MeetingFormDialog"
 import { MeetingStatusActionDialog } from "../components/MeetingStatusActionDialog"
-import { useMeeting } from "../hooks/useMeetings"
+import { useMeeting, useNotifyMeetingAssignees } from "../hooks/useMeetings"
 import type {
   Meeting,
   MeetingPerson,
@@ -65,6 +69,8 @@ export function MeetingDetailPage() {
 
   const meetingQuery = useMeeting(id, canView)
   const [editOpen, setEditOpen] = useState(false)
+  const [notifyOpen, setNotifyOpen] = useState(false)
+  const notifyAssignees = useNotifyMeetingAssignees()
   const [statusAction, setStatusAction] = useState<
     "complete" | "cancel" | undefined
   >()
@@ -102,6 +108,30 @@ export function MeetingDetailPage() {
 
   const meeting = meetingQuery.data
   const scheduled = meeting.status === "SCHEDULED"
+
+  async function sendNotification() {
+    try {
+      const result = await notifyAssignees.mutateAsync(meeting.id)
+      if (result.sent === result.total && result.failed === 0 && result.skipped === 0) {
+        toast.success(
+          detailText.feedback.notifiedAll.replace(
+            "{count}",
+            result.sent.toLocaleString("fa-IR")
+          )
+        )
+      } else {
+        toast.warning(
+          detailText.feedback.notifiedPartial
+            .replace("{sent}", result.sent.toLocaleString("fa-IR"))
+            .replace("{skipped}", result.skipped.toLocaleString("fa-IR"))
+            .replace("{failed}", result.failed.toLocaleString("fa-IR"))
+        )
+      }
+      setNotifyOpen(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, detailText.errors.notify))
+    }
+  }
 
   return (
     <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-4">
@@ -161,6 +191,17 @@ export function MeetingDetailPage() {
           actions={
             scheduled ? (
               <>
+                {canUpdate ? (
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    disabled={notifyAssignees.isPending}
+                    onClick={() => setNotifyOpen(true)}
+                  >
+                    <Mail className="size-4" />
+                    {text.actions.notifyAssignees}
+                  </Button>
+                ) : null}
                 {canUpdate ? (
                   <Button
                     variant="outline"
@@ -250,6 +291,26 @@ export function MeetingDetailPage() {
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        open={notifyOpen}
+        onOpenChange={setNotifyOpen}
+        title={detailText.dialogs.notifyTitle}
+        description={detailText.dialogs.notifyDescription}
+        confirmLabel={detailText.dialogs.notifyConfirm}
+        tone="primary"
+        icon={<Mail className="size-5" />}
+        isPending={notifyAssignees.isPending}
+        confirmDisabled={!meeting.assignees?.length}
+        onConfirm={sendNotification}
+      >
+        <p className="rounded-xl bg-[var(--app-background)] p-3 text-sm text-[var(--app-text-secondary)]">
+          {detailText.dialogs.notifyCount.replace(
+            "{count}",
+            (meeting.assignees?.length ?? 0).toLocaleString("fa-IR")
+          )}
+        </p>
+      </ConfirmDialog>
 
       <Person360WorkspaceDialog
         personId={selectedPersonId}

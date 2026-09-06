@@ -14,6 +14,7 @@ import type {
   MeetingPayload,
   MeetingQuery,
   MeetingTypeOption,
+  MeetingNotificationResult,
 } from "../types/meeting.types"
 
 function clean<T extends object>(value: T) {
@@ -76,6 +77,11 @@ export async function cancelMeeting(id: string, cancellationReason?: string) {
     cancellationReason: cancellationReason?.trim() || undefined,
   })
   return unwrapApiResponse<Meeting>(response.data)
+}
+
+export async function notifyMeetingAssignees(id: string) {
+  const response = await api.post(`/meetings/${id}/notify-assignees`)
+  return unwrapApiResponse<MeetingNotificationResult>(response.data)
 }
 
 export async function getMeetingAssignees(search: string, page: number) {

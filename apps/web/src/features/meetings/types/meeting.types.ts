@@ -133,3 +133,18 @@ export interface MeetingAttachmentPage {
   data: MeetingAttachment[]
   meta: MeetingPage["meta"]
 }
+
+export type MeetingNotificationRecipientStatus = "SENT" | "SKIPPED" | "FAILED"
+
+export interface MeetingNotificationResult {
+  total: number
+  sent: number
+  skipped: number
+  failed: number
+  recipients: Array<{
+    userId: string
+    email: string | null
+    status: MeetingNotificationRecipientStatus
+    reason?: "NO_EMAIL" | "INVALID_EMAIL" | "DUPLICATE_EMAIL" | "SEND_FAILED"
+  }>
+}
