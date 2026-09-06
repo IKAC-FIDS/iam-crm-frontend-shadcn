@@ -24,6 +24,8 @@ export type NotificationRule = {
   mandatory: boolean
   priority: number
   recipientRules: NotificationRecipientRule[]
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type NotificationRuleCatalog = {
@@ -31,6 +33,56 @@ export type NotificationRuleCatalog = {
   recipientTypes: NotificationRecipientType[]
   channels: NotificationChannel[]
 }
+
+export type NotificationEventMeta = {
+  eventName: string
+  service: string
+  action: string
+}
+
+export type NotificationTemplate = {
+  id: string
+  eventName: string
+  channel: NotificationChannel
+  locale: string
+  subject?: string | null
+  body: string
+  isActive: boolean
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type NotificationDeliveryStatus =
+  | "PENDING" | "PROCESSING" | "SENT" | "DELIVERED"
+  | "FAILED" | "RETRYING" | "SKIPPED"
+
+export type NotificationDelivery = {
+  id: string
+  channel: NotificationChannel
+  status: NotificationDeliveryStatus
+  destination?: string | null
+  attemptCount: number
+  providerMessageId?: string | null
+  failureCode?: string | null
+  failureMessage?: string | null
+  sentAt?: string | null
+  deliveredAt?: string | null
+  createdAt: string
+  event: { eventName: string; occurredAt: string }
+  recipientUser?: { id: string; fullName: string; email: string } | null
+}
+
+export type NotificationChannelStatus = {
+  channel: NotificationChannel
+  available: boolean
+  configured: boolean
+  usable: boolean
+  provider?: string | null
+  configurationPath?: string | null
+}
+
+export type PageMeta = { total: number; page: number; limit: number; totalPages: number; hasNext: boolean; hasPrevious: boolean }
 
 export type NotificationRuleTarget = {
   id: string
