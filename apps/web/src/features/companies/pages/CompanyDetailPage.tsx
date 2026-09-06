@@ -30,12 +30,18 @@ import { CreatePersonDialog } from "@/features/people/components/CreatePersonDia
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
+import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
+import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog"
+import { OpportunityFormDialog } from "@/features/opportunities/components/OpportunityFormDialog"
+import { useCreateOpportunity, usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
+import type { OpportunityPayload } from "@/features/opportunities/types/opportunity.types"
 import { useAuthStore } from "@/store/authStore"
 
 import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { Company360ActionSection } from "../components/Company360ActionSection"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
+import { CreateCompanyBranchDialog, CreateCompanySocialDialog, UploadCompanyLegalDocumentDialog } from "../components/CompanyRelationCreateDialogs"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
 import { CompanyMetricCard } from "../components/CompanyMetricCard"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
@@ -84,6 +90,8 @@ type QuickViewState =
   | { kind: "document"; item: CompanyLegalDocument }
   | null
 
+type CreateSection = "opportunity" | "activity" | "task" | "branch" | "social" | "legal" | null
+
 export function CompanyDetailPage() {
   const text = uiText.companies.detail
   const navigate = useNavigate()
@@ -97,6 +105,7 @@ export function CompanyDetailPage() {
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [createPersonOpen, setCreatePersonOpen] = useState(false)
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false)
+  const [createSection, setCreateSection] = useState<CreateSection>(null)
   const [quickView, setQuickView] = useState<QuickViewState>(null)
 
   const [sectionPaging, setSectionPaging] = useState({
@@ -131,10 +140,21 @@ export function CompanyDetailPage() {
   const canViewMeetings = permissions.includes("meeting:view")
   const canCreateMeeting = permissions.includes("meeting:create")
   const canViewActivities = permissions.includes("activity:view")
+  const canCreateOpportunity = permissions.includes("opportunity:create")
+  const canCreateActivity = permissions.includes("activity:create")
+  const canCreateTask = permissions.includes("task:create")
+  const canCreateBranch = permissions.includes("branch:manage")
+  const canCreateSocial = permissions.includes("social-channel:manage")
+  const canCreateLegalDocument = permissions.includes("company:update")
 
   const query = useCompany(companyId)
   const overviewQuery = useCompany360Overview(companyId)
   const updateMutation = useUpdateCompany(companyId)
+  const createOpportunity = useCreateOpportunity()
+  const stagesQuery = usePipelineStages(canCreateOpportunity)
+  const opportunityStages = (Array.isArray(stagesQuery.data) ? stagesQuery.data : [])
+    .filter((stage) => stage.isActive !== false)
+    .sort((left, right) => left.sortOrder - right.sortOrder)
 
   const peopleQuery = useCompanyPeople(
     companyId,
@@ -477,6 +497,8 @@ export function CompanyDetailPage() {
                 setSectionPageSize("opportunities", pageSize)
               }
               icon={<CircleDollarSign className="size-5" />}
+              onCreate={canCreateOpportunity ? () => setCreateSection("opportunity") : undefined}
+              createLabel="ثبت فرصت فروش"
               onViewAll={() => goToModule("/opportunities")}
             >
               <QueryContent query={opportunitiesQuery}>
@@ -530,6 +552,8 @@ export function CompanyDetailPage() {
               }
               icon={<CalendarClock className="size-5" />}
               contentClassName="max-h-[476px]"
+              onCreate={canCreateActivity ? () => setCreateSection("activity") : undefined}
+              createLabel="ثبت فعالیت"
               onViewAll={() => goToModule("/activities")}
             >
               <QueryContent query={activitiesQuery}>
@@ -583,6 +607,8 @@ export function CompanyDetailPage() {
               setSectionPageSize("documents", pageSize)
             }
             icon={<FileText className="size-5" />}
+            onCreate={canCreateLegalDocument ? () => setCreateSection("legal") : undefined}
+            createLabel="ثبت سند حقوقی"
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={documentsQuery}>
@@ -696,6 +722,8 @@ export function CompanyDetailPage() {
                 setSectionPageSize("tasks", pageSize)
               }
               icon={<ListTodo className="size-5" />}
+              onCreate={canCreateTask ? () => setCreateSection("task") : undefined}
+              createLabel="ثبت کار"
               onViewAll={() => goToModule("/tasks")}
             >
               <QueryContent query={tasksQuery}>
@@ -799,6 +827,8 @@ export function CompanyDetailPage() {
               setSectionPageSize("branches", pageSize)
             }
             icon={<MapPin className="size-5" />}
+            onCreate={canCreateBranch ? () => setCreateSection("branch") : undefined}
+            createLabel="ثبت شعبه"
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={branchesQuery}>
@@ -841,6 +871,8 @@ export function CompanyDetailPage() {
               setSectionPageSize("social", pageSize)
             }
             icon={<Share2 className="size-5" />}
+            onCreate={canCreateSocial ? () => setCreateSection("social") : undefined}
+            createLabel="ثبت کانال اجتماعی"
             onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={socialQuery}>
@@ -911,6 +943,13 @@ export function CompanyDetailPage() {
           lockCompany
         />
       ) : null}
+
+      {createSection === "task" ? <TaskFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialCompanyId={companyId} lockCompany onSaved={() => void tasksQuery.refetch()} /> : null}
+      {createSection === "activity" ? <ActivityFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialTargetType="COMPANY" initialCompanyId={companyId} lockTarget onSaved={async () => { await activitiesQuery.refetch() }} /> : null}
+      {createSection === "opportunity" ? <OpportunityFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialCompanyId={companyId} lockCompany stages={opportunityStages} isPending={createOpportunity.isPending} onSubmit={async (payload) => { await createOpportunity.mutateAsync(payload as OpportunityPayload); await opportunitiesQuery.refetch(); await overviewQuery.refetch(); setCreateSection(null) }} /> : null}
+      <CreateCompanyBranchDialog companyId={companyId} open={createSection === "branch"} onClose={() => setCreateSection(null)} onCreated={async () => { await branchesQuery.refetch() }} />
+      <CreateCompanySocialDialog companyId={companyId} open={createSection === "social"} onClose={() => setCreateSection(null)} onCreated={async () => { await socialQuery.refetch() }} />
+      <UploadCompanyLegalDocumentDialog companyId={companyId} open={createSection === "legal"} onClose={() => setCreateSection(null)} onCreated={async () => { await documentsQuery.refetch() }} />
 
       <EntityQuickViewDialog
         open={Boolean(quickView)}

@@ -69,15 +69,19 @@ export function ActivityFormDialog({
   onOpenChange,
   activity,
   initialTargetType,
+  initialCompanyId,
   initialTask,
   lockTarget = false,
+  onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   activity?: Activity | null
   initialTargetType?: ActivityTargetType
+  initialCompanyId?: string
   initialTask?: ActivityOption
   lockTarget?: boolean
+  onSaved?: () => void | Promise<void>
 }) {
   const editing = Boolean(activity)
   const create = useCreateActivity()
@@ -94,7 +98,7 @@ export function ActivityFormDialog({
       (initialTask ? "TASK" : "COMPANY")
     return {
       targetType,
-      companyId: targetType === "COMPANY" ? existingCompanyId : "",
+      companyId: targetType === "COMPANY" ? existingCompanyId || initialCompanyId || "" : "",
       task:
         targetType === "TASK"
           ? initialTask ||
@@ -128,7 +132,7 @@ export function ActivityFormDialog({
         (activity ? undefined : new Date()),
       nextActionDate: undefined,
     }
-  }, [activity, initialTargetType, initialTask])
+  }, [activity, initialTargetType, initialCompanyId, initialTask])
 
   const {
     control,
@@ -236,6 +240,7 @@ export function ActivityFormDialog({
         await create.mutateAsync(payload)
         toast.success("فعالیت با موفقیت ثبت شد.")
       }
+      await onSaved?.()
       handleDialogOpenChange(false)
     } catch (error) {
       applyServerFieldErrors(
