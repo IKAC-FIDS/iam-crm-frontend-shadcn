@@ -10,16 +10,12 @@ import { uiText } from "@/config/uiText"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 
-import { PERSON_CONTACT_TYPE_OPTIONS } from "../constants/personOptions"
-import type {
-  PersonContact,
-  PersonContactPayload,
-  PersonContactType,
-} from "../types/person.types"
+import { usePeopleLookup } from "../hooks/usePeople"
+import type { PersonContact, PersonContactPayload } from "../types/person.types"
 import { getPeopleErrorMessage } from "../utils/peopleError"
 
 const schema = z.object({
-  type: z.custom<PersonContactType>(),
+  typeOptionId: z.string().min(1, uiText.common.forms.required),
   value: z.string().trim().min(1, uiText.common.forms.required),
   note: z.string(),
   isPrimary: z.boolean(),
@@ -42,13 +38,14 @@ export function PersonContactDialog({
   onSubmit: (payload: PersonContactPayload) => Promise<void>
 }) {
   const text = uiText.people.contactHub
+  const contactTypesQuery = usePeopleLookup("contact_types")
+  const contactTypes = Array.isArray(contactTypesQuery.data)
+    ? contactTypesQuery.data
+    : []
+  const legacyType = contact && !contact.typeOptionId ? contact.type : null
   const defaultValues = useMemo<FormValues>(
     () => ({
-      type: PERSON_CONTACT_TYPE_OPTIONS.some(
-        (option) => option.value === contact?.type
-      )
-        ? (contact?.type as PersonContactType)
-        : "MOBILE",
+      typeOptionId: contact?.typeOptionId || "",
       value: contact?.value || "",
       note: contact?.note || "",
       isPrimary: Boolean(contact?.isPrimary),
@@ -64,9 +61,9 @@ export function PersonContactDialog({
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({ defaultValues, resolver: zodResolver(schema) })
-  const { type, value, note, isPrimary } = useWatch({ control }) as FormValues
-  const setType = (value: FormValues["type"]) =>
-    setFieldValue("type", value, { shouldDirty: true, shouldValidate: true })
+  const { typeOptionId, value, note, isPrimary } = useWatch({ control }) as FormValues
+  const setTypeOptionId = (value: FormValues["typeOptionId"]) =>
+    setFieldValue("typeOptionId", value, { shouldDirty: true, shouldValidate: true })
   const setValue = (value: FormValues["value"]) =>
     setFieldValue("value", value, { shouldDirty: true, shouldValidate: true })
   const setNote = (value: FormValues["note"]) =>
@@ -81,16 +78,16 @@ export function PersonContactDialog({
   }, [open, defaultValues, reset])
   async function submit() {
     try {
-      if (!value.trim()) return
+      if (!value.trim() || !contactTypes.some((option) => option.id === typeOptionId)) return
       await onSubmit({
-        type,
+        typeOptionId,
         value: value.trim(),
         note: note.trim() || undefined,
         isPrimary,
       })
     } catch (error) {
       applyServerFieldErrors(error, setError, [
-        "type",
+        "typeOptionId",
         "value",
         "note",
         "isPrimary",
@@ -119,23 +116,36 @@ export function PersonContactDialog({
               {errors.root.server.message}
             </p>
           ) : null}
-          <Field label={text.type} error={errors.type?.message}>
+          <Field label={text.type} error={errors.typeOptionId?.message}>
             <select
-              {...register("type")}
-              aria-invalid={Boolean(errors.type)}
-              value={type}
-              onChange={(event) =>
-                setType(event.target.value as PersonContactType)
-              }
+              {...register("typeOptionId")}
+              aria-invalid={Boolean(errors.typeOptionId)}
+              value={typeOptionId}
+              onChange={(event) => setTypeOptionId(event.target.value)}
+              disabled={contactTypesQuery.isLoading || contactTypesQuery.isError}
               className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
             >
-              {PERSON_CONTACT_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
+              <option value="">{text.selectType}</option>
+              {contactTypes.map((option) => (
+                <option key={option.id} value={option.id}>
                   {option.label}
                 </option>
               ))}
             </select>
+            {legacyType ? (
+              <span className="text-xs text-[var(--app-text-secondary)]">
+                نوع قدیمی «{legacyType}» فقط برای نمایش نگه‌داری شده است؛ برای ذخیره، یک نوع معتبر انتخاب کنید.
+              </span>
+            ) : null}
           </Field>
+          {contactTypesQuery.isError ? (
+            <InlineError
+              message={getPeopleErrorMessage(
+                contactTypesQuery.error,
+                uiText.people.nested.loadError
+              )}
+            />
+          ) : null}
           <Field label={text.value} error={errors.value?.message}>
             <Input
               {...register("value")}
@@ -173,6 +183,11 @@ export function PersonContactDialog({
           ) : null}
           <FormActions
             pending={isPending}
+            disabled={
+              contactTypesQuery.isLoading ||
+              contactTypesQuery.isError ||
+              !contactTypes.some((option) => option.id === typeOptionId)
+            }
             onCancel={() => onOpenChange(false)}
             submitLabel={uiText.people.actions.save}
           />

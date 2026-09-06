@@ -9,7 +9,6 @@ import { Button } from "@workspace/ui/components/button"
 
 import { useCreatePersonContact, useDeletePersonContact, usePersonContacts, useUpdatePersonContact } from "../hooks/usePeople"
 import type { PersonContact, PersonContactPayload } from "../types/person.types"
-import { getPersonContactTypeLabel } from "../constants/personOptions"
 import { getPeopleErrorMessage } from "../utils/peopleError"
 import { PersonContactDialog } from "./PersonContactDialog"
 
@@ -34,13 +33,20 @@ export function PersonContactsSection({ personId, canEdit }: { personId: string;
     {query.isLoading ? <LoadingState rows={2} /> : query.isError ? <ErrorState title={text.nested.loadError} description={getPeopleErrorMessage(query.error, text.nested.loadError)} retryLabel={uiText.common.retry} onRetry={() => void query.refetch()} /> : contacts.length ? (
       <div className="grid gap-2.5">{contacts.map((contact) => <div key={contact.id} className="flex items-start gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">{(contact.type || "").toUpperCase().includes("EMAIL") ? <Mail className="size-4" /> : <Phone className="size-4" />}</span>
-        <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-bold text-[var(--app-heading)]">{getPersonContactTypeLabel(contact.type) || contact.typeOption?.label || text.notSpecified}</p>{contact.isPrimary ? <Badge /> : null}</div><p dir="auto" className="mt-1 break-all text-xs text-[var(--app-heading)]">{contact.value}</p>{contact.note ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]" title={contact.note}>{contact.note}</p> : null}</div>
+        <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-bold text-[var(--app-heading)]">{getPersonContactDisplayLabel(contact, text.notSpecified)}</p>{contact.isPrimary ? <Badge /> : null}</div><p dir="auto" className="mt-1 break-all text-xs text-[var(--app-heading)]">{contact.value}</p>{contact.note ? <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]" title={contact.note}>{contact.note}</p> : null}</div>
         {canEdit ? <RowActions onEdit={() => setEditing(contact)} onDelete={() => setDeleting(contact)} /> : null}
       </div>)}</div>
     ) : <EmptyLine>{text.empty.contacts}</EmptyLine>}
     <PersonContactDialog open={editing !== undefined} onOpenChange={(open) => { if (!open) setEditing(undefined) }} contact={editing} isPending={createMutation.isPending || updateMutation.isPending} error={createMutation.error || updateMutation.error} onSubmit={save} />
     <ConfirmDialog open={Boolean(deleting)} onOpenChange={(open) => { if (!open) setDeleting(null) }} title={text.contactHub.deleteTitle} description={deleteMutation.error ? getPeopleErrorMessage(deleteMutation.error, text.nested.deleteError) : text.contactHub.deleteDescription} confirmLabel={text.actions.delete} isPending={deleteMutation.isPending} onConfirm={async () => { if (deleting) { await deleteMutation.mutateAsync(deleting.id); setDeleting(null) } }} />
   </>
+}
+
+export function getPersonContactDisplayLabel(
+  contact: Pick<PersonContact, "type" | "typeOption">,
+  fallback: string
+) {
+  return contact.typeOption?.label ?? contact.type ?? fallback
 }
 
 export function SectionHeader({ title, canEdit, addLabel, onAdd }: { title: string; canEdit: boolean; addLabel: string; onAdd: () => void }) { return <div className="mb-4 flex items-center justify-between gap-3"><h3 className="text-sm font-bold text-[var(--app-heading)]">{title}</h3>{canEdit ? <Button type="button" size="sm" variant="outline" className="rounded-xl" onClick={onAdd}><Plus className="size-3.5" />{addLabel}</Button> : null}</div> }

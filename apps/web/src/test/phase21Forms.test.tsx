@@ -7,6 +7,7 @@ import type { ReactNode } from "react"
 import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
 import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
 import { PersonContactDialog } from "@/features/people/components/PersonContactDialog"
+import { getPersonContactDisplayLabel } from "@/features/people/components/PersonContactsSection"
 import { PersonFormDialog } from "@/features/people/components/PersonFormDialog"
 import type { Meeting } from "@/features/meetings/types/meeting.types"
 import { api } from "@/lib/api"
@@ -16,9 +17,10 @@ import { response, httpError } from "./fixtures"
 
 vi.mock("@/lib/api",()=>({api:{get:vi.fn(),post:vi.fn(),patch:vi.fn()}}))
 const meeting:Meeting={id:"m1",companyId:"c1",title:"جلسه قبلی",meetingTypeId:"demo",type:{id:"demo",code:"DEMO",label:"جلسه دمو",sortOrder:0,isActive:true},mode:"IN_PERSON",status:"SCHEDULED",startAt:"2026-08-28T09:00:00Z",endAt:"2026-08-28T10:00:00Z",assignees:[],attendees:[]}
+const contactType={id:"contact-type-work",group:"contact_types",code:"WORK",label:"تلفن کاری",sortOrder:10,isActive:true}
 beforeEach(()=>{
   vi.clearAllMocks()
-  vi.mocked(api.get).mockImplementation(async(url)=>String(url).includes("types/options")?response([meeting.type]):response({data:[],meta:{page:1,limit:25,total:0,totalPages:0}}))
+  vi.mocked(api.get).mockImplementation(async(url)=>String(url).includes("/lookups/contact_types")?response([contactType]):String(url).includes("types/options")?response([meeting.type]):response({data:[],meta:{page:1,limit:25,total:0,totalPages:0}}))
   vi.mocked(api.post).mockResolvedValue(response({id:"new"}))
   vi.mocked(api.patch).mockResolvedValue(response(meeting))
   useAuthStore.setState({
@@ -81,8 +83,10 @@ it("Person form preserves company and maps server field errors to the name field
 })
 it("Contact form restores edit defaults on reopen and blocks an empty contact",async()=>{
   const onSubmit=vi.fn().mockResolvedValue(undefined)
-  const props={onOpenChange:vi.fn(),isPending:false,onSubmit,contact:{id:"contact1",type:"MOBILE" as const,value:"09120000000",isPrimary:true}}
-  const {rerender}=render(<PersonContactDialog open {...props}/>)
+  const props={onOpenChange:vi.fn(),isPending:false,onSubmit,contact:{id:"contact1",type:"WORK",typeOptionId:contactType.id,typeOption:contactType,value:"09120000000",isPrimary:true}}
+  const {rerender}=render(<PersonContactDialog open {...props}/>,{wrapper})
+  expect(await screen.findByRole("option",{name:"تلفن کاری"})).toBeInTheDocument()
+  expect(screen.getByLabelText(uiText.people.contactHub.type)).toHaveValue(contactType.id)
   await userEvent.clear(screen.getByLabelText(uiText.people.contactHub.value))
   await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
   expect(onSubmit).not.toHaveBeenCalled()
@@ -91,5 +95,36 @@ it("Contact form restores edit defaults on reopen and blocks an empty contact",a
   rerender(<PersonContactDialog open {...props}/>)
   expect(await screen.findByDisplayValue("09120000000")).toBeInTheDocument()
   await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
-  await waitFor(()=>expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({type:"MOBILE",value:"09120000000",isPrimary:true})))
+  await waitFor(()=>expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({typeOptionId:contactType.id,value:"09120000000",isPrimary:true})))
+  expect(onSubmit.mock.calls[onSubmit.mock.calls.length-1]?.[0]).not.toHaveProperty("type")
+})
+it("Contact create submits the selected lookup id instead of a legacy type string",async()=>{
+  const onSubmit=vi.fn().mockResolvedValue(undefined)
+  render(<PersonContactDialog open onOpenChange={vi.fn()} isPending={false} onSubmit={onSubmit}/>,{wrapper})
+  await userEvent.selectOptions(await screen.findByLabelText(uiText.people.contactHub.type),contactType.id)
+  await userEvent.type(screen.getByLabelText(uiText.people.contactHub.value),"02133333333")
+  await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
+  await waitFor(()=>expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({typeOptionId:contactType.id,value:"02133333333"})))
+  expect(onSubmit.mock.calls[0][0]).not.toHaveProperty("type")
+})
+it("Contact edit keeps a legacy type display-only until a current lookup option is selected",async()=>{
+  const onSubmit=vi.fn().mockResolvedValue(undefined)
+  render(<PersonContactDialog open onOpenChange={vi.fn()} isPending={false} onSubmit={onSubmit} contact={{id:"legacy",type:"FAX_LEGACY",typeOptionId:null,value:"02144444444"}}/>,{wrapper})
+  expect(await screen.findByText(/FAX_LEGACY/)).toBeInTheDocument()
+  expect(screen.getByRole("button",{name:uiText.people.actions.save})).toBeDisabled()
+  await userEvent.selectOptions(screen.getByLabelText(uiText.people.contactHub.type),contactType.id)
+  await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
+  await waitFor(()=>expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({typeOptionId:contactType.id})))
+})
+it("Contact display prefers the lookup label and falls back to legacy type",()=>{
+  expect(getPersonContactDisplayLabel({type:"WORK",typeOption:contactType},"نامشخص")).toBe("تلفن کاری")
+  expect(getPersonContactDisplayLabel({type:"FAX_LEGACY",typeOption:null},"نامشخص")).toBe("FAX_LEGACY")
+})
+it("Contact form reports lookup loading failure and prevents submission",async()=>{
+  vi.mocked(api.get).mockRejectedValueOnce(httpError(500,{error:{message:"دریافت انواع تماس ناموفق بود"}}))
+  const onSubmit=vi.fn()
+  render(<PersonContactDialog open onOpenChange={vi.fn()} isPending={false} onSubmit={onSubmit}/>,{wrapper})
+  expect(await screen.findByText("دریافت انواع تماس ناموفق بود")).toBeInTheDocument()
+  expect(screen.getByLabelText(uiText.people.contactHub.type)).toBeDisabled()
+  expect(screen.getByRole("button",{name:uiText.people.actions.save})).toBeDisabled()
 })

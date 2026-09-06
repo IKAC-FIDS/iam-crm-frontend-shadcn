@@ -14,20 +14,13 @@ export interface PersonCompanyRef {
 
 export interface PersonContact {
   id: string
-  type?: string | null
+  type: string
   typeOptionId?: string | null
   value: string
   isPrimary?: boolean | null
   note?: string | null
   typeOption?: LookupOption | null
 }
-
-export type PersonContactType =
-  | "MOBILE"
-  | "WORK"
-  | "PERSONAL_EMAIL"
-  | "WORK_EMAIL"
-  | "OTHER"
 
 export interface PersonSocial {
   id: string
@@ -165,7 +158,7 @@ export interface LookupOption {
 }
 
 export interface PersonContactPayload {
-  type: PersonContactType
+  typeOptionId: string
   value: string
   isPrimary?: boolean
   note?: string
