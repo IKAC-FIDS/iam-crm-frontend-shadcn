@@ -99,6 +99,7 @@
     rolesAndPermissions: "نقش‌ها و مجوزها",
     libraries: "کتابخانه‌ها",
     pipelineSettings: "تنظیمات پایپ‌لاین",
+    emailSettings: "تنظیمات ایمیل",
     auditLogs: "رویدادهای ممیزی",
     accountSecurity: "امنیت حساب",
     usageAndQuota: "مصرف و سهمیه",

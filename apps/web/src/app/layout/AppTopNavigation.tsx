@@ -79,6 +79,7 @@ const routeHints: Record<string, string> = {
   "admin-permissions": "نقش‌ها و مجوزها",
   "admin-libraries": "داده‌های مرجع سامانه",
   "admin-pipeline": "مراحل و قوانین انتقال",
+  "admin-email-settings": "SMTP، فرستنده و ارسال آزمایشی",
   "admin-audit-logs": "ردیابی تغییرات و رویدادها",
   "account-security": "رمز عبور، Passkey و نشست‌ها",
   "account-usage": "مصرف منابع و سهمیه‌ها",

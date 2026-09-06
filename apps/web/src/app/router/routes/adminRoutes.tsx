@@ -56,6 +56,13 @@ export const adminRoutes = [
     )
   ),
   routeGroup(
+    "admin-email-settings",
+    lazyRoute(
+      () => import("@/features/admin/email/pages/AdminEmailSettingsPage"),
+      "AdminEmailSettingsPage"
+    )
+  ),
+  routeGroup(
     "admin-audit-logs",
     lazyRoute(
       () => import("@/features/admin/audit-logs/pages/AdminAuditLogsPage"),

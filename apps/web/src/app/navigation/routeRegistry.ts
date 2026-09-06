@@ -21,6 +21,7 @@ import {
   FileText,
   FolderOpen,
   Gavel,
+  Mail,
 } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -253,6 +254,15 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
       "pipeline:transition:view",
       "pipeline:transition:manage",
     ]),
+  },
+  {
+    id: "admin-email-settings",
+    path: "/admin/email-settings",
+    label: navText.emailSettings,
+    group: "management",
+    order: 285,
+    icon: Mail,
+    access: any(["organization:manage"]),
   },
   {
     id: "admin-audit-logs",
