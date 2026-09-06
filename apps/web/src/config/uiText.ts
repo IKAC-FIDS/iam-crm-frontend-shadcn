@@ -100,6 +100,7 @@
     libraries: "کتابخانه‌ها",
     pipelineSettings: "تنظیمات پایپ‌لاین",
     emailSettings: "تنظیمات ایمیل",
+    notificationRules: "قوانین اعلان",
     auditLogs: "رویدادهای ممیزی",
     accountSecurity: "امنیت حساب",
     usageAndQuota: "مصرف و سهمیه",

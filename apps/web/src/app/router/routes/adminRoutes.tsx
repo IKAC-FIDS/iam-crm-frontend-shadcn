@@ -63,6 +63,13 @@ export const adminRoutes = [
     )
   ),
   routeGroup(
+    "admin-notification-rules",
+    lazyRoute(
+      () => import("@/features/notification-core/pages/AdminNotificationRulesPage"),
+      "AdminNotificationRulesPage"
+    )
+  ),
+  routeGroup(
     "admin-audit-logs",
     lazyRoute(
       () => import("@/features/admin/audit-logs/pages/AdminAuditLogsPage"),

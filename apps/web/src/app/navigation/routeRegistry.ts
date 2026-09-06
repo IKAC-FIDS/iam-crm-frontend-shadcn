@@ -265,6 +265,15 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     access: any(["organization:manage"]),
   },
   {
+    id: "admin-notification-rules",
+    path: "/admin/notification-rules",
+    label: navText.notificationRules,
+    group: "management",
+    order: 287,
+    icon: Bell,
+    access: any(["notification:manage"]),
+  },
+  {
     id: "admin-audit-logs",
     path: "/admin/audit-logs",
     label: navText.auditLogs,
