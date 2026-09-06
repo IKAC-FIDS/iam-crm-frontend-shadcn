@@ -11,6 +11,8 @@ import {
   Plus,
   Radio,
   Smartphone,
+  Settings,
+  Send,
   Power,
   PowerOff,
 } from "lucide-react"
@@ -43,6 +45,10 @@ import {
   getNotificationTemplateVariables,
   previewNotificationTemplate,
   updateNotificationTemplate,
+  getSmsSettings,
+  updateSmsSettings,
+  testSmsSettings,
+  dispatchNotificationDelivery,
   type TemplateInput,
 } from "../api/notificationAdminApi"
 import type {
@@ -60,7 +66,7 @@ const tabs: { id: Tab; label: string; icon: typeof BellRing }[] = [
   { id: "channels", label: "کانال‌ها", icon: Radio },
   { id: "deliveries", label: "تاریخچه ارسال", icon: History },
 ]
-export const channelLabels: Record<NotificationChannel, string> = {
+const channelLabels: Record<NotificationChannel, string> = {
   EMAIL: "ایمیل",
   SMS: "پیامک",
   PUSH: "پوش",
@@ -84,7 +90,7 @@ const actionLabels: Record<string, string> = {
   REASSIGNED: "ارجاع مجدد",
   COMPLETED: "تکمیل",
 }
-export function eventLabel(value: string) {
+function eventLabel(value: string) {
   const [service, action] = value.split(".")
   return `${serviceLabels[service ?? ""] ?? service} — ${actionLabels[action ?? ""] ?? action}`
 }
@@ -433,7 +439,7 @@ function TemplateDialog({
           {channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">پیامک موضوع ندارد.</span> : null}
         </label>
         <label className="grid gap-2 text-sm font-bold">
-          متن قالب
+          <span className="flex items-center justify-between"><span>متن قالب</span>{channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">{body.length.toLocaleString("fa-IR")} نویسه؛ متن کوتاه نمی‌شود</span> : null}</span>
           <textarea
             className="min-h-40 rounded-xl border bg-background p-3 font-mono text-sm"
             value={body}
@@ -491,6 +497,7 @@ function TemplateDialog({
 }
 
 function ChannelsTab() {
+  const [smsOpen, setSmsOpen] = useState(false)
   const query = useQuery({
     queryKey: ["notification-channels"],
     queryFn: getNotificationChannelStatus,
@@ -541,11 +548,81 @@ function ChannelsTab() {
                   تنظیمات ایمیل
                 </Button>
               ) : null}
+              {item.channel === "SMS" ? (
+                <Button className="mt-4" variant="outline" onClick={() => setSmsOpen(true)}>
+                  <Settings className="size-4" />
+                  تنظیمات پیامک
+                </Button>
+              ) : null}
             </article>
           )
         })}
       </div>
+      {smsOpen ? <SmsSettingsDialog onClose={() => setSmsOpen(false)} /> : null}
     </QueryContent>
+  )
+}
+
+function SmsSettingsDialog({ onClose }: { onClose: () => void }) {
+  const query = useQuery({ queryKey: ["sms-settings"], queryFn: getSmsSettings })
+  return (
+    <ResponsiveModal open onClose={onClose} title="تنظیمات کانال پیامک" description="تنظیمات به سازمان جاری تعلق دارد و کلید API پس از ذخیره قابل مشاهده نیست." icon={MessageSquare}>
+      <QueryContent query={query} errorTitle="دریافت تنظیمات پیامک ناموفق بود">
+        {query.data ? <SmsSettingsForm initial={query.data} onClose={onClose} /> : null}
+      </QueryContent>
+    </ResponsiveModal>
+  )
+}
+
+function SmsSettingsForm({ initial, onClose }: { initial: import("../types/rule-engine.types").SmsSettings; onClose: () => void }) {
+  const client = useQueryClient()
+  const [provider, setProvider] = useState(initial.provider)
+  const [apiUrl, setApiUrl] = useState(initial.apiUrl)
+  const [apiKey, setApiKey] = useState("")
+  const [clearApiKey, setClearApiKey] = useState(false)
+  const [senderNumber, setSenderNumber] = useState(initial.senderNumber)
+  const [enabled, setEnabled] = useState(initial.enabled)
+  const [timeoutMs, setTimeoutMs] = useState(initial.timeoutMs)
+  const [recipient, setRecipient] = useState("")
+  const [message, setMessage] = useState("پیامک آزمایشی سامانه CRM")
+  const save = useMutation({
+    mutationFn: updateSmsSettings,
+    onSuccess: async () => {
+      setApiKey("")
+      await Promise.all([client.invalidateQueries({ queryKey: ["sms-settings"] }), client.invalidateQueries({ queryKey: ["notification-channels"] })])
+      toast.success("تنظیمات پیامک ذخیره شد.")
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, "ذخیره تنظیمات پیامک ناموفق بود.")),
+  })
+  const test = useMutation({
+    mutationFn: testSmsSettings,
+    onSuccess: (result) => {
+      if (result.success) toast.success(`پیامک آزمایشی ارسال شد${result.providerMessageId ? `؛ شناسه ${result.providerMessageId}` : ""}.`)
+      else toast.error(result.errorMessage || "ارسال پیامک آزمایشی ناموفق بود.")
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, "ارسال پیامک آزمایشی ناموفق بود.")),
+  })
+  return (
+    <>
+        <form className="grid gap-5" onSubmit={(e) => { e.preventDefault(); save.mutate({ provider, apiUrl: apiUrl.trim(), apiKey: clearApiKey ? undefined : apiKey.trim() || undefined, clearApiKey, senderNumber: senderNumber.trim(), enabled, timeoutMs }) }}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-bold">ارائه‌دهنده<Select value={provider} onChange={(e) => setProvider(e.target.value)}>{initial.providers.map((value) => <option key={value} value={value}>{value === "GENERIC_HTTP_JSON" ? "HTTP JSON عمومی" : value}</option>)}</Select></label>
+            <label className="grid gap-2 text-sm font-bold">شماره فرستنده<Input value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} dir="ltr" /></label>
+            <label className="grid gap-2 text-sm font-bold sm:col-span-2">آدرس API<Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://sms.example.com/messages" dir="ltr" /></label>
+            <label className="grid gap-2 text-sm font-bold">کلید API<Input type="password" value={apiKey} disabled={clearApiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={initial.apiKeyConfigured ? "کلید API تنظیم شده است؛ برای حفظ آن خالی بگذارید" : "کلید API"} dir="ltr" /></label>
+            <label className="grid gap-2 text-sm font-bold">مهلت اتصال (میلی‌ثانیه)<Input type="number" min={1000} max={60000} value={timeoutMs} onChange={(e) => setTimeoutMs(Number(e.target.value) || 10000)} /></label>
+          </div>
+          {initial.apiKeyConfigured ? <label className="flex items-center gap-2 text-sm text-red-700"><input type="checkbox" checked={clearApiKey} onChange={(e) => setClearApiKey(e.target.checked)} />کلید API ذخیره‌شده پاک شود</label> : null}
+          <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />کانال پیامک فعال باشد</label>
+          <div className="flex flex-wrap items-center gap-2"><StatusBadge tone={initial.configured ? "success" : "warning"}>{initial.configured ? "پیکربندی‌شده" : "ناقص"}</StatusBadge>{initial.apiKeyConfigured ? <StatusBadge tone="neutral">کلید API تنظیم شده است</StatusBadge> : null}</div>
+          <div className="flex justify-end gap-2 border-b pb-5"><Button type="button" variant="outline" onClick={onClose}>انصراف</Button><Button type="submit" disabled={save.isPending}>{save.isPending ? "در حال ذخیره..." : "ذخیره تنظیمات"}</Button></div>
+        </form>
+        <section className="mt-5 grid gap-3 rounded-2xl border border-[var(--app-divider)] p-4">
+          <h3 className="font-black">ارسال پیامک آزمایشی</h3>
+          <div className="grid gap-3 sm:grid-cols-2"><Input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="شماره موبایل گیرنده" dir="ltr" /><Input value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} placeholder="متن آزمایشی" /></div>
+          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{message.length.toLocaleString("fa-IR")} نویسه</span><Button type="button" variant="outline" disabled={!recipient.trim() || test.isPending} onClick={() => test.mutate({ recipient: recipient.trim(), message: message.trim() || undefined })}><Send className="size-4" />{test.isPending ? "در حال ارسال..." : "ارسال پیامک آزمایشی"}</Button></div>
+        </section>
+    </>
   )
 }
 
@@ -586,6 +663,16 @@ function DeliveriesTab({ events }: { events: string[] }) {
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
       }),
+  })
+  const client = useQueryClient()
+  const dispatch = useMutation({
+    mutationFn: dispatchNotificationDelivery,
+    onSuccess: async (result) => {
+      await client.invalidateQueries({ queryKey: ["notification-deliveries"] })
+      if (result.sent) toast.success("پیامک ارسال شد.")
+      else toast.info(`ارسال انجام نشد: ${result.reason ?? result.status}`)
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
   })
   const columns: DataTableColumn<NotificationDelivery>[] = [
     { id: "date", header: "زمان", cell: (r) => date(r.createdAt) },
@@ -639,6 +726,16 @@ function DeliveriesTab({ events }: { events: string[] }) {
           {date(r.deliveredAt)}
         </span>
       ),
+    },
+    {
+      id: "actions",
+      header: "عملیات",
+      cell: (r) => r.channel === "SMS" && ["PENDING", "RETRYING"].includes(r.status) ? (
+        <Button size="sm" variant="outline" disabled={dispatch.isPending} onClick={() => dispatch.mutate(r.id)}>
+          <Send className="size-4" />
+          ارسال
+        </Button>
+      ) : "—",
     },
   ]
   return (

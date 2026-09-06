@@ -1,6 +1,6 @@
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
-import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta } from "../types/rule-engine.types"
+import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta, SmsSettings } from "../types/rule-engine.types"
 
 export type TemplateInput = Pick<NotificationTemplate, "eventName" | "channel" | "locale" | "body" | "isActive" | "version"> & { subject?: string | null }
 export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; dateFrom?: string; dateTo?: string; search?: string }
@@ -40,6 +40,22 @@ export async function previewNotificationTemplate(input: Pick<TemplateInput, "ev
 export async function getNotificationChannelStatus() {
   const response = await api.get("/admin/notifications/channels/status")
   return unwrapApiResponse<NotificationChannelStatus[]>(response.data)
+}
+export async function getSmsSettings() {
+  const response = await api.get("/admin/notification-channels/sms")
+  return unwrapApiResponse<SmsSettings>(response.data)
+}
+export async function updateSmsSettings(input: { provider: string; apiUrl: string; apiKey?: string; clearApiKey?: boolean; senderNumber: string; enabled: boolean; timeoutMs: number }) {
+  const response = await api.patch("/admin/notification-channels/sms", input)
+  return unwrapApiResponse<SmsSettings>(response.data)
+}
+export async function testSmsSettings(input: { recipient: string; message?: string }) {
+  const response = await api.post("/admin/notification-channels/sms/test", input)
+  return unwrapApiResponse<{ success: boolean; providerMessageId?: string | null; errorCode?: string | null; errorMessage?: string | null }>(response.data)
+}
+export async function dispatchNotificationDelivery(id: string) {
+  const response = await api.post(`/admin/notification-deliveries/${id}/dispatch`)
+  return unwrapApiResponse<{ deliveryId: string; status: string; sent: boolean; reason?: string }>(response.data)
 }
 export async function getNotificationDeliveries(params: DeliveryFilters) {
   const response = await api.get("/admin/notification-deliveries", { params })

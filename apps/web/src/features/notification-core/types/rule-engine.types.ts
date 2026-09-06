@@ -94,8 +94,22 @@ export type NotificationChannelStatus = {
   available: boolean
   configured: boolean
   usable: boolean
+  enabled?: boolean
   provider?: string | null
   configurationPath?: string | null
+}
+
+export type SmsSettings = {
+  provider: string
+  apiUrl: string
+  senderNumber: string
+  enabled: boolean
+  timeoutMs: number
+  apiKeyConfigured: boolean
+  configured: boolean
+  usable: boolean
+  lastUpdatedAt?: string | null
+  providers: string[]
 }
 
 export type PageMeta = { total: number; page: number; limit: number; totalPages: number; hasNext: boolean; hasPrevious: boolean }
