@@ -53,6 +53,22 @@ export type NotificationTemplate = {
   updatedAt: string
 }
 
+export type NotificationTemplateVariable = {
+  key: string
+  token: string
+  label: string
+  type: "string" | "date"
+}
+
+export type NotificationTemplatePreview = {
+  eventName: string
+  channel: NotificationChannel
+  locale: string
+  subject?: string | null
+  body: string
+  missingVariables: string[]
+}
+
 export type NotificationDeliveryStatus =
   | "PENDING" | "PROCESSING" | "SENT" | "DELIVERED"
   | "FAILED" | "RETRYING" | "SKIPPED"

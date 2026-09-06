@@ -5,12 +5,14 @@ import {
   BellRing,
   FileText,
   History,
+  Eye,
   Mail,
   MessageSquare,
   Plus,
   Radio,
   Smartphone,
-  Trash2,
+  Power,
+  PowerOff,
 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHero } from "@/components/shared/PageHero"
@@ -32,11 +34,14 @@ import { AdminNotificationRulesPage } from "./AdminNotificationRulesPage"
 import { useNotificationTargets } from "../hooks/useNotificationRules"
 import {
   createNotificationTemplate,
+  activateNotificationTemplate,
   deleteNotificationTemplate,
   getNotificationAdminCatalog,
   getNotificationChannelStatus,
   getNotificationDeliveries,
   getNotificationTemplates,
+  getNotificationTemplateVariables,
+  previewNotificationTemplate,
   updateNotificationTemplate,
   type TemplateInput,
 } from "../api/notificationAdminApi"
@@ -159,24 +164,34 @@ function TemplatesTab({ events }: { events: string[] }) {
     [eventName, setEventName] = useState(""),
     [channel, setChannel] = useState(""),
     [locale, setLocale] = useState(""),
+    [active, setActive] = useState(""),
     [editing, setEditing] = useState<NotificationTemplate | "NEW" | null>(null)
   const query = useQuery({
-    queryKey: ["notification-templates", search, eventName, channel, locale],
+    queryKey: ["notification-templates", search, eventName, channel, locale, active],
     queryFn: () =>
       getNotificationTemplates({
         search: search || undefined,
         eventName: eventName || undefined,
         channel: channel || undefined,
         locale: locale || undefined,
+        isActive: active || undefined,
       }),
   })
   const remove = useMutation({
     mutationFn: deleteNotificationTemplate,
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["notification-templates"] })
-      toast.success("قالب حذف شد.")
+      toast.success("قالب غیرفعال شد و در تاریخچه باقی ماند.")
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "حذف قالب ناموفق بود.")),
+  })
+  const activate = useMutation({
+    mutationFn: activateNotificationTemplate,
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["notification-templates"] })
+      toast.success("این نسخه فعال شد.")
+    },
+    onError: (e) => toast.error(getApiErrorMessage(e, "فعال‌سازی قالب ناموفق بود.")),
   })
   const columns: DataTableColumn<NotificationTemplate>[] = [
     { id: "event", header: "رویداد", cell: (r) => eventLabel(r.eventName) },
@@ -204,17 +219,22 @@ function TemplatesTab({ events }: { events: string[] }) {
       cell: (r) => (
         <div className="flex gap-1">
           <Button size="sm" variant="outline" onClick={() => setEditing(r)}>
-            ویرایش
+            نسخه جدید
           </Button>
+          {!r.isActive ? (
+            <Button size="icon-sm" variant="ghost" title="فعال‌کردن این نسخه" onClick={() => activate.mutate(r.id)}>
+              <Power className="size-4" />
+            </Button>
+          ) : null}
           <Button
             size="icon-sm"
             variant="ghost"
             className="text-red-600"
             onClick={() => {
-              if (confirm("این قالب حذف شود؟")) remove.mutate(r.id)
+              if (confirm("این نسخه غیرفعال شود؟ تاریخچه حذف نخواهد شد.")) remove.mutate(r.id)
             }}
           >
-            <Trash2 className="size-4" />
+            <PowerOff className="size-4" />
           </Button>
         </div>
       ),
@@ -226,12 +246,13 @@ function TemplatesTab({ events }: { events: string[] }) {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="جستجو در موضوع و متن قالب"
-        hasActiveFilters={Boolean(search || eventName || channel || locale)}
+        hasActiveFilters={Boolean(search || eventName || channel || locale || active)}
         onClearFilters={() => {
           setSearch("")
           setEventName("")
           setChannel("")
           setLocale("")
+          setActive("")
         }}
         filters={
           <>
@@ -265,6 +286,11 @@ function TemplatesTab({ events }: { events: string[] }) {
               onChange={(e) => setLocale(e.target.value)}
               placeholder="زبان؛ مانند fa-IR"
             />
+            <Select value={active} onChange={(e) => setActive(e.target.value)} aria-label="وضعیت قالب">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="true">فعال</option>
+              <option value="false">غیرفعال</option>
+            </Select>
           </>
         }
         actions={
@@ -318,8 +344,17 @@ function TemplateDialog({
     [locale, setLocale] = useState(item?.locale ?? "fa-IR"),
     [subject, setSubject] = useState(item?.subject ?? ""),
     [body, setBody] = useState(item?.body ?? ""),
-    [version, setVersion] = useState(item?.version ?? 1),
-    [active, setActive] = useState(item?.isActive ?? true)
+    [active, setActive] = useState(true),
+    [insertTarget, setInsertTarget] = useState<"subject" | "body">("body")
+  const variables = useQuery({
+    queryKey: ["notification-template-variables", eventName],
+    queryFn: () => getNotificationTemplateVariables(eventName),
+    enabled: Boolean(eventName),
+  })
+  const preview = useMutation({
+    mutationFn: () => previewNotificationTemplate({ eventName, channel, locale: locale.trim() || "fa-IR", subject: subject.trim() || null, body }),
+    onError: (e) => toast.error(getApiErrorMessage(e, "پیش‌نمایش قالب ناموفق بود.")),
+  })
   const save = useMutation({
     mutationFn: (input: TemplateInput) =>
       item
@@ -327,7 +362,7 @@ function TemplateDialog({
         : createNotificationTemplate(input),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["notification-templates"] })
-      toast.success(item ? "قالب ویرایش شد." : "قالب ایجاد شد.")
+      toast.success(item ? "نسخه جدید قالب ایجاد شد." : "قالب ایجاد شد.")
       onClose()
     },
     onError: (e) =>
@@ -337,8 +372,8 @@ function TemplateDialog({
     <ResponsiveModal
       open
       onClose={onClose}
-      title={item ? "ویرایش قالب اعلان" : "ایجاد قالب اعلان"}
-      description="متن ساده و جای‌نگهدارهای مورد پشتیبانی سرویس را وارد کنید."
+      title={item ? "ایجاد نسخه جدید قالب" : "ایجاد قالب اعلان"}
+      description="محتوای هر کانال مستقل است؛ فقط متغیرهای مجاز را در متن قرار دهید."
       icon={FileText}
     >
       <form
@@ -352,7 +387,7 @@ function TemplateDialog({
             locale: locale.trim() || "fa-IR",
             subject: subject.trim() || null,
             body: body.trim(),
-            version,
+            version: item?.version ?? 1,
             isActive: active,
           })
         }}
@@ -390,30 +425,46 @@ function TemplateDialog({
             زبان
             <Input value={locale} onChange={(e) => setLocale(e.target.value)} />
           </label>
-          <label className="grid gap-2 text-sm font-bold">
-            نسخه
-            <Input
-              type="number"
-              min={1}
-              value={version}
-              onChange={(e) =>
-                setVersion(Math.max(1, Number(e.target.value) || 1))
-              }
-            />
-          </label>
+          {item ? <div className="grid gap-2 text-sm font-bold">نسخه مبنا<Input value={`نسخه ${item.version.toLocaleString("fa-IR")}`} disabled /></div> : null}
         </div>
         <label className="grid gap-2 text-sm font-bold">
           موضوع (اختیاری)
-          <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+          <Input value={subject} onFocus={() => setInsertTarget("subject")} onChange={(e) => setSubject(e.target.value)} disabled={channel === "SMS"} />
+          {channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">پیامک موضوع ندارد.</span> : null}
         </label>
         <label className="grid gap-2 text-sm font-bold">
           متن قالب
           <textarea
             className="min-h-40 rounded-xl border bg-background p-3 font-mono text-sm"
             value={body}
+            onFocus={() => setInsertTarget("body")}
             onChange={(e) => setBody(e.target.value)}
           />
         </label>
+        <section className="grid gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)] p-4">
+          <div>
+            <h3 className="text-sm font-black">متغیرهای قابل استفاده</h3>
+            <p className="mt-1 text-xs text-muted-foreground">با انتخاب هر متغیر، به {insertTarget === "subject" ? "موضوع" : "متن"} افزوده می‌شود.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {variables.data?.variables.map((variable) => (
+              <Button key={variable.key} type="button" size="sm" variant="outline" title={variable.label} onClick={() => {
+                if (insertTarget === "subject" && channel !== "SMS") setSubject((value) => `${value}${value ? " " : ""}${variable.token}`)
+                else setBody((value) => `${value}${value ? " " : ""}${variable.token}`)
+              }}>
+                <span dir="ltr">{variable.token}</span>
+              </Button>
+            ))}
+          </div>
+        </section>
+        {preview.data ? (
+          <section className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-4 text-sm dark:border-blue-900 dark:bg-blue-950/20">
+            <div className="flex items-center justify-between"><h3 className="font-black">پیش‌نمایش با داده نمونه</h3><StatusBadge tone="neutral">نمونه؛ ذخیره نمی‌شود</StatusBadge></div>
+            {preview.data.subject ? <div><span className="text-muted-foreground">موضوع: </span>{preview.data.subject}</div> : null}
+            <div className="whitespace-pre-wrap">{preview.data.body}</div>
+            {preview.data.missingVariables.length ? <p className="text-amber-700">متغیرهای بدون مقدار: {preview.data.missingVariables.join("، ")}</p> : null}
+          </section>
+        ) : null}
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -425,6 +476,10 @@ function TemplateDialog({
         <div className="flex justify-end gap-2 border-t pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             انصراف
+          </Button>
+          <Button type="button" variant="outline" disabled={!body.trim() || preview.isPending} onClick={() => preview.mutate()}>
+            <Eye className="size-4" />
+            پیش‌نمایش
           </Button>
           <Button type="submit" disabled={save.isPending}>
             {save.isPending ? "در حال ذخیره..." : "ذخیره"}

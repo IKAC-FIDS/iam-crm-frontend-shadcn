@@ -1,6 +1,6 @@
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
-import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, PageMeta } from "../types/rule-engine.types"
+import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta } from "../types/rule-engine.types"
 
 export type TemplateInput = Pick<NotificationTemplate, "eventName" | "channel" | "locale" | "body" | "isActive" | "version"> & { subject?: string | null }
 export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; dateFrom?: string; dateTo?: string; search?: string }
@@ -24,6 +24,18 @@ export async function updateNotificationTemplate(id: string, input: Partial<Temp
 export async function deleteNotificationTemplate(id: string) {
   const response = await api.delete(`/admin/notification-templates/${id}`)
   return unwrapApiResponse<{ deleted: boolean }>(response.data)
+}
+export async function activateNotificationTemplate(id: string) {
+  const response = await api.post(`/admin/notification-templates/${id}/activate`)
+  return unwrapApiResponse<NotificationTemplate>(response.data)
+}
+export async function getNotificationTemplateVariables(eventName: string) {
+  const response = await api.get("/admin/notification-templates/variables", { params: { eventName } })
+  return unwrapApiResponse<{ eventName: string; variables: NotificationTemplateVariable[] }>(response.data)
+}
+export async function previewNotificationTemplate(input: Pick<TemplateInput, "eventName" | "channel" | "locale" | "subject" | "body">) {
+  const response = await api.post("/admin/notification-templates/preview", input)
+  return unwrapApiResponse<NotificationTemplatePreview>(response.data)
 }
 export async function getNotificationChannelStatus() {
   const response = await api.get("/admin/notifications/channels/status")
