@@ -38,7 +38,7 @@ export function PersonContactDialog({
   onSubmit: (payload: PersonContactPayload) => Promise<void>
 }) {
   const text = uiText.people.contactHub
-  const contactTypesQuery = usePeopleLookup("contact_types")
+  const contactTypesQuery = usePeopleLookup("contact-types")
   const contactTypes = Array.isArray(contactTypesQuery.data)
     ? contactTypesQuery.data
     : []

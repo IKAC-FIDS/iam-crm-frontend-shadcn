@@ -20,7 +20,7 @@ const meeting:Meeting={id:"m1",companyId:"c1",title:"جلسه قبلی",meetingT
 const contactType={id:"contact-type-work",group:"contact_types",code:"WORK",label:"تلفن کاری",sortOrder:10,isActive:true}
 beforeEach(()=>{
   vi.clearAllMocks()
-  vi.mocked(api.get).mockImplementation(async(url)=>String(url).includes("/lookups/contact_types")?response([contactType]):String(url).includes("types/options")?response([meeting.type]):response({data:[],meta:{page:1,limit:25,total:0,totalPages:0}}))
+  vi.mocked(api.get).mockImplementation(async(url)=>String(url).includes("/lookups/contact-types")?response([contactType]):String(url).includes("types/options")?response([meeting.type]):response({data:[],meta:{page:1,limit:25,total:0,totalPages:0}}))
   vi.mocked(api.post).mockResolvedValue(response({id:"new"}))
   vi.mocked(api.patch).mockResolvedValue(response(meeting))
   useAuthStore.setState({
