@@ -435,7 +435,8 @@ function TemplateDialog({
         </div>
         <label className="grid gap-2 text-sm font-bold">
           موضوع (اختیاری)
-          <Input value={subject} onFocus={() => setInsertTarget("subject")} onChange={(e) => setSubject(e.target.value)} disabled={channel === "SMS"} />
+          <Input value={subject} required={channel === "IN_APP"} onFocus={() => setInsertTarget("subject")} onChange={(e) => setSubject(e.target.value)} disabled={channel === "SMS"} />
+          {channel === "IN_APP" ? <span className="text-xs font-normal text-muted-foreground">عنوان اعلان داخل سامانه الزامی است.</span> : null}
           {channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">پیامک موضوع ندارد.</span> : null}
         </label>
         <label className="grid gap-2 text-sm font-bold">
@@ -669,7 +670,8 @@ function DeliveriesTab({ events }: { events: string[] }) {
     mutationFn: dispatchNotificationDelivery,
     onSuccess: async (result) => {
       await client.invalidateQueries({ queryKey: ["notification-deliveries"] })
-      if (result.sent) toast.success("پیامک ارسال شد.")
+      await client.invalidateQueries({ queryKey: ["notifications"] })
+      if (result.sent) toast.success("اعلان ارسال شد.")
       else toast.info(`ارسال انجام نشد: ${result.reason ?? result.status}`)
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
@@ -713,7 +715,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
     { id: "failure", header: "خطا", cell: (r) => r.failureMessage || "—" },
     {
       id: "provider",
-      header: "شناسه ارائه‌دهنده",
+      header: "شناسه پیام / اعلان داخلی",
       cell: (r) => r.providerMessageId || "—",
     },
     {
@@ -730,7 +732,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
     {
       id: "actions",
       header: "عملیات",
-      cell: (r) => r.channel === "SMS" && ["PENDING", "RETRYING"].includes(r.status) ? (
+      cell: (r) => ((r.channel === "SMS" && ["PENDING", "RETRYING"].includes(r.status)) || (r.channel === "IN_APP" && ["PENDING", "RETRYING", "FAILED"].includes(r.status))) ? (
         <Button size="sm" variant="outline" disabled={dispatch.isPending} onClick={() => dispatch.mutate(r.id)}>
           <Send className="size-4" />
           ارسال

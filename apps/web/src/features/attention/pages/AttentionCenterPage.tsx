@@ -1,4 +1,5 @@
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { safeNotificationActionUrl, notificationInboxState } from "@/features/notifications/utils/notificationDisplay"
 import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { Eye, Archive, Trash2, CalendarClock } from "lucide-react"
 import { PageHero } from "@/components/shared/PageHero"
@@ -618,14 +619,15 @@ function NotificationList({
     remove = useDeleteNotification()
 
   async function openNotification(notification: Notification) {
-    if (canManage && !notification.readAt)
-      await markRead.mutateAsync(notification.id)
-    if (
-      notification.actionUrl?.startsWith("/") &&
-      !notification.actionUrl.startsWith("//")
-    )
-      navigate(notification.actionUrl)
+    try {
+      if (canManage && !notification.readAt) await markRead.mutateAsync(notification.id)
+      const actionUrl = safeNotificationActionUrl(notification.actionUrl)
+      if (actionUrl) navigate(actionUrl)
+      else setDetail(notification)
+    } catch (error) { toast.error(getApiErrorMessage(error, "باز کردن اعلان ناموفق بود")) }
   }
+
+  const [detail, setDetail] = useState<Notification | null>(null)
 
   const columns: DataTableColumn<Notification>[] = [
     {
@@ -645,8 +647,8 @@ function NotificationList({
       header: "وضعیت",
       className: "min-w-32",
       cell: (n) => (
-        <StatusBadge tone={n.readAt ? "neutral" : "primary"}>
-          {n.readAt ? "خوانده‌شده" : "خوانده‌نشده"}
+        <StatusBadge tone={n.readAt || n.archivedAt ? "neutral" : "primary"}>
+          {notificationInboxState(n)}
         </StatusBadge>
       ),
     },
@@ -690,7 +692,7 @@ function NotificationList({
               label: "مشاهده",
               icon: Eye,
               onClick: () => openNotification(n),
-              enabled: Boolean(n.actionUrl),
+              enabled: true,
             },
             {
               id: "read",
@@ -734,6 +736,12 @@ function NotificationList({
 
   return (
     <div className="grid min-w-0 gap-4">
+      <Dialog open={Boolean(detail)} onOpenChange={(open) => { if (!open) setDetail(null) }}>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto" dir="rtl">
+          <DialogHeader><DialogTitle>{detail?.title}</DialogTitle></DialogHeader>
+          <p className="whitespace-pre-wrap break-words text-sm leading-7">{detail?.body || "این اعلان متن بیشتری ندارد."}</p>
+        </DialogContent>
+      </Dialog>
       <DataTableToolbar
         searchValue={search}
         onSearchChange={setSearch}
