@@ -114,6 +114,7 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 
 export function AdminNotificationsPage() {
   const [createRuleOpen, setCreateRuleOpen] = useState(false)
+  const [createTemplateOpen, setCreateTemplateOpen] = useState(false)
   const [params, setParams] = useSearchParams()
   const tab = (
     tabs.some((item) => item.id === params.get("tab"))
@@ -134,11 +135,21 @@ export function AdminNotificationsPage() {
         description="مدیریت قوانین، قالب‌ها، کانال‌های ارسال و تاریخچه اعلان‌ها"
         accessBadge={{ label: "مدیریت اعلان‌ها", icon: BellRing }}
         backFallback="/dashboard"
-        primaryAction={tab === "rules" ? {
-          label: "ایجاد قانون",
-          icon: Plus,
-          onClick: () => setCreateRuleOpen(true),
-        } : undefined}
+        primaryAction={
+          tab === "rules"
+            ? {
+                label: "ایجاد قانون",
+                icon: Plus,
+                onClick: () => setCreateRuleOpen(true),
+              }
+            : tab === "templates"
+              ? {
+                  label: "قالب جدید",
+                  icon: Plus,
+                  onClick: () => setCreateTemplateOpen(true),
+                }
+              : undefined
+        }
       />
       <nav
         aria-label="بخش‌های تنظیمات اعلان"
@@ -158,6 +169,13 @@ export function AdminNotificationsPage() {
       </nav>
       {tab === "rules" ? <AdminNotificationRulesPage embedded /> : null}
       {createRuleOpen ? <RuleDialog open onOpenChange={setCreateRuleOpen} /> : null}
+      {createTemplateOpen ? (
+        <TemplateDialog
+          item={null}
+          events={catalog.data?.events.map((item) => item.eventName) ?? []}
+          onClose={() => setCreateTemplateOpen(false)}
+        />
+      ) : null}
       {tab === "templates" ? (
         <TemplatesTab
           events={catalog.data?.events.map((item) => item.eventName) ?? []}
@@ -307,12 +325,6 @@ function TemplatesTab({ events }: { events: string[] }) {
               <option value="false">غیرفعال</option>
             </Select>
           </>
-        }
-        actions={
-          <Button onClick={() => setEditing("NEW")}>
-            <Plus className="size-4" />
-            قالب جدید
-          </Button>
         }
       />
       <QueryContent query={query} errorTitle="دریافت قالب‌ها ناموفق بود">
