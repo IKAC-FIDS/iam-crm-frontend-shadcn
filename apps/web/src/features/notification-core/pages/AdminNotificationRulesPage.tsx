@@ -78,7 +78,7 @@ function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   )
 }
 
-function RuleDialog({
+export function RuleDialog({
   open,
   onOpenChange,
   rule,

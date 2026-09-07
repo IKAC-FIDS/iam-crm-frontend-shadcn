@@ -25,6 +25,8 @@ import {
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
+import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
@@ -32,7 +34,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { AdminNotificationRulesPage } from "./AdminNotificationRulesPage"
+import { AdminNotificationRulesPage, RuleDialog } from "./AdminNotificationRulesPage"
 import { useNotificationTargets } from "../hooks/useNotificationRules"
 import {
   createNotificationTemplate,
@@ -111,6 +113,7 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 }
 
 export function AdminNotificationsPage() {
+  const [createRuleOpen, setCreateRuleOpen] = useState(false)
   const [params, setParams] = useSearchParams()
   const tab = (
     tabs.some((item) => item.id === params.get("tab"))
@@ -131,6 +134,11 @@ export function AdminNotificationsPage() {
         description="مدیریت قوانین، قالب‌ها، کانال‌های ارسال و تاریخچه اعلان‌ها"
         accessBadge={{ label: "مدیریت اعلان‌ها", icon: BellRing }}
         backFallback="/dashboard"
+        primaryAction={tab === "rules" ? {
+          label: "ایجاد قانون",
+          icon: Plus,
+          onClick: () => setCreateRuleOpen(true),
+        } : undefined}
       />
       <nav
         aria-label="بخش‌های تنظیمات اعلان"
@@ -149,6 +157,7 @@ export function AdminNotificationsPage() {
         ))}
       </nav>
       {tab === "rules" ? <AdminNotificationRulesPage embedded /> : null}
+      {createRuleOpen ? <RuleDialog open onOpenChange={setCreateRuleOpen} /> : null}
       {tab === "templates" ? (
         <TemplatesTab
           events={catalog.data?.events.map((item) => item.eventName) ?? []}
@@ -540,7 +549,7 @@ function ChannelsTab() {
               <p className="mt-3 text-xs">
                 ارائه‌دهنده: {item.provider || "تعریف نشده"}
               </p>
-              {item.configurationPath ? (
+              {item.channel === "EMAIL" && item.configurationPath ? (
                 <Button
                   className="mt-4"
                   variant="outline"
@@ -834,26 +843,28 @@ function DeliveriesTab({ events }: { events: string[] }) {
             </div>
             <label className="grid gap-1 text-xs text-muted-foreground">
               از تاریخ
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value)
+              <PersianDatePicker
+                ariaLabel="از تاریخ"
+                placeholder="از تاریخ"
+                value={fromApiDate(dateFrom)}
+                maxDate={fromApiDate(dateTo)}
+                onChange={(value) => {
+                  setDateFrom(toApiDate(value) ?? "")
                   setPage(1)
                 }}
-                className="h-11 rounded-xl"
               />
             </label>
             <label className="grid gap-1 text-xs text-muted-foreground">
               تا تاریخ
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value)
+              <PersianDatePicker
+                ariaLabel="تا تاریخ"
+                placeholder="تا تاریخ"
+                value={fromApiDate(dateTo)}
+                minDate={fromApiDate(dateFrom)}
+                onChange={(value) => {
+                  setDateTo(toApiDate(value) ?? "")
                   setPage(1)
                 }}
-                className="h-11 rounded-xl"
               />
             </label>
           </>
