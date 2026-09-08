@@ -112,6 +112,19 @@ export type SmsSettings = {
   providers: string[]
 }
 
+export type PushSettings = {
+  provider: string
+  publicKey: string
+  subject: string
+  enabled: boolean
+  timeoutMs: number
+  privateKeyConfigured: boolean
+  configured: boolean
+  usable: boolean
+  lastUpdatedAt?: string | null
+  providers: string[]
+}
+
 export type PageMeta = { total: number; page: number; limit: number; totalPages: number; hasNext: boolean; hasPrevious: boolean }
 
 export type NotificationRuleTarget = {

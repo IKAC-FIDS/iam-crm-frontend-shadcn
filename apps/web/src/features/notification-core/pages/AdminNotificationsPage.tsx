@@ -48,6 +48,9 @@ import {
   previewNotificationTemplate,
   updateNotificationTemplate,
   getSmsSettings,
+  getPushSettings,
+  updatePushSettings,
+  testPushSettings,
   updateSmsSettings,
   testSmsSettings,
   dispatchNotificationDelivery,
@@ -520,6 +523,7 @@ function TemplateDialog({
 
 function ChannelsTab() {
   const [smsOpen, setSmsOpen] = useState(false)
+  const [pushOpen, setPushOpen] = useState(false)
   const query = useQuery({
     queryKey: ["notification-channels"],
     queryFn: getNotificationChannelStatus,
@@ -576,13 +580,39 @@ function ChannelsTab() {
                   تنظیمات پیامک
                 </Button>
               ) : null}
+              {item.channel === "PUSH" ? (
+                <Button className="mt-4" variant="outline" onClick={() => setPushOpen(true)}>
+                  <Settings className="size-4" />
+                  تنظیمات پوش
+                </Button>
+              ) : null}
             </article>
           )
         })}
       </div>
       {smsOpen ? <SmsSettingsDialog onClose={() => setSmsOpen(false)} /> : null}
+      {pushOpen ? <PushSettingsDialog onClose={() => setPushOpen(false)} /> : null}
     </QueryContent>
   )
+}
+
+function PushSettingsDialog({ onClose }: { onClose: () => void }) {
+  const query = useQuery({ queryKey: ["push-settings"], queryFn: getPushSettings })
+  return <ResponsiveModal open onClose={onClose} title="تنظیمات کانال پوش" description="کلید خصوصی رمزنگاری می‌شود و پس از ذخیره هرگز نمایش داده نخواهد شد." icon={Smartphone}>
+    <QueryContent query={query} errorTitle="دریافت تنظیمات پوش ناموفق بود">{query.data ? <PushSettingsForm initial={query.data} onClose={onClose} /> : null}</QueryContent>
+  </ResponsiveModal>
+}
+
+function PushSettingsForm({ initial, onClose }: { initial: import("../types/rule-engine.types").PushSettings; onClose: () => void }) {
+  const client = useQueryClient()
+  const [publicKey, setPublicKey] = useState(initial.publicKey), [privateKey, setPrivateKey] = useState(""), [clearPrivateKey, setClearPrivateKey] = useState(false), [subject, setSubject] = useState(initial.subject), [enabled, setEnabled] = useState(initial.enabled), [timeoutMs, setTimeoutMs] = useState(initial.timeoutMs), [recipientUserId, setRecipientUserId] = useState(""), [recipientSearch, setRecipientSearch] = useState("")
+  const recipients = useNotificationTargets("USER", recipientSearch)
+  const save = useMutation({ mutationFn: updatePushSettings, onSuccess: async () => { setPrivateKey(""); await Promise.all([client.invalidateQueries({ queryKey: ["push-settings"] }), client.invalidateQueries({ queryKey: ["notification-channels"] })]); toast.success("تنظیمات پوش ذخیره شد.") }, onError: e => toast.error(getApiErrorMessage(e, "ذخیره تنظیمات پوش ناموفق بود.")) })
+  const test = useMutation({ mutationFn: testPushSettings, onSuccess: result => result.successful ? toast.success(`${result.successful.toLocaleString("fa-IR")} مقصد اعلان را دریافت کرد.`) : toast.error(result.attempted ? "ارسال به همه مقصدها ناموفق بود." : "این کاربر اشتراک پوش فعالی ندارد."), onError: e => toast.error(getApiErrorMessage(e, "ارسال پوش آزمایشی ناموفق بود.")) })
+  return <div className="grid gap-5"><form className="grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate({ provider: initial.provider || "WEB_PUSH", publicKey: publicKey.trim(), privateKey: clearPrivateKey ? undefined : privateKey.trim() || undefined, clearPrivateKey, subject: subject.trim(), enabled, timeoutMs }) }}>
+    <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold">ارائه‌دهنده<Select value="WEB_PUSH" disabled><option value="WEB_PUSH">Web Push</option></Select></label><label className="grid gap-2 text-sm font-bold">مهلت اتصال<Input type="number" min={1000} max={60000} value={timeoutMs} onChange={e => setTimeoutMs(Number(e.target.value) || 10000)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">Subject / اطلاعات تماس<Input dir="ltr" placeholder="mailto:admin@neshane.co" value={subject} onChange={e => setSubject(e.target.value)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">کلید عمومی VAPID<Input dir="ltr" value={publicKey} onChange={e => setPublicKey(e.target.value)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">کلید خصوصی VAPID<Input type="password" dir="ltr" disabled={clearPrivateKey} value={privateKey} onChange={e => setPrivateKey(e.target.value)} placeholder={initial.privateKeyConfigured ? "تنظیم شده است؛ برای حفظ آن خالی بگذارید" : "کلید خصوصی"} /></label></div>
+    {initial.privateKeyConfigured ? <label className="flex gap-2 text-sm text-red-700"><input type="checkbox" checked={clearPrivateKey} onChange={e => setClearPrivateKey(e.target.checked)} />کلید خصوصی ذخیره‌شده پاک شود</label> : null}<label className="flex gap-2 text-sm font-bold"><input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />کانال پوش فعال باشد</label><p className="text-xs text-muted-foreground">برای ساخت کلیدها اجرا کنید: <code dir="ltr">npx web-push generate-vapid-keys</code></p><div className="flex justify-end gap-2 border-b pb-5"><Button type="button" variant="outline" onClick={onClose}>انصراف</Button><Button type="submit" disabled={save.isPending}>ذخیره تنظیمات</Button></div>
+  </form><section className="grid gap-3 rounded-2xl border p-4"><h3 className="font-black">ارسال آزمایشی</h3><SearchableOptionSelect value={recipientUserId || undefined} onChange={value => setRecipientUserId(value ?? "")} options={(recipients.data ?? []).map(item => ({ id: item.id, label: item.name, secondary: item.description }))} search={recipientSearch} onSearchChange={setRecipientSearch} loading={recipients.isFetching} placeholder="انتخاب کاربر دارای اشتراک" ariaLabel="گیرنده تست پوش" /><Button variant="outline" disabled={!recipientUserId || test.isPending} onClick={() => test.mutate({ recipientUserId })}><Send className="size-4" />ارسال اعلان آزمایشی</Button></section></div>
 }
 
 function SmsSettingsDialog({ onClose }: { onClose: () => void }) {

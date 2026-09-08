@@ -15,9 +15,9 @@
     forbiddenTitle: "دسترسی غیرمجاز",
     notFoundTitle: "صفحه پیدا نشد",
     logoutFailed: "خروج محلی انجام شد، اما پایان نشست روی سرور تأیید نشد. اتصال را بررسی کنید.",
-    name: "NESHANE CRM",
+    name: "NESHANE OPERATION CENTER",
     tagline: "فضای کاری امن و یکپارچه",
-    workspaceSubtitle: "فضای کاری مدیریت ارتباط با مشتری",
+    workspaceSubtitle: "مرکز یکپارچه عملیات نشانه",
   },
 
   common: {

@@ -8,7 +8,6 @@ import {
   Fingerprint,
   LockKeyhole,
   Mail,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -68,8 +67,8 @@ export function LoginPage() {
     <main className="grid min-h-svh w-full bg-[#FCFCFF] lg:grid-cols-2">
       <section className="flex min-h-svh flex-col px-6 py-6 sm:px-10 md:px-14 lg:px-16 xl:px-24">
         <div className="flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-[#0053B2] text-white shadow-lg shadow-[#0053B2]/20">
-            <ShieldCheck className="size-5" />
+          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white p-1.5 shadow-lg shadow-[#0053B2]/15 ring-1 ring-[#0053B2]/10">
+            <img src="/neshane-logo.png" alt="لوگوی NESHANE OPERATION CENTER" className="size-full object-contain" />
           </div>
 
           <div>

@@ -22,6 +22,7 @@ import {
   type DataTableColumn,
 } from "@/components/shared/DataTableShell"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { PushNotificationSettingsCard } from "@/features/notification-push/components/PushNotificationSettingsCard"
 import { useAuthStore } from "@/store/authStore"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -368,6 +369,7 @@ export function AccountSecurityPage() {
             خروج از همه دستگاه‌های دیگر
           </Button>
         </article>
+        <PushNotificationSettingsCard />
       </section>
       <section className="grid gap-3">
         <div className="flex items-center justify-between">

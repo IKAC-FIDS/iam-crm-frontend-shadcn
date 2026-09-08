@@ -1,6 +1,6 @@
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
-import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta, SmsSettings } from "../types/rule-engine.types"
+import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta, PushSettings, SmsSettings } from "../types/rule-engine.types"
 
 export type TemplateInput = Pick<NotificationTemplate, "eventName" | "channel" | "locale" | "body" | "isActive" | "version"> & { subject?: string | null }
 export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; dateFrom?: string; dateTo?: string; search?: string }
@@ -52,6 +52,18 @@ export async function updateSmsSettings(input: { provider: string; apiUrl: strin
 export async function testSmsSettings(input: { recipient: string; message?: string }) {
   const response = await api.post("/admin/notification-channels/sms/test", input)
   return unwrapApiResponse<{ success: boolean; providerMessageId?: string | null; errorCode?: string | null; errorMessage?: string | null }>(response.data)
+}
+export async function getPushSettings() {
+  const response = await api.get("/admin/notification-channels/push")
+  return unwrapApiResponse<PushSettings>(response.data)
+}
+export async function updatePushSettings(input: { provider: string; publicKey?: string; privateKey?: string; clearPrivateKey?: boolean; subject?: string; enabled: boolean; timeoutMs: number }) {
+  const response = await api.patch("/admin/notification-channels/push", input)
+  return unwrapApiResponse<PushSettings>(response.data)
+}
+export async function testPushSettings(input: { recipientUserId: string; title?: string; body?: string }) {
+  const response = await api.post("/admin/notification-channels/push/test", input)
+  return unwrapApiResponse<{ attempted: number; successful: number; failed: number }>(response.data)
 }
 export async function dispatchNotificationDelivery(id: string) {
   const response = await api.post(`/admin/notification-deliveries/${id}/dispatch`)
