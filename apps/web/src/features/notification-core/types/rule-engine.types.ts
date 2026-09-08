@@ -23,6 +23,7 @@ export type NotificationRule = {
   enabled: boolean
   mandatory: boolean
   priority: number
+  conditions?: NotificationRuleConditions | null
   recipientRules: NotificationRecipientRule[]
   createdAt?: string
   updatedAt?: string
@@ -30,9 +31,18 @@ export type NotificationRule = {
 
 export type NotificationRuleCatalog = {
   events: string[]
+  conditionEvents: NotificationConditionEventDefinition[]
   recipientTypes: NotificationRecipientType[]
   channels: NotificationChannel[]
 }
+
+export type NotificationConditionOperator = "EQ" | "NEQ" | "IN" | "NOT_IN" | "EXISTS" | "NOT_EXISTS" | "GT" | "GTE" | "LT" | "LTE"
+export type NotificationConditionValue = string | number | boolean | null | Array<string | number | boolean | null>
+export type NotificationConditionLeaf = { field: string; operator: NotificationConditionOperator; value?: NotificationConditionValue }
+export type NotificationConditionGroup = { logic: "AND" | "OR"; conditions: Array<NotificationConditionLeaf | NotificationConditionGroup> }
+export type NotificationRuleConditions = { version: 1; logic: "AND" | "OR"; conditions: Array<NotificationConditionLeaf | NotificationConditionGroup> }
+export type NotificationConditionFieldDefinition = { field: string; label: string; type: "string" | "number" | "boolean" | "enum" | "userId" | "teamId"; operators: NotificationConditionOperator[]; values?: string[]; control?: "select" | "text" | "number" }
+export type NotificationConditionEventDefinition = { eventName: string; label: string; conditionFields: NotificationConditionFieldDefinition[] }
 
 export type NotificationEventMeta = {
   eventName: string
@@ -146,5 +156,6 @@ export type NotificationRuleInput = {
   enabled?: boolean
   mandatory?: boolean
   priority?: number
+  conditions?: NotificationRuleConditions | null
   recipientRules: RecipientRuleInput[]
 }

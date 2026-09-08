@@ -5,6 +5,7 @@ import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { RuleConditionBuilder } from "../components/RuleConditionBuilder"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
@@ -24,6 +25,7 @@ import type {
   NotificationChannel,
   NotificationRecipientType,
   NotificationRule,
+  NotificationRuleConditions,
   NotificationRuleInput,
   RecipientRuleInput,
 } from "../types/rule-engine.types"
@@ -35,6 +37,7 @@ const eventLabels: Record<string, string> = {
   "TASK.ASSIGNED": "ارجاع کار",
   "TASK.REASSIGNED": "ارجاع مجدد کار",
   "TASK.COMPLETED": "تکمیل کار",
+  "OPPORTUNITY.STAGE_CHANGED": "تغییر مرحله فرصت",
 }
 const actionLabels: Record<string, string> = {
   CREATED: "ایجاد",
@@ -43,6 +46,7 @@ const actionLabels: Record<string, string> = {
   ASSIGNED: "ارجاع",
   REASSIGNED: "ارجاع مجدد",
   COMPLETED: "تکمیل",
+  STAGE_CHANGED: "تغییر مرحله",
 }
 
 const recipientLabels: Record<NotificationRecipientType, string> = {
@@ -95,6 +99,7 @@ export function RuleDialog({
   )
   const [priority, setPriority] = useState(rule?.priority ?? 100)
   const [mandatory, setMandatory] = useState(rule?.mandatory ?? false)
+  const [conditions, setConditions] = useState<NotificationRuleConditions | null>(rule?.conditions ?? null)
   const [recipients, setRecipients] = useState<RecipientRuleInput[]>(
     rule?.recipientRules?.length
       ? rule.recipientRules.map((item) => ({
@@ -121,6 +126,7 @@ export function RuleDialog({
   const channels =
     catalog.data?.channels ??
     (Object.keys(channelLabels) as NotificationChannel[])
+  const conditionFields = catalog.data?.conditionEvents?.find(item => item.eventName === eventName)?.conditionFields ?? []
 
   const updateRecipient = (
     index: number,
@@ -160,6 +166,7 @@ export function RuleDialog({
       priority,
       mandatory,
       enabled: rule?.enabled ?? true,
+      conditions,
       recipientRules: recipients,
     }
 
@@ -205,7 +212,7 @@ export function RuleDialog({
                   const first = events.find((event) =>
                     event.startsWith(`${service}.`)
                   )
-                  if (first) setEventName(first)
+                  if (first) { setEventName(first); setConditions(null) }
                 }}
               >
                 {services.map((service) => (
@@ -214,6 +221,8 @@ export function RuleDialog({
                       ? "جلسه"
                       : service === "TASK"
                         ? "کار"
+                        : service === "OPPORTUNITY"
+                          ? "فرصت"
                         : service}
                   </option>
                 ))}
@@ -223,9 +232,7 @@ export function RuleDialog({
               <span>اکشن</span>
               <NativeSelect
                 value={selectedAction}
-                onChange={(e) =>
-                  setEventName(`${selectedService}.${e.target.value}`)
-                }
+                onChange={(e) => { setEventName(`${selectedService}.${e.target.value}`); setConditions(null) }}
               >
                 {actions.map((action) => {
                   const value = `${selectedService}.${action}`
@@ -257,6 +264,8 @@ export function RuleDialog({
               <span>اعلان سازمانی اجباری</span>
             </label>
           </div>
+
+          <RuleConditionBuilder fields={conditionFields} value={conditions} onChange={setConditions} />
 
           <div className="grid gap-3">
             <div className="flex items-center justify-between">
