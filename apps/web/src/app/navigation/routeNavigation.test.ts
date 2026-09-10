@@ -47,6 +47,15 @@ describe("operations navigation", () => {
     expect(ids).not.toContain("attention")
   })
 
+  it("keeps email configuration routable but removes its duplicate menu item", () => {
+    const ids = getVisibleMenuGroups(
+      user(["organization:manage", "notification:manage"])
+    ).flatMap((item) => item.routes.map((route) => route.id))
+
+    expect(ids).toContain("admin-notifications")
+    expect(ids).not.toContain("admin-email-settings")
+  })
+
   it("keeps the unified technical library active on its legacy child routes", () => {
     expect(isMenuRouteActive("/technical/library", "/technical/resources/r1")).toBe(true)
     expect(isMenuRouteActive("/technical/library", "/technical/documents/d1")).toBe(true)

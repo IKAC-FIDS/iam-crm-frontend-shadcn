@@ -263,6 +263,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     order: 285,
     icon: Mail,
     access: any(["organization:manage"]),
+    showInNavigation: false,
   },
   {
     id: "admin-notifications",
