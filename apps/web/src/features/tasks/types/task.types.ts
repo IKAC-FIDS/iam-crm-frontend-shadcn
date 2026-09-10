@@ -12,6 +12,7 @@ export interface TaskUser {
   role?: string | null
   team?: string | null
   teamId?: string | null
+  avatarObjectKey?: string | null
 }
 
 export interface Task {
@@ -30,7 +31,7 @@ export interface Task {
   subtasks?: Array<Pick<Task, "id" | "title" | "status" | "priority" | "dueAt" | "assignedTo">>
   _count?: { subtasks: number; reviewRounds?: number }
   companyId?: string | null
-  company?: { id: string; legalName?: string | null; brandName?: string | null; ownerId?: string | null } | null
+  company?: { id: string; legalName?: string | null; brandName?: string | null; ownerId?: string | null; logoObjectKey?: string | null } | null
   personId?: string | null
   person?: { id: string; fullName?: string | null; title?: string | null; companyId?: string | null } | null
   opportunityId?: string | null

@@ -14,11 +14,15 @@ describe("EntityCardList", () => {
         title={(item) => item.name}
         subtitle={() => "زیرعنوان"}
         media={() => <span aria-label="logo">ن</span>}
+        badges={() => <span>فعال</span>}
+        tags={() => <span>مشتری ویژه</span>}
         onRowClick={open}
         actions={() => <button onClick={action}>عملیات</button>}
       />,
     )
     expect(screen.getByLabelText("logo")).toBeInTheDocument()
+    expect(screen.getByText("فعال")).toBeInTheDocument()
+    expect(screen.getByText("مشتری ویژه")).toBeInTheDocument()
     fireEvent.click(screen.getByText("عملیات"))
     expect(action).toHaveBeenCalledOnce()
     expect(open).not.toHaveBeenCalled()

@@ -66,14 +66,14 @@ it("Meetings preserves list view and sends meeting type to the server",async()=>
 })
 it("Tasks preserves priority and server paging when changing page size",async()=>{
   mount(<TasksPage/>,"/tasks?view=list&page=2&priority=HIGH")
-  expect(await screen.findByRole("table")).toHaveTextContent("کار نمونه")
+  expect(await screen.findByText("کار نمونه")).toBeInTheDocument()
   expectParams("/tasks",{page:2,priority:"HIGH"})
   await userEvent.selectOptions(screen.getByLabelText(uiText.common.pagination.rowsPerPage),"50")
   await waitFor(()=>expectParams("/tasks",{page:1,limit:50,priority:"HIGH"}))
 })
 it("Tasks sends organization-work filters to the server",async()=>{
   mount(<TasksPage/>,"/tasks?view=list&teamId=t1&dueState=overdue&linkedEntityType=MEETING&quick=organization")
-  expect(await screen.findByRole("table")).toHaveTextContent("کار نمونه")
+  expect(await screen.findByText("کار نمونه")).toBeInTheDocument()
   expectParams("/tasks",{teamId:"t1",dueState:"overdue",linkedEntityType:"MEETING",view:"organization"})
 })
 it("Audit deep links preserve every operational filter at the API boundary",async()=>{

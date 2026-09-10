@@ -28,6 +28,8 @@ export type EntityCardListProps<T> = {
   title?: (item: T) => ReactNode
   subtitle?: (item: T) => ReactNode
   media?: (item: T) => ReactNode
+  badges?: (item: T) => ReactNode
+  tags?: (item: T) => ReactNode
 }
 
 function fieldPriorityClass(priority: EntityCardField<unknown>["priority"]) {
@@ -54,6 +56,8 @@ export function EntityCardList<T>({
   title,
   subtitle,
   media,
+  badges,
+  tags,
 }: EntityCardListProps<T>) {
   if (!rows.length) return <>{emptyState || null}</>
 
@@ -94,13 +98,15 @@ export function EntityCardList<T>({
                 compact ? "p-3" : "p-4 sm:p-5",
               )}
             >
-              {title || subtitle || media ? (
+              {title || subtitle || media || badges || tags ? (
                 <div className="relative overflow-hidden rounded-2xl border border-[var(--app-primary)]/10 bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_72%)] px-4 py-5 text-center">
                   <div className="pointer-events-none absolute -end-8 -top-10 size-28 rounded-full bg-[var(--app-primary)]/10 blur-2xl" />
                   <div className="relative grid justify-items-center gap-2">
                     {media ? media(item) : null}
+                    {badges ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{badges(item)}</div> : null}
                     {title ? <div className="max-w-full truncate text-base font-extrabold text-[var(--app-heading)]">{title(item)}</div> : null}
                     {subtitle ? <div className="max-w-full truncate text-xs text-[var(--app-text-secondary)]">{subtitle(item)}</div> : null}
+                    {tags ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{tags(item)}</div> : null}
                   </div>
                 </div>
               ) : null}

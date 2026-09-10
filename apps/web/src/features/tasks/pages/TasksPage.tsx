@@ -5,7 +5,6 @@ import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import {
   AlertTriangle,
-  List,
   ListChecks,
   Plus,
 } from "lucide-react"
@@ -23,7 +22,6 @@ import { useAuthStore } from "@/store/authStore"
 
 import { TaskActionDialogs } from "../components/TaskActionDialogs"
 import type { TaskDialogAction } from "../components/TaskActionsMenu"
-import { TaskFocusView } from "../components/TaskFocusView"
 import { TaskFormDialog } from "../components/TaskFormDialog"
 import { canReassignTask } from "../taskPermissions"
 import { TaskList } from "../components/TaskList"
@@ -42,7 +40,6 @@ import type {
   TaskEntityType,
 } from "../types/task.types"
 
-type ViewMode = "focus" | "list"
 type QuickFilter =
   | "all"
   | "overdue"
@@ -69,7 +66,6 @@ export function TasksPage() {
   const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")
 
-  const view = (params.get("view") === "list" ? "list" : "focus") as ViewMode
   const quick = normalizeQuick(params.get("quick"))
   const search = params.get("search") || ""
   const companyId = params.get("companyId") || ""
@@ -191,10 +187,6 @@ export function TasksPage() {
   function setQuick(value: QuickFilter) {
     patch({ quick: value === "all" ? undefined : value })
   }
-  function switchView(nextView: ViewMode) {
-    updateParam("view", nextView)
-  }
-
   function clearFilters() {
     patch(
       Object.fromEntries(
@@ -266,12 +258,6 @@ export function TasksPage() {
         eyebrow={"مرکز مدیریت کارها"}
         icon={ListChecks}
         primaryAction={canCreate ? { label: text.actions.create, icon: Plus, onClick: () => setCreateOpen(true) } : undefined}
-        viewOptions={[
-          { id: "focus", label: text.views.focus, icon: ListChecks },
-          { id: "list", label: text.views.list, icon: List },
-        ]}
-        activeView={view}
-        onViewChange={(next) => switchView(next as ViewMode)}
       />
 
       <DataTableToolbar
@@ -423,31 +409,17 @@ export function TasksPage() {
       />
 
       <QueryContent query={tasks} errorTitle={text.errors.listTitle}>
-        {view === "list" ? (
-          <TaskList
-            tasks={tasks.data?.data ?? []}
-            canCreate={canCreate}
-            canUpdate={canUpdate}
-            canAssign={canAssign}
-            canComplete={canComplete}
-            canDelete={canDelete}
-            onCreate={() => setCreateOpen(true)}
-            onEdit={setEditTask}
-            onAction={openAction}
-          />
-        ) : (
-          <TaskFocusView
-            tasks={tasks.data?.data ?? []}
-            canCreate={canCreate}
-            canUpdate={canUpdate}
-            canAssign={canAssign}
-            canComplete={canComplete}
-            canDelete={canDelete}
-            onCreate={() => setCreateOpen(true)}
-            onEdit={setEditTask}
-            onAction={openAction}
-          />
-        )}
+        <TaskList
+          tasks={tasks.data?.data ?? []}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
+          canAssign={canAssign}
+          canComplete={canComplete}
+          canDelete={canDelete}
+          onCreate={() => setCreateOpen(true)}
+          onEdit={setEditTask}
+          onAction={openAction}
+        />
       </QueryContent>
       {tasks.data ? (
         <PaginationControls
