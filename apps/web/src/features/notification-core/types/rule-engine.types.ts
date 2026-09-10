@@ -100,6 +100,9 @@ export type NotificationDelivery = {
   providerMessageId?: string | null
   failureCode?: string | null
   failureMessage?: string | null
+  lastAttemptAt?: string | null
+  nextAttemptAt?: string | null
+  processingStartedAt?: string | null
   sentAt?: string | null
   deliveredAt?: string | null
   createdAt: string

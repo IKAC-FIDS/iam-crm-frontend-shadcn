@@ -719,11 +719,10 @@ function DeliveriesTab({ events }: { events: string[] }) {
   const client = useQueryClient()
   const dispatch = useMutation({
     mutationFn: dispatchNotificationDelivery,
-    onSuccess: async (result) => {
+    onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["notification-deliveries"] })
       await client.invalidateQueries({ queryKey: ["notifications"] })
-      if (result.sent) toast.success("اعلان ارسال شد.")
-      else toast.info(`ارسال انجام نشد: ${result.reason ?? result.status}`)
+      toast.success("ارسال برای تلاش مجدد در صف قرار گرفت.")
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
   })
@@ -764,6 +763,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
       cell: (r) => r.attemptCount.toLocaleString("fa-IR"),
     },
     { id: "failure", header: "خطا", cell: (r) => r.failureMessage || "—" },
+    { id: "nextAttempt", header: "تلاش بعدی", cell: (r) => date(r.nextAttemptAt) },
     {
       id: "provider",
       header: "شناسه پیام / اعلان داخلی",
@@ -783,10 +783,10 @@ function DeliveriesTab({ events }: { events: string[] }) {
     {
       id: "actions",
       header: "عملیات",
-      cell: (r) => ((r.channel === "SMS" && ["PENDING", "RETRYING"].includes(r.status)) || (r.channel === "IN_APP" && ["PENDING", "RETRYING", "FAILED"].includes(r.status))) ? (
+      cell: (r) => ["PENDING", "RETRYING", "FAILED"].includes(r.status) ? (
         <Button size="sm" variant="outline" disabled={dispatch.isPending} onClick={() => dispatch.mutate(r.id)}>
           <Send className="size-4" />
-          ارسال
+          تلاش مجدد
         </Button>
       ) : "—",
     },
