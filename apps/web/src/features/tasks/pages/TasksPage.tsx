@@ -2,13 +2,12 @@ import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import {
   AlertTriangle,
-  Filter,
   List,
   ListChecks,
   Plus,
-  SlidersHorizontal,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useListQueryState } from "@/lib/listQuery"
@@ -21,12 +20,6 @@ import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSele
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useAuthStore } from "@/store/authStore"
-import { Button } from "@workspace/ui/components/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
 
 import { TaskActionDialogs } from "../components/TaskActionDialogs"
 import type { TaskDialogAction } from "../components/TaskActionsMenu"
@@ -228,6 +221,29 @@ export function TasksPage() {
     setTeamSearch("")
   }
 
+  function clearAdvancedFilters() {
+    patch(
+      Object.fromEntries(
+        [
+          "companyId",
+          "opportunityId",
+          "assignedToId",
+          "dueFrom",
+          "dueTo",
+          "teamId",
+          "dueState",
+          "linkedEntityType",
+          "reviewStatus",
+          "reviewerId",
+        ].map((key) => [key, undefined])
+      )
+    )
+    setAssigneeSearch("")
+    setReviewerSearch("")
+    setOpportunitySearch("")
+    setTeamSearch("")
+  }
+
   function openAction(task: Task, next: TaskDialogAction) {
     setActionTask(task)
     setAction(next)
@@ -278,35 +294,13 @@ export function TasksPage() {
               searchable={false}
             />
 
-            <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11 rounded-xl"
-                  />
-                }
-              >
-                <SlidersHorizontal className="size-4" />
-                {text.actions.filters}
-                {advancedCount ? (
-                  <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
-                    {advancedCount.toLocaleString("fa-IR")}
-                  </span>
-                ) : null}
-              </PopoverTrigger>
-
-              <PopoverContent
-                align="end"
-                className="w-[min(760px,calc(100vw-24px))] rounded-2xl p-4"
-                dir="rtl"
-              >
-                <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
-                  <Filter className="size-4 text-[var(--app-primary)]" />
-                  {text.actions.filters}
-                </div>
-
+            <AdvancedFilterPopover
+              open={advancedOpen}
+              onOpenChange={setAdvancedOpen}
+              activeCount={advancedCount}
+              label={text.actions.filters}
+              onClear={clearAdvancedFilters}
+            >
                 <div className="grid gap-3 md:grid-cols-2">
                   <SearchableCompanySelect
                     value={companyId || undefined}
@@ -405,33 +399,27 @@ export function TasksPage() {
                     />
                   </div>
                 </div>
-              </PopoverContent>
-            </Popover>
+            </AdvancedFilterPopover>
 
-            <div className="col-span-full mt-3 flex flex-col gap-3 border-t border-[var(--app-divider)] pt-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 flex-wrap gap-1.5">
-                {quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).filter((item) => item.value !== "awaitingReview" || permissions.includes("task:review")).map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setQuick(item.value)}
-                    className={[
-                      "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition",
-                      quick === item.value
-                        ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                        : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-                    ].join(" ")}
-                  >
-                    {item.value === "overdue" ? (
-                      <AlertTriangle className="size-3.5" />
-                    ) : null}
-                    {item.value === "awaitingReview" ? "در انتظار بازبینی من" : text.quick[item.value]}
-                  </button>
-                ))}
-              </div>
-            </div>
           </>
         }
+        quickFilters={quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).filter((item) => item.value !== "awaitingReview" || permissions.includes("task:review")).map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            aria-pressed={quick === item.value}
+            onClick={() => setQuick(item.value)}
+            className={[
+              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30",
+              quick === item.value
+                ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
+                : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+            ].join(" ")}
+          >
+            {item.value === "overdue" ? <AlertTriangle className="size-3.5" /> : null}
+            {item.value === "awaitingReview" ? "در انتظار بازبینی من" : text.quick[item.value]}
+          </button>
+        ))}
       />
 
       <QueryContent query={tasks} errorTitle={text.errors.listTitle}>
