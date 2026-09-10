@@ -23,8 +23,10 @@ export type EntityCardListProps<T> = {
   onRowClick?: (item: T) => void
   emptyState?: ReactNode
   density?: "compact" | "comfortable"
+  layout?: "tile" | "row"
   className?: string
   cardClassName?: string
+  fieldsClassName?: string
   title?: (item: T) => ReactNode
   subtitle?: (item: T) => ReactNode
   media?: (item: T) => ReactNode
@@ -51,8 +53,10 @@ export function EntityCardList<T>({
   onRowClick,
   emptyState,
   density = "comfortable",
+  layout = "tile",
   className,
   cardClassName,
+  fieldsClassName,
   title,
   subtitle,
   media,
@@ -62,6 +66,7 @@ export function EntityCardList<T>({
   if (!rows.length) return <>{emptyState || null}</>
 
   const compact = density === "compact"
+  const rowLayout = layout === "row"
 
   return (
     <div className={cn("grid gap-3", className)}>
@@ -99,18 +104,30 @@ export function EntityCardList<T>({
               )}
             >
               {title || subtitle || media || badges || tags ? (
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--app-primary)]/10 bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_72%)] px-4 py-5 text-center">
+                <div className={cn("relative overflow-hidden rounded-2xl border border-[var(--app-primary)]/10 bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_72%)]", rowLayout ? "px-4 py-4 text-start" : "px-4 py-5 text-center")}>
                   <div className="pointer-events-none absolute -end-8 -top-10 size-28 rounded-full bg-[var(--app-primary)]/10 blur-2xl" />
-                  <div className="relative grid justify-items-center gap-2">
-                    {media ? media(item) : null}
-                    {badges ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{badges(item)}</div> : null}
-                    {title ? <div className="max-w-full truncate text-base font-extrabold text-[var(--app-heading)]">{title(item)}</div> : null}
-                    {subtitle ? <div className="max-w-full truncate text-xs text-[var(--app-text-secondary)]">{subtitle(item)}</div> : null}
-                    {tags ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{tags(item)}</div> : null}
-                  </div>
+                  {rowLayout ? (
+                    <div className="relative flex min-w-0 items-start gap-3">
+                      {media ? <div className="shrink-0">{media(item)}</div> : null}
+                      <div className="min-w-0 flex-1">
+                        {badges ? <div className="mb-2 flex max-w-full flex-wrap items-center gap-1.5">{badges(item)}</div> : null}
+                        {title ? <div className="line-clamp-2 text-base font-extrabold leading-7 text-[var(--app-heading)]">{title(item)}</div> : null}
+                        {subtitle ? <div className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">{subtitle(item)}</div> : null}
+                        {tags ? <div className="mt-2 flex max-w-full flex-wrap items-center gap-1.5">{tags(item)}</div> : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative grid justify-items-center gap-2">
+                      {media ? media(item) : null}
+                      {badges ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{badges(item)}</div> : null}
+                      {title ? <div className="max-w-full truncate text-base font-extrabold text-[var(--app-heading)]">{title(item)}</div> : null}
+                      {subtitle ? <div className="max-w-full truncate text-xs text-[var(--app-text-secondary)]">{subtitle(item)}</div> : null}
+                      {tags ? <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">{tags(item)}</div> : null}
+                    </div>
+                  )}
                 </div>
               ) : null}
-              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className={cn("grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2", fieldsClassName)}>
                 {fields.map((field) => {
                   const Icon = field.icon
                   return (

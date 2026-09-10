@@ -35,7 +35,7 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
       render: (task) => {
         const companyName = task.company?.brandName || task.company?.legalName
         return <span className="inline-flex min-w-0 items-center gap-2">
-          <IdentityAvatar name={companyName || taskContextLabel(task)} mediaPath={task.company?.id ? `/companies/${task.company.id}/logo` : null} hasMedia={Boolean(task.company?.logoObjectKey)} mediaVersion={task.company?.logoObjectKey} fallbackIcon={<Building2 className="size-4" />} className="size-7 rounded-lg text-[10px]" />
+          <IdentityAvatar name={companyName || taskContextLabel(task)} mediaPath={task.company?.id ? `/companies/${task.company.id}/logo` : null} hasMedia={Boolean(task.company?.id)} mediaVersion={task.company?.logoObjectKey} fallbackIcon={<Building2 className="size-4" />} className="size-8 rounded-xl text-[10px]" />
           <span className="truncate">{taskContextLabel(task)}</span>
         </span>
       },
@@ -47,7 +47,7 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
       render: (task) => {
         const name = task.assignedTo?.fullName || task.assignedTo?.email || text.labels.unassigned
         return <span className="inline-flex min-w-0 items-center gap-2">
-          <IdentityAvatar name={name} mediaPath={task.assignedTo?.id ? `/users/${task.assignedTo.id}/avatar` : null} hasMedia={Boolean(task.assignedTo?.avatarObjectKey)} mediaVersion={task.assignedTo?.avatarObjectKey} className="size-7 rounded-lg text-[10px]" />
+          <IdentityAvatar name={name} mediaPath={task.assignedTo?.id ? `/users/${task.assignedTo.id}/avatar` : null} hasMedia={Boolean(task.assignedTo?.id)} mediaVersion={task.assignedTo?.avatarObjectKey} className="size-8 rounded-xl text-[10px]" />
           <span className="min-w-0"><span className="block truncate">{name}</span><span className="block truncate text-[10px] font-normal text-[var(--app-text-secondary)]">{task.team?.name || assignmentScopeLabel(task.assignmentScope)}</span></span>
         </span>
       },
@@ -65,6 +65,9 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
   return <EntityCardList
     rows={tasks}
     fields={fields}
+    layout="row"
+    density="compact"
+    fieldsClassName="lg:grid-cols-3"
     getRowKey={(task) => task.id}
     onRowClick={(task) => navigate(`/tasks/${task.id}`)}
     title={(task) => task.title}
