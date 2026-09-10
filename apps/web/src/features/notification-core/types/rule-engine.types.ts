@@ -90,6 +90,8 @@ export type NotificationTemplatePreview = {
 export type NotificationDeliveryStatus =
   | "PENDING" | "PROCESSING" | "SENT" | "DELIVERED"
   | "FAILED" | "RETRYING" | "SKIPPED"
+export type NotificationTriggerType = "DOMAIN_EVENT" | "SCHEDULED" | "MANUAL_RETRY" | "AUTOMATIC_RETRY" | "SYSTEM"
+export type NotificationFailureCategory = "NETWORK" | "AUTHENTICATION" | "PROVIDER_REJECTED" | "INVALID_DESTINATION" | "TEMPLATE_ERROR" | "RATE_LIMIT" | "TIMEOUT" | "CONFIGURATION" | "UNKNOWN"
 
 export type NotificationDelivery = {
   id: string
@@ -106,8 +108,31 @@ export type NotificationDelivery = {
   sentAt?: string | null
   deliveredAt?: string | null
   createdAt: string
-  event: { eventName: string; occurredAt: string }
+  updatedAt?: string
+  event: { eventName: string; occurredAt: string; aggregateType?: string; aggregateId?: string }
   recipientUser?: { id: string; fullName: string; email: string } | null
+  rule?: { id: string; name: string } | null
+  template?: { id: string; version: number; locale: string } | null
+  triggerType: NotificationTriggerType
+  provider?: string | null
+  triggeredBy?: { id: string; fullName: string } | null
+}
+
+export type NotificationDeliveryAttempt = {
+  id: string; attemptNumber: number; triggerType: NotificationTriggerType; status: NotificationDeliveryStatus
+  provider?: string | null; providerMessageId?: string | null; failureCategory?: NotificationFailureCategory | null
+  failureCode?: string | null; failureReason?: string | null; startedAt: string; finishedAt?: string | null; createdAt: string
+  triggeredByUser?: { id: string; fullName: string } | null
+}
+
+export type NotificationDeliveryDetail = NotificationDelivery & {
+  deduplicationKey: string; retryRequestedAt?: string | null; failureCategory?: NotificationFailureCategory | null; lastFailureAt?: string | null
+  deduplication?: { enabled: boolean; key: string }
+  retryRequestedBy?: { id: string; fullName: string } | null
+  event: NotificationDelivery["event"] & { id: string; actorId?: string | null; idempotencyKey?: string | null; schedule?: Record<string, unknown> | null; actor?: { id: string; fullName: string } | null }
+  recipientRule?: { id: string; type: string; targetId?: string | null } | null
+  template?: (NonNullable<NotificationDelivery["template"]> & { eventName: string; channel: NotificationChannel; subject?: string | null }) | null
+  attempts: NotificationDeliveryAttempt[]
 }
 
 export type NotificationChannelStatus = {

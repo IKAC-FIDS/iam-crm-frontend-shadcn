@@ -29,6 +29,7 @@ import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -43,6 +44,7 @@ import {
   getNotificationAdminCatalog,
   getNotificationChannelStatus,
   getNotificationDeliveries,
+  getNotificationDelivery,
   getNotificationTemplates,
   getNotificationTemplateVariables,
   previewNotificationTemplate,
@@ -61,6 +63,7 @@ import type {
   NotificationChannelStatus,
   NotificationDelivery,
   NotificationDeliveryStatus,
+  NotificationTriggerType,
   NotificationTemplate,
 } from "../types/rule-engine.types"
 
@@ -85,6 +88,15 @@ const deliveryLabels: Record<NotificationDeliveryStatus, string> = {
   FAILED: "ناموفق",
   RETRYING: "تلاش مجدد",
   SKIPPED: "ردشده",
+}
+const triggerLabels: Record<NotificationTriggerType, string> = {
+  DOMAIN_EVENT: "رویداد سامانه", SCHEDULED: "زمان‌بندی‌شده", MANUAL_RETRY: "تلاش دستی",
+  AUTOMATIC_RETRY: "تلاش خودکار", SYSTEM: "سیستمی",
+}
+const failureLabels: Record<string, string> = {
+  NETWORK: "شبکه", AUTHENTICATION: "احراز هویت", PROVIDER_REJECTED: "رد ارائه‌دهنده",
+  INVALID_DESTINATION: "مقصد نامعتبر", TEMPLATE_ERROR: "خطای قالب", RATE_LIMIT: "محدودیت نرخ",
+  TIMEOUT: "پایان مهلت", CONFIGURATION: "پیکربندی", UNKNOWN: "نامشخص",
 }
 const serviceLabels: Record<string, string> = { MEETING: "جلسه", TASK: "کار" }
 const actionLabels: Record<string, string> = {
@@ -678,6 +690,46 @@ function SmsSettingsForm({ initial, onClose }: { initial: import("../types/rule-
   )
 }
 
+function DeliveryDetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
+  const query = useQuery({ queryKey: ["notification-delivery", id], queryFn: () => getNotificationDelivery(id) })
+  const item = query.data
+  const field = (label: string, value: React.ReactNode) => <div className="grid gap-1 rounded-xl border border-[var(--app-divider)] p-3"><span className="text-xs text-muted-foreground">{label}</span><span className="break-words text-sm font-medium">{value || "—"}</span></div>
+  return <ResponsiveModal open onClose={onClose} title="جزئیات ارسال اعلان" description="وضعیت، منشأ و تاریخچه تلاش‌های این ارسال" icon={History} width="max-w-3xl">
+    <QueryContent query={query} errorTitle="دریافت جزئیات ارسال ناموفق بود">
+      {item ? <div className="grid gap-5 p-4 sm:p-6">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {field("رویداد", eventLabel(item.event.eventName))}
+          {field("گیرنده", item.recipientUser?.fullName ?? "—")}
+          {field("مقصد محافظت‌شده", item.destination)}
+          {field("کانال", channelLabels[item.channel])}
+          {field("وضعیت", <StatusBadge tone={item.status === "FAILED" ? "error" : item.status === "DELIVERED" || item.status === "SENT" ? "success" : "neutral"}>{deliveryLabels[item.status]}</StatusBadge>)}
+          {field("نوع اجرا", triggerLabels[item.triggerType])}
+          {field("قانون", item.rule?.name)}
+          {field("قالب", item.template ? `نسخه ${item.template.version.toLocaleString("fa-IR")} · ${item.template.locale}` : "—")}
+          {item.channel === "EMAIL" ? field("عنوان ایمیل", item.template?.subject) : null}
+          {field("موجودیت مرتبط", item.event.aggregateType && item.event.aggregateId ? `${item.event.aggregateType} · ${item.event.aggregateId}` : "—")}
+          {field("شناسه رویداد", item.event.id)}
+          {field("کلید یکتایی رویداد", item.event.idempotencyKey)}
+          {field("قاعده گیرنده", item.recipientRule ? `${item.recipientRule.type} · ${item.recipientRule.id}` : "—")}
+          {field("ایجاد", date(item.createdAt))}
+          {field("ارسال", date(item.sentAt))}
+          {field("تحویل", date(item.deliveredAt))}
+          {field("کلید جلوگیری از تکرار", item.deduplicationKey)}
+        </section>
+        {(item.failureCode || item.failureMessage) ? <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4"><h3 className="font-bold text-destructive">آخرین خطا</h3><p className="mt-2 text-sm">{item.failureCode || "—"}</p><p className="mt-1 break-words text-sm text-muted-foreground">{item.failureMessage || "—"}</p></section> : null}
+        <section className="grid gap-3"><h3 className="font-bold">تاریخچه تلاش‌ها</h3>
+          {item.attempts.length ? <ol className="grid gap-3">{item.attempts.map((attempt) => <li key={attempt.id} className="grid gap-2 rounded-2xl border border-[var(--app-divider)] p-4 sm:grid-cols-[auto_1fr_auto]">
+            <span className="grid size-9 place-items-center rounded-full bg-[var(--app-primary-soft)] text-sm font-bold text-[var(--app-primary)]">{attempt.attemptNumber.toLocaleString("fa-IR")}</span>
+            <div><div className="flex flex-wrap items-center gap-2"><StatusBadge tone={attempt.status === "FAILED" ? "error" : attempt.status === "SENT" || attempt.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[attempt.status]}</StatusBadge><span className="text-sm">{triggerLabels[attempt.triggerType]}</span><span className="text-xs text-muted-foreground">{attempt.triggeredByUser?.fullName ?? "سامانه"}</span></div>
+            {(attempt.failureCode || attempt.failureReason) ? <p className="mt-2 break-words text-xs text-destructive">{attempt.failureCategory ? `${failureLabels[attempt.failureCategory] ?? attempt.failureCategory} · ` : ""}{attempt.failureCode ?? ""} {attempt.failureReason ?? ""}</p> : null}</div>
+            <time className="text-xs text-muted-foreground">{date(attempt.startedAt)}</time>
+          </li>)}</ol> : <p className="text-sm text-muted-foreground">هنوز تلاشی ثبت نشده است.</p>}
+        </section>
+      </div> : null}
+    </QueryContent>
+  </ResponsiveModal>
+}
+
 function DeliveriesTab({ events }: { events: string[] }) {
   const [page, setPage] = useState(1),
     [pageSize, setPageSize] = useState(20),
@@ -688,7 +740,10 @@ function DeliveriesTab({ events }: { events: string[] }) {
     [recipientUserId, setRecipientUserId] = useState(""),
     [recipientSearch, setRecipientSearch] = useState(""),
     [dateFrom, setDateFrom] = useState(""),
-    [dateTo, setDateTo] = useState("")
+    [dateTo, setDateTo] = useState(""),
+    [triggerType, setTriggerType] = useState(""),
+    [selectedId, setSelectedId] = useState<string | null>(null),
+    [retryItem, setRetryItem] = useState<NotificationDelivery | null>(null)
   const recipients = useNotificationTargets("USER", recipientSearch)
   const query = useQuery({
     queryKey: [
@@ -702,6 +757,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
       recipientUserId,
       dateFrom,
       dateTo,
+      triggerType,
     ],
     queryFn: () =>
       getNotificationDeliveries({
@@ -714,6 +770,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
         recipientUserId: recipientUserId || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
+        triggerType: (triggerType as NotificationTriggerType) || undefined,
       }),
   })
   const client = useQueryClient()
@@ -723,6 +780,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
       await client.invalidateQueries({ queryKey: ["notification-deliveries"] })
       await client.invalidateQueries({ queryKey: ["notifications"] })
       toast.success("ارسال برای تلاش مجدد در صف قرار گرفت.")
+      setRetryItem(null)
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
   })
@@ -756,39 +814,19 @@ function DeliveriesTab({ events }: { events: string[] }) {
         </StatusBadge>
       ),
     },
-    { id: "destination", header: "مقصد", cell: (r) => r.destination || "—" },
+    { id: "trigger", header: "نوع اجرا", cell: (r) => triggerLabels[r.triggerType] },
     {
       id: "attempts",
       header: "تلاش",
       cell: (r) => r.attemptCount.toLocaleString("fa-IR"),
     },
-    { id: "failure", header: "خطا", cell: (r) => r.failureMessage || "—" },
-    { id: "nextAttempt", header: "تلاش بعدی", cell: (r) => date(r.nextAttemptAt) },
-    {
-      id: "provider",
-      header: "شناسه پیام / اعلان داخلی",
-      cell: (r) => r.providerMessageId || "—",
-    },
-    {
-      id: "sent",
-      header: "ارسال/تحویل",
-      cell: (r) => (
-        <span>
-          {date(r.sentAt)}
-          <br />
-          {date(r.deliveredAt)}
-        </span>
-      ),
-    },
     {
       id: "actions",
       header: "عملیات",
-      cell: (r) => ["PENDING", "RETRYING", "FAILED"].includes(r.status) ? (
-        <Button size="sm" variant="outline" disabled={dispatch.isPending} onClick={() => dispatch.mutate(r.id)}>
-          <Send className="size-4" />
-          تلاش مجدد
-        </Button>
-      ) : "—",
+      cell: (r) => <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
+        <Button size="icon" variant="ghost" aria-label="مشاهده جزئیات" onClick={() => setSelectedId(r.id)}><Eye className="size-4" /></Button>
+        {r.status === "FAILED" ? <Button size="icon" variant="ghost" aria-label="تلاش مجدد" disabled={dispatch.isPending} onClick={() => setRetryItem(r)}><Send className="size-4" /></Button> : null}
+      </div>,
     },
   ]
   return (
@@ -808,6 +846,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
           recipientUserId ||
           dateFrom ||
           dateTo
+          || triggerType
         )}
         onClearFilters={() => {
           setSearch("")
@@ -818,6 +857,7 @@ function DeliveriesTab({ events }: { events: string[] }) {
           setRecipientSearch("")
           setDateFrom("")
           setDateTo("")
+          setTriggerType("")
           setPage(1)
         }}
         filters={
@@ -835,6 +875,10 @@ function DeliveriesTab({ events }: { events: string[] }) {
                   {eventLabel(v)}
                 </option>
               ))}
+            </Select>
+            <Select value={triggerType} onChange={(e) => { setTriggerType(e.target.value); setPage(1) }}>
+              <option value="">همه انواع اجرا</option>
+              {Object.entries(triggerLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </Select>
             <Select
               value={channel}
@@ -917,6 +961,18 @@ function DeliveriesTab({ events }: { events: string[] }) {
           rows={query.data?.data ?? []}
           columns={columns}
           getRowKey={(r) => r.id}
+          onRowClick={(r) => setSelectedId(r.id)}
+          mobile={{
+            title: (r) => eventLabel(r.event.eventName),
+            subtitle: (r) => r.recipientUser?.fullName || r.destination || "—",
+            status: (r) => <StatusBadge tone={r.status === "FAILED" ? "error" : r.status === "SENT" || r.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[r.status]}</StatusBadge>,
+            fields: [
+              { id: "channel", label: "کانال", render: (r) => channelLabels[r.channel] },
+              { id: "trigger", label: "نوع اجرا", render: (r) => triggerLabels[r.triggerType] },
+              { id: "attempts", label: "تعداد تلاش", render: (r) => r.attemptCount.toLocaleString("fa-IR") },
+              { id: "date", label: "زمان", render: (r) => date(r.createdAt) },
+            ],
+          }}
           emptyState={
             <EmptyState
               icon={History}
@@ -938,6 +994,8 @@ function DeliveriesTab({ events }: { events: string[] }) {
           }}
         />
       </QueryContent>
+      {selectedId ? <DeliveryDetailDialog id={selectedId} onClose={() => setSelectedId(null)} /> : null}
+      <ConfirmDialog open={Boolean(retryItem)} onOpenChange={(open) => { if (!open) setRetryItem(null) }} title="تلاش مجدد برای ارسال؟" description="همین Delivery با همان رویداد، گیرنده و قالب دوباره در صف قرار می‌گیرد و رکورد تکراری ساخته نمی‌شود." confirmLabel="قرار دادن در صف" tone="primary" isPending={dispatch.isPending} onConfirm={() => { if (retryItem) dispatch.mutate(retryItem.id) }} />
     </section>
   )
 }

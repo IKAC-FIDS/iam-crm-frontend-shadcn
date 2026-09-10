@@ -1,9 +1,11 @@
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
-import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, PageMeta, PushSettings, SmsSettings } from "../types/rule-engine.types"
+import { parsePaginatedResponse } from "@/lib/pagination"
+import { z } from "zod"
+import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryDetail, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, NotificationTriggerType, PushSettings, SmsSettings } from "../types/rule-engine.types"
 
 export type TemplateInput = Pick<NotificationTemplate, "eventName" | "channel" | "locale" | "body" | "isActive" | "version"> & { subject?: string | null }
-export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; dateFrom?: string; dateTo?: string; search?: string }
+export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; ruleId?: string; templateId?: string; triggerType?: NotificationTriggerType; provider?: string; aggregateType?: string; aggregateId?: string; dateFrom?: string; dateTo?: string; search?: string; sortBy?: "createdAt" | "sentAt" | "deliveredAt" | "status" | "channel"; sortDirection?: "asc" | "desc" }
 
 export async function getNotificationAdminCatalog() {
   const response = await api.get("/admin/notifications/catalog")
@@ -66,11 +68,14 @@ export async function testPushSettings(input: { recipientUserId: string; title?:
   return unwrapApiResponse<{ attempted: number; successful: number; failed: number }>(response.data)
 }
 export async function dispatchNotificationDelivery(id: string) {
-  const response = await api.post(`/admin/notification-deliveries/${id}/dispatch`)
-  return unwrapApiResponse<{ deliveryId: string; status: string; sent: boolean; reason?: string }>(response.data)
+  const response = await api.post(`/admin/notification-deliveries/${id}/retry`)
+  return unwrapApiResponse<NotificationDelivery>(response.data)
 }
 export async function getNotificationDeliveries(params: DeliveryFilters) {
   const response = await api.get("/admin/notification-deliveries", { params })
-  const payload = response.data as { data?: NotificationDelivery[]; meta?: PageMeta }
-  return { data: payload.data ?? [], meta: payload.meta ?? { total: 0, page: params.page, limit: params.pageSize, totalPages: 1, hasNext: false, hasPrevious: false } }
+  return parsePaginatedResponse(response.data, z.unknown() as z.ZodType<NotificationDelivery>)
+}
+export async function getNotificationDelivery(id: string) {
+  const response = await api.get(`/admin/notification-deliveries/${id}`)
+  return unwrapApiResponse<NotificationDeliveryDetail>(response.data)
 }
