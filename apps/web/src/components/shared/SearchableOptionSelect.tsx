@@ -30,6 +30,7 @@ export function SearchableOptionSelect({
   ariaLabel,
   allowCustom = false,
   customLabel = "استفاده از مقدار جدید",
+  searchable = true,
 }: {
   value?: string
   options: SearchableOption[]
@@ -45,6 +46,7 @@ export function SearchableOptionSelect({
   ariaLabel?: string
   allowCustom?: boolean
   customLabel?: string
+  searchable?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const selected = options.find((option) => option.id === value)
@@ -78,16 +80,18 @@ export function SearchableOptionSelect({
         dir="rtl"
         className="w-[min(390px,calc(100vw-32px))] rounded-2xl p-2"
       >
-        <div className="relative mb-2">
-          <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
-          <Input
-            autoFocus
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={searchPlaceholder}
-            className="h-10 rounded-xl pe-9"
-          />
-        </div>
+        {searchable ? (
+          <div className="relative mb-2">
+            <Search className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-[var(--app-icon-muted)]" />
+            <Input
+              autoFocus
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={searchPlaceholder}
+              className="h-10 rounded-xl pe-9"
+            />
+          </div>
+        ) : null}
 
         <div className="max-h-72 overflow-y-auto overscroll-contain">
           {allowCustom && search.trim() && !options.some((option) => option.id === search.trim()) ? (

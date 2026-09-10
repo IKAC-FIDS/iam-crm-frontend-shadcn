@@ -17,6 +17,7 @@ import { QueryContent } from "@/components/shared/QueryContent"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useAuthStore } from "@/store/authStore"
@@ -248,80 +249,34 @@ export function TasksPage() {
         description={text.description}
         eyebrow={"مرکز مدیریت کارها"}
         icon={ListChecks}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
-            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "focus"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => switchView("focus")}
-              >
-                <ListChecks className="size-4" />
-                {text.views.focus}
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "list"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => switchView("list")}
-              >
-                <List className="size-4" />
-                {text.views.list}
-              </Button>
-            </div>
-
-          </div>
-        }
+        primaryAction={canCreate ? { label: text.actions.create, icon: Plus, onClick: () => setCreateOpen(true) } : undefined}
+        viewOptions={[
+          { id: "focus", label: text.views.focus, icon: ListChecks },
+          { id: "list", label: text.views.list, icon: List },
+        ]}
+        activeView={view}
+        onViewChange={(next) => switchView(next as ViewMode)}
       />
 
       <DataTableToolbar
         searchValue={search}
         onSearchChange={(value) => updateParam("search", value)}
         searchPlaceholder={text.placeholders.search}
-        hasActiveFilters
+        hasActiveFilters={Boolean(search || priority || quick !== "all" || advancedCount)}
         onClearFilters={clearFilters}
         filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
         filters={
           <>
-            <select
-              aria-label={uiText.common.filters.priority}
-              value={priority || ""}
-              onChange={(event) =>
-                updateParam("priority", event.target.value || undefined)
-              }
-              className={selectClass}
-            >
-              <option value="">{text.filters.allPriorities}</option>
-              {(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map(
-                (value) => (
-                  <option key={value} value={value}>
-                    {text.priorities[value]}
-                  </option>
-                )
-              )}
-            </select>
+            <SearchableOptionSelect
+              ariaLabel={uiText.common.filters.priority}
+              value={priority}
+              options={priorityOptions.map((value) => ({ id: value, label: text.priorities[value] }))}
+              onChange={(value) => updateParam("priority", value)}
+              search=""
+              onSearchChange={() => undefined}
+              placeholder={text.filters.allPriorities}
+              searchable={false}
+            />
 
             <Popover open={advancedOpen} onOpenChange={setAdvancedOpen}>
               <PopoverTrigger
@@ -392,24 +347,11 @@ export function TasksPage() {
                     onLoadMore={() => void teams.fetchNextPage()}
                   />
 
-                  <select aria-label="وضعیت موعد" value={dueState} onChange={(event) => updateParam("dueState", event.target.value || undefined)} className={selectClass}>
-                    <option value="">همه وضعیت‌های موعد</option>
-                    <option value="none">بدون موعد</option>
-                    <option value="upcoming">آینده</option>
-                    <option value="today">امروز</option>
-                    <option value="overdue">گذشته</option>
-                    <option value="completed">تکمیل‌شده</option>
-                  </select>
+                  <StaticFilterSelect ariaLabel="وضعیت موعد" value={dueState} placeholder="همه وضعیت‌های موعد" options={dueStateOptions} onChange={(value) => updateParam("dueState", value)} />
 
-                  <select aria-label="نوع موجودیت مرتبط" value={linkedEntityType} onChange={(event) => updateParam("linkedEntityType", event.target.value || undefined)} className={selectClass}>
-                    <option value="">همه موجودیت‌های مرتبط</option>
-                    <option value="COMPANY">شرکت</option><option value="OPPORTUNITY">فرصت</option><option value="PERSON">شخص</option>
-                    <option value="MEETING">جلسه</option><option value="ACTIVITY">فعالیت</option><option value="PRODUCT">محصول</option>
-                  </select>
+                  <StaticFilterSelect ariaLabel="نوع موجودیت مرتبط" value={linkedEntityType} placeholder="همه موجودیت‌های مرتبط" options={linkedEntityOptions} onChange={(value) => updateParam("linkedEntityType", value)} />
 
-                  <select aria-label="وضعیت بازبینی" value={reviewStatus} onChange={(event) => updateParam("reviewStatus", event.target.value || undefined)} className={selectClass}>
-                    <option value="">همه وضعیت‌های بازبینی</option><option value="NOT_REQUIRED">بدون بازبینی</option><option value="DRAFT">پیش‌نویس</option><option value="PENDING_REVIEW">در انتظار بازبینی</option><option value="CHANGES_REQUESTED">نیازمند اصلاح</option><option value="APPROVED">تأییدشده</option>
-                  </select>
+                  <StaticFilterSelect ariaLabel="وضعیت بازبینی" value={reviewStatus} placeholder="همه وضعیت‌های بازبینی" options={reviewStatusOptions} onChange={(value) => updateParam("reviewStatus", value)} />
 
                   <TaskOptionSelect
                     value={reviewerId || undefined}
@@ -616,5 +558,58 @@ const quickFilters: { value: QuickFilter }[] = [
   { value: "awaitingReview" },
 ]
 
-const selectClass =
-  "h-11 w-full rounded-xl border border-input bg-transparent px-3 text-xs outline-none focus:border-[var(--app-primary)]"
+type StaticFilterOption = { id: string; label: string }
+
+function StaticFilterSelect({
+  ariaLabel,
+  value,
+  placeholder,
+  options,
+  onChange,
+}: {
+  ariaLabel: string
+  value?: string
+  placeholder: string
+  options: StaticFilterOption[]
+  onChange: (value?: string) => void
+}) {
+  return (
+    <SearchableOptionSelect
+      ariaLabel={ariaLabel}
+      value={value || undefined}
+      options={options}
+      onChange={onChange}
+      search=""
+      onSearchChange={() => undefined}
+      placeholder={placeholder}
+      searchable={false}
+    />
+  )
+}
+
+const priorityOptions: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "STRATEGIC"]
+
+const dueStateOptions: StaticFilterOption[] = [
+  { id: "none", label: "بدون موعد" },
+  { id: "upcoming", label: "آینده" },
+  { id: "today", label: "امروز" },
+  { id: "overdue", label: "گذشته" },
+  { id: "completed", label: "تکمیل‌شده" },
+]
+
+const linkedEntityOptions: StaticFilterOption[] = [
+  { id: "COMPANY", label: "شرکت" },
+  { id: "OPPORTUNITY", label: "فرصت" },
+  { id: "PERSON", label: "شخص" },
+  { id: "MEETING", label: "جلسه" },
+  { id: "ACTIVITY", label: "فعالیت" },
+  { id: "PRODUCT", label: "محصول" },
+]
+
+const reviewStatusOptions: StaticFilterOption[] = [
+  { id: "NOT_REQUIRED", label: "بدون بازبینی" },
+  { id: "DRAFT", label: "پیش‌نویس" },
+  { id: "PENDING_REVIEW", label: "در انتظار بازبینی" },
+  { id: "CHANGES_REQUESTED", label: "نیازمند اصلاح" },
+  { id: "APPROVED", label: "تأییدشده" },
+]

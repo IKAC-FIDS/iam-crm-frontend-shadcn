@@ -233,17 +233,8 @@ function TaskFocusRow({
 
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={openTask}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault()
-          openTask()
-        }
-      }}
       className={[
-        "min-w-0 cursor-pointer rounded-2xl border bg-[var(--app-surface)] p-3.5 shadow-[var(--app-shadow-card)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30 sm:p-4",
+        "min-w-0 rounded-2xl border bg-[var(--app-surface)] p-3.5 shadow-[var(--app-shadow-card)] transition-colors sm:p-4",
         overdue
           ? "border-[var(--destructive)]/25 hover:border-[var(--destructive)]/45"
           : "border-[var(--app-divider)] hover:border-[var(--app-primary)]/25",
@@ -251,7 +242,12 @@ function TaskFocusRow({
       ].join(" ")}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0">
+        <button
+          type="button"
+          onClick={openTask}
+          aria-label={`مشاهده کار ${task.title}`}
+          className="min-w-0 flex-1 rounded-xl text-start outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30"
+        >
           <div className="flex flex-wrap items-center gap-1.5">
             <StatusBadge tone={taskStatusTone(task.status)}>
               {taskStatusLabel(task.status)}
@@ -274,12 +270,32 @@ function TaskFocusRow({
               {task.description}
             </p>
           ) : null}
-        </div>
+          <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--app-text-secondary)]">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <Building2 className="size-3.5 shrink-0" />
+              <span className="truncate">{taskContextLabel(task)}</span>
+            </span>
+            <span
+              className={[
+                "inline-flex items-center gap-1.5",
+                overdue ? "font-bold text-[var(--destructive)]" : "",
+              ].join(" ")}
+            >
+              <CalendarClock className="size-3.5" />
+              {taskDueLabel(task)}
+            </span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <UserRound className="size-3.5 shrink-0" />
+              <span className="truncate">
+                {task.assignedTo?.fullName ||
+                  task.assignedTo?.email ||
+                  uiText.tasks.labels.unassigned}
+              </span>
+            </span>
+          </div>
+        </button>
 
-        <div
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
+        <div>
           <TaskActionsMenu
             task={task}
             canUpdate={canUpdate}
@@ -292,29 +308,6 @@ function TaskFocusRow({
         </div>
       </div>
 
-      <div className="mt-3 flex min-w-0 flex-wrap gap-x-4 gap-y-2 text-xs text-[var(--app-text-secondary)]">
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <Building2 className="size-3.5 shrink-0" />
-          <span className="truncate">{taskContextLabel(task)}</span>
-        </span>
-        <span
-          className={[
-            "inline-flex items-center gap-1.5",
-            overdue ? "font-bold text-[var(--destructive)]" : "",
-          ].join(" ")}
-        >
-          <CalendarClock className="size-3.5" />
-          {taskDueLabel(task)}
-        </span>
-        <span className="inline-flex min-w-0 items-center gap-1.5">
-          <UserRound className="size-3.5 shrink-0" />
-          <span className="truncate">
-            {task.assignedTo?.fullName ||
-              task.assignedTo?.email ||
-              uiText.tasks.labels.unassigned}
-          </span>
-        </span>
-      </div>
     </article>
   )
 }
