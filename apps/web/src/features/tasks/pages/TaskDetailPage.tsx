@@ -19,13 +19,15 @@ import {
   CalendarDays,
   Activity as ActivityIcon,
   Package,
+  ListTodo,
 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
@@ -108,14 +110,60 @@ export function TaskDetailPage() {
 
   const task = taskQuery.data
   const closed = task.status === "DONE" || task.status === "CANCELLED"
+  const secondaryActions: PageAction[] = []
+
+  if (canUpdate) {
+    secondaryActions.push({
+      id: "edit",
+      label: text.actions.edit,
+      icon: Pencil,
+      variant: "outline",
+      onClick: () => setEditOpen(true),
+    })
+  }
+  if (canAssign) {
+    secondaryActions.push({
+      id: "assign",
+      label: text.actions.assign,
+      icon: UserRoundCog,
+      variant: "outline",
+      onClick: () => setAction("assign"),
+    })
+  }
+  if (canCreateSubtask && !closed) {
+    secondaryActions.push({
+      id: "subtask",
+      label: "ایجاد زیرکار",
+      icon: ListPlus,
+      variant: "outline",
+      onClick: () => setAction("subtask"),
+    })
+  }
+  if (canUpdate) {
+    secondaryActions.push({
+      id: "status",
+      label: text.actions.changeStatus,
+      icon: RefreshCcw,
+      variant: "outline",
+      onClick: () => setAction("status"),
+    })
+  }
+  if (canDelete) {
+    secondaryActions.push({
+      id: "delete",
+      label: text.actions.delete,
+      icon: Trash2,
+      variant: "destructive",
+      onClick: () => setAction("delete"),
+    })
+  }
 
   return (
     <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-4">
-      <div>
-        <PageHeader
+      <PageHero
           title={task.title}
           description={detail.description}
-          accessLabel="عملیات و مدیریت کار"
+          accessBadge={{ label: "عملیات و مدیریت کار", icon: ListTodo }}
           onBack={() => navigate("/tasks")}
           onRefresh={() => taskQuery.refetch()}
           refreshing={taskQuery.isFetching}
@@ -162,71 +210,21 @@ export function TaskDetailPage() {
               icon: UserRound,
             },
           ]}
-          actions={
-            <>
-              {canUpdate ? (
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setEditOpen(true)}
-                >
-                  <Pencil className="size-4" />
-                  {text.actions.edit}
-                </Button>
-              ) : null}
-              {canAssign ? (
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setAction("assign")}
-                >
-                  <UserRoundCog className="size-4" />
-                  {text.actions.assign}
-                </Button>
-              ) : null}
-              {canCreateSubtask && !closed ? (
-                <Button variant="outline" className="rounded-xl" onClick={() => setAction("subtask")}>
-                  <ListPlus className="size-4" />
-                  ایجاد زیرکار
-                </Button>
-              ) : null}
-              {canComplete && !closed ? (
-                <Button
-                  variant="outline"
-                  className="rounded-xl border-[var(--success)]/30 text-[var(--success)] hover:bg-[var(--success-light)]"
-                  onClick={() => setAction("complete")}
-                  disabled={task.requiresReview && task.reviewStatus !== "APPROVED"}
-                >
-                  <CheckCircle2 className="size-4" />
-                  {text.actions.complete}
-                </Button>
-              ) : null}
-              {canUpdate ? (
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => setAction("status")}
-                >
-                  <RefreshCcw className="size-4" />
-                  {text.actions.changeStatus}
-                </Button>
-              ) : null}
-              {canDelete ? (
-                <Button
-                  variant="outline"
-                  className="rounded-xl border-[var(--destructive)]/30 text-[var(--destructive)] hover:bg-[var(--destructive-soft)]"
-                  onClick={() => setAction("delete")}
-                >
-                  <Trash2 className="size-4" />
-                  {text.actions.delete}
-                </Button>
-              ) : null}
-            </>
+          primaryAction={
+            canComplete && !closed
+              ? {
+                  label: text.actions.complete,
+                  icon: CheckCircle2,
+                  onClick: () => setAction("complete"),
+                  disabled:
+                    task.requiresReview && task.reviewStatus !== "APPROVED",
+                }
+              : undefined
           }
+          secondaryActions={secondaryActions}
         />
-      </div>
 
-<div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(310px,380px)]">
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(310px,380px)]">
         <main className="grid min-w-0 gap-4">
           <ScheduleCard
             task={task}
@@ -271,6 +269,7 @@ export function TaskDetailPage() {
           setAction(undefined)
           void taskQuery.refetch()
         }}
+        onDeleted={() => navigate("/tasks", { replace: true })}
       />
 
       <Person360WorkspaceDialog
@@ -436,7 +435,20 @@ function ContextCard({
       />
       <div className="grid gap-3 p-4">
         <ContextLink
-          icon={<Building2 className="size-4" />}
+          icon={
+            <IdentityAvatar
+              name={
+                task.company?.brandName ||
+                task.company?.legalName ||
+                "شرکت"
+              }
+              mediaPath={task.companyId ? `/companies/${task.companyId}/logo` : undefined}
+              hasMedia={Boolean(task.company?.logoObjectKey)}
+              mediaVersion={task.company?.logoObjectKey}
+              fallbackIcon={<Building2 className="size-4" />}
+              className="size-9 rounded-xl"
+            />
+          }
           label={detail.labels.company}
           value={
             task.company?.brandName ||
@@ -518,7 +530,12 @@ function OwnershipCard({ task }: { task: Task }) {
         <InfoBox icon={<GitBranch className="size-4" />} label="دامنه واگذاری" value={{ SELF: "خودم", TEAM: "تیم", ORGANIZATION: "سازمان" }[task.assignmentScope || "SELF"]} />
         {task.team ? <InfoBox icon={<UserRoundCog className="size-4" />} label="تیم" value={`${task.team.name} (${task.team.code})`} /> : null}
         <InfoBox
-          icon={<UserRoundCog className="size-4" />}
+          icon={
+            <TaskUserAvatar
+              user={task.assignedTo}
+              fallbackIcon={<UserRoundCog className="size-4" />}
+            />
+          }
           label={detail.labels.assignee}
           value={
             task.assignedTo?.fullName ||
@@ -527,7 +544,12 @@ function OwnershipCard({ task }: { task: Task }) {
           }
         />
         <InfoBox
-          icon={<UserRound className="size-4" />}
+          icon={
+            <TaskUserAvatar
+              user={task.createdBy}
+              fallbackIcon={<UserRound className="size-4" />}
+            />
+          }
           label={detail.labels.createdBy}
           value={
             task.createdBy?.fullName ||
@@ -537,7 +559,12 @@ function OwnershipCard({ task }: { task: Task }) {
         />
         {task.status === "DONE" ? (
           <InfoBox
-            icon={<CheckCircle2 className="size-4" />}
+            icon={
+              <TaskUserAvatar
+                user={task.completedBy}
+                fallbackIcon={<CheckCircle2 className="size-4" />}
+              />
+            }
             label={detail.labels.completedBy}
             value={
               task.completedBy?.fullName ||
@@ -548,6 +575,27 @@ function OwnershipCard({ task }: { task: Task }) {
         ) : null}
       </div>
     </SurfaceCard>
+  )
+}
+
+function TaskUserAvatar({
+  user,
+  fallbackIcon,
+}: {
+  user?: Task["assignedTo"]
+  fallbackIcon: ReactNode
+}) {
+  const name = user?.fullName || user?.email || "کاربر"
+
+  return (
+    <IdentityAvatar
+      name={name}
+      mediaPath={user?.id ? `/users/${user.id}/avatar` : undefined}
+      hasMedia={Boolean(user?.avatarObjectKey)}
+      mediaVersion={user?.avatarObjectKey}
+      fallbackIcon={fallbackIcon}
+      className="size-9 rounded-xl"
+    />
   )
 }
 

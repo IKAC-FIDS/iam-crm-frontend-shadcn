@@ -3,6 +3,7 @@ import { toast } from "sonner"
 
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
@@ -36,13 +37,15 @@ export function TaskActionDialogs({
   task,
   action,
   onClose,
+  onDeleted,
 }: {
   task?: Task | null
   action?: TaskDialogAction
   onClose: () => void
+  onDeleted?: () => void
 }) {
   if (!task || !action) return null
-  if (action === "delete") return <DeleteDialog task={task} onClose={onClose} />
+  if (action === "delete") return <DeleteDialog task={task} onClose={onClose} onDeleted={onDeleted} />
   if (action === "complete") return <CompleteDialog task={task} onClose={onClose} />
   if (action === "status") return <StatusDialog task={task} onClose={onClose} />
   if (action === "assign") return <AssignDialog task={task} onClose={onClose} />
@@ -106,11 +109,15 @@ function StatusDialog({ task, onClose }: { task: Task; onClose: () => void }) {
       onSubmit={submit}
     >
       <Field label={text.fields.status}>
-        <select value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)} className={selectClass}>
-          {(["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] as TaskStatus[]).map((value) => (
-            <option key={value} value={value}>{text.statuses[value]}</option>
-          ))}
-        </select>
+        <StaticOptionSelect
+          value={status}
+          onChange={(value) => setStatus(value as TaskStatus)}
+          ariaLabel={text.fields.status}
+          options={(["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] as TaskStatus[]).map((value) => ({
+            id: value,
+            label: text.statuses[value],
+          }))}
+        />
       </Field>
       <Field label={text.fields.note}>
         <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} className={textareaClass} />
@@ -170,9 +177,16 @@ function AssignDialog({ task, onClose }: { task: Task; onClose: () => void }) {
     >
       <div className="rounded-xl border p-3 text-xs text-[var(--app-text-secondary)]">وضعیت فعلی: {task.assignedTo?.fullName || text.labels.unassigned} · {task.team?.name || "بدون تیم"}</div>
       <Field label="دامنه واگذاری">
-        <select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}>
-          <option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option>
-        </select>
+        <StaticOptionSelect
+          value={scope}
+          ariaLabel="دامنه واگذاری"
+          options={assignmentScopeOptions}
+          onChange={(value) => {
+            setScope(value as TaskAssignmentScope)
+            setTeam(undefined)
+            setAssignee(undefined)
+          }}
+        />
       </Field>
       {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teamQuery.isLoading} hasMore={teamQuery.hasNextPage} loadingMore={teamQuery.isFetchingNextPage} onLoadMore={() => void teamQuery.fetchNextPage()} /></Field> : null}
       {scope !== "SELF" ? <Field label={text.fields.assignee}>
@@ -227,10 +241,10 @@ function SubtaskDialog({ task, onClose }: { task: Task; onClose: () => void }) {
   return <SimpleDialog title="ایجاد زیرکار" description="یک کار جدید ساخته می‌شود و مسئولیت کار والد تغییر نمی‌کند." pending={mutation.isPending} submitLabel="ایجاد زیرکار" submitDisabled={!title.trim() || (canAssignOthers && scope === "TEAM" && !team)} onClose={onClose} onSubmit={submit}>
     <Field label="عنوان زیرکار"><input value={title} onChange={(event) => setTitle(event.target.value)} className={selectClass} maxLength={200} /></Field>
     <Field label="توضیحات"><textarea rows={3} value={description} onChange={(event) => setDescription(event.target.value)} className={textareaClass} /></Field>
-    <Field label="اولویت"><select value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)} className={selectClass}>{(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map((value) => <option key={value} value={value}>{uiText.tasks.priorities[value]}</option>)}</select></Field>
+    <Field label="اولویت"><StaticOptionSelect value={priority} ariaLabel="اولویت" onChange={(value) => setPriority(value as TaskPriority)} options={(["LOW", "MEDIUM", "HIGH", "STRATEGIC"] as TaskPriority[]).map((value) => ({ id: value, label: uiText.tasks.priorities[value] }))} /></Field>
     <Field label="موعد انجام"><PersianDateTimePicker value={dueAt} onChange={setDueAt} /></Field>
     {canAssignOthers ? <>
-      <Field label="دامنه واگذاری"><select value={scope} onChange={(event) => { setScope(event.target.value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} className={selectClass}><option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option></select></Field>
+      <Field label="دامنه واگذاری"><StaticOptionSelect value={scope} ariaLabel="دامنه واگذاری" options={assignmentScopeOptions} onChange={(value) => { setScope(value as TaskAssignmentScope); setTeam(undefined); setAssignee(undefined) }} /></Field>
       {scope === "TEAM" ? <Field label="تیم"><TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} /></Field> : null}
       {scope !== "SELF" ? <Field label="مسئول"><TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder="انتخاب مسئول (اختیاری)" loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={scope === "TEAM" && !team} /></Field> : null}
     </> : <p className="rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs leading-6 text-[var(--app-primary)]">این زیرکار به خود شما واگذار می‌شود. برای ارجاع به سایر کاربران یا تیم‌ها، دسترسی <code dir="ltr">task:assign</code> لازم است.</p>}
@@ -283,14 +297,15 @@ function RescheduleDialog({ task, onClose }: { task: Task; onClose: () => void }
   )
 }
 
-function DeleteDialog({ task, onClose }: { task: Task; onClose: () => void }) {
+function DeleteDialog({ task, onClose, onDeleted }: { task: Task; onClose: () => void; onDeleted?: () => void }) {
   const text = uiText.tasks
   const mutation = useDeleteTask()
   async function submit() {
     try {
       await mutation.mutateAsync(task)
       toast.success(text.feedback.deleted)
-      onClose()
+      if (onDeleted) onDeleted()
+      else onClose()
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.mutation))
     }
@@ -360,6 +375,39 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <Label className="text-xs font-bold">{label}</Label>
       {children}
     </div>
+  )
+}
+
+const assignmentScopeOptions = [
+  { id: "SELF", label: "خودم" },
+  { id: "TEAM", label: "تیم" },
+  { id: "ORGANIZATION", label: "سازمان" },
+]
+
+function StaticOptionSelect({
+  value,
+  options,
+  ariaLabel,
+  onChange,
+}: {
+  value: string
+  options: Array<{ id: string; label: string }>
+  ariaLabel: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <SearchableOptionSelect
+      value={value}
+      options={options}
+      search=""
+      onSearchChange={() => undefined}
+      onChange={(next) => {
+        if (next) onChange(next)
+      }}
+      ariaLabel={ariaLabel}
+      searchable={false}
+      allowEmpty={false}
+    />
   )
 }
 
