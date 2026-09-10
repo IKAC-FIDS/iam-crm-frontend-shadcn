@@ -6,6 +6,7 @@ import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { RuleConditionBuilder } from "../components/RuleConditionBuilder"
+import { RuleScheduleEditor } from "../components/RuleScheduleEditor"
 import { Button } from "@workspace/ui/components/button"
 import { Card, CardContent } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
@@ -27,6 +28,7 @@ import type {
   NotificationRule,
   NotificationRuleConditions,
   NotificationRuleInput,
+  NotificationScheduleInput,
   RecipientRuleInput,
 } from "../types/rule-engine.types"
 
@@ -34,9 +36,12 @@ const eventLabels: Record<string, string> = {
   "MEETING.CREATED": "ایجاد جلسه",
   "MEETING.UPDATED": "ویرایش جلسه",
   "MEETING.CANCELLED": "لغو جلسه",
+  "MEETING.REMINDER": "یادآوری جلسه",
   "TASK.ASSIGNED": "ارجاع کار",
   "TASK.REASSIGNED": "ارجاع مجدد کار",
   "TASK.COMPLETED": "تکمیل کار",
+  "TASK.DUE_SOON": "نزدیک‌شدن سررسید کار",
+  "TASK.OVERDUE": "سررسید گذشته کار",
   "OPPORTUNITY.STAGE_CHANGED": "تغییر مرحله فرصت",
 }
 const actionLabels: Record<string, string> = {
@@ -47,6 +52,9 @@ const actionLabels: Record<string, string> = {
   REASSIGNED: "ارجاع مجدد",
   COMPLETED: "تکمیل",
   STAGE_CHANGED: "تغییر مرحله",
+  REMINDER: "یادآوری",
+  DUE_SOON: "نزدیک‌شدن سررسید",
+  OVERDUE: "سررسید گذشته",
 }
 
 const recipientLabels: Record<NotificationRecipientType, string> = {
@@ -100,6 +108,7 @@ export function RuleDialog({
   const [priority, setPriority] = useState(rule?.priority ?? 100)
   const [mandatory, setMandatory] = useState(rule?.mandatory ?? false)
   const [conditions, setConditions] = useState<NotificationRuleConditions | null>(rule?.conditions ?? null)
+  const [schedule, setSchedule] = useState<NotificationScheduleInput | null>(rule?.schedule ? { enabled: rule.schedule.enabled, type: rule.schedule.scheduleType, sourceField: rule.schedule.sourceField, triggerMode: rule.schedule.triggerMode, offsetMinutes: rule.schedule.offsetMinutes, gracePeriodMinutes: rule.schedule.gracePeriodMinutes } : null)
   const [recipients, setRecipients] = useState<RecipientRuleInput[]>(
     rule?.recipientRules?.length
       ? rule.recipientRules.map((item) => ({
@@ -127,6 +136,12 @@ export function RuleDialog({
     catalog.data?.channels ??
     (Object.keys(channelLabels) as NotificationChannel[])
   const conditionFields = catalog.data?.conditionEvents?.find(item => item.eventName === eventName)?.conditionFields ?? []
+  const scheduleDefinition = catalog.data?.scheduleEvents?.find(item => item.eventName === eventName)
+  const selectEvent = (nextEvent: string) => {
+    setEventName(nextEvent); setConditions(null)
+    const definition = catalog.data?.scheduleEvents?.find(item => item.eventName === nextEvent)
+    setSchedule(definition ? { enabled: true, type: definition.scheduleOptions.type, sourceField: definition.scheduleOptions.sourceField, triggerMode: definition.scheduleOptions.triggerModes[0]!, offsetMinutes: definition.scheduleOptions.suggestedOffsetsMinutes[0] ?? 0, gracePeriodMinutes: definition.scheduleOptions.defaultGracePeriodMinutes } : null)
+  }
 
   const updateRecipient = (
     index: number,
@@ -167,6 +182,7 @@ export function RuleDialog({
       mandatory,
       enabled: rule?.enabled ?? true,
       conditions,
+      schedule,
       recipientRules: recipients,
     }
 
@@ -212,7 +228,7 @@ export function RuleDialog({
                   const first = events.find((event) =>
                     event.startsWith(`${service}.`)
                   )
-                  if (first) { setEventName(first); setConditions(null) }
+                  if (first) selectEvent(first)
                 }}
               >
                 {services.map((service) => (
@@ -232,7 +248,7 @@ export function RuleDialog({
               <span>اکشن</span>
               <NativeSelect
                 value={selectedAction}
-                onChange={(e) => { setEventName(`${selectedService}.${e.target.value}`); setConditions(null) }}
+                onChange={(e) => selectEvent(`${selectedService}.${e.target.value}`)}
               >
                 {actions.map((action) => {
                   const value = `${selectedService}.${action}`
@@ -265,6 +281,7 @@ export function RuleDialog({
             </label>
           </div>
 
+          <RuleScheduleEditor definition={scheduleDefinition} value={schedule} onChange={setSchedule} />
           <RuleConditionBuilder fields={conditionFields} value={conditions} onChange={setConditions} />
 
           <div className="grid gap-3">
@@ -599,6 +616,11 @@ export function AdminNotificationRulesPage({
                   {rule.mandatory ? (
                     <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
                       اجباری
+                    </span>
+                  ) : null}
+                  {rule.schedule ? (
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700">
+                      {rule.schedule.offsetMinutes === 0 ? "در سررسید" : `${Math.abs(rule.schedule.offsetMinutes)} دقیقه قبل`}
                     </span>
                   ) : null}
                 </div>

@@ -24,6 +24,7 @@ export type NotificationRule = {
   mandatory: boolean
   priority: number
   conditions?: NotificationRuleConditions | null
+  schedule?: NotificationSchedule | null
   recipientRules: NotificationRecipientRule[]
   createdAt?: string
   updatedAt?: string
@@ -32,9 +33,16 @@ export type NotificationRule = {
 export type NotificationRuleCatalog = {
   events: string[]
   conditionEvents: NotificationConditionEventDefinition[]
+  scheduleEvents: NotificationScheduleEventDefinition[]
   recipientTypes: NotificationRecipientType[]
   channels: NotificationChannel[]
 }
+
+export type NotificationScheduleType = "RELATIVE" | "OVERDUE"
+export type NotificationScheduleTriggerMode = "BEFORE" | "AT" | "AT_OR_AFTER" | "AFTER"
+export type NotificationScheduleInput = { enabled?: boolean; type: NotificationScheduleType; sourceField: string; triggerMode: NotificationScheduleTriggerMode; offsetMinutes: number; gracePeriodMinutes?: number }
+export type NotificationSchedule = { id: string; ruleId: string; enabled: boolean; scheduleType: NotificationScheduleType; sourceField: string; triggerMode: NotificationScheduleTriggerMode; offsetMinutes: number; gracePeriodMinutes: number; lastEvaluatedAt?: string | null }
+export type NotificationScheduleEventDefinition = { eventName: string; label: string; supportsSchedule: true; scheduleOptions: { type: NotificationScheduleType; sourceField: string; triggerModes: NotificationScheduleTriggerMode[]; suggestedOffsetsMinutes: number[]; defaultGracePeriodMinutes: number } }
 
 export type NotificationConditionOperator = "EQ" | "NEQ" | "IN" | "NOT_IN" | "EXISTS" | "NOT_EXISTS" | "GT" | "GTE" | "LT" | "LTE"
 export type NotificationConditionValue = string | number | boolean | null | Array<string | number | boolean | null>
@@ -157,5 +165,6 @@ export type NotificationRuleInput = {
   mandatory?: boolean
   priority?: number
   conditions?: NotificationRuleConditions | null
+  schedule?: NotificationScheduleInput | null
   recipientRules: RecipientRuleInput[]
 }
