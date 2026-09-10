@@ -77,8 +77,8 @@ vi.mock("../hooks/useTasks", () => ({
 }))
 
 vi.mock("@/components/shared/IdentityAvatar", () => ({
-  IdentityAvatar: ({ name, mediaPath }: { name: string; mediaPath?: string }) => (
-    <span data-testid="identity-avatar" data-media-path={mediaPath}>
+  IdentityAvatar: ({ name, mediaPath, hasMedia }: { name: string; mediaPath?: string; hasMedia?: boolean }) => (
+    <span data-testid="identity-avatar" data-media-path={mediaPath} data-has-media={hasMedia}>
       {name}
     </span>
   ),
@@ -140,6 +140,11 @@ describe("TaskDetailPage", () => {
     expect(mediaPaths).toContain("/companies/company-1/logo")
     expect(mediaPaths).toContain("/users/user-1/avatar")
     expect(mediaPaths).toContain("/users/user-2/avatar")
+    expect(
+      screen.getAllByTestId("identity-avatar").every(
+        (element) => element.getAttribute("data-has-media") === "true",
+      ),
+    ).toBe(true)
   })
 
   it("returns to the task list after a successful delete", async () => {

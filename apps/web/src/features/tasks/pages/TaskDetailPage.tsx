@@ -443,7 +443,7 @@ function ContextCard({
                 "شرکت"
               }
               mediaPath={task.companyId ? `/companies/${task.companyId}/logo` : undefined}
-              hasMedia={Boolean(task.company?.logoObjectKey)}
+              hasMedia={Boolean(task.companyId)}
               mediaVersion={task.company?.logoObjectKey}
               fallbackIcon={<Building2 className="size-4" />}
               className="size-9 rounded-xl"
@@ -591,7 +591,7 @@ function TaskUserAvatar({
     <IdentityAvatar
       name={name}
       mediaPath={user?.id ? `/users/${user.id}/avatar` : undefined}
-      hasMedia={Boolean(user?.avatarObjectKey)}
+      hasMedia={Boolean(user?.id)}
       mediaVersion={user?.avatarObjectKey}
       fallbackIcon={fallbackIcon}
       className="size-9 rounded-xl"
