@@ -106,10 +106,12 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
     screen.queryByRole("button", { name: uiText.companies.list.create })
   ).not.toBeInTheDocument()
 
-  await userEvent.selectOptions(
-    screen.getByLabelText(uiText.companies.list.filters.allPriorities),
-    "LOW"
+  await userEvent.click(
+    screen.getByRole("button", {
+      name: uiText.companies.list.filters.allPriorities,
+    })
   )
+  await userEvent.click(screen.getByRole("button", { name: "کم" }))
 
   await waitFor(() =>
     expect(api.get).toHaveBeenCalledWith(
@@ -124,10 +126,8 @@ it("Companies sends deep-link filters to the API, resets page and restores back 
 
   await act(() => router.navigate(-1))
 
-  expect(
-    screen.getByLabelText(uiText.companies.list.filters.allPriorities)
-  ).toHaveValue("HIGH")
   expect(router.state.location.search).toContain("page=2")
+  expect(router.state.location.search).toContain("priority=HIGH")
 })
 it("Admin Users uses shared pagination, server filters and unchanged create permissions", async () => {
   const { router } = mount(

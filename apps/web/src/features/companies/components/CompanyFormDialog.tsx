@@ -8,7 +8,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import type { ReactNode } from "react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
 
 import { Button } from "@workspace/ui/components/button"
@@ -19,6 +19,7 @@ import { Label } from "@workspace/ui/components/label"
 import { PersianDatePicker } from "@/components/shared/date"
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { CurrencyInput, NumberInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -94,6 +95,8 @@ export function CompanyFormDialog({
     useLeadSources(open)
   const { data: industries = [], isPending: isIndustriesPending } =
     useIndustries(open)
+  const [industrySearch, setIndustrySearch] = useState("")
+  const [sourceSearch, setSourceSearch] = useState("")
 
   const sourceOptions = useMemo(() => {
     const current = company?.sourceRef
@@ -111,6 +114,15 @@ export function CompanyFormDialog({
     return [current, ...industries]
   }, [company?.industryRef, industries])
 
+  const visibleIndustryOptions = useMemo(
+    () => industryOptions.filter((item) => item.name.includes(industrySearch.trim())),
+    [industryOptions, industrySearch],
+  )
+  const visibleSourceOptions = useMemo(
+    () => sourceOptions.filter((item) => item.name.includes(sourceSearch.trim())),
+    [sourceOptions, sourceSearch],
+  )
+
   const {
     register,
     control,
@@ -125,8 +137,18 @@ export function CompanyFormDialog({
   })
 
   useEffect(() => {
-    if (open) reset(defaultValues)
+    if (open) {
+      reset(defaultValues)
+    }
   }, [defaultValues, open, reset])
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      setIndustrySearch("")
+      setSourceSearch("")
+    }
+    onOpenChange(nextOpen)
+  }
 
   const legalName = useWatch({ control, name: "legalName" })
   const brandName = useWatch({ control, name: "brandName" })
@@ -170,7 +192,7 @@ export function CompanyFormDialog({
     mode === "create" ? text.createDescription : text.editDescription
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         dir="rtl"
@@ -226,7 +248,7 @@ export function CompanyFormDialog({
               title={title}
               description={description}
               closeLabel={text.close}
-              onClose={() => onOpenChange(false)}
+              onClose={() => handleOpenChange(false)}
             />
 
             <form
@@ -298,24 +320,22 @@ export function CompanyFormDialog({
                       htmlFor="company-ownership"
                       label={text.fields.ownership}
                     >
-                      <select
-                        id="company-ownership"
-                        aria-invalid={Boolean(errors.ownership)}
-                        aria-describedby={
-                          errors.ownership
-                            ? "company-ownership-error"
-                            : undefined
-                        }
-                        {...register("ownership")}
-                        className={selectClass}
-                      >
-                        <option value="">{text.selectPlaceholder}</option>
-                        {COMPANY_OWNERSHIPS.map((value) => (
-                          <option key={value} value={value}>
-                            {text.ownerships[value]}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        control={control}
+                        name="ownership"
+                        render={({ field }) => (
+                          <SearchableOptionSelect
+                            value={field.value}
+                            options={COMPANY_OWNERSHIPS.map((value) => ({ id: value, label: text.ownerships[value] }))}
+                            search=""
+                            onSearchChange={() => undefined}
+                            onChange={field.onChange}
+                            placeholder={text.selectPlaceholder}
+                            ariaLabel={text.fields.ownership}
+                            searchable={false}
+                          />
+                        )}
+                      />
                     </Field>
 
                     <Field
@@ -323,24 +343,22 @@ export function CompanyFormDialog({
                       htmlFor="company-activityStatus"
                       label={text.fields.activityStatus}
                     >
-                      <select
-                        id="company-activityStatus"
-                        aria-invalid={Boolean(errors.activityStatus)}
-                        aria-describedby={
-                          errors.activityStatus
-                            ? "company-activityStatus-error"
-                            : undefined
-                        }
-                        {...register("activityStatus")}
-                        className={selectClass}
-                      >
-                        <option value="">{text.selectPlaceholder}</option>
-                        {COMPANY_ACTIVITY_STATUSES.map((value) => (
-                          <option key={value} value={value}>
-                            {text.activityStatuses[value]}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        control={control}
+                        name="activityStatus"
+                        render={({ field }) => (
+                          <SearchableOptionSelect
+                            value={field.value}
+                            options={COMPANY_ACTIVITY_STATUSES.map((value) => ({ id: value, label: text.activityStatuses[value] }))}
+                            search=""
+                            onSearchChange={() => undefined}
+                            onChange={field.onChange}
+                            placeholder={text.selectPlaceholder}
+                            ariaLabel={text.fields.activityStatus}
+                            searchable={false}
+                          />
+                        )}
+                      />
                     </Field>
                   </FormSectionBlock>
 
@@ -354,25 +372,23 @@ export function CompanyFormDialog({
                       label={text.fields.industry}
                       error={errors.industryId?.message}
                     >
-                      <select
-                        id="company-industryId"
-                        aria-invalid={Boolean(errors.industryId)}
-                        aria-describedby={
-                          errors.industryId
-                            ? "company-industryId-error"
-                            : undefined
-                        }
-                        {...register("industryId")}
-                        className={selectClass}
-                        disabled={isIndustriesPending}
-                      >
-                        <option value="">{text.selectPlaceholder}</option>
-                        {industryOptions.map((industry) => (
-                          <option key={industry.id} value={industry.id}>
-                            {industry.name}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        control={control}
+                        name="industryId"
+                        render={({ field }) => (
+                          <SearchableOptionSelect
+                            value={field.value}
+                            options={visibleIndustryOptions.map((item) => ({ id: item.id, label: item.name }))}
+                            search={industrySearch}
+                            onSearchChange={setIndustrySearch}
+                            onChange={(value) => field.onChange(value ?? "")}
+                            placeholder={text.selectPlaceholder}
+                            ariaLabel={text.fields.industry}
+                            loading={isIndustriesPending}
+                            disabled={isIndustriesPending}
+                          />
+                        )}
+                      />
                     </Field>
 
                     <Field
@@ -380,22 +396,22 @@ export function CompanyFormDialog({
                       htmlFor="company-priority"
                       label={text.fields.priority}
                     >
-                      <select
-                        id="company-priority"
-                        aria-invalid={Boolean(errors.priority)}
-                        aria-describedby={
-                          errors.priority ? "company-priority-error" : undefined
-                        }
-                        {...register("priority")}
-                        className={selectClass}
-                      >
-                        <option value="">{text.selectPlaceholder}</option>
-                        {COMPANY_PRIORITIES.map((value) => (
-                          <option key={value} value={value}>
-                            {text.priorities[value]}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        control={control}
+                        name="priority"
+                        render={({ field }) => (
+                          <SearchableOptionSelect
+                            value={field.value}
+                            options={COMPANY_PRIORITIES.map((value) => ({ id: value, label: text.priorities[value] }))}
+                            search=""
+                            onSearchChange={() => undefined}
+                            onChange={field.onChange}
+                            placeholder={text.selectPlaceholder}
+                            ariaLabel={text.fields.priority}
+                            searchable={false}
+                          />
+                        )}
+                      />
                     </Field>
 
                     <Field
@@ -403,23 +419,23 @@ export function CompanyFormDialog({
                       label={text.fields.source}
                       error={errors.sourceId?.message}
                     >
-                      <select
-                        id="company-sourceId"
-                        aria-invalid={Boolean(errors.sourceId)}
-                        aria-describedby={
-                          errors.sourceId ? "company-sourceId-error" : undefined
-                        }
-                        {...register("sourceId")}
-                        className={selectClass}
-                        disabled={isLeadSourcesPending}
-                      >
-                        <option value="">{text.selectPlaceholder}</option>
-                        {sourceOptions.map((source) => (
-                          <option key={source.id} value={source.id}>
-                            {source.name}
-                          </option>
-                        ))}
-                      </select>
+                      <Controller
+                        control={control}
+                        name="sourceId"
+                        render={({ field }) => (
+                          <SearchableOptionSelect
+                            value={field.value}
+                            options={visibleSourceOptions.map((item) => ({ id: item.id, label: item.name }))}
+                            search={sourceSearch}
+                            onSearchChange={setSourceSearch}
+                            onChange={(value) => field.onChange(value ?? "")}
+                            placeholder={text.selectPlaceholder}
+                            ariaLabel={text.fields.source}
+                            loading={isLeadSourcesPending}
+                            disabled={isLeadSourcesPending}
+                          />
+                        )}
+                      />
                     </Field>
 
                     <Field
@@ -619,7 +635,7 @@ export function CompanyFormDialog({
                     variant="outline"
                     className="rounded-xl"
                     disabled={isPending}
-                    onClick={() => onOpenChange(false)}
+                    onClick={() => handleOpenChange(false)}
                   >
                     {uiText.common.cancel}
                   </Button>
@@ -741,6 +757,3 @@ function clean(value?: string) {
   const result = value?.trim()
   return result || undefined
 }
-
-const selectClass =
-  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
