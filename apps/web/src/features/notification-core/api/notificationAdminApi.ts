@@ -2,7 +2,7 @@ import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 import { parsePaginatedResponse } from "@/lib/pagination"
 import { z } from "zod"
-import type { NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryDetail, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, NotificationTriggerType, PushSettings, SmsSettings } from "../types/rule-engine.types"
+import type { DigestPolicy, EscalationPolicy, NotificationChannel, NotificationChannelStatus, NotificationDelivery, NotificationDeliveryDetail, NotificationDeliveryStatus, NotificationEventMeta, NotificationTemplate, NotificationTemplatePreview, NotificationTemplateVariable, NotificationTriggerType, PushSettings, QuietHoursPolicy, SmsSettings } from "../types/rule-engine.types"
 
 export type TemplateInput = Pick<NotificationTemplate, "eventName" | "channel" | "locale" | "body" | "isActive" | "version"> & { subject?: string | null }
 export type DeliveryFilters = { page: number; pageSize: number; eventName?: string; channel?: NotificationChannel; status?: NotificationDeliveryStatus; recipientUserId?: string; ruleId?: string; templateId?: string; triggerType?: NotificationTriggerType; provider?: string; aggregateType?: string; aggregateId?: string; dateFrom?: string; dateTo?: string; search?: string; sortBy?: "createdAt" | "sentAt" | "deliveredAt" | "status" | "channel"; sortDirection?: "asc" | "desc" }
@@ -79,3 +79,13 @@ export async function getNotificationDelivery(id: string) {
   const response = await api.get(`/admin/notification-deliveries/${id}`)
   return unwrapApiResponse<NotificationDeliveryDetail>(response.data)
 }
+export async function getQuietHours() { const response = await api.get("/admin/notification-policies/quiet-hours"); return unwrapApiResponse<QuietHoursPolicy | null>(response.data) }
+export async function updateQuietHours(input: QuietHoursPolicy) { const response = await api.patch("/admin/notification-policies/quiet-hours", input); return unwrapApiResponse<QuietHoursPolicy>(response.data) }
+export async function getDigestPolicies() { const response = await api.get("/admin/notification-policies/digests"); return unwrapApiResponse<DigestPolicy[]>(response.data) }
+export async function createDigestPolicy(input: Omit<DigestPolicy, "id">) { const response = await api.post("/admin/notification-policies/digests", input); return unwrapApiResponse<DigestPolicy>(response.data) }
+export async function updateDigestPolicy(id: string, input: Partial<Omit<DigestPolicy, "id">>) { const response = await api.patch(`/admin/notification-policies/digests/${id}`, input); return unwrapApiResponse<DigestPolicy>(response.data) }
+export async function deleteDigestPolicy(id: string) { const response = await api.delete(`/admin/notification-policies/digests/${id}`); return unwrapApiResponse<{ disabled: boolean }>(response.data) }
+export async function getEscalationPolicies() { const response = await api.get("/admin/notification-policies/escalations"); return unwrapApiResponse<EscalationPolicy[]>(response.data) }
+export async function createEscalationPolicy(input: Omit<EscalationPolicy, "id">) { const response = await api.post("/admin/notification-policies/escalations", input); return unwrapApiResponse<EscalationPolicy>(response.data) }
+export async function updateEscalationPolicy(id: string, input: Partial<Omit<EscalationPolicy, "id">>) { const response = await api.patch(`/admin/notification-policies/escalations/${id}`, input); return unwrapApiResponse<EscalationPolicy>(response.data) }
+export async function deleteEscalationPolicy(id: string) { const response = await api.delete(`/admin/notification-policies/escalations/${id}`); return unwrapApiResponse<{ disabled: boolean }>(response.data) }

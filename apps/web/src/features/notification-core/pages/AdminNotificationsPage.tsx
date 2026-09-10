@@ -36,6 +36,7 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { AdminNotificationRulesPage, RuleDialog } from "./AdminNotificationRulesPage"
+import { DigestsTab, EscalationsTab, QuietHoursTab, policyTabIcons } from "../components/NotificationPolicyTabs"
 import { useNotificationTargets } from "../hooks/useNotificationRules"
 import {
   createNotificationTemplate,
@@ -67,12 +68,15 @@ import type {
   NotificationTemplate,
 } from "../types/rule-engine.types"
 
-type Tab = "rules" | "templates" | "channels" | "deliveries"
+type Tab = "rules" | "templates" | "channels" | "deliveries" | "quiet" | "digests" | "escalations"
 const tabs: { id: Tab; label: string; icon: typeof BellRing }[] = [
   { id: "rules", label: "قوانین اعلان", icon: BellRing },
   { id: "templates", label: "قالب‌ها", icon: FileText },
   { id: "channels", label: "کانال‌ها", icon: Radio },
   { id: "deliveries", label: "تاریخچه ارسال", icon: History },
+  { id: "quiet", label: "ساعات سکوت", icon: policyTabIcons.quiet },
+  { id: "digests", label: "خلاصه‌ها", icon: policyTabIcons.digests },
+  { id: "escalations", label: "افزایش سطح", icon: policyTabIcons.escalations },
 ]
 const channelLabels: Record<NotificationChannel, string> = {
   EMAIL: "ایمیل",
@@ -168,7 +172,7 @@ export function AdminNotificationsPage() {
       />
       <nav
         aria-label="بخش‌های تنظیمات اعلان"
-        className="grid grid-cols-2 gap-2 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 md:flex"
+        className="grid grid-cols-2 gap-2 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 sm:grid-cols-3 lg:flex lg:flex-wrap"
       >
         {tabs.map(({ id, label, icon: Icon }) => (
           <Button
@@ -202,6 +206,9 @@ export function AdminNotificationsPage() {
           events={catalog.data?.events.map((item) => item.eventName) ?? []}
         />
       ) : null}
+      {tab === "quiet" ? <QuietHoursTab /> : null}
+      {tab === "digests" ? <DigestsTab events={catalog.data?.events.map((item) => item.eventName) ?? []} /> : null}
+      {tab === "escalations" ? <EscalationsTab events={catalog.data?.events.map((item) => item.eventName) ?? []} /> : null}
     </div>
   )
 }
@@ -703,6 +710,10 @@ function DeliveryDetailDialog({ id, onClose }: { id: string; onClose: () => void
           {field("مقصد محافظت‌شده", item.destination)}
           {field("کانال", channelLabels[item.channel])}
           {field("وضعیت", <StatusBadge tone={item.status === "FAILED" ? "error" : item.status === "DELIVERED" || item.status === "SENT" ? "success" : "neutral"}>{deliveryLabels[item.status]}</StatusBadge>)}
+          {field("تصمیم ارسال", item.orchestrationReason)}
+          {field("تعویق تا", date(item.deferredUntil))}
+          {item.digestBucketId ? field("خلاصه دوره‌ای", item.digestBucketId) : null}
+          {item.escalationRunId ? field("مرحله افزایش سطح", item.escalationRunId) : null}
           {field("نوع اجرا", triggerLabels[item.triggerType])}
           {field("قانون", item.rule?.name)}
           {field("قالب", item.template ? `نسخه ${item.template.version.toLocaleString("fa-IR")} · ${item.template.locale}` : "—")}

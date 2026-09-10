@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { BellRing, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import { getDigestPolicies } from "../api/notificationAdminApi"
 import { RuleConditionBuilder } from "../components/RuleConditionBuilder"
 import { RuleScheduleEditor } from "../components/RuleScheduleEditor"
 import { Button } from "@workspace/ui/components/button"
@@ -28,6 +30,7 @@ import type {
   NotificationRule,
   NotificationRuleConditions,
   NotificationRuleInput,
+  NotificationPriority,
   NotificationScheduleInput,
   RecipientRuleInput,
 } from "../types/rule-engine.types"
@@ -106,6 +109,9 @@ export function RuleDialog({
     rule?.eventName ?? "MEETING.CREATED"
   )
   const [priority, setPriority] = useState(rule?.priority ?? 100)
+  const [deliveryPriority, setDeliveryPriority] = useState<NotificationPriority>(rule?.deliveryPriority ?? "NORMAL")
+  const [digestPolicyId, setDigestPolicyId] = useState(rule?.digestPolicyId ?? "")
+  const digestPolicies = useQuery({ queryKey: ["notification-digests"], queryFn: getDigestPolicies })
   const [mandatory, setMandatory] = useState(rule?.mandatory ?? false)
   const [conditions, setConditions] = useState<NotificationRuleConditions | null>(rule?.conditions ?? null)
   const [schedule, setSchedule] = useState<NotificationScheduleInput | null>(rule?.schedule ? { enabled: rule.schedule.enabled, type: rule.schedule.scheduleType, sourceField: rule.schedule.sourceField, triggerMode: rule.schedule.triggerMode, offsetMinutes: rule.schedule.offsetMinutes, gracePeriodMinutes: rule.schedule.gracePeriodMinutes } : null)
@@ -179,6 +185,8 @@ export function RuleDialog({
       name: name.trim(),
       eventName,
       priority,
+      deliveryPriority,
+      digestPolicyId: digestPolicyId || null,
       mandatory,
       enabled: rule?.enabled ?? true,
       conditions,
@@ -269,6 +277,19 @@ export function RuleDialog({
                 value={priority}
                 onChange={(e) => setPriority(Number(e.target.value) || 0)}
               />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span>فوریت اعلان</span>
+              <NativeSelect value={deliveryPriority} onChange={event => setDeliveryPriority(event.target.value as NotificationPriority)}>
+                <option value="LOW">کم</option><option value="NORMAL">عادی</option><option value="HIGH">زیاد</option><option value="URGENT">فوری</option><option value="CRITICAL">بحرانی (عبور از ساعات سکوت)</option>
+              </NativeSelect>
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span>خلاصه دوره‌ای</span>
+              <NativeSelect value={digestPolicyId} onChange={event => setDigestPolicyId(event.target.value)}>
+                <option value="">ارسال مستقیم</option>
+                {digestPolicies.data?.filter(item => item.enabled && item.eventNames.includes(eventName)).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </NativeSelect>
             </label>
             <label className="flex items-center gap-3 rounded-xl border p-3 text-sm">
               <input

@@ -1,4 +1,5 @@
 export type NotificationChannel = "EMAIL" | "SMS" | "PUSH" | "IN_APP"
+export type NotificationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL"
 export type NotificationRecipientType =
   | "USER"
   | "ROLE"
@@ -23,6 +24,8 @@ export type NotificationRule = {
   enabled: boolean
   mandatory: boolean
   priority: number
+  deliveryPriority: NotificationPriority
+  digestPolicyId?: string | null
   conditions?: NotificationRuleConditions | null
   schedule?: NotificationSchedule | null
   recipientRules: NotificationRecipientRule[]
@@ -99,6 +102,11 @@ export type NotificationDelivery = {
   status: NotificationDeliveryStatus
   destination?: string | null
   attemptCount: number
+  priority?: NotificationPriority
+  orchestrationReason?: string | null
+  deferredUntil?: string | null
+  digestBucketId?: string | null
+  escalationRunId?: string | null
   providerMessageId?: string | null
   failureCode?: string | null
   failureMessage?: string | null
@@ -192,7 +200,14 @@ export type NotificationRuleInput = {
   enabled?: boolean
   mandatory?: boolean
   priority?: number
+  deliveryPriority?: NotificationPriority
+  digestPolicyId?: string | null
   conditions?: NotificationRuleConditions | null
   schedule?: NotificationScheduleInput | null
   recipientRules: RecipientRuleInput[]
 }
+
+export type QuietHoursPolicy = { id?: string; enabled: boolean; startTime: string; endTime: string; timezone: string; channels: NotificationChannel[]; allowCritical: boolean; mode: "SUPPRESS" | "DEFER" }
+export type DigestPolicy = { id: string; name: string; enabled: boolean; frequency: "DAILY"; sendTime: string; timezone: string; subjectTemplate?: string; introText?: string; eventNames: string[]; channels: NotificationChannel[] }
+export type EscalationStep = { id?: string; delayMinutes: number; recipientType: NotificationRecipientType; targetId?: string | null; channels: NotificationChannel[]; priority: NotificationPriority; mandatory: boolean }
+export type EscalationPolicy = { id: string; name: string; enabled: boolean; eventName: string; aggregateType: string; conditions?: Record<string, unknown> | null; steps: EscalationStep[] }
