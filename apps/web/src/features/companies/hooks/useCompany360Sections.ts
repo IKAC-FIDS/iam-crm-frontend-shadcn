@@ -90,6 +90,7 @@ export type CompanyTask = {
     email?: string | null
     role?: string | null
     team?: string | null
+    avatarObjectKey?: string | null
   } | null
 }
 
@@ -108,6 +109,7 @@ export type CompanyMeeting = {
     id?: string
     fullName?: string | null
     email?: string | null
+    avatarObjectKey?: string | null
   } | null
   opportunity?: { id?: string; title?: string | null } | null
   assignees?: Array<{

@@ -62,13 +62,13 @@ export function Company360ActionSection({
         onCreate ? (
           <Button
             type="button"
-            size="icon"
+            size="sm"
             className="rounded-xl"
             onClick={onCreate}
             aria-label={createLabel || uiText.common.save}
-            title={createLabel}
           >
             <Plus className="size-4" />
+            {createLabel}
           </Button>
         ) : null
       }

@@ -25,6 +25,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
@@ -33,6 +34,10 @@ import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDia
 import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog"
 import { OpportunityFormDialog } from "@/features/opportunities/components/OpportunityFormDialog"
+import { taskPriorityLabel, taskStatusLabel } from "@/features/tasks/utils/taskFormatters"
+import type { TaskPriority, TaskStatus } from "@/features/tasks/types/task.types"
+import { meetingModeLabel, meetingStatusLabel } from "@/features/meetings/utils/meetingFormatters"
+import type { MeetingMode, MeetingStatus } from "@/features/meetings/types/meeting.types"
 import { useCreateOpportunity, usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
 import type { OpportunityPayload } from "@/features/opportunities/types/opportunity.types"
 import { useAuthStore } from "@/store/authStore"
@@ -306,7 +311,17 @@ export function CompanyDetailPage() {
               {company.industryRef?.name || company.industry || text.notSpecified}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
-              <UsersRound className="size-3.5" />
+              {company.owner?.id ? (
+                <IdentityAvatar
+                  name={company.owner.fullName}
+                  mediaPath={`/users/${company.owner.id}/avatar`}
+                  hasMedia
+                  mediaVersion={company.owner.avatarObjectKey}
+                  className="size-5 rounded-md text-[8px]"
+                />
+              ) : (
+                <UsersRound className="size-3.5" />
+              )}
               {company.owner?.fullName || text.unassigned}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
@@ -321,7 +336,7 @@ export function CompanyDetailPage() {
         <ProfileMediaEditor
           name={displayName}
           mediaPath={`/companies/${company.id}/logo`}
-          hasMedia={Boolean(company.logoObjectKey)}
+          hasMedia={Boolean(company.id)}
           mediaVersion={company.logoObjectKey}
           canEdit={permissions.includes("company:update")}
           label="لوگوی شرکت"
@@ -387,7 +402,18 @@ export function CompanyDetailPage() {
                 },
                 {
                   label: text.fields.owner,
-                  value: company.owner?.fullName || text.unassigned,
+                  value: company.owner ? (
+                    <span className="inline-flex items-center gap-2">
+                      <IdentityAvatar
+                        name={company.owner.fullName}
+                        mediaPath={`/users/${company.owner.id}/avatar`}
+                        hasMedia={Boolean(company.owner.id)}
+                        mediaVersion={company.owner.avatarObjectKey}
+                        className="size-7 rounded-lg text-[9px]"
+                      />
+                      {company.owner.fullName}
+                    </span>
+                  ) : text.unassigned,
                 },
                 {
                   label: text.fields.city,
@@ -675,9 +701,11 @@ export function CompanyDetailPage() {
                         onClick={() => setSelectedPersonId(person.id)}
                         className="flex min-h-[58px] w-full items-center gap-3 rounded-2xl border border-transparent bg-[var(--app-background)]/60 p-3 text-start transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--app-divider)] hover:bg-[var(--app-surface)] hover:shadow-sm"
                       >
-                        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
-                          {person.fullName.slice(0, 1)}
-                        </div>
+                        <IdentityAvatar
+                          name={person.fullName}
+                          hasMedia={false}
+                          className="size-9 rounded-xl text-xs"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-bold text-[var(--app-heading)]">
                             {person.fullName}
@@ -739,12 +767,20 @@ export function CompanyDetailPage() {
                         }
                       >
                         <EntityRow
-                          icon={<ListTodo className="size-4" />}
+                          icon={task.assignedTo?.id ? (
+                            <IdentityAvatar
+                              name={task.assignedTo.fullName || task.assignedTo.email || task.title}
+                              mediaPath={`/users/${task.assignedTo.id}/avatar`}
+                              hasMedia
+                              mediaVersion={task.assignedTo.avatarObjectKey}
+                              className="size-9 rounded-xl text-[10px]"
+                            />
+                          ) : <ListTodo className="size-4" />}
                           title={task.title}
                           subtitle={[
                             task.assignedTo?.fullName,
-                            task.status,
-                            task.priority,
+                            displayTaskStatus(task.status),
+                            displayTaskPriority(task.priority),
                           ]
                             .filter(Boolean)
                             .join(" · ")}
@@ -793,10 +829,18 @@ export function CompanyDetailPage() {
                         onClick={() => navigate(`/meetings/${meeting.id}`)}
                       >
                         <EntityRow
-                          icon={<CalendarClock className="size-4" />}
+                          icon={meeting.organizer?.id ? (
+                            <IdentityAvatar
+                              name={meeting.organizer.fullName || meeting.organizer.email || meeting.title}
+                              mediaPath={`/users/${meeting.organizer.id}/avatar`}
+                              hasMedia
+                              mediaVersion={meeting.organizer.avatarObjectKey}
+                              className="size-9 rounded-xl text-[10px]"
+                            />
+                          ) : <CalendarClock className="size-4" />}
                           title={meeting.title}
                           subtitle={[
-                            meeting.mode,
+                            displayMeetingMode(meeting.mode),
                             meeting.location,
                             meeting.organizer?.fullName,
                           ]
@@ -1003,15 +1047,17 @@ function quickViewProps(
       const item = state.item
       return {
         title: item.title,
-        subtitle: item.status,
+        subtitle: item.status ? (
+          <StatusBadge>{displayTaskStatus(item.status)}</StatusBadge>
+        ) : undefined,
         icon: <ListTodo className="size-5" />,
         fields: [
-          { value: item.assignedTo?.fullName },
-          { value: item.priority },
-          { value: formatCompanyDateTime(item.dueAt) },
-          { value: item.person?.fullName },
-          { value: item.opportunity?.title },
-          { value: item.description, wide: true },
+          { label: "مسئول", value: item.assignedTo?.fullName },
+          { label: "اولویت", value: displayTaskPriority(item.priority) },
+          { label: "سررسید", value: formatCompanyDateTime(item.dueAt) },
+          { label: "مخاطب", value: item.person?.fullName },
+          { label: "فرصت", value: item.opportunity?.title },
+          { label: "توضیحات", value: item.description, wide: true },
         ],
       }
     }
@@ -1019,24 +1065,27 @@ function quickViewProps(
       const item = state.item
       return {
         title: item.title,
-        subtitle: item.status,
+        subtitle: item.status ? (
+          <StatusBadge>{displayMeetingStatus(item.status)}</StatusBadge>
+        ) : undefined,
         icon: <CalendarClock className="size-5" />,
         fields: [
-          { value: item.organizer?.fullName },
-          { value: item.mode },
-          { value: item.location },
-          { value: formatCompanyDateTime(item.startAt) },
-          { value: formatCompanyDateTime(item.endAt) },
-          { value: item.opportunity?.title },
+          { label: "برگزارکننده", value: item.organizer?.fullName },
+          { label: "نحوه برگزاری", value: displayMeetingMode(item.mode) },
+          { label: "محل", value: item.location },
+          { label: "شروع", value: formatCompanyDateTime(item.startAt) },
+          { label: "پایان", value: formatCompanyDateTime(item.endAt) },
+          { label: "فرصت", value: item.opportunity?.title },
           {
+            label: "حاضران",
             value: item.attendees
               ?.map((entry) => entry.person?.fullName)
               .filter(Boolean)
               .join("، "),
             wide: true,
           },
-          { value: item.agenda, wide: true },
-          { value: item.description, wide: true },
+          { label: "دستور جلسه", value: item.agenda, wide: true },
+          { label: "توضیحات", value: item.description, wide: true },
         ],
       }
     }
@@ -1048,14 +1097,15 @@ function quickViewProps(
         icon: <CalendarClock className="size-5" />,
         fields: [
           {
+            label: "زمان فعالیت",
             value: formatCompanyDateTime(
               item.activityDate || item.occurredAt || item.createdAt
             ),
           },
-          { value: item.person?.fullName },
-          { value: item.status },
-          { value: item.outcome, wide: true },
-          { value: item.description || item.notes, wide: true },
+          { label: "مخاطب", value: item.person?.fullName },
+          { label: "وضعیت", value: displayActivityStatus(item.status) },
+          { label: "نتیجه", value: item.outcome, wide: true },
+          { label: "توضیحات", value: item.description || item.notes, wide: true },
         ],
       }
     }
@@ -1064,29 +1114,30 @@ function quickViewProps(
         title: state.item.name || state.item.city || fallback,
         icon: <MapPin className="size-5" />,
         fields: [
-          { value: state.item.city },
-          { value: state.item.phone },
-          { value: state.item.address, wide: true },
+          { label: "شهر", value: state.item.city },
+          { label: "تلفن", value: state.item.phone },
+          { label: "نشانی", value: state.item.address, wide: true },
         ],
       }
     case "social":
       return {
         title: state.item.platform || fallback,
         icon: <Share2 className="size-5" />,
-        fields: [{ value: state.item.handle, wide: true }],
+        fields: [{ label: "شناسه یا نشانی", value: state.item.handle, wide: true }],
       }
     case "document":
       return {
         title: state.item.title || state.item.type || fallback,
         icon: <FileText className="size-5" />,
         fields: [
-          { value: state.item.type },
+          { label: "نوع سند", value: displayLegalDocumentType(state.item.type) },
           {
+            label: "تاریخ سند",
             value: formatCompanyDate(
               state.item.documentDate || state.item.createdAt
             ),
           },
-          { value: state.item.description, wide: true },
+          { label: "توضیحات", value: state.item.description, wide: true },
         ],
       }
   }
@@ -1160,4 +1211,40 @@ function SectionEmpty() {
       {uiText.companies.detail.notSpecified}
     </p>
   )
+}
+
+function displayTaskStatus(value?: string | null) {
+  return ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"].includes(value || "")
+    ? taskStatusLabel(value as TaskStatus)
+    : value || undefined
+}
+
+function displayTaskPriority(value?: string | null) {
+  return ["LOW", "MEDIUM", "HIGH", "STRATEGIC"].includes(value || "")
+    ? taskPriorityLabel(value as TaskPriority)
+    : value || undefined
+}
+
+function displayMeetingStatus(value?: string | null) {
+  return ["SCHEDULED", "COMPLETED", "CANCELLED"].includes(value || "")
+    ? meetingStatusLabel(value as MeetingStatus)
+    : value || undefined
+}
+
+function displayMeetingMode(value?: string | null) {
+  return ["IN_PERSON", "ONLINE", "HYBRID"].includes(value || "")
+    ? meetingModeLabel(value as MeetingMode)
+    : value || undefined
+}
+
+function displayActivityStatus(value?: string | null) {
+  if (value === "COMPLETED") return "انجام‌شده"
+  if (value === "PENDING") return "در انتظار"
+  return value || undefined
+}
+
+function displayLegalDocumentType(value?: string | null) {
+  if (value === "OFFICIAL_GAZETTE") return "روزنامه رسمی"
+  if (value === "LATEST_CHANGES") return "آخرین تغییرات"
+  return value || undefined
 }
