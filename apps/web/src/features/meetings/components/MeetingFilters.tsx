@@ -1,17 +1,12 @@
 import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import { Filter, SlidersHorizontal } from "lucide-react"
 import { useState } from "react"
 
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import { PersianDateRangePicker } from "@/components/shared/date"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
-import { Button } from "@workspace/ui/components/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
 
 import {
   useMeetingAssignees,
@@ -40,16 +35,19 @@ export function MeetingFilters({
   values,
   onChange,
   onClear,
+  quickFilters,
 }: {
   values: FilterValues
   onChange: (patch: Partial<FilterValues>) => void
   onClear: () => void
+  quickFilters?: React.ReactNode
 }) {
   const text = uiText.meetings
   const [opportunitySearch, setOpportunitySearch] = useState("")
   const [organizerSearch, setOrganizerSearch] = useState("")
   const [assignedSearch, setAssignedSearch] = useState("")
   const [attendeeSearch, setAttendeeSearch] = useState("")
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const opportunities = useMeetingOpportunityOptions(
     values.companyId || "",
@@ -109,12 +107,23 @@ export function MeetingFilters({
     values.attendeePersonId,
   ].filter(Boolean).length
 
+  const hasActiveFilters = Boolean(
+    values.search ||
+    values.companyId ||
+    values.status ||
+    values.mode ||
+    values.dateFrom ||
+    values.dateTo ||
+    values.meetingTypeId ||
+    activeAdvanced
+  )
+
   return (
     <DataTableToolbar
       searchValue={values.search}
       onSearchChange={(value) => onChange({ search: value })}
       searchPlaceholder={text.fields.search}
-      hasActiveFilters
+      hasActiveFilters={hasActiveFilters}
       onClearFilters={() => {
         setOpportunitySearch("")
         setOrganizerSearch("")
@@ -123,6 +132,7 @@ export function MeetingFilters({
         onClear()
       }}
       filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+      quickFilters={quickFilters}
       filters={
         <>
           <SearchableCompanySelect
@@ -136,55 +146,50 @@ export function MeetingFilters({
             }
           />
 
-          <select
-            aria-label="نوع جلسه"
+          <SearchableOptionSelect
             value={values.meetingTypeId || ""}
-            onChange={(event) =>
-              onChange({ meetingTypeId: event.target.value || undefined })
-            }
-            className={selectClass}
-          >
-            <option value="">{text.fields.type}: همه</option>
-            {(meetingTypes.data ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+            options={(meetingTypes.data ?? []).map((item) => ({
+              id: item.id,
+              label: item.label,
+            }))}
+            onChange={(meetingTypeId) => onChange({ meetingTypeId })}
+            search=""
+            onSearchChange={() => undefined}
+            placeholder={`${text.fields.type}: همه`}
+            ariaLabel={text.fields.type}
+            loading={meetingTypes.isLoading}
+            searchable={false}
+          />
 
-          <select
-            aria-label="وضعیت جلسه"
-            value={values.status || ""}
-            onChange={(event) =>
-              onChange({
-                status: (event.target.value || undefined) as
-                  MeetingStatus | undefined,
-              })
+          <SearchableOptionSelect
+            value={values.status}
+            options={(
+              ["SCHEDULED", "COMPLETED", "CANCELLED"] as MeetingStatus[]
+            ).map((id) => ({ id, label: text.statuses[id] }))}
+            onChange={(status) =>
+              onChange({ status: status as MeetingStatus | undefined })
             }
-            className={selectClass}
-          >
-            <option value="">{text.fields.status}: همه</option>
-            <option value="SCHEDULED">{text.statuses.SCHEDULED}</option>
-            <option value="COMPLETED">{text.statuses.COMPLETED}</option>
-            <option value="CANCELLED">{text.statuses.CANCELLED}</option>
-          </select>
+            search=""
+            onSearchChange={() => undefined}
+            placeholder={`${text.fields.status}: همه`}
+            ariaLabel={text.fields.status}
+            searchable={false}
+          />
 
-          <select
-            aria-label="نحوه برگزاری"
-            value={values.mode || ""}
-            onChange={(event) =>
-              onChange({
-                mode: (event.target.value || undefined) as
-                  MeetingMode | undefined,
-              })
+          <SearchableOptionSelect
+            value={values.mode}
+            options={(["IN_PERSON", "ONLINE", "HYBRID"] as MeetingMode[]).map(
+              (id) => ({ id, label: text.modes[id] })
+            )}
+            onChange={(mode) =>
+              onChange({ mode: mode as MeetingMode | undefined })
             }
-            className={selectClass}
-          >
-            <option value="">{text.fields.mode}: همه</option>
-            <option value="IN_PERSON">{text.modes.IN_PERSON}</option>
-            <option value="ONLINE">{text.modes.ONLINE}</option>
-            <option value="HYBRID">{text.modes.HYBRID}</option>
-          </select>
+            search=""
+            onSearchChange={() => undefined}
+            placeholder={`${text.fields.mode}: همه`}
+            ariaLabel={text.fields.mode}
+            searchable={false}
+          />
 
           <PersianDateRangePicker
             value={range}
@@ -202,136 +207,118 @@ export function MeetingFilters({
             }}
           />
 
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 rounded-xl"
+          <AdvancedFilterPopover
+            open={advancedOpen}
+            onOpenChange={setAdvancedOpen}
+            activeCount={activeAdvanced}
+            label={text.actions.filters}
+            onClear={() =>
+              onChange({
+                opportunityId: undefined,
+                organizerId: undefined,
+                assignedUserId: undefined,
+                attendeePersonId: undefined,
+              })
+            }
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FilterField label={text.fields.opportunity}>
+                <MeetingOptionSelect
+                  value={values.opportunityId}
+                  onChange={(option) =>
+                    onChange({
+                      opportunityId: option?.id,
+                    })
+                  }
+                  options={opportunityOptions}
+                  search={opportunitySearch}
+                  onSearchChange={setOpportunitySearch}
+                  placeholder={
+                    values.companyId
+                      ? text.placeholders.select
+                      : text.placeholders.companyFirst
+                  }
+                  disabled={!values.companyId}
+                  loading={opportunities.isLoading}
+                  emptyText={
+                    opportunities.isError ? text.errors.options : undefined
+                  }
+                  hasMore={opportunities.hasNextPage}
+                  loadingMore={opportunities.isFetchingNextPage}
+                  onLoadMore={() => void opportunities.fetchNextPage()}
                 />
-              }
-            >
-              <SlidersHorizontal className="size-4" />
-              {text.actions.filters}
-              {activeAdvanced ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
-                  {activeAdvanced.toLocaleString("fa-IR")}
-                </span>
-              ) : null}
-            </PopoverTrigger>
+              </FilterField>
 
-            <PopoverContent
-              align="end"
-              dir="rtl"
-              className="max-h-[75vh] w-[min(680px,calc(100vw-24px))] overflow-y-auto rounded-2xl p-4"
-            >
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
-                <Filter className="size-4 text-[var(--app-primary)]" />
-                {text.actions.filters}
-              </div>
+              <FilterField label={text.fields.organizer}>
+                <MeetingOptionSelect
+                  value={values.organizerId}
+                  onChange={(option) =>
+                    onChange({
+                      organizerId: option?.id,
+                    })
+                  }
+                  options={organizerOptions}
+                  search={organizerSearch}
+                  onSearchChange={setOrganizerSearch}
+                  placeholder={text.placeholders.select}
+                  loading={organizers.isLoading}
+                  emptyText={
+                    organizers.isError ? text.errors.options : undefined
+                  }
+                  hasMore={organizers.hasNextPage}
+                  loadingMore={organizers.isFetchingNextPage}
+                  onLoadMore={() => void organizers.fetchNextPage()}
+                />
+              </FilterField>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FilterField label={text.fields.opportunity}>
-                  <MeetingOptionSelect
-                    value={values.opportunityId}
-                    onChange={(option) =>
-                      onChange({
-                        opportunityId: option?.id,
-                      })
-                    }
-                    options={opportunityOptions}
-                    search={opportunitySearch}
-                    onSearchChange={setOpportunitySearch}
-                    placeholder={
-                      values.companyId
-                        ? text.placeholders.select
-                        : text.placeholders.companyFirst
-                    }
-                    disabled={!values.companyId}
-                    loading={opportunities.isLoading}
-                    emptyText={
-                      opportunities.isError ? text.errors.options : undefined
-                    }
-                    hasMore={opportunities.hasNextPage}
-                    loadingMore={opportunities.isFetchingNextPage}
-                    onLoadMore={() => void opportunities.fetchNextPage()}
-                  />
-                </FilterField>
+              <FilterField label={text.fields.assignedUser}>
+                <MeetingOptionSelect
+                  value={values.assignedUserId}
+                  onChange={(option) =>
+                    onChange({
+                      assignedUserId: option?.id,
+                    })
+                  }
+                  options={assignedOptions}
+                  search={assignedSearch}
+                  onSearchChange={setAssignedSearch}
+                  placeholder={text.placeholders.select}
+                  loading={assigned.isLoading}
+                  emptyText={assigned.isError ? text.errors.options : undefined}
+                  hasMore={assigned.hasNextPage}
+                  loadingMore={assigned.isFetchingNextPage}
+                  onLoadMore={() => void assigned.fetchNextPage()}
+                />
+              </FilterField>
 
-                <FilterField label={text.fields.organizer}>
-                  <MeetingOptionSelect
-                    value={values.organizerId}
-                    onChange={(option) =>
-                      onChange({
-                        organizerId: option?.id,
-                      })
-                    }
-                    options={organizerOptions}
-                    search={organizerSearch}
-                    onSearchChange={setOrganizerSearch}
-                    placeholder={text.placeholders.select}
-                    loading={organizers.isLoading}
-                    emptyText={
-                      organizers.isError ? text.errors.options : undefined
-                    }
-                    hasMore={organizers.hasNextPage}
-                    loadingMore={organizers.isFetchingNextPage}
-                    onLoadMore={() => void organizers.fetchNextPage()}
-                  />
-                </FilterField>
-
-                <FilterField label={text.fields.assignedUser}>
-                  <MeetingOptionSelect
-                    value={values.assignedUserId}
-                    onChange={(option) =>
-                      onChange({
-                        assignedUserId: option?.id,
-                      })
-                    }
-                    options={assignedOptions}
-                    search={assignedSearch}
-                    onSearchChange={setAssignedSearch}
-                    placeholder={text.placeholders.select}
-                    loading={assigned.isLoading}
-                    emptyText={
-                      assigned.isError ? text.errors.options : undefined
-                    }
-                    hasMore={assigned.hasNextPage}
-                    loadingMore={assigned.isFetchingNextPage}
-                    onLoadMore={() => void assigned.fetchNextPage()}
-                  />
-                </FilterField>
-
-                <FilterField label={text.fields.attendee}>
-                  <MeetingOptionSelect
-                    value={values.attendeePersonId}
-                    onChange={(option) =>
-                      onChange({
-                        attendeePersonId: option?.id,
-                      })
-                    }
-                    options={attendeeOptions}
-                    search={attendeeSearch}
-                    onSearchChange={setAttendeeSearch}
-                    placeholder={
-                      values.companyId
-                        ? text.placeholders.select
-                        : text.placeholders.companyFirst
-                    }
-                    disabled={!values.companyId}
-                    loading={attendees.isLoading}
-                    emptyText={
-                      attendees.isError ? text.errors.options : undefined
-                    }
-                    hasMore={attendees.hasNextPage}
-                    loadingMore={attendees.isFetchingNextPage}
-                    onLoadMore={() => void attendees.fetchNextPage()}
-                  />
-                </FilterField>
-              </div>
-            </PopoverContent>
-          </Popover>
+              <FilterField label={text.fields.attendee}>
+                <MeetingOptionSelect
+                  value={values.attendeePersonId}
+                  onChange={(option) =>
+                    onChange({
+                      attendeePersonId: option?.id,
+                    })
+                  }
+                  options={attendeeOptions}
+                  search={attendeeSearch}
+                  onSearchChange={setAttendeeSearch}
+                  placeholder={
+                    values.companyId
+                      ? text.placeholders.select
+                      : text.placeholders.companyFirst
+                  }
+                  disabled={!values.companyId}
+                  loading={attendees.isLoading}
+                  emptyText={
+                    attendees.isError ? text.errors.options : undefined
+                  }
+                  hasMore={attendees.hasNextPage}
+                  loadingMore={attendees.isFetchingNextPage}
+                  onLoadMore={() => void attendees.fetchNextPage()}
+                />
+              </FilterField>
+            </div>
+          </AdvancedFilterPopover>
         </>
       }
     />
@@ -354,9 +341,6 @@ function FilterField({
     </div>
   )
 }
-
-const selectClass =
-  "h-11 w-full rounded-xl border border-input bg-transparent px-3 text-xs text-[var(--app-heading)] outline-none focus:border-[var(--app-primary)]"
 
 function safeDate(value?: string) {
   if (!value) return undefined

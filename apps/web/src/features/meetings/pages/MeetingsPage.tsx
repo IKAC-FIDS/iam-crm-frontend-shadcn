@@ -10,7 +10,6 @@ import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
-import { Button } from "@workspace/ui/components/button"
 
 import { MeetingAgenda } from "../components/MeetingAgenda"
 import {
@@ -225,53 +224,23 @@ export function MeetingsPage() {
       <PageHero
         title={text.title}
         description={text.description}
-        eyebrow={"مرکز مدیریت جلسات"}
-        icon={CalendarDays}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setFormMeeting(null)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
-            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "agenda"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => patchParams({ view: undefined }, false)}
-              >
-                <CalendarDays className="size-4" />
-                {text.views.agenda}
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "list"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => patchParams({ view: "list" }, false)}
-              >
-                <LayoutList className="size-4" />
-                {text.views.list}
-              </Button>
-            </div>
-
-          </div>
+        accessBadge={{ label: "مرکز مدیریت جلسات", icon: CalendarDays }}
+        primaryAction={
+          canCreate
+            ? {
+                label: text.actions.create,
+                icon: Plus,
+                onClick: () => setFormMeeting(null),
+              }
+            : undefined
+        }
+        viewOptions={[
+          { id: "agenda", label: text.views.agenda, icon: CalendarDays },
+          { id: "list", label: text.views.list, icon: LayoutList },
+        ]}
+        activeView={view}
+        onViewChange={(nextView) =>
+          patchParams({ view: nextView === "list" ? "list" : undefined }, false)
         }
       />
 
@@ -279,32 +248,23 @@ export function MeetingsPage() {
         values={filterValues}
         onChange={changeFilters}
         onClear={clearFilters}
+        quickFilters={quickFilters.map((item) => (
+          <button
+            key={item}
+            type="button"
+            aria-pressed={quick === item}
+            onClick={() => changeQuick(item)}
+            className={[
+              "inline-flex h-8 shrink-0 items-center rounded-lg px-3 text-xs font-bold transition focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30 focus-visible:outline-none",
+              quick === item
+                ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
+                : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+            ].join(" ")}
+          >
+            {text.quickFilters[item]}
+          </button>
+        ))}
       />
-
-      <section className="flex min-w-0 flex-col gap-3 rounded-[20px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap gap-1.5">
-          {quickFilters.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => changeQuick(item)}
-              className={[
-                "inline-flex h-8 items-center rounded-lg px-3 text-xs font-bold transition",
-                quick === item
-                  ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                  : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-              ].join(" ")}
-            >
-              {text.quickFilters[item]}
-            </button>
-          ))}
-        </div>
-
-        <p className="shrink-0 text-xs text-[var(--app-text-secondary)]">
-          {(meetings.data?.meta.total ?? 0).toLocaleString("fa-IR")}{" "}
-          {text.title}
-        </p>
-      </section>
 
       <div className="min-w-0">
         <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
