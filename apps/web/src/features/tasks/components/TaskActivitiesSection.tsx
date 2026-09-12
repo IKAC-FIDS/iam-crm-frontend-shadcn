@@ -52,7 +52,7 @@ export function TaskActivitiesSection({ task }: { task: Task }) {
             تاریخچه اقدام‌های انجام‌شده برای این کار و در صورت نیاز زیرکارهای آن
           </p>
         </div>
-        {canCreate && task.status !== "DONE" && task.status !== "CANCELLED" ? (
+        {canCreate ? (
           <Button
             size="sm"
             className="rounded-xl"
@@ -175,9 +175,7 @@ export function TaskActivitiesSection({ task }: { task: Task }) {
             }
             description="فعالیت‌های ثبت‌شده به ترتیب زمان در این بخش نمایش داده می‌شوند."
             action={
-              canCreate &&
-              task.status !== "DONE" &&
-              task.status !== "CANCELLED" ? (
+              canCreate ? (
                 <Button
                   size="sm"
                   className="rounded-xl"
