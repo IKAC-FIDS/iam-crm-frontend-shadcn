@@ -110,6 +110,7 @@ export interface Company {
   owner?: CompanyOwner | null
   website?: string | null
   headOfficeCity?: string | null
+  headOfficeAddress?: string | null
   centralPhone?: string | null
   source?: string | null
   sourceId?: string | null
@@ -154,6 +155,7 @@ export interface CompanyMutationPayload {
   priority?: CompanyPriority
   website?: string
   headOfficeCity?: string
+  headOfficeAddress?: string | null
   centralPhone?: string | null
   sourceId?: string
   registrationNumber?: string

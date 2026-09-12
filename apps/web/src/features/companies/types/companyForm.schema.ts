@@ -28,6 +28,7 @@ export const companyFormSchema = z.object({
   priority: z.enum(COMPANY_PRIORITIES).optional(),
   website: optionalText,
   headOfficeCity: optionalText,
+  headOfficeAddress: z.string().trim().max(1000).optional(),
   centralPhone: optionalPhone,
   sourceId: optionalText,
   registrationNumber: z.string().trim().max(50).optional(),

@@ -60,6 +60,7 @@ function toFormValues(company?: Company | null): CompanyFormValues {
     priority: company?.priority ?? undefined,
     website: company?.website ?? "",
     headOfficeCity: company?.headOfficeCity ?? "",
+    headOfficeAddress: company?.headOfficeAddress ?? "",
     centralPhone: company?.centralPhone ?? "",
     sourceId: company?.sourceRef?.id ?? company?.sourceId ?? "",
     registrationNumber: company?.registrationNumber ?? "",
@@ -163,6 +164,7 @@ export function CompanyFormDialog({
       priority: values.priority,
       website: clean(values.website),
       headOfficeCity: clean(values.headOfficeCity),
+      headOfficeAddress: clean(values.headOfficeAddress) ?? null,
       centralPhone: clean(values.centralPhone)?.replace(/\s|-/g, "") ?? null,
       sourceId: clean(values.sourceId),
       registrationNumber: clean(values.registrationNumber),
@@ -475,6 +477,25 @@ export function CompanyFormDialog({
                         inputMode="tel"
                         placeholder={text.placeholders.phone}
                         className="h-11 rounded-xl text-left"
+                      />
+                    </Field>
+
+                    <Field
+                      htmlFor="company-headOfficeAddress"
+                      label={text.fields.address}
+                      error={errors.headOfficeAddress?.message}
+                    >
+                      <Input
+                        id="company-headOfficeAddress"
+                        aria-invalid={Boolean(errors.headOfficeAddress)}
+                        aria-describedby={
+                          errors.headOfficeAddress
+                            ? "company-headOfficeAddress-error"
+                            : undefined
+                        }
+                        {...register("headOfficeAddress")}
+                        placeholder={text.placeholders.address}
+                        className="h-11 rounded-xl"
                       />
                     </Field>
 

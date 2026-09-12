@@ -420,6 +420,10 @@ export function CompanyDetailPage() {
                   value: company.headOfficeCity || text.notSpecified,
                 },
                 {
+                  label: text.fields.address,
+                  value: company.headOfficeAddress || text.notSpecified,
+                },
+                {
                   label: text.fields.phone,
                   value: company.centralPhone ? (
                     <a
