@@ -10,7 +10,7 @@ export type ReportFilters = {
 export type UserPerformanceFilters = {
   startDate?: string
   endDate?: string
-  userId?: string
+  teamId?: string
 }
 
 export type ReportUserOption = {
@@ -18,6 +18,27 @@ export type ReportUserOption = {
   fullName: string
   email?: string | null
   isActive?: boolean
+  teamId?: string | null
+  teamRef?: { id: string; code: string; name: string } | null
+}
+
+export type ReportTeamOption = {
+  id: string
+  value: string
+  code: string
+  name: string
+  label: string
+}
+
+export type UserPerformanceMetrics = {
+  activity: {
+    total: number
+    breakdown: Array<{ code: string; label: string; count: number; percentage?: number }>
+  }
+  companiesCreated: number
+  tasksCreated: number
+  tasksAssigned: { total: number; completed: number; incomplete: number }
+  opportunities: UserPerformanceReport["opportunities"]
 }
 
 export type UserPerformanceReport = {
@@ -27,6 +48,7 @@ export type UserPerformanceReport = {
     dateBasis: Record<string, string>
   }
   users: ReportUserOption[]
+  members: Array<UserPerformanceMetrics & { user: ReportUserOption }>
   activity: {
     total: number
     breakdown: Array<{ code: string; label: string; count: number }>
@@ -50,6 +72,7 @@ export type UserPerformanceReport = {
 
 export type ReportFilterOptions = {
   users: ReportUserOption[]
+  teams: ReportTeamOption[]
 }
 
 export type ComparisonMetric = {
@@ -121,7 +144,7 @@ export async function getUserPerformance(filters: UserPerformanceFilters) {
     params: {
       ...(filters.startDate ? { startDate: filters.startDate } : {}),
       ...(filters.endDate ? { endDate: filters.endDate } : {}),
-      ...(filters.userId ? { userIds: filters.userId } : {}),
+      ...(filters.teamId ? { teams: filters.teamId } : {}),
     },
   })
   return unwrapApiResponse<UserPerformanceReport>(response.data)
