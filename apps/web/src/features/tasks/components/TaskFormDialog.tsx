@@ -13,7 +13,7 @@ import { toast } from "sonner"
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { FormSection } from "@/components/shared/FormSection"
-import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { PersianDateTimePicker } from "@/components/shared/date"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -138,11 +138,35 @@ export function TaskFormDialog({
           }
         : undefined,
       assignmentScope: task?.assignmentScope || "SELF",
-      team: task?.team ? { id: task.team.id, label: task.team.name, secondary: task.team.code } : undefined,
-      linkedEntityType: task?.meetingId ? "MEETING" : task?.activityId ? "ACTIVITY" : task?.productId ? "PRODUCT" : "NONE",
-      linkedEntity: task?.meeting ? { id: task.meeting.id, label: task.meeting.title } : task?.activity ? { id: task.activity.id, label: task.activity.type } : task?.product ? { id: task.product.id, label: task.product.name, secondary: task.product.code } : undefined,
+      team: task?.team
+        ? { id: task.team.id, label: task.team.name, secondary: task.team.code }
+        : undefined,
+      linkedEntityType: task?.meetingId
+        ? "MEETING"
+        : task?.activityId
+          ? "ACTIVITY"
+          : task?.productId
+            ? "PRODUCT"
+            : "NONE",
+      linkedEntity: task?.meeting
+        ? { id: task.meeting.id, label: task.meeting.title }
+        : task?.activity
+          ? { id: task.activity.id, label: task.activity.type }
+          : task?.product
+            ? {
+                id: task.product.id,
+                label: task.product.name,
+                secondary: task.product.code,
+              }
+            : undefined,
       requiresReview: task?.requiresReview ?? false,
-      reviewer: task?.reviewer ? { id: task.reviewer.id, label: task.reviewer.fullName || task.reviewer.email || task.reviewer.id } : undefined,
+      reviewer: task?.reviewer
+        ? {
+            id: task.reviewer.id,
+            label:
+              task.reviewer.fullName || task.reviewer.email || task.reviewer.id,
+          }
+        : undefined,
       dueAt: task?.dueAt ? new Date(task.dueAt) : undefined,
       reminderAt: task?.reminderAt ? new Date(task.reminderAt) : undefined,
     }
@@ -195,13 +219,26 @@ export function TaskFormDialog({
   const setAssignee = (value: FormValues["assignee"]) =>
     setValue("assignee", value, { shouldDirty: true, shouldValidate: true })
   const setAssignmentScope = (value: FormValues["assignmentScope"]) =>
-    setValue("assignmentScope", value, { shouldDirty: true, shouldValidate: true })
+    setValue("assignmentScope", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
   const setTeam = (value: FormValues["team"]) =>
     setValue("team", value, { shouldDirty: true, shouldValidate: true })
-  const setLinkedEntityType = (value: FormValues["linkedEntityType"]) => setValue("linkedEntityType", value, { shouldDirty: true, shouldValidate: true })
-  const setLinkedEntity = (value: FormValues["linkedEntity"]) => setValue("linkedEntity", value, { shouldDirty: true, shouldValidate: true })
-  const setRequiresReview = (value: boolean) => setValue("requiresReview", value, { shouldDirty: true, shouldValidate: true })
-  const setReviewer = (value: FormValues["reviewer"]) => setValue("reviewer", value, { shouldDirty: true, shouldValidate: true })
+  const setLinkedEntityType = (value: FormValues["linkedEntityType"]) =>
+    setValue("linkedEntityType", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  const setLinkedEntity = (value: FormValues["linkedEntity"]) =>
+    setValue("linkedEntity", value, { shouldDirty: true, shouldValidate: true })
+  const setRequiresReview = (value: boolean) =>
+    setValue("requiresReview", value, {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
+  const setReviewer = (value: FormValues["reviewer"]) =>
+    setValue("reviewer", value, { shouldDirty: true, shouldValidate: true })
   const setDueAt = (value: FormValues["dueAt"]) =>
     setValue("dueAt", value, { shouldDirty: true, shouldValidate: true })
   const setReminderAt = (value: FormValues["reminderAt"]) =>
@@ -244,10 +281,26 @@ export function TaskFormDialog({
   )
   const people = useTaskPeopleOptions(companyId, debouncedPerson, open)
   const assignmentControlsEnabled = open && !task && canAssignOthers
-  const assignees = useTaskAssignees(debouncedAssignee, assignmentControlsEnabled && assignmentScope !== "SELF", assignmentScope === "TEAM" ? team?.id || "" : "")
-  const reviewers = useTaskAssignees(debouncedReviewer, open && canAssignReviewer)
-  const teams = useTaskTeams(debouncedTeam, assignmentControlsEnabled && assignmentScope === "TEAM")
-  const linkedEntities = useTaskEntityOptions(linkedEntityType === "NONE" ? "MEETING" : linkedEntityType as TaskEntityType, debouncedLinkedEntity, open && linkedEntityType !== "NONE")
+  const assignees = useTaskAssignees(
+    debouncedAssignee,
+    assignmentControlsEnabled && assignmentScope !== "SELF",
+    assignmentScope === "TEAM" ? team?.id || "" : ""
+  )
+  const reviewers = useTaskAssignees(
+    debouncedReviewer,
+    open && canAssignReviewer
+  )
+  const teams = useTaskTeams(
+    debouncedTeam,
+    assignmentControlsEnabled && assignmentScope === "TEAM"
+  )
+  const linkedEntities = useTaskEntityOptions(
+    linkedEntityType === "NONE"
+      ? "MEETING"
+      : (linkedEntityType as TaskEntityType),
+    debouncedLinkedEntity,
+    open && linkedEntityType !== "NONE"
+  )
   const documents = useTaskDocuments(opportunity?.id || "", open)
   const payments = useTaskPayments(opportunity?.id || "", open)
 
@@ -281,16 +334,33 @@ export function TaskFormDialog({
         .map((item) => ({
           id: item.id,
           label: item.fullName || item.email || item.id,
-          secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
+          secondary:
+            [item.email, item.role, item.teamRef?.name || item.team]
+              .filter(Boolean)
+              .join(" · ") || undefined,
         })) || [],
     [assignees.data]
   )
-  const reviewerOptions = useMemo(() => reviewers.data?.pages.flatMap((page) => page.data).filter((item) => item.id !== (assignee?.id || task?.assignedToId)).map((item) => ({ id: item.id, label: item.fullName || item.email || item.id, secondary: item.email || undefined })) || [], [reviewers.data, assignee?.id, task?.assignedToId])
+  const reviewerOptions = useMemo(
+    () =>
+      reviewers.data?.pages
+        .flatMap((page) => page.data)
+        .filter((item) => item.id !== (assignee?.id || task?.assignedToId))
+        .map((item) => ({
+          id: item.id,
+          label: item.fullName || item.email || item.id,
+          secondary: item.email || undefined,
+        })) || [],
+    [reviewers.data, assignee?.id, task?.assignedToId]
+  )
   const teamOptions = useMemo(
     () => teams.data?.pages.flatMap((page) => page.data) || [],
     [teams.data]
   )
-  const linkedEntityOptions = useMemo(() => linkedEntities.data?.pages.flatMap((page) => page.data) || [], [linkedEntities.data])
+  const linkedEntityOptions = useMemo(
+    () => linkedEntities.data?.pages.flatMap((page) => page.data) || [],
+    [linkedEntities.data]
+  )
   const documentOptions = useMemo(
     () =>
       documents.data?.data.map((item) => ({
@@ -327,8 +397,10 @@ export function TaskFormDialog({
     if (person && !companyId) return text.validation.companyForPerson
     if ((document || payment) && !opportunity)
       return text.validation.opportunityForCommercialContext
-    if (!task && canAssignOthers && assignmentScope === "TEAM" && !team) return "برای دامنه تیم، انتخاب تیم الزامی است."
-    if (requiresReview && !reviewer) return "برای کار نیازمند بازبینی، انتخاب بازبین الزامی است."
+    if (!task && canAssignOthers && assignmentScope === "TEAM" && !team)
+      return "برای دامنه تیم، انتخاب تیم الزامی است."
+    if (requiresReview && !reviewer)
+      return "برای کار نیازمند بازبینی، انتخاب بازبین الزامی است."
     return ""
   }, [
     companyId,
@@ -381,12 +453,21 @@ export function TaskFormDialog({
       ...(!task && {
         assignedToId: canAssignOthers ? assignee?.id : undefined,
         assignmentScope: canAssignOthers ? assignmentScope : "SELF",
-        teamId: canAssignOthers && assignmentScope === "TEAM" ? team?.id : undefined,
+        teamId:
+          canAssignOthers && assignmentScope === "TEAM" ? team?.id : undefined,
       }),
-      meetingId: linkedEntityType === "MEETING" ? linkedEntity?.id || null : null,
-      activityId: linkedEntityType === "ACTIVITY" ? linkedEntity?.id || null : null,
-      productId: linkedEntityType === "PRODUCT" ? linkedEntity?.id || null : null,
-      ...(canAssignReviewer ? { requiresReview, reviewerId: requiresReview ? reviewer?.id : undefined } : {}),
+      meetingId:
+        linkedEntityType === "MEETING" ? linkedEntity?.id || null : null,
+      activityId:
+        linkedEntityType === "ACTIVITY" ? linkedEntity?.id || null : null,
+      productId:
+        linkedEntityType === "PRODUCT" ? linkedEntity?.id || null : null,
+      ...(canAssignReviewer
+        ? {
+            requiresReview,
+            reviewerId: requiresReview ? reviewer?.id : undefined,
+          }
+        : {}),
     }
 
     try {
@@ -627,11 +708,39 @@ export function TaskFormDialog({
                   />
                 </Field>
                 <Field label="نوع ارتباط تکمیلی">
-                  <select value={linkedEntityType} onChange={(event) => { setLinkedEntityType(event.target.value as FormValues["linkedEntityType"]); setLinkedEntity(undefined) }} className={selectClass}>
-                    <option value="NONE">بدون ارتباط تکمیلی</option><option value="MEETING">جلسه</option><option value="ACTIVITY">فعالیت</option><option value="PRODUCT">محصول</option>
+                  <select
+                    value={linkedEntityType}
+                    onChange={(event) => {
+                      setLinkedEntityType(
+                        event.target.value as FormValues["linkedEntityType"]
+                      )
+                      setLinkedEntity(undefined)
+                    }}
+                    className={selectClass}
+                  >
+                    <option value="NONE">بدون ارتباط تکمیلی</option>
+                    <option value="MEETING">جلسه</option>
+                    <option value="ACTIVITY">فعالیت</option>
+                    <option value="PRODUCT">محصول</option>
                   </select>
                 </Field>
-                {linkedEntityType !== "NONE" ? <Field label="موجودیت مرتبط"><TaskOptionSelect value={linkedEntity?.id} selectedOption={linkedEntity} options={linkedEntityOptions} onChange={setLinkedEntity} search={linkedEntitySearch} onSearchChange={setLinkedEntitySearch} placeholder="انتخاب موجودیت مرتبط" loading={linkedEntities.isLoading} hasMore={linkedEntities.hasNextPage} loadingMore={linkedEntities.isFetchingNextPage} onLoadMore={() => void linkedEntities.fetchNextPage()} /></Field> : null}
+                {linkedEntityType !== "NONE" ? (
+                  <Field label="موجودیت مرتبط">
+                    <TaskOptionSelect
+                      value={linkedEntity?.id}
+                      selectedOption={linkedEntity}
+                      options={linkedEntityOptions}
+                      onChange={setLinkedEntity}
+                      search={linkedEntitySearch}
+                      onSearchChange={setLinkedEntitySearch}
+                      placeholder="انتخاب موجودیت مرتبط"
+                      loading={linkedEntities.isLoading}
+                      hasMore={linkedEntities.hasNextPage}
+                      loadingMore={linkedEntities.isFetchingNextPage}
+                      onLoadMore={() => void linkedEntities.fetchNextPage()}
+                    />
+                  </Field>
+                ) : null}
               </div>
             </FormSection>
 
@@ -641,49 +750,131 @@ export function TaskFormDialog({
             >
               {task ? (
                 <p className="rounded-xl bg-muted/50 p-3 text-xs leading-6 text-muted-foreground">
-                  تغییر مسئول یا دامنه واگذاری از اقدام «تغییر مسئول کار» انجام می‌شود و به دسترسی
-                  <code className="mx-1" dir="ltr">task:reassign</code>
+                  تغییر مسئول یا دامنه واگذاری از اقدام «تغییر مسئول کار» انجام
+                  می‌شود و به دسترسی
+                  <code className="mx-1" dir="ltr">
+                    task:reassign
+                  </code>
                   نیاز دارد.
                 </p>
               ) : !canAssignOthers ? (
                 <p className="rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs leading-6 text-[var(--app-primary)]">
-                  این کار به خود شما واگذار می‌شود. برای ارجاع کار به سایر کاربران یا تیم‌ها، دسترسی
-                  <code className="mx-1" dir="ltr">task:assign</code>
+                  این کار به خود شما واگذار می‌شود. برای ارجاع کار به سایر
+                  کاربران یا تیم‌ها، دسترسی
+                  <code className="mx-1" dir="ltr">
+                    task:assign
+                  </code>
                   لازم است.
                 </p>
               ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="دامنه واگذاری" error={errors.assignmentScope?.message}>
-                  <select value={assignmentScope} onChange={(event) => {
-                    const next = event.target.value as TaskAssignmentScope
-                    setAssignmentScope(next)
-                    setTeam(undefined)
-                    setAssignee(undefined)
-                  }} className={selectClass}>
-                    <option value="SELF">خودم</option><option value="TEAM">تیم</option><option value="ORGANIZATION">سازمان</option>
-                  </select>
-                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="دامنه واگذاری"
+                    error={errors.assignmentScope?.message}
+                  >
+                    <select
+                      value={assignmentScope}
+                      onChange={(event) => {
+                        const next = event.target.value as TaskAssignmentScope
+                        setAssignmentScope(next)
+                        setTeam(undefined)
+                        setAssignee(undefined)
+                      }}
+                      className={selectClass}
+                    >
+                      <option value="SELF">خودم</option>
+                      <option value="TEAM">تیم</option>
+                      <option value="ORGANIZATION">سازمان</option>
+                    </select>
+                  </Field>
 
-                {assignmentScope === "TEAM" ? (
-                  <Field label="تیم" error={errors.team?.message}>
-                    <TaskOptionSelect value={team?.id} selectedOption={team} options={teamOptions} onChange={(next) => { setTeam(next); setAssignee(undefined) }} search={teamSearch} onSearchChange={setTeamSearch} placeholder="انتخاب تیم" allowEmpty={false} loading={teams.isLoading} hasMore={teams.hasNextPage} loadingMore={teams.isFetchingNextPage} onLoadMore={() => void teams.fetchNextPage()} />
-                  </Field>
-                ) : null}
-                {assignmentScope !== "SELF" ? (
-                  <Field label={text.fields.assignee} error={errors.assignee?.message}>
-                    <TaskOptionSelect value={assignee?.id} selectedOption={assignee} options={assigneeOptions} onChange={setAssignee} search={assigneeSearch} onSearchChange={setAssigneeSearch} placeholder={text.placeholders.systemAssignee} loading={assignees.isLoading} hasMore={assignees.hasNextPage} loadingMore={assignees.isFetchingNextPage} onLoadMore={() => void assignees.fetchNextPage()} disabled={assignmentScope === "TEAM" && !team} />
-                  </Field>
-                ) : <p className="self-end rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs text-[var(--app-primary)]">این کار به خود شما واگذار می‌شود.</p>}
-              </div>
+                  {assignmentScope === "TEAM" ? (
+                    <Field label="تیم" error={errors.team?.message}>
+                      <TaskOptionSelect
+                        value={team?.id}
+                        selectedOption={team}
+                        options={teamOptions}
+                        onChange={(next) => {
+                          setTeam(next)
+                          setAssignee(undefined)
+                        }}
+                        search={teamSearch}
+                        onSearchChange={setTeamSearch}
+                        placeholder="انتخاب تیم"
+                        allowEmpty={false}
+                        loading={teams.isLoading}
+                        hasMore={teams.hasNextPage}
+                        loadingMore={teams.isFetchingNextPage}
+                        onLoadMore={() => void teams.fetchNextPage()}
+                      />
+                    </Field>
+                  ) : null}
+                  {assignmentScope !== "SELF" ? (
+                    <Field
+                      label={text.fields.assignee}
+                      error={errors.assignee?.message}
+                    >
+                      <TaskOptionSelect
+                        value={assignee?.id}
+                        selectedOption={assignee}
+                        options={assigneeOptions}
+                        onChange={setAssignee}
+                        search={assigneeSearch}
+                        onSearchChange={setAssigneeSearch}
+                        placeholder={text.placeholders.systemAssignee}
+                        loading={assignees.isLoading}
+                        hasMore={assignees.hasNextPage}
+                        loadingMore={assignees.isFetchingNextPage}
+                        onLoadMore={() => void assignees.fetchNextPage()}
+                        disabled={assignmentScope === "TEAM" && !team}
+                      />
+                    </Field>
+                  ) : (
+                    <p className="self-end rounded-xl bg-[var(--app-primary-soft)] p-3 text-xs text-[var(--app-primary)]">
+                      این کار به خود شما واگذار می‌شود.
+                    </p>
+                  )}
+                </div>
               )}
             </FormSection>
 
-            {canAssignReviewer ? <FormSection title="بازبینی" description="در صورت نیاز، یک بازبین مستقل برای تأیید خروجی کار تعیین کنید.">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm"><input type="checkbox" checked={requiresReview} onChange={(event) => { setRequiresReview(event.target.checked); if (!event.target.checked) setReviewer(undefined) }} />این کار نیازمند بازبینی است</label>
-                {requiresReview ? <Field label="بازبین"><TaskOptionSelect value={reviewer?.id} selectedOption={reviewer} options={reviewerOptions} onChange={setReviewer} search={reviewerSearch} onSearchChange={setReviewerSearch} placeholder="انتخاب بازبین" loading={reviewers.isLoading} hasMore={reviewers.hasNextPage} loadingMore={reviewers.isFetchingNextPage} onLoadMore={() => void reviewers.fetchNextPage()} /></Field> : null}
-              </div>
-            </FormSection> : null}
+            {canAssignReviewer ? (
+              <FormSection
+                title="بازبینی"
+                description="در صورت نیاز، یک بازبین مستقل برای تأیید خروجی کار تعیین کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-input px-3 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={requiresReview}
+                      onChange={(event) => {
+                        setRequiresReview(event.target.checked)
+                        if (!event.target.checked) setReviewer(undefined)
+                      }}
+                    />
+                    این کار نیازمند بازبینی است
+                  </label>
+                  {requiresReview ? (
+                    <Field label="بازبین">
+                      <TaskOptionSelect
+                        value={reviewer?.id}
+                        selectedOption={reviewer}
+                        options={reviewerOptions}
+                        onChange={setReviewer}
+                        search={reviewerSearch}
+                        onSearchChange={setReviewerSearch}
+                        placeholder="انتخاب بازبین"
+                        loading={reviewers.isLoading}
+                        hasMore={reviewers.hasNextPage}
+                        loadingMore={reviewers.isFetchingNextPage}
+                        onLoadMore={() => void reviewers.fetchNextPage()}
+                      />
+                    </Field>
+                  ) : null}
+                </div>
+              </FormSection>
+            ) : null}
 
             <FormSection
               title={text.sections.schedule}

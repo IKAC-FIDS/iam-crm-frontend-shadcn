@@ -3,18 +3,14 @@ import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
-import {
-  AlertTriangle,
-  ListChecks,
-  Plus,
-} from "lucide-react"
+import { AlertTriangle, ListChecks, Plus } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useListQueryState } from "@/lib/listQuery"
 import { QueryContent } from "@/components/shared/QueryContent"
 
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
-import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { PersianDateTimePicker } from "@/components/shared/date"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
@@ -67,17 +63,26 @@ export function TasksPage() {
   const canDelete = permissions.includes("task:delete")
 
   const quick = normalizeQuick(params.get("quick"))
+  const view = normalizeView(params.get("view"))
+  const activeQuick =
+    quick === "all" && (view === "team" || view === "organization")
+      ? view
+      : quick
   const search = params.get("search") || ""
   const companyId = params.get("companyId") || ""
   const opportunityId = params.get("opportunityId") || ""
   const priority = normalizePriority(params.get("priority"))
   const assignedToId = params.get("assignedToId") || ""
+  const createdById = params.get("createdById") || ""
   const dueFrom = params.get("dueFrom") || ""
   const dueTo = params.get("dueTo") || ""
   const teamId = params.get("teamId") || ""
-  const dueState = (params.get("dueState") || "") as TaskListQuery["dueState"] | ""
-  const linkedEntityType = (params.get("linkedEntityType") || "") as TaskEntityType | ""
-  const reviewStatus = (params.get("reviewStatus") || "") as TaskListQuery["reviewStatus"] | ""
+  const dueState = (params.get("dueState") || "") as
+    TaskListQuery["dueState"] | ""
+  const linkedEntityType = (params.get("linkedEntityType") || "") as
+    TaskEntityType | ""
+  const reviewStatus = (params.get("reviewStatus") || "") as
+    TaskListQuery["reviewStatus"] | ""
   const reviewerId = params.get("reviewerId") || ""
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -87,11 +92,12 @@ export function TasksPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [assigneeSearch, setAssigneeSearch] = useState("")
   const [reviewerSearch, setReviewerSearch] = useState("")
+  const [creatorSearch, setCreatorSearch] = useState("")
   const [opportunitySearch, setOpportunitySearch] = useState("")
   const [teamSearch, setTeamSearch] = useState("")
 
   const debouncedSearch = useDebouncedValue(search)
-  const quickQuery = quickToQuery(quick, user?.id)
+  const quickQuery = quickToQuery(activeQuick, user?.id)
 
   const query: TaskListQuery = {
     page,
@@ -101,10 +107,10 @@ export function TasksPage() {
     opportunityId: opportunityId || undefined,
     priority,
     assignedToId: assignedToId || quickQuery.assignedToId,
-    createdById: quickQuery.createdById,
+    createdById: createdById || quickQuery.createdById,
     status: quickQuery.status,
     overdueOnly: quickQuery.overdueOnly,
-    view: quickQuery.view,
+    view: quickQuery.view || view,
     dueFrom: dueFrom || undefined,
     dueTo: dueTo || undefined,
     teamId: teamId || undefined,
@@ -119,6 +125,7 @@ export function TasksPage() {
 
   const assignees = useTaskAssignees(assigneeSearch, advancedOpen && canView)
   const reviewers = useTaskAssignees(reviewerSearch, advancedOpen && canView)
+  const creators = useTaskAssignees(creatorSearch, advancedOpen && canView)
   const teams = useTaskTeams(teamSearch, advancedOpen && canView)
   const teamOptions = useMemo(
     () => teams.data?.pages.flatMap((part) => part.data) || [],
@@ -131,7 +138,10 @@ export function TasksPage() {
         .map((item) => ({
           id: item.id,
           label: item.fullName || item.email || item.id,
-          secondary: [item.email, item.role, item.teamRef?.name || item.team].filter(Boolean).join(" · ") || undefined,
+          secondary:
+            [item.email, item.role, item.teamRef?.name || item.team]
+              .filter(Boolean)
+              .join(" · ") || undefined,
         })) || [],
     [assignees.data]
   )
@@ -145,6 +155,17 @@ export function TasksPage() {
           secondary: item.email || undefined,
         })) || [],
     [reviewers.data]
+  )
+  const creatorOptions = useMemo(
+    () =>
+      creators.data?.pages
+        .flatMap((part) => part.data)
+        .map((item) => ({
+          id: item.id,
+          label: item.fullName || item.email || item.id,
+          secondary: item.email || undefined,
+        })) || [],
+    [creators.data]
   )
 
   const opportunities = useTaskOpportunityOptions(
@@ -169,6 +190,7 @@ export function TasksPage() {
     companyId,
     opportunityId,
     assignedToId,
+    createdById,
     dueFrom,
     dueTo,
     teamId,
@@ -185,7 +207,7 @@ export function TasksPage() {
     )
   }
   function setQuick(value: QuickFilter) {
-    patch({ quick: value === "all" ? undefined : value })
+    patch({ quick: value === "all" ? undefined : value, view: undefined })
   }
   function clearFilters() {
     patch(
@@ -196,6 +218,7 @@ export function TasksPage() {
           "opportunityId",
           "priority",
           "assignedToId",
+          "createdById",
           "dueFrom",
           "dueTo",
           "teamId",
@@ -204,11 +227,13 @@ export function TasksPage() {
           "reviewStatus",
           "reviewerId",
           "quick",
+          "view",
         ].map((key) => [key, undefined])
       )
     )
     setAssigneeSearch("")
     setReviewerSearch("")
+    setCreatorSearch("")
     setOpportunitySearch("")
     setTeamSearch("")
   }
@@ -220,6 +245,7 @@ export function TasksPage() {
           "companyId",
           "opportunityId",
           "assignedToId",
+          "createdById",
           "dueFrom",
           "dueTo",
           "teamId",
@@ -232,6 +258,7 @@ export function TasksPage() {
     )
     setAssigneeSearch("")
     setReviewerSearch("")
+    setCreatorSearch("")
     setOpportunitySearch("")
     setTeamSearch("")
   }
@@ -255,16 +282,25 @@ export function TasksPage() {
       <PageHero
         title={text.title}
         description={text.description}
-        eyebrow={"مرکز مدیریت کارها"}
-        icon={ListChecks}
-        primaryAction={canCreate ? { label: text.actions.create, icon: Plus, onClick: () => setCreateOpen(true) } : undefined}
+        accessBadge={{ label: "مرکز مدیریت کارها", icon: ListChecks }}
+        primaryAction={
+          canCreate
+            ? {
+                label: text.actions.create,
+                icon: Plus,
+                onClick: () => setCreateOpen(true),
+              }
+            : undefined
+        }
       />
 
       <DataTableToolbar
         searchValue={search}
         onSearchChange={(value) => updateParam("search", value)}
         searchPlaceholder={text.placeholders.search}
-        hasActiveFilters={Boolean(search || priority || quick !== "all" || advancedCount)}
+        hasActiveFilters={Boolean(
+          search || priority || activeQuick !== "all" || advancedCount
+        )}
         onClearFilters={clearFilters}
         filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
         filters={
@@ -272,7 +308,10 @@ export function TasksPage() {
             <SearchableOptionSelect
               ariaLabel={uiText.common.filters.priority}
               value={priority}
-              options={priorityOptions.map((value) => ({ id: value, label: text.priorities[value] }))}
+              options={priorityOptions.map((value) => ({
+                id: value,
+                label: text.priorities[value],
+              }))}
               onChange={(value) => updateParam("priority", value)}
               search=""
               onSearchChange={() => undefined}
@@ -287,125 +326,172 @@ export function TasksPage() {
               label={text.actions.filters}
               onClear={clearAdvancedFilters}
             >
-                <div className="grid gap-3 md:grid-cols-2">
-                  <SearchableCompanySelect
-                    value={companyId || undefined}
-                    onChange={(value) => {
-                      patch({
-                        companyId: value || undefined,
-                        ...(!value ? { opportunityId: undefined } : {}),
-                      })
-                    }}
-                    placeholder={text.placeholders.company}
-                  />
+              <div className="grid gap-3 md:grid-cols-2">
+                <SearchableCompanySelect
+                  value={companyId || undefined}
+                  onChange={(value) => {
+                    patch({
+                      companyId: value || undefined,
+                      ...(!value ? { opportunityId: undefined } : {}),
+                    })
+                  }}
+                  placeholder={text.placeholders.company}
+                />
 
-                  <TaskOptionSelect
-                    value={opportunityId || undefined}
-                    options={opportunityOptions}
-                    onChange={(option) =>
-                      updateParam("opportunityId", option?.id)
+                <TaskOptionSelect
+                  value={opportunityId || undefined}
+                  options={opportunityOptions}
+                  onChange={(option) =>
+                    updateParam("opportunityId", option?.id)
+                  }
+                  search={opportunitySearch}
+                  onSearchChange={setOpportunitySearch}
+                  placeholder={text.placeholders.opportunity}
+                  loading={opportunities.isLoading}
+                  hasMore={opportunities.hasNextPage}
+                  loadingMore={opportunities.isFetchingNextPage}
+                  onLoadMore={() => void opportunities.fetchNextPage()}
+                />
+
+                <TaskOptionSelect
+                  value={teamId || undefined}
+                  options={teamOptions}
+                  onChange={(option) => updateParam("teamId", option?.id)}
+                  search={teamSearch}
+                  onSearchChange={setTeamSearch}
+                  placeholder="تیم"
+                  loading={teams.isLoading}
+                  hasMore={teams.hasNextPage}
+                  loadingMore={teams.isFetchingNextPage}
+                  onLoadMore={() => void teams.fetchNextPage()}
+                />
+
+                <StaticFilterSelect
+                  ariaLabel="وضعیت موعد"
+                  value={dueState}
+                  placeholder="همه وضعیت‌های موعد"
+                  options={dueStateOptions}
+                  onChange={(value) => updateParam("dueState", value)}
+                />
+
+                <StaticFilterSelect
+                  ariaLabel="نوع موجودیت مرتبط"
+                  value={linkedEntityType}
+                  placeholder="همه موجودیت‌های مرتبط"
+                  options={linkedEntityOptions}
+                  onChange={(value) => updateParam("linkedEntityType", value)}
+                />
+
+                <StaticFilterSelect
+                  ariaLabel="وضعیت بازبینی"
+                  value={reviewStatus}
+                  placeholder="همه وضعیت‌های بازبینی"
+                  options={reviewStatusOptions}
+                  onChange={(value) => updateParam("reviewStatus", value)}
+                />
+
+                <TaskOptionSelect
+                  value={reviewerId || undefined}
+                  options={reviewerOptions}
+                  onChange={(option) => updateParam("reviewerId", option?.id)}
+                  search={reviewerSearch}
+                  onSearchChange={setReviewerSearch}
+                  placeholder="بازبین"
+                  loading={reviewers.isLoading}
+                  hasMore={reviewers.hasNextPage}
+                  loadingMore={reviewers.isFetchingNextPage}
+                  onLoadMore={() => void reviewers.fetchNextPage()}
+                />
+
+                <TaskOptionSelect
+                  value={assignedToId || undefined}
+                  options={assigneeOptions}
+                  onChange={(option) => updateParam("assignedToId", option?.id)}
+                  search={assigneeSearch}
+                  onSearchChange={setAssigneeSearch}
+                  placeholder={text.placeholders.assignee}
+                  loading={assignees.isLoading}
+                  hasMore={assignees.hasNextPage}
+                  loadingMore={assignees.isFetchingNextPage}
+                  onLoadMore={() => void assignees.fetchNextPage()}
+                />
+
+                <TaskOptionSelect
+                  value={createdById || undefined}
+                  options={creatorOptions}
+                  onChange={(option) => updateParam("createdById", option?.id)}
+                  search={creatorSearch}
+                  onSearchChange={setCreatorSearch}
+                  placeholder="ایجادکننده"
+                  loading={creators.isLoading}
+                  hasMore={creators.hasNextPage}
+                  loadingMore={creators.isFetchingNextPage}
+                  onLoadMore={() => void creators.fetchNextPage()}
+                />
+
+                <div className="grid gap-1">
+                  <span className="text-xs text-[var(--app-text-secondary)]">
+                    {text.filters.dueFrom}
+                  </span>
+                  <PersianDateTimePicker
+                    value={dueFrom ? new Date(dueFrom) : undefined}
+                    onChange={(value) =>
+                      updateParam("dueFrom", value?.toISOString())
                     }
-                    search={opportunitySearch}
-                    onSearchChange={setOpportunitySearch}
-                    placeholder={text.placeholders.opportunity}
-                    loading={opportunities.isLoading}
-                    hasMore={opportunities.hasNextPage}
-                    loadingMore={opportunities.isFetchingNextPage}
-                    onLoadMore={() => void opportunities.fetchNextPage()}
                   />
-
-                  <TaskOptionSelect
-                    value={teamId || undefined}
-                    options={teamOptions}
-                    onChange={(option) => updateParam("teamId", option?.id)}
-                    search={teamSearch}
-                    onSearchChange={setTeamSearch}
-                    placeholder="تیم"
-                    loading={teams.isLoading}
-                    hasMore={teams.hasNextPage}
-                    loadingMore={teams.isFetchingNextPage}
-                    onLoadMore={() => void teams.fetchNextPage()}
-                  />
-
-                  <StaticFilterSelect ariaLabel="وضعیت موعد" value={dueState} placeholder="همه وضعیت‌های موعد" options={dueStateOptions} onChange={(value) => updateParam("dueState", value)} />
-
-                  <StaticFilterSelect ariaLabel="نوع موجودیت مرتبط" value={linkedEntityType} placeholder="همه موجودیت‌های مرتبط" options={linkedEntityOptions} onChange={(value) => updateParam("linkedEntityType", value)} />
-
-                  <StaticFilterSelect ariaLabel="وضعیت بازبینی" value={reviewStatus} placeholder="همه وضعیت‌های بازبینی" options={reviewStatusOptions} onChange={(value) => updateParam("reviewStatus", value)} />
-
-                  <TaskOptionSelect
-                    value={reviewerId || undefined}
-                    options={reviewerOptions}
-                    onChange={(option) => updateParam("reviewerId", option?.id)}
-                    search={reviewerSearch}
-                    onSearchChange={setReviewerSearch}
-                    placeholder="بازبین"
-                    loading={reviewers.isLoading}
-                    hasMore={reviewers.hasNextPage}
-                    loadingMore={reviewers.isFetchingNextPage}
-                    onLoadMore={() => void reviewers.fetchNextPage()}
-                  />
-
-                  <TaskOptionSelect
-                    value={assignedToId || undefined}
-                    options={assigneeOptions}
-                    onChange={(option) =>
-                      updateParam("assignedToId", option?.id)
-                    }
-                    search={assigneeSearch}
-                    onSearchChange={setAssigneeSearch}
-                    placeholder={text.placeholders.assignee}
-                    loading={assignees.isLoading}
-                    hasMore={assignees.hasNextPage}
-                    loadingMore={assignees.isFetchingNextPage}
-                    onLoadMore={() => void assignees.fetchNextPage()}
-                  />
-
-                  <div className="grid gap-1">
-                    <span className="text-xs text-[var(--app-text-secondary)]">
-                      {text.filters.dueFrom}
-                    </span>
-                    <PersianDateTimePicker
-                      value={dueFrom ? new Date(dueFrom) : undefined}
-                      onChange={(value) =>
-                        updateParam("dueFrom", value?.toISOString())
-                      }
-                    />
-                  </div>
-
-                  <div className="grid gap-1">
-                    <span className="text-xs text-[var(--app-text-secondary)]">
-                      {text.filters.dueTo}
-                    </span>
-                    <PersianDateTimePicker
-                      value={dueTo ? new Date(dueTo) : undefined}
-                      onChange={(value) =>
-                        updateParam("dueTo", value?.toISOString())
-                      }
-                    />
-                  </div>
                 </div>
-            </AdvancedFilterPopover>
 
+                <div className="grid gap-1">
+                  <span className="text-xs text-[var(--app-text-secondary)]">
+                    {text.filters.dueTo}
+                  </span>
+                  <PersianDateTimePicker
+                    value={dueTo ? new Date(dueTo) : undefined}
+                    onChange={(value) =>
+                      updateParam("dueTo", value?.toISOString())
+                    }
+                  />
+                </div>
+              </div>
+            </AdvancedFilterPopover>
           </>
         }
-        quickFilters={quickFilters.filter((item) => item.value !== "team" || permissions.includes("task:view-team")).filter((item) => item.value !== "organization" || permissions.includes("task:view-organization")).filter((item) => item.value !== "awaitingReview" || permissions.includes("task:review")).map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            aria-pressed={quick === item.value}
-            onClick={() => setQuick(item.value)}
-            className={[
-              "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30",
-              quick === item.value
-                ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-            ].join(" ")}
-          >
-            {item.value === "overdue" ? <AlertTriangle className="size-3.5" /> : null}
-            {item.value === "awaitingReview" ? "در انتظار بازبینی من" : text.quick[item.value]}
-          </button>
-        ))}
+        quickFilters={quickFilters
+          .filter(
+            (item) =>
+              item.value !== "team" || permissions.includes("task:view-team")
+          )
+          .filter(
+            (item) =>
+              item.value !== "organization" ||
+              permissions.includes("task:view-organization")
+          )
+          .filter(
+            (item) =>
+              item.value !== "awaitingReview" ||
+              permissions.includes("task:review")
+          )
+          .map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={activeQuick === item.value}
+              onClick={() => setQuick(item.value)}
+              className={[
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/30 focus-visible:outline-none",
+                activeQuick === item.value
+                  ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
+                  : "border border-[var(--app-divider)] bg-[var(--app-background)] text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+              ].join(" ")}
+            >
+              {item.value === "overdue" ? (
+                <AlertTriangle className="size-3.5" />
+              ) : null}
+              {item.value === "awaitingReview"
+                ? "در انتظار بازبینی من"
+                : text.quick[item.value]}
+            </button>
+          ))}
       />
 
       <QueryContent query={tasks} errorTitle={text.errors.listTitle}>
@@ -477,6 +563,16 @@ function normalizeQuick(value: string | null): QuickFilter {
 function normalizePriority(value: string | null): TaskPriority | undefined {
   return ["LOW", "MEDIUM", "HIGH", "STRATEGIC"].includes(value || "")
     ? (value as TaskPriority)
+    : undefined
+}
+
+function normalizeView(
+  value: string | null
+): TaskListQuery["view"] | undefined {
+  return ["all", "mine", "team", "organization", "created"].includes(
+    value || ""
+  )
+    ? (value as TaskListQuery["view"])
     : undefined
 }
 
