@@ -23,6 +23,7 @@ import type {
   ReportFilters,
 } from "../api/reportsApi"
 import { useReportsAnalytics } from "../hooks/useReportsAnalytics"
+import { UserPerformanceReport } from "../components/UserPerformanceReport"
 import { useAuthStore } from "@/store/authStore"
 import { canViewFinancials } from "@/lib/permissions"
 
@@ -893,6 +894,7 @@ export function ReportsPage() {
   )
   const [dateRange, setDateRange] = useState<PersianDateRange | undefined>()
   const [scope, setScope] = useState<"all" | "mine">("all")
+  const [view, setView] = useState<"sales" | "users">("sales")
 
   const filters = useMemo<ReportFilters>(
     () => ({
@@ -903,19 +905,46 @@ export function ReportsPage() {
     [dateRange, scope],
   )
 
-  const query = useReportsAnalytics(filters)
+  const query = useReportsAnalytics(filters, view === "sales")
   const data = query.data
 
   return (
     <div className="grid gap-5" dir="rtl">
       <PageHero
-        title="تحلیل فروش و سلامت مسیر"
-        description="نرخ تبدیل سرنخ‌ها، وضعیت فرصت‌ها، عملکرد تیم فروش و سلامت مراحل فانل را تحلیل کنید."
+        title="گزارش‌ها"
+        description="سلامت مسیر فروش و عملکرد کاربران را در یک نمای تحلیلی بررسی کنید."
         accessBadge={{ label: "تحلیل و گزارش", icon: TrendingUp }}
-        onRefresh={() => query.refetch()}
-        refreshing={query.isFetching}
+        onRefresh={view === "sales" ? () => query.refetch() : undefined}
+        refreshing={view === "sales" && query.isFetching}
       />
 
+      <nav
+        aria-label="نوع گزارش"
+        className="flex w-full gap-1 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-1 shadow-[var(--app-shadow-card)] sm:w-fit"
+      >
+        {([
+          ["sales", "سلامت مسیر فروش"],
+          ["users", "عملکرد کاربران"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-current={view === value ? "page" : undefined}
+            onClick={() => setView(value)}
+            className={[
+              "min-h-10 flex-1 rounded-xl px-4 text-sm transition sm:flex-none",
+              view === value
+                ? "bg-[var(--app-primary)] font-bold text-[var(--app-on-primary)]"
+                : "text-[var(--app-text-secondary)] hover:bg-[var(--app-background)]",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {view === "sales" ? (
+        <>
       <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="min-w-0 flex-1">
@@ -1044,6 +1073,10 @@ export function ReportsPage() {
           <InsightCards data={data} />
         </>
       ) : null}
+        </>
+      ) : (
+        <UserPerformanceReport />
+      )}
     </div>
   )
 }

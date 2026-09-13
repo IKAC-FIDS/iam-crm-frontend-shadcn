@@ -7,6 +7,51 @@ export type ReportFilters = {
   ownershipScope?: "all" | "mine" | "team" | "unassigned"
 }
 
+export type UserPerformanceFilters = {
+  startDate?: string
+  endDate?: string
+  userId?: string
+}
+
+export type ReportUserOption = {
+  id: string
+  fullName: string
+  email?: string | null
+  isActive?: boolean
+}
+
+export type UserPerformanceReport = {
+  period: {
+    startDate: string | null
+    endDate: string | null
+    dateBasis: Record<string, string>
+  }
+  users: ReportUserOption[]
+  activity: {
+    total: number
+    breakdown: Array<{ code: string; label: string; count: number }>
+    uncataloguedCount: number
+  }
+  companiesCreated: number
+  tasksCreated: number
+  tasksAssigned: { total: number; completed: number; incomplete: number }
+  opportunities: {
+    total: number
+    active: number
+    won: number
+    lost: number
+    totalValue: number | null
+    activeValue: number | null
+    wonValue: number | null
+    lostValue: number | null
+  }
+  financialVisible: boolean
+}
+
+export type ReportFilterOptions = {
+  users: ReportUserOption[]
+}
+
 export type ComparisonMetric = {
   current: number
   previous: number
@@ -69,6 +114,22 @@ function params(filters: ReportFilters) {
 export async function getConversionHealth(filters: ReportFilters) {
   const response = await api.get("/reports/conversion-health", { params: params(filters) })
   return unwrapApiResponse<ConversionHealth>(response.data)
+}
+
+export async function getUserPerformance(filters: UserPerformanceFilters) {
+  const response = await api.get("/reports/user-performance", {
+    params: {
+      ...(filters.startDate ? { startDate: filters.startDate } : {}),
+      ...(filters.endDate ? { endDate: filters.endDate } : {}),
+      ...(filters.userId ? { userIds: filters.userId } : {}),
+    },
+  })
+  return unwrapApiResponse<UserPerformanceReport>(response.data)
+}
+
+export async function getReportFilterOptions() {
+  const response = await api.get("/reports/filter-options")
+  return unwrapApiResponse<ReportFilterOptions>(response.data)
 }
 
 
