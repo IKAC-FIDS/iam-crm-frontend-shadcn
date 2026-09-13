@@ -1,6 +1,7 @@
 import {
   Activity,
   Building2,
+  CalendarDays,
   CircleDollarSign,
   ListChecks,
   RotateCcw,
@@ -127,7 +128,7 @@ function PerformanceContent({
           {number.format(data.members.length)} عضو
         </StatusBadge>
       </div>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Metric
           icon={Activity}
           label="فعالیت‌های ثبت‌شده"
@@ -138,6 +139,7 @@ function PerformanceContent({
           label="شرکت‌های ایجادشده"
           value={data.companiesCreated}
         />
+        <Metric icon={CalendarDays} label="جلسات" value={data.meetings} />
         <Metric
           icon={ListChecks}
           label="کارهای ایجادشده"
@@ -187,6 +189,12 @@ function MemberCard({
     })
   const taskHref = (extra: Record<string, string | undefined>) =>
     withQuery("/tasks", { page: "1", ...extra })
+  const meetingHref = withQuery("/meetings", {
+    page: "1",
+    organizerId: member.user.id,
+    dateFrom: dateRange.from?.toISOString(),
+    dateTo: dateRange.to?.toISOString(),
+  })
   return (
     <SurfaceCard className="min-w-0 overflow-hidden">
       <header className="flex items-center gap-3 border-b border-[var(--app-divider)] bg-[var(--app-background)] p-4 sm:p-5">
@@ -230,6 +238,11 @@ function MemberCard({
         </div>
         <div className="grid gap-2 sm:grid-cols-3">
           <PlainMetric label="شرکت ایجادشده" value={member.companiesCreated} />
+          <LinkedMetric
+            label="جلسات"
+            value={member.meetings}
+            to={meetingHref}
+          />
           <LinkedMetric
             label="کار ایجادشده"
             value={member.tasksCreated}

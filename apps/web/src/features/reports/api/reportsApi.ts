@@ -33,9 +33,15 @@ export type ReportTeamOption = {
 export type UserPerformanceMetrics = {
   activity: {
     total: number
-    breakdown: Array<{ code: string; label: string; count: number; percentage?: number }>
+    breakdown: Array<{
+      code: string
+      label: string
+      count: number
+      percentage?: number
+    }>
   }
   companiesCreated: number
+  meetings: number
   tasksCreated: number
   tasksAssigned: { total: number; completed: number; incomplete: number }
   opportunities: UserPerformanceReport["opportunities"]
@@ -55,6 +61,7 @@ export type UserPerformanceReport = {
     uncataloguedCount: number
   }
   companiesCreated: number
+  meetings: number
   tasksCreated: number
   tasksAssigned: { total: number; completed: number; incomplete: number }
   opportunities: {
@@ -102,7 +109,12 @@ export type ConversionHealth = {
     count: number
     rate: number
   }>
-  milestones: Array<{ key: string; label: string; reached: number; reachRate: number }>
+  milestones: Array<{
+    key: string
+    label: string
+    reached: number
+    reachRate: number
+  }>
   biggestLeakage: {
     fromKey: string
     fromLabel: string
@@ -135,7 +147,9 @@ function params(filters: ReportFilters) {
 }
 
 export async function getConversionHealth(filters: ReportFilters) {
-  const response = await api.get("/reports/conversion-health", { params: params(filters) })
+  const response = await api.get("/reports/conversion-health", {
+    params: params(filters),
+  })
   return unwrapApiResponse<ConversionHealth>(response.data)
 }
 
@@ -154,5 +168,3 @@ export async function getReportFilterOptions() {
   const response = await api.get("/reports/filter-options")
   return unwrapApiResponse<ReportFilterOptions>(response.data)
 }
-
-
