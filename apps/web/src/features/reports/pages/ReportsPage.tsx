@@ -11,12 +11,11 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import { ErrorState } from "@/components/shared/ErrorState"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
-import {
-  PersianDateRangePicker,
-  type PersianDateRange,
-} from "@/components/shared/PersianDateRangePicker"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { PersianDateRangePicker } from "@/components/shared/date"
+import type { DateRangeValue } from "@/lib/date/jalali"
 import type {
   ComparisonMetric,
   ConversionHealth,
@@ -43,16 +42,12 @@ function monthLabel(value: string) {
 }
 
 function normalizeText(value: string) {
-  return value
-    .replace(/ي/g, "ی")
-    .replace(/ك/g, "ک")
-    .replace(/\s+/g, " ")
-    .trim()
+  return value.replace(/ي/g, "ی").replace(/ك/g, "ک").replace(/\s+/g, " ").trim()
 }
 
 function findMilestoneRate(
   milestones: ConversionHealth["milestones"],
-  matchers: string[],
+  matchers: string[]
 ) {
   const hit = milestones.find((item) => {
     const label = normalizeText(item.label).toLowerCase()
@@ -77,7 +72,8 @@ function MetricDelta({
 }) {
   const neutral = metric.delta === 0
   const positive = inverse ? metric.delta < 0 : metric.delta > 0
-  const Icon = metric.delta > 0 ? ArrowUp : metric.delta < 0 ? ArrowDown : Activity
+  const Icon =
+    metric.delta > 0 ? ArrowUp : metric.delta < 0 ? ArrowDown : Activity
 
   return (
     <span
@@ -115,21 +111,19 @@ function KpiCard({
   icon: typeof TrendingUp
 }) {
   return (
-    <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
-          <p className="mt-1 text-xs leading-6 text-muted-foreground">{helper}</p>
-        </div>
-        <div className="rounded-2xl bg-[var(--app-primary-soft)] p-3 text-[var(--app-primary)]">
-          <Icon className="size-5" />
-        </div>
-      </div>
-      <div className="mt-4">
-        <MetricDelta metric={metric} inverse={inverse} suffix={suffix} />
-      </div>
-    </article>
+    <MetricCard
+      label={title}
+      value={value}
+      icon={Icon}
+      helper={
+        <>
+          <span className="block leading-6">{helper}</span>
+          <span className="mt-3 block">
+            <MetricDelta metric={metric} inverse={inverse} suffix={suffix} />
+          </span>
+        </>
+      }
+    />
   )
 }
 
@@ -191,7 +185,10 @@ function LeadStatusChart({ data }: { data: ConversionHealth["outcomes"] }) {
       </div>
 
       <div className="flex justify-center">
-        <div className="relative size-72 rounded-full" style={{ background: gradient }}>
+        <div
+          className="relative size-72 rounded-full"
+          style={{ background: gradient }}
+        >
           <div className="absolute inset-10 grid place-items-center rounded-full bg-[var(--app-surface)] text-center">
             <div>
               <div className="text-4xl font-black">{fa(wonRate, 1)}٪</div>
@@ -226,8 +223,7 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
           data.length <= 1
             ? width / 2
             : padding + (index * (width - padding * 2)) / (data.length - 1)
-        const y =
-          height - padding - (item[key] / max) * (height - padding * 2)
+        const y = height - padding - (item[key] / max) * (height - padding * 2)
         return `${x},${y}`
       })
       .join(" ")
@@ -236,10 +232,12 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
     <div>
       <div className="mb-4 flex flex-wrap gap-4 text-xs">
         <span className="inline-flex items-center gap-2">
-          <i className="h-0.5 w-5 bg-[#2196F3]" />سرنخ‌های ایجادشده
+          <i className="h-0.5 w-5 bg-[#2196F3]" />
+          سرنخ‌های ایجادشده
         </span>
         <span className="inline-flex items-center gap-2">
-          <i className="h-0.5 w-5 bg-[#2E7D32]" />مشتری‌شده
+          <i className="h-0.5 w-5 bg-[#2E7D32]" />
+          مشتری‌شده
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -420,8 +418,10 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
           </div>
 
           <p className="mt-3 leading-6 text-muted-foreground">
-            یعنی حدود <strong className="text-foreground">{fa(hovered.rate, 1)}٪</strong>{" "}
-            از سرنخ‌های بازه انتخابی حداقل یک‌بار به این بخش از مسیر فروش رسیده‌اند.
+            یعنی حدود{" "}
+            <strong className="text-foreground">{fa(hovered.rate, 1)}٪</strong>{" "}
+            از سرنخ‌های بازه انتخابی حداقل یک‌بار به این بخش از مسیر فروش
+            رسیده‌اند.
           </p>
         </div>
       ) : null}
@@ -456,9 +456,7 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
                   />
                   <div className="relative z-10 flex h-full items-center justify-end px-3 text-xs font-bold">
                     {phase.rate >= 18 ? (
-                      <span className="text-white">
-                        {fa(phase.rate, 1)}٪
-                      </span>
+                      <span className="text-white">{fa(phase.rate, 1)}٪</span>
                     ) : null}
                   </div>
                 </div>
@@ -480,8 +478,9 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
       </div>
 
       <div className="mt-4 rounded-xl bg-muted/35 px-3 py-2 text-xs leading-6 text-muted-foreground">
-        طول هر میله نشان می‌دهد چه درصدی از سرنخ‌ها حداقل یک‌بار به آن فاز رسیده‌اند.
-        برای دیدن استیج‌های هر فاز، نشانگر را روی همان ردیف نگه دارید.
+        طول هر میله نشان می‌دهد چه درصدی از سرنخ‌ها حداقل یک‌بار به آن فاز
+        رسیده‌اند. برای دیدن استیج‌های هر فاز، نشانگر را روی همان ردیف نگه
+        دارید.
       </div>
     </div>
   )
@@ -520,11 +519,9 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
     data.reduce((sum, item) => sum + item.pipelineValue, 0) / data.length
 
   const valueX = plotLeft + (averageValue / maxValue) * plotWidth
-  const rateY =
-    plotBottom - (Math.min(100, averageRate) / 100) * plotHeight
+  const rateY = plotBottom - (Math.min(100, averageRate) / 100) * plotHeight
 
-  const hovered =
-    data.find((item) => item.ownerId === hoveredOwnerId) ?? null
+  const hovered = data.find((item) => item.ownerId === hoveredOwnerId) ?? null
 
   const getStatus = (pipelineValue: number, conversionRate: number) => {
     const valueAbove = pipelineValue >= averageValue
@@ -547,104 +544,117 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
       <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
         <span>
           خط عمودی: میانگین ارزش تیم
-          <strong className="ms-1 text-foreground">{fa(averageValue)} ریال</strong>
+          <strong className="ms-1 text-foreground">
+            {fa(averageValue)} ریال
+          </strong>
         </span>
         <span>
           خط افقی: میانگین نرخ تبدیل تیم
-          <strong className="ms-1 text-foreground">{fa(averageRate, 1)}٪</strong>
+          <strong className="ms-1 text-foreground">
+            {fa(averageRate, 1)}٪
+          </strong>
         </span>
         <span>اندازه دایره: تعداد فرصت‌ها</span>
       </div>
 
-      {hovered ? (() => {
-        const pipelineDiff = valueDiffPercent(hovered.pipelineValue)
-        const rateDiff = hovered.conversionRate - averageRate
-        const status = getStatus(hovered.pipelineValue, hovered.conversionRate)
+      {hovered
+        ? (() => {
+            const pipelineDiff = valueDiffPercent(hovered.pipelineValue)
+            const rateDiff = hovered.conversionRate - averageRate
+            const status = getStatus(
+              hovered.pipelineValue,
+              hovered.conversionRate
+            )
 
-        return (
-          <div
-            className="pointer-events-none absolute start-4 top-14 z-20 w-[340px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
-            dir="rtl"
-          >
-            <div className="flex items-start justify-between gap-3 border-b border-[var(--app-divider)] pb-3">
-              <div>
-                <div className="text-sm font-black text-foreground">
-                  {hovered.ownerName}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  جزئیات عملکرد کارشناس
-                </div>
-              </div>
-              <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 font-bold text-[var(--app-primary)]">
-                {status}
-              </span>
-            </div>
-
-            <div className="mt-3 grid gap-2">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">تعداد فرصت‌ها</span>
-                <strong>{fa(hovered.total)} مورد</strong>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">ارزش فرصت‌ها</span>
-                <strong>{fa(hovered.pipelineValue)} ریال</strong>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">نرخ تبدیل</span>
-                <strong>{fa(hovered.conversionRate, 1)}٪</strong>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">میانگین نرخ تیم</span>
-                <strong>{fa(averageRate, 1)}٪</strong>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">میانگین ارزش تیم</span>
-                <strong>{fa(averageValue)} ریال</strong>
-              </div>
-            </div>
-
-            <div className="my-3 border-t border-[var(--app-divider)]" />
-
-            <div className="mb-2 font-bold">اختلاف با تیم</div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">ارزش فرصت‌ها</span>
-                <strong>
-                  {fa(Math.abs(pipelineDiff), 1)}٪
-                  <span className="ms-1">
-                    {pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+            return (
+              <div
+                className="pointer-events-none absolute start-4 top-14 z-20 w-[340px] max-w-[calc(100%-32px)] rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-xs shadow-[var(--app-shadow-popover)]"
+                dir="rtl"
+              >
+                <div className="flex items-start justify-between gap-3 border-b border-[var(--app-divider)] pb-3">
+                  <div>
+                    <div className="text-sm font-black text-foreground">
+                      {hovered.ownerName}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      جزئیات عملکرد کارشناس
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 font-bold text-[var(--app-primary)]">
+                    {status}
                   </span>
-                </strong>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">نرخ تبدیل</span>
-                <strong>
-                  {fa(Math.abs(rateDiff), 1)} واحد درصد
-                  <span className="ms-1">
-                    {rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}
-                  </span>
-                </strong>
-              </div>
-            </div>
+                </div>
 
-            <div className="my-3 border-t border-[var(--app-divider)]" />
+                <div className="mt-3 grid gap-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">تعداد فرصت‌ها</span>
+                    <strong>{fa(hovered.total)} مورد</strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">ارزش فرصت‌ها</span>
+                    <strong>{fa(hovered.pipelineValue)} ریال</strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">نرخ تبدیل</span>
+                    <strong>{fa(hovered.conversionRate, 1)}٪</strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      میانگین نرخ تیم
+                    </span>
+                    <strong>{fa(averageRate, 1)}٪</strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">
+                      میانگین ارزش تیم
+                    </span>
+                    <strong>{fa(averageValue)} ریال</strong>
+                  </div>
+                </div>
 
-            <div className="mb-2 font-bold">فرمول جایگاه</div>
-            <div className="space-y-1 leading-6 text-muted-foreground">
-              <p>محور افقی = ارزش فرصت‌ها در مقایسه با میانگین تیم</p>
-              <p>محور عمودی = نرخ تبدیل در مقایسه با میانگین تیم</p>
-              <p>
-                نتیجه: <strong className="text-foreground">{status}</strong>
-              </p>
-            </div>
-          </div>
-        )
-      })() : null}
+                <div className="my-3 border-t border-[var(--app-divider)]" />
+
+                <div className="mb-2 font-bold">اختلاف با تیم</div>
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">ارزش فرصت‌ها</span>
+                    <strong>
+                      {fa(Math.abs(pipelineDiff), 1)}٪
+                      <span className="ms-1">
+                        {pipelineDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                      </span>
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-muted-foreground">نرخ تبدیل</span>
+                    <strong>
+                      {fa(Math.abs(rateDiff), 1)} واحد درصد
+                      <span className="ms-1">
+                        {rateDiff >= 0 ? "بالاتر" : "پایین‌تر"}
+                      </span>
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="my-3 border-t border-[var(--app-divider)]" />
+
+                <div className="mb-2 font-bold">فرمول جایگاه</div>
+                <div className="space-y-1 leading-6 text-muted-foreground">
+                  <p>محور افقی = ارزش فرصت‌ها در مقایسه با میانگین تیم</p>
+                  <p>محور عمودی = نرخ تبدیل در مقایسه با میانگین تیم</p>
+                  <p>
+                    نتیجه: <strong className="text-foreground">{status}</strong>
+                  </p>
+                </div>
+              </div>
+            )
+          })()
+        : null}
 
       <div className="overflow-x-auto">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="min-w-[760px] w-full"
+          className="w-full min-w-[760px]"
           onMouseLeave={() => setHoveredOwnerId(null)}
         >
           <rect
@@ -795,8 +805,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
           </text>
 
           {data.map((item) => {
-            const x =
-              plotLeft + (item.pipelineValue / maxValue) * plotWidth
+            const x = plotLeft + (item.pipelineValue / maxValue) * plotWidth
             const y =
               plotBottom -
               (Math.min(100, item.conversionRate) / 100) * plotHeight
@@ -847,10 +856,12 @@ function InsightCards({ data }: { data: ConversionHealth }) {
         </div>
         {leakage ? (
           <>
-            <p className="mt-4 text-2xl font-black">{fa(leakage.dropRate, 1)}٪</p>
+            <p className="mt-4 text-2xl font-black">
+              {fa(leakage.dropRate, 1)}٪
+            </p>
             <p className="mt-1 text-sm leading-7 text-muted-foreground">
-              بین «{leakage.fromLabel}» و «{leakage.toLabel}»؛
-              {" "}{fa(leakage.dropCount)} فرصت به مرحله بعد نرسیده‌اند.
+              بین «{leakage.fromLabel}» و «{leakage.toLabel}»؛{" "}
+              {fa(leakage.dropCount)} فرصت به مرحله بعد نرسیده‌اند.
             </p>
           </>
         ) : (
@@ -892,7 +903,7 @@ export function ReportsPage() {
   const financialVisible = canViewFinancials(
     useAuthStore((state) => state.user?.permissions)
   )
-  const [dateRange, setDateRange] = useState<PersianDateRange | undefined>()
+  const [dateRange, setDateRange] = useState<DateRangeValue>({})
   const [scope, setScope] = useState<"all" | "mine">("all")
   const [view, setView] = useState<"sales" | "users">("sales")
 
@@ -902,7 +913,7 @@ export function ReportsPage() {
       endDate: dateRange?.to?.toISOString(),
       ownershipScope: scope,
     }),
-    [dateRange, scope],
+    [dateRange, scope]
   )
 
   const query = useReportsAnalytics(filters, view === "sales")
@@ -916,163 +927,137 @@ export function ReportsPage() {
         accessBadge={{ label: "تحلیل و گزارش", icon: TrendingUp }}
         onRefresh={view === "sales" ? () => query.refetch() : undefined}
         refreshing={view === "sales" && query.isFetching}
+        viewOptions={[
+          { id: "sales", label: "سلامت مسیر فروش", icon: TrendingUp },
+          { id: "users", label: "عملکرد کاربران", icon: UsersRound },
+        ]}
+        activeView={view}
+        onViewChange={(nextView) => setView(nextView as "sales" | "users")}
       />
-
-      <nav
-        aria-label="نوع گزارش"
-        className="flex w-full gap-1 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-1 shadow-[var(--app-shadow-card)] sm:w-fit"
-      >
-        {([
-          ["sales", "سلامت مسیر فروش"],
-          ["users", "عملکرد کاربران"],
-        ] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-current={view === value ? "page" : undefined}
-            onClick={() => setView(value)}
-            className={[
-              "min-h-10 flex-1 rounded-xl px-4 text-sm transition sm:flex-none",
-              view === value
-                ? "bg-[var(--app-primary)] font-bold text-[var(--app-on-primary)]"
-                : "text-[var(--app-text-secondary)] hover:bg-[var(--app-background)]",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
 
       {view === "sales" ? (
         <>
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-          <div className="min-w-0 flex-1">
-            <PersianDateRangePicker
-              value={dateRange}
-              onChange={setDateRange}
-              placeholder="۹۰ روز اخیر"
-            />
-          </div>
-          <div className="flex rounded-2xl bg-muted p-1">
-            {(["all", "mine"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setScope(value)}
-                className={[
-                  "rounded-xl px-4 py-2 text-sm transition",
-                  scope === value
-                    ? "bg-background font-medium shadow-sm"
-                    : "text-muted-foreground",
-                ].join(" ")}
-              >
-                {value === "all" ? "همه" : "متعلق به من"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {query.isError ? (
-        <ErrorState
-          title="دریافت تحلیل فروش با خطا مواجه شد"
-          description="Endpoint مربوط به گزارش‌ها را در Backend بررسی کنید."
-          retryLabel="تلاش مجدد"
-          onRetry={() => void query.refetch()}
-        />
-      ) : null}
-
-      {query.isLoading ? (
-        <div className="grid min-h-72 place-items-center rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] text-sm text-muted-foreground">
-          در حال تحلیل داده‌های فروش...
-        </div>
-      ) : null}
-
-      {data ? (
-        <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              title="تبدیل سرنخ به مشتری"
-              value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
-              helper={`از ${fa(data.summary.totalLeads)} سرنخ در بازه انتخابی`}
-              metric={data.summary.leadToCustomer}
-              icon={Target}
-            />
-            <KpiCard
-              title="میانه زمان تبدیل"
-              value={`${fa(data.summary.medianTimeToWinDays.current, 1)} روز`}
-              helper="از ایجاد سرنخ تا تبدیل به مشتری"
-              metric={data.summary.medianTimeToWinDays}
-              inverse
-              suffix=" روز"
-              icon={TimerReset}
-            />
-            <KpiCard
-              title="نرخ عدم موفقیت"
-              value={`${fa(data.summary.lostRate.current, 1)}٪`}
-              helper="سهم از دست رفته و بدون پاسخ از کل سرنخ‌ها"
-              metric={data.summary.lostRate}
-              inverse
-              icon={CircleAlert}
-            />
-            <KpiCard
-              title="بازگشت از توقف"
-              value={`${fa(data.summary.recoveryRate.current, 1)}٪`}
-              helper="فرصت‌هایی که از توقف دوباره فعال شده‌اند"
-              metric={data.summary.recoveryRate}
-              icon={RotateCcw}
-            />
-          </section>
-
-          <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-            <div className="mb-5">
-              <h2 className="text-lg font-bold">روند جذب تا تبدیل</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                مقایسه تعداد سرنخ‌های ایجادشده با تعداد مشتری‌شده در طول بازه زمانی
-              </p>
+          <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+              <div className="min-w-0 flex-1">
+                <PersianDateRangePicker
+                  value={dateRange}
+                  onChange={setDateRange}
+                />
+              </div>
+              <div className="flex rounded-2xl bg-muted p-1">
+                {(["all", "mine"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setScope(value)}
+                    className={[
+                      "rounded-xl px-4 py-2 text-sm transition",
+                      scope === value
+                        ? "bg-background font-medium shadow-sm"
+                        : "text-muted-foreground",
+                    ].join(" ")}
+                  >
+                    {value === "all" ? "همه" : "متعلق به من"}
+                  </button>
+                ))}
+              </div>
             </div>
-            <TrendChart data={data.trend} />
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-2">
-            <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-              <div className="mb-5">
-                <h2 className="text-lg font-bold">وضعیت سرنخ‌ها</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  توزیع فعلی سرنخ‌ها در وضعیت‌های اصلی بازه انتخابی
-                </p>
-              </div>
-              <LeadStatusChart data={data.outcomes} />
-            </article>
+          <QueryContent
+            query={query}
+            errorTitle="دریافت تحلیل فروش با خطا مواجه شد"
+          >
+            {data ? (
+              <>
+                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <KpiCard
+                    title="تبدیل سرنخ به مشتری"
+                    value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
+                    helper={`از ${fa(data.summary.totalLeads)} سرنخ در بازه انتخابی`}
+                    metric={data.summary.leadToCustomer}
+                    icon={Target}
+                  />
+                  <KpiCard
+                    title="میانه زمان تبدیل"
+                    value={`${fa(data.summary.medianTimeToWinDays.current, 1)} روز`}
+                    helper="از ایجاد سرنخ تا تبدیل به مشتری"
+                    metric={data.summary.medianTimeToWinDays}
+                    inverse
+                    suffix=" روز"
+                    icon={TimerReset}
+                  />
+                  <KpiCard
+                    title="نرخ عدم موفقیت"
+                    value={`${fa(data.summary.lostRate.current, 1)}٪`}
+                    helper="سهم از دست رفته و بدون پاسخ از کل سرنخ‌ها"
+                    metric={data.summary.lostRate}
+                    inverse
+                    icon={CircleAlert}
+                  />
+                  <KpiCard
+                    title="بازگشت از توقف"
+                    value={`${fa(data.summary.recoveryRate.current, 1)}٪`}
+                    helper="فرصت‌هایی که از توقف دوباره فعال شده‌اند"
+                    metric={data.summary.recoveryRate}
+                    icon={RotateCcw}
+                  />
+                </section>
 
-            <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-              <div className="mb-5">
-                <h2 className="text-lg font-bold">پیشرفت در مسیر فروش</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  نمایش فازهای فانل و استیج‌های هر فاز بر اساس مسیر توافق‌شده
-                </p>
-              </div>
-              <FunnelChart data={data} />
-            </article>
-          </section>
+                <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+                  <div className="mb-5">
+                    <h2 className="text-lg font-bold">روند جذب تا تبدیل</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      مقایسه تعداد سرنخ‌های ایجادشده با تعداد مشتری‌شده در طول
+                      بازه زمانی
+                    </p>
+                  </div>
+                  <TrendChart data={data.trend} />
+                </section>
 
-          {financialVisible ? <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-            <div className="mb-3 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-bold">عملکرد تیم فروش</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس
-                </p>
-              </div>
-              <UsersRound className="size-4 text-[var(--app-primary)]" />
-            </div>
-            <OwnerScatter data={data.owners} />
-          </section> : null}
+                <section className="grid gap-5 xl:grid-cols-2">
+                  <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+                    <div className="mb-5">
+                      <h2 className="text-lg font-bold">وضعیت سرنخ‌ها</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        توزیع فعلی سرنخ‌ها در وضعیت‌های اصلی بازه انتخابی
+                      </p>
+                    </div>
+                    <LeadStatusChart data={data.outcomes} />
+                  </article>
 
-          <InsightCards data={data} />
-        </>
-      ) : null}
+                  <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+                    <div className="mb-5">
+                      <h2 className="text-lg font-bold">پیشرفت در مسیر فروش</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        نمایش فازهای فانل و استیج‌های هر فاز بر اساس مسیر
+                        توافق‌شده
+                      </p>
+                    </div>
+                    <FunnelChart data={data} />
+                  </article>
+                </section>
+
+                {financialVisible ? (
+                  <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+                    <div className="mb-3 flex items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-base font-bold">عملکرد تیم فروش</h2>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس
+                        </p>
+                      </div>
+                      <UsersRound className="size-4 text-[var(--app-primary)]" />
+                    </div>
+                    <OwnerScatter data={data.owners} />
+                  </section>
+                ) : null}
+
+                <InsightCards data={data} />
+              </>
+            ) : null}
+          </QueryContent>
         </>
       ) : (
         <UserPerformanceReport />
