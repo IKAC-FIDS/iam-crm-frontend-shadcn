@@ -1,7 +1,19 @@
-import { EntityCardList, type EntityCardField } from "@/components/shared/EntityCardList"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useMemo, useState } from "react"
-import { Building2, Eye, Plus, UsersRound } from "lucide-react"
+import {
+  Archive,
+  Building2,
+  Eye,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  UserRoundCog,
+  UsersRound,
+} from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
@@ -18,10 +30,15 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
+import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { useCompanies } from "../hooks/useCompanies"
-import { useCreateCompany } from "../hooks/useCompanyMutations"
+import {
+  useCreateCompany,
+  useUpdateCompany,
+} from "../hooks/useCompanyMutations"
 import type { Company } from "../types/company.types"
 import {
   companyDisplayName,
@@ -38,6 +55,10 @@ export function CompaniesPage() {
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
   const [createOpen, setCreateOpen] = useState(false)
+  const [editCompany, setEditCompany] = useState<Company | null>(null)
+  const [ownerCompany, setOwnerCompany] = useState<Company | null>(null)
+  const [archiveCompany, setArchiveCompany] = useState<Company | null>(null)
+  const updateMutation = useUpdateCompany(editCompany?.id ?? "")
   const search = params.get("search") ?? ""
   const priority = enumParam(
     params.get("priority"),
@@ -86,12 +107,21 @@ export function CompaniesPage() {
         id: "owner",
         label: text.columns.owner,
         icon: UsersRound,
-        render: (company) => company.owner ? (
-          <span className="flex items-center gap-2">
-            <IdentityAvatar name={company.owner.fullName} mediaPath={`/users/${company.owner.id}/avatar`} hasMedia={Boolean(company.owner.id)} mediaVersion={company.owner.avatarObjectKey} className="size-7 rounded-lg text-[10px]" />
-            <span className="truncate">{company.owner.fullName}</span>
-          </span>
-        ) : text.unassigned,
+        render: (company) =>
+          company.owner ? (
+            <span className="flex items-center gap-2">
+              <IdentityAvatar
+                name={company.owner.fullName}
+                mediaPath={`/users/${company.owner.id}/avatar`}
+                hasMedia={Boolean(company.owner.avatarObjectKey)}
+                mediaVersion={company.owner.avatarObjectKey}
+                className="size-7 rounded-lg text-[10px]"
+              />
+              <span className="truncate">{company.owner.fullName}</span>
+            </span>
+          ) : (
+            text.unassigned
+          ),
       },
       {
         id: "status",
@@ -110,7 +140,7 @@ export function CompaniesPage() {
         render: (company) => formatCompanyDate(company.updatedAt),
       },
     ],
-    [text],
+    [text]
   )
 
   const hasActiveFilters =
@@ -134,11 +164,15 @@ export function CompaniesPage() {
         accessBadge={{ label: "مدیریت حساب‌های مشتری", icon: Building2 }}
         title={text.title}
         description={text.description}
-        primaryAction={canCreate ? {
-          label: text.create,
-          icon: Plus,
-          onClick: () => setCreateOpen(true),
-        } : undefined}
+        primaryAction={
+          canCreate
+            ? {
+                label: text.create,
+                icon: Plus,
+                onClick: () => setCreateOpen(true),
+              }
+            : undefined
+        }
       />
 
       <DataTableToolbar
@@ -221,31 +255,92 @@ export function CompaniesPage() {
           getRowKey={(company) => company.id}
           onRowClick={(company) => navigate(`/companies/${company.id}`)}
           className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          title={(company) => companyDisplayName(company.legalName, company.brandName)}
-          subtitle={(company) => company.brandName && company.brandName !== company.legalName ? company.legalName : uiText.common.notAvailable}
+          title={(company) =>
+            companyDisplayName(company.legalName, company.brandName)
+          }
+          subtitle={(company) =>
+            company.brandName && company.brandName !== company.legalName
+              ? company.legalName
+              : uiText.common.notAvailable
+          }
           media={(company) => (
             <IdentityAvatar
               name={companyDisplayName(company.legalName, company.brandName)}
               mediaPath={`/companies/${company.id}/logo`}
-              hasMedia={Boolean(company.id)}
+              hasMedia={Boolean(company.logoObjectKey)}
               mediaVersion={company.logoObjectKey}
               fallbackIcon={<Building2 className="size-6" />}
               className="size-16 rounded-[22px] text-xl shadow-sm"
             />
           )}
-          actions={(company) => (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              aria-label={text.openCompany}
-              className="rounded-xl"
-              onClick={() => navigate(`/companies/${company.id}`)}
-            >
-              <Eye className="size-4" />
-              {uiText.common.view}
-            </Button>
-          )}
+          actions={(company) => {
+            const canEdit = permissions.includes("company:update")
+            const canChangeOwner = permissions.includes("company:change-owner")
+            const canToggleArchive = company.archivedAt
+              ? permissions.includes("company:restore")
+              : permissions.includes("company:archive")
+
+            return (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label={text.openCompany}
+                  className="rounded-xl"
+                  onClick={() => navigate(`/companies/${company.id}`)}
+                >
+                  <Eye className="size-4" />
+                  {uiText.common.view}
+                </Button>
+
+                {canEdit ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setEditCompany(company)}
+                  >
+                    <Pencil className="size-4" />
+                    {uiText.companies.detail.edit}
+                  </Button>
+                ) : null}
+
+                {canChangeOwner ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setOwnerCompany(company)}
+                  >
+                    <UserRoundCog className="size-4" />
+                    تغییر مالک
+                  </Button>
+                ) : null}
+
+                {canToggleArchive ? (
+                  <Button
+                    type="button"
+                    variant={company.archivedAt ? "outline" : "destructive"}
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => setArchiveCompany(company)}
+                  >
+                    {company.archivedAt ? (
+                      <RefreshCcw className="size-4" />
+                    ) : (
+                      <Archive className="size-4" />
+                    )}
+                    {company.archivedAt
+                      ? uiText.companies.detail.active
+                      : uiText.companies.detail.archived}
+                  </Button>
+                ) : null}
+              </>
+            )
+          }}
           emptyState={
             <EmptyState
               icon={Building2}
@@ -278,6 +373,43 @@ export function CompaniesPage() {
           navigate(`/companies/${company.id}`)
         }}
       />
+
+      {editCompany ? (
+        <CompanyFormDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditCompany(null)
+          }}
+          mode="edit"
+          company={editCompany}
+          isPending={updateMutation.isPending}
+          submitError={updateMutation.error}
+          onSubmit={async (payload) => {
+            await updateMutation.mutateAsync(payload)
+            setEditCompany(null)
+          }}
+        />
+      ) : null}
+
+      {ownerCompany ? (
+        <ChangeCompanyOwnerDialog
+          company={ownerCompany}
+          open
+          onOpenChange={(open) => {
+            if (!open) setOwnerCompany(null)
+          }}
+        />
+      ) : null}
+
+      {archiveCompany ? (
+        <ArchiveCompanyDialog
+          company={archiveCompany}
+          open
+          onOpenChange={(open) => {
+            if (!open) setArchiveCompany(null)
+          }}
+        />
+      ) : null}
     </EntityListPage>
   )
 }
