@@ -46,6 +46,10 @@ const eventLabels: Record<string, string> = {
   "TASK.DUE_SOON": "نزدیک‌شدن سررسید کار",
   "TASK.OVERDUE": "سررسید گذشته کار",
   "OPPORTUNITY.STAGE_CHANGED": "تغییر مرحله فرصت",
+  "CONVERSATION.MESSAGE_CREATED": "پیام جدید گفتگو",
+  "CONVERSATION.QUESTION_CREATED": "پرسش جدید گفتگو",
+  "CONVERSATION.REPLY_CREATED": "پاسخ جدید گفتگو",
+  "CONVERSATION.RESOLVED": "حل‌شدن گفتگو",
 }
 const actionLabels: Record<string, string> = {
   CREATED: "ایجاد",

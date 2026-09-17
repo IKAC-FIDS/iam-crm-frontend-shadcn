@@ -102,14 +102,27 @@ const failureLabels: Record<string, string> = {
   INVALID_DESTINATION: "مقصد نامعتبر", TEMPLATE_ERROR: "خطای قالب", RATE_LIMIT: "محدودیت نرخ",
   TIMEOUT: "پایان مهلت", CONFIGURATION: "پیکربندی", UNKNOWN: "نامشخص",
 }
-const serviceLabels: Record<string, string> = { MEETING: "جلسه", TASK: "کار" }
+const serviceLabels: Record<string, string> = {
+  MEETING: "جلسه",
+  TASK: "کار",
+  OPPORTUNITY: "فرصت",
+  CONVERSATION: "گفتگو",
+}
 const actionLabels: Record<string, string> = {
   CREATED: "ایجاد",
   UPDATED: "ویرایش",
   CANCELLED: "لغو",
+  REMINDER: "یادآوری",
   ASSIGNED: "ارجاع",
   REASSIGNED: "ارجاع مجدد",
   COMPLETED: "تکمیل",
+  DUE_SOON: "نزدیک‌شدن سررسید",
+  OVERDUE: "سررسید گذشته",
+  STAGE_CHANGED: "تغییر مرحله",
+  MESSAGE_CREATED: "پیام جدید",
+  QUESTION_CREATED: "پرسش جدید",
+  REPLY_CREATED: "پاسخ جدید",
+  RESOLVED: "حل‌شده",
 }
 function eventLabel(value: string) {
   const [service, action] = value.split(".")
