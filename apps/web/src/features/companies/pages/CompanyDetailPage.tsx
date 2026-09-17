@@ -30,6 +30,7 @@ import { uiText } from "@/config/uiText"
 import { CreatePersonDialog } from "@/features/people/components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
+import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
 import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDialog"
 import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog"
@@ -952,6 +953,7 @@ export function CompanyDetailPage() {
       </div>
 
       <ArtifactPanel entityType="COMPANY" entityId={companyId} title="مستندات و مراجع شرکت" />
+      <EntityConversationPanel entityType="COMPANY" entityId={companyId} />
 
       {selectedPersonId ? (
         <Person360WorkspaceDialog

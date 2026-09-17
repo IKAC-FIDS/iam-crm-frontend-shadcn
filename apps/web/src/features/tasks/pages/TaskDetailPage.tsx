@@ -33,6 +33,7 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
+import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -237,6 +238,7 @@ export function TaskDetailPage() {
           <TaskActivitiesSection task={task} />
           {task.requiresReview ? <TaskReviewSection task={task} /> : null}
           <ArtifactPanel entityType="TASK" entityId={task.id} title="فایل‌ها و مراجع کار" />
+          <EntityConversationPanel entityType="TASK" entityId={task.id} />
         </main>
 
         <aside className="grid min-w-0 gap-4 xl:sticky xl:top-4">

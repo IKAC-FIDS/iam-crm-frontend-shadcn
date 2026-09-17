@@ -7,6 +7,7 @@ import {
 import { useNavigate } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
+import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
 import {
   Dialog,
   DialogContent,
@@ -178,6 +179,8 @@ export function ActivityDetailDialog({
                 "یادداشتی ثبت نشده است."}
             </p>
           </section>
+
+          <EntityConversationPanel entityType="ACTIVITY" entityId={activity.id} enabled={open} />
 
           <div className="flex flex-wrap justify-end gap-2">
             {companyId ? (
