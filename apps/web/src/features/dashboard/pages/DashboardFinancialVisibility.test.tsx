@@ -24,7 +24,11 @@ const summary = {
 }
 
 vi.mock("../hooks/useDashboard", () => ({
-  useDashboardSummary: () => ({ data: summary, isPending: false, isError: false }),
+  useDashboardSummary: () => ({
+    data: summary,
+    isPending: false,
+    isError: false,
+  }),
   useDashboardLatestActivities: () => ({ data: [], isError: false }),
 }))
 vi.mock("../components/DashboardPanels", () => ({
@@ -33,7 +37,6 @@ vi.mock("../components/DashboardPanels", () => ({
   RecentActivities: () => <div />,
 }))
 vi.mock("../components/DashboardVisuals", () => ({
-  DashboardKpiCard: () => <div data-testid="financial-kpi" />,
   OpportunityTrendChart: () => <div data-testid="financial-trend" />,
   OpportunityStatusDonut: () => <div data-testid="status-donut" />,
 }))
@@ -48,10 +51,14 @@ describe("dashboard financial visibility", () => {
       status: "authenticated",
       user: { ...user, permissions: ["report:view"] },
     })
-    render(<MemoryRouter><DashboardPage /></MemoryRouter>)
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    )
 
     expect(screen.getByTestId("status-donut")).toBeInTheDocument()
-    expect(screen.queryByTestId("financial-kpi")).toBeNull()
+    expect(screen.queryByText("ارزش کل سبد فرصت‌ها")).toBeNull()
     expect(screen.getByTestId("financial-trend")).toBeInTheDocument()
   })
 
@@ -60,9 +67,16 @@ describe("dashboard financial visibility", () => {
       status: "authenticated",
       user: { ...user, permissions: ["report:view", "financial:view"] },
     })
-    render(<MemoryRouter><DashboardPage /></MemoryRouter>)
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    )
 
-    expect(screen.getAllByTestId("financial-kpi")).toHaveLength(4)
+    expect(screen.getByText("ارزش کل سبد فرصت‌ها")).toBeInTheDocument()
+    expect(screen.getByText("ارزش پایپ‌لاین فعال")).toBeInTheDocument()
+    expect(screen.getByText("فروش موفق تجمعی")).toBeInTheDocument()
+    expect(screen.getByText("فروش موفق دوره")).toBeInTheDocument()
     expect(screen.getByTestId("financial-trend")).toBeInTheDocument()
   })
 })

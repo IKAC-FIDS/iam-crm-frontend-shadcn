@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react"
-import type { LucideIcon } from "lucide-react"
-
 import { Button } from "@workspace/ui/components/button"
 
+import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 
 import type { DashboardSummary } from "../types/dashboard.types"
@@ -13,49 +12,6 @@ import {
   formatPercent,
   toFiniteNumber,
 } from "../utils/dashboardFormatters"
-
-export function DashboardKpiCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  tone,
-}: {
-  title: string
-  value: string
-  subtitle: string
-  icon: LucideIcon
-  tone: "primary" | "success" | "info" | "neutral"
-}) {
-  const toneClass = {
-    primary: "bg-[var(--app-primary-soft)] text-[var(--app-primary)]",
-    success: "bg-[var(--success-light)] text-[var(--success)]",
-    info: "bg-[var(--info-light)] text-[var(--info)]",
-    neutral: "bg-[var(--secondary)] text-[var(--app-primary-alt)]",
-  }[tone]
-
-  return (
-    <article className="group relative overflow-hidden rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--app-shadow-popover)]">
-      <div className="pointer-events-none absolute -end-12 -top-12 size-28 rounded-full bg-[var(--app-primary)]/5 blur-3xl transition duration-300 group-hover:scale-125" />
-
-      <div className={`relative grid size-11 place-items-center rounded-2xl ${toneClass}`}>
-        <Icon className="size-5" />
-      </div>
-
-      <div className="relative mt-5">
-        <p className="text-xs font-medium text-[var(--app-text-secondary)]">
-          {title}
-        </p>
-        <p className="mt-2 text-[26px] font-bold leading-none text-[var(--app-heading)]">
-          {value}
-        </p>
-        <p className="mt-3 text-xs text-[var(--app-text-secondary)]">
-          {subtitle}
-        </p>
-      </div>
-    </article>
-  )
-}
 
 type TrendMode = "count" | "value"
 
@@ -89,7 +45,7 @@ function pointPosition(
   index: number,
   value: number,
   count: number,
-  maxValue: number,
+  maxValue: number
 ) {
   const chartWidth = WIDTH - PLOT_LEFT - PLOT_RIGHT
   const chartHeight = HEIGHT - PLOT_TOP - PLOT_BOTTOM
@@ -111,13 +67,7 @@ function niceMax(value: number) {
   const normalized = value / magnitude
 
   const rounded =
-    normalized <= 1
-      ? 1
-      : normalized <= 2
-        ? 2
-        : normalized <= 5
-          ? 5
-          : 10
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
 
   return rounded * magnitude
 }
@@ -138,31 +88,35 @@ export function OpportunityTrendChart({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const effectiveMode: TrendMode = canViewValues ? mode : "count"
-const points = useMemo(
+  const points = useMemo(
     () =>
       data.map((item) => ({
         label: formatPersianMonth(item.periodStart),
         created:
-          mode === "count"
+          effectiveMode === "count"
             ? item.createdCount
             : toFiniteNumber(item.createdValueIrr),
         won:
-          mode === "count" ? item.wonCount : toFiniteNumber(item.wonValueIrr),
+          effectiveMode === "count"
+            ? item.wonCount
+            : toFiniteNumber(item.wonValueIrr),
         lost:
-          mode === "count" ? item.lostCount : toFiniteNumber(item.lostValueIrr),
+          effectiveMode === "count"
+            ? item.lostCount
+            : toFiniteNumber(item.lostValueIrr),
       })),
-    [data, mode],
+    [data, effectiveMode]
   )
 
   const rawMax = Math.max(
     1,
-    ...points.flatMap((item) => [item.created, item.won, item.lost]),
+    ...points.flatMap((item) => [item.created, item.won, item.lost])
   )
   const maxValue = niceMax(rawMax)
   const latestMonth = points.at(-1)?.label ?? text.currentPeriodFallback
 
   const activeSummary =
-    mode === "count"
+    effectiveMode === "count"
       ? {
           title: `${text.activeSummary.countPrefix} ${latestMonth} ${text.activeSummary.monthSuffix}`,
           value: `${formatCount(activeCount)} ${uiText.dashboard.units.opportunity}`,
@@ -175,7 +129,7 @@ const points = useMemo(
   const hovered = hoveredIndex === null ? null : points[hoveredIndex]
 
   const formatSeriesValue = (value: number) =>
-    mode === "count"
+    effectiveMode === "count"
       ? `${formatCount(value)} ${uiText.dashboard.units.opportunity}`
       : `${formatCompactNumber(value)} ${uiText.dashboard.units.rial}`
 
@@ -185,14 +139,17 @@ const points = useMemo(
       : formatCompactNumber(value)
 
   return (
-    <section className="relative overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
+    <SurfaceCard className="relative overflow-hidden p-5 sm:p-6">
       <div className="pointer-events-none absolute -start-20 -top-20 size-64 rounded-full bg-[var(--app-primary)]/5 blur-3xl" />
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <h3 className="ui-section-title">{text.title}</h3>
 
         <div className="flex w-fit rounded-xl bg-[var(--app-background)] p-1">
-          {(canViewValues ? (["count", "value"] as const) : (["count"] as const)).map((item) => (
+          {(canViewValues
+            ? (["count", "value"] as const)
+            : (["count"] as const)
+          ).map((item) => (
             <Button
               key={item}
               type="button"
@@ -239,13 +196,15 @@ const points = useMemo(
 
         <div className="relative">
           <div className="mb-1 flex items-center justify-start ps-1 text-xs font-medium text-[var(--app-text-secondary)]">
-            {mode === "count" ? text.axis.count : text.axis.value}
+            {effectiveMode === "count" ? text.axis.count : text.axis.value}
           </div>
 
           <div className="relative overflow-x-auto">
             {hovered ? (
               <div className="pointer-events-none absolute end-4 top-3 z-10 min-w-44 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-3 text-xs shadow-[var(--app-shadow-popover)] backdrop-blur">
-                <strong className="text-[var(--app-heading)]">{hovered.label}</strong>
+                <strong className="text-[var(--app-heading)]">
+                  {hovered.label}
+                </strong>
 
                 <div className="mt-2 grid gap-1.5 text-xs text-[var(--app-text-secondary)]">
                   <div className="flex items-center justify-between gap-5">
@@ -272,16 +231,14 @@ const points = useMemo(
 
             <svg
               viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-              className="min-w-[740px] w-full"
+              className="w-full min-w-[740px]"
               role="img"
               aria-label={text.ariaLabel}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {Array.from({ length: GRID_LINES + 1 }).map((_, index) => {
                 const ratio = index / GRID_LINES
-                const y =
-                  PLOT_TOP +
-                  (HEIGHT - PLOT_TOP - PLOT_BOTTOM) * ratio
+                const y = PLOT_TOP + (HEIGHT - PLOT_TOP - PLOT_BOTTOM) * ratio
                 const axisValue = maxValue * (1 - ratio)
 
                 return (
@@ -308,7 +265,10 @@ const points = useMemo(
               })}
 
               <path
-                d={buildPath(points.map((item) => item.created), maxValue)}
+                d={buildPath(
+                  points.map((item) => item.created),
+                  maxValue
+                )}
                 fill="none"
                 stroke="var(--app-primary)"
                 strokeWidth="3"
@@ -316,7 +276,10 @@ const points = useMemo(
                 strokeLinejoin="round"
               />
               <path
-                d={buildPath(points.map((item) => item.won), maxValue)}
+                d={buildPath(
+                  points.map((item) => item.won),
+                  maxValue
+                )}
                 fill="none"
                 stroke="var(--success)"
                 strokeWidth="3"
@@ -324,7 +287,10 @@ const points = useMemo(
                 strokeLinejoin="round"
               />
               <path
-                d={buildPath(points.map((item) => item.lost), maxValue)}
+                d={buildPath(
+                  points.map((item) => item.lost),
+                  maxValue
+                )}
                 fill="none"
                 stroke="var(--destructive)"
                 strokeWidth="2.5"
@@ -338,20 +304,25 @@ const points = useMemo(
                   index,
                   point.created,
                   points.length,
-                  maxValue,
+                  maxValue
                 )
-                const won = pointPosition(index, point.won, points.length, maxValue)
+                const won = pointPosition(
+                  index,
+                  point.won,
+                  points.length,
+                  maxValue
+                )
                 const lost = pointPosition(
                   index,
                   point.lost,
                   points.length,
-                  maxValue,
+                  maxValue
                 )
 
                 const chartWidth = WIDTH - PLOT_LEFT - PLOT_RIGHT
                 const hitWidth = Math.max(
                   40,
-                  chartWidth / Math.max(points.length, 1),
+                  chartWidth / Math.max(points.length, 1)
                 )
 
                 return (
@@ -408,13 +379,13 @@ const points = useMemo(
           </div>
         </div>
 
-        {mode === "value" ? (
+        {effectiveMode === "value" ? (
           <div className="mt-1 text-xs text-[var(--app-text-secondary)]">
             {text.axis.valueHint}
           </div>
         ) : null}
       </div>
-    </section>
+    </SurfaceCard>
   )
 }
 
@@ -426,8 +397,9 @@ export function OpportunityStatusDonut({
   portfolio: DashboardSummary["portfolio"]
 }) {
   const text = uiText.dashboard.status
-  const [hoveredSegment, setHoveredSegment] =
-    useState<DonutSegmentKey | null>(null)
+  const [hoveredSegment, setHoveredSegment] = useState<DonutSegmentKey | null>(
+    null
+  )
 
   const segments = [
     {
@@ -466,7 +438,7 @@ export function OpportunityStatusDonut({
   const hovered = segments.find((item) => item.key === hoveredSegment)
 
   return (
-    <section className="relative overflow-hidden rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
+    <SurfaceCard className="relative overflow-hidden p-5 sm:p-6">
       <h3 className="ui-section-title">{text.title}</h3>
       <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
         {text.description}
@@ -552,7 +524,9 @@ export function OpportunityStatusDonut({
             onBlur={() => setHoveredSegment(null)}
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              <span className={`size-2.5 shrink-0 rounded-full ${segment.dot}`} />
+              <span
+                className={`size-2.5 shrink-0 rounded-full ${segment.dot}`}
+              />
               <strong className="truncate text-xs text-[var(--app-heading)]">
                 {segment.label}
               </strong>
@@ -578,6 +552,6 @@ export function OpportunityStatusDonut({
           </button>
         ))}
       </div>
-    </section>
+    </SurfaceCard>
   )
 }

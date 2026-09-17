@@ -11,6 +11,8 @@ import { useNavigate } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
 
+import { ContentSection } from "@/components/shared/ContentSection"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { uiText } from "@/config/uiText"
 import { localizeStageChangeText } from "@/features/activities/utils/activityDisplay"
 import { usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
@@ -75,14 +77,13 @@ export function AttentionPanel({
   ].slice(0, 5)
 
   return (
-    <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
-      <h3 className="ui-section-title">{text.title}</h3>
-      <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
-        {text.description}
-      </p>
-
+    <ContentSection
+      title={text.title}
+      description={text.description}
+      icon={AlertTriangle}
+    >
       {items.length ? (
-        <div className="mt-5 grid gap-2.5">
+        <div className="grid gap-2.5">
           {items.map((item) => {
             const Icon = item.icon
             return (
@@ -93,7 +94,9 @@ export function AttentionPanel({
                 className="h-auto w-full justify-start rounded-2xl bg-[var(--app-background)]/55 px-3 py-3 text-start hover:bg-[var(--app-background)]"
                 onClick={() => navigate(item.route)}
               >
-                <div className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.tone}`}>
+                <div
+                  className={`grid size-9 shrink-0 place-items-center rounded-xl ${item.tone}`}
+                >
                   <Icon className="size-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -109,29 +112,29 @@ export function AttentionPanel({
           })}
         </div>
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-[var(--app-divider)] bg-[var(--app-background)]/45 px-4 py-8 text-center text-xs text-[var(--app-text-secondary)]">
-          {text.empty}
-        </div>
+        <EmptyState icon={CheckSquare2} title={text.empty} />
       )}
-    </section>
+    </ContentSection>
   )
 }
 
-export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) {
+export function RecentActivities({
+  data,
+}: {
+  data: DashboardLatestActivity[]
+}) {
   const text = uiText.dashboard.recentActivities
   const navigate = useNavigate()
-  const stages = usePipelineStages(data.some((item) => item.type === "STAGE_CHANGE"))
+  const stages = usePipelineStages(
+    data.some((item) => item.type === "STAGE_CHANGE")
+  )
 
   return (
-    <section className="rounded-[26px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] sm:p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h3 className="ui-section-title">{text.title}</h3>
-          <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
-            {text.description}
-          </p>
-        </div>
-
+    <ContentSection
+      title={text.title}
+      description={text.description}
+      icon={Activity}
+      action={
         <Button
           type="button"
           variant="ghost"
@@ -141,10 +144,10 @@ export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) 
           {text.viewAll}
           <ArrowLeft className="size-3.5" />
         </Button>
-      </div>
-
+      }
+    >
       {data.length ? (
-        <div className="mt-5 divide-y divide-[var(--app-divider)]">
+        <div className="divide-y divide-[var(--app-divider)]">
           {data.slice(0, 6).map((item) => (
             <div
               key={item.id}
@@ -186,11 +189,9 @@ export function RecentActivities({ data }: { data: DashboardLatestActivity[] }) 
           ))}
         </div>
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-[var(--app-divider)] bg-[var(--app-background)]/45 px-4 py-8 text-center text-xs text-[var(--app-text-secondary)]">
-          {text.empty}
-        </div>
+        <EmptyState icon={Activity} title={text.empty} />
       )}
-    </section>
+    </ContentSection>
   )
 }
 
