@@ -41,6 +41,10 @@ import { QueryContent } from "@/components/shared/QueryContent"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { safeNotificationActionUrl } from "@/features/notifications/utils/notificationDisplay"
+import {
+  taskStatusLabel,
+  taskStatusTone,
+} from "@/features/tasks/utils/taskFormatters"
 import { useAccountWorkspace } from "../hooks/useAccountWorkspace"
 import type {
   AccountWorkspace,
@@ -48,19 +52,6 @@ import type {
 } from "../types/accountWorkspace.types"
 
 const profileText = uiText.profile
-const taskLabels = {
-  TODO: "انجام‌نشده",
-  IN_PROGRESS: "در حال انجام",
-  DONE: "انجام‌شده",
-  CANCELLED: "لغوشده",
-}
-const taskTones: Record<keyof typeof taskLabels, StatusTone> = {
-  TODO: "neutral",
-  IN_PROGRESS: "primary",
-  DONE: "success",
-  CANCELLED: "error",
-}
-
 function dateInput(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, "0")
@@ -184,7 +175,7 @@ function ProfileIdentity({
   onAvatarChanged: (hasMedia: boolean) => void
 }) {
   return (
-    <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-primary-soft)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-elevated)] sm:p-8">
+    <SurfaceCard className="relative overflow-hidden border-[var(--app-primary-soft)] p-5 sm:p-6">
       <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
       <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
         {user ? (
@@ -212,7 +203,7 @@ function ProfileIdentity({
           </p>
         </div>
       </div>
-    </section>
+    </SurfaceCard>
   )
 }
 
@@ -349,13 +340,16 @@ function WorkspaceContent({
           empty="کار بازی برای شما وجود ندارد."
         >
           {data.recent.tasks.map((task) => (
-            <EntityLink key={task.id} to={`/tasks/${task.id}`}>
+            <EntityLink
+              key={task.id}
+              to={can("task:view") ? `/tasks/${task.id}` : undefined}
+            >
               <CompanyAvatar company={task.company} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="truncate text-sm">{task.title}</strong>
-                  <StatusBadge tone={taskTones[task.status]}>
-                    {taskLabels[task.status]}
+                  <StatusBadge tone={taskStatusTone(task.status)}>
+                    {taskStatusLabel(task.status)}
                   </StatusBadge>
                 </div>
                 <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
@@ -376,7 +370,10 @@ function WorkspaceContent({
           empty="جلسه برنامه‌ریزی‌شده‌ای ندارید."
         >
           {data.recent.meetings.map((meeting) => (
-            <EntityLink key={meeting.id} to={`/meetings/${meeting.id}`}>
+            <EntityLink
+              key={meeting.id}
+              to={can("meeting:view") ? `/meetings/${meeting.id}` : undefined}
+            >
               <CompanyAvatar company={meeting.company} />
               <div className="min-w-0 flex-1">
                 <strong className="block truncate text-sm">
@@ -402,7 +399,11 @@ function WorkspaceContent({
           {data.recent.opportunities.map((opportunity) => (
             <EntityLink
               key={opportunity.id}
-              to={`/opportunities/${opportunity.id}`}
+              to={
+                can("opportunity:view")
+                  ? `/opportunities/${opportunity.id}`
+                  : undefined
+              }
             >
               <CompanyAvatar company={opportunity.company} />
               <div className="min-w-0 flex-1">
@@ -440,7 +441,10 @@ function WorkspaceContent({
           empty="شرکتی تحت مالکیت شما نیست."
         >
           {data.recent.companies.map((company) => (
-            <EntityLink key={company.id} to={`/companies/${company.id}`}>
+            <EntityLink
+              key={company.id}
+              to={can("company:view") ? `/companies/${company.id}` : undefined}
+            >
               <CompanyAvatar company={company} />
               <div className="min-w-0 flex-1">
                 <strong className="block truncate text-sm">
@@ -541,10 +545,13 @@ function WorkspaceContent({
                   safeNotificationActionUrl(notification.actionUrl) ||
                   "/attention?tab=notifications"
                 return (
-                  <Link key={notification.id} to={path}>
-                    <ContentListItem>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
+                  <EntityLink
+                    key={notification.id}
+                    to={can("notification:view") ? path : undefined}
+                    showArrow={false}
+                  >
+                    <div className="flex w-full items-start justify-between gap-3">
+                      <div className="min-w-0">
                           <strong className="block truncate text-sm">
                             {notification.title}
                           </strong>
@@ -556,15 +563,14 @@ function WorkspaceContent({
                           <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
                             {formatJalaliDateTime(notification.createdAt)}
                           </p>
-                        </div>
-                        <StatusBadge
-                          tone={notification.readAt ? "neutral" : "primary"}
-                        >
-                          {notification.readAt ? "خوانده‌شده" : "جدید"}
-                        </StatusBadge>
                       </div>
-                    </ContentListItem>
-                  </Link>
+                      <StatusBadge
+                        tone={notification.readAt ? "neutral" : "primary"}
+                      >
+                        {notification.readAt ? "خوانده‌شده" : "جدید"}
+                      </StatusBadge>
+                    </div>
+                  </EntityLink>
                 )
               })}
             </ContentList>
@@ -578,18 +584,27 @@ function WorkspaceContent({
           description="پیام‌ها و پرسش‌های مرتبط با رکوردهای شما"
           icon={MessageSquareText}
           action={
-            <SectionLink to="/attention?tab=conversations">
-              مرکز توجه
-            </SectionLink>
+            can("activity:view") ? (
+              <SectionLink to="/attention?tab=conversations">
+                مرکز توجه
+              </SectionLink>
+            ) : undefined
           }
         >
           {data.recent.conversations.length ? (
             <ContentList>
               {data.recent.conversations.map((conversation) => (
-                <Link key={conversation.id} to={conversation.actionUrl}>
-                  <ContentListItem>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                <EntityLink
+                  key={conversation.id}
+                  to={
+                    can("activity:view")
+                      ? conversation.actionUrl
+                      : undefined
+                  }
+                  showArrow={false}
+                >
+                  <div className="flex w-full items-start justify-between gap-3">
+                    <div className="min-w-0">
                         <strong className="block truncate text-sm">
                           {conversation.latestMessage?.author.fullName ||
                             "گفتگوی مرتبط"}
@@ -601,22 +616,21 @@ function WorkspaceContent({
                         <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
                           {formatJalaliDateTime(conversation.updatedAt)}
                         </p>
-                      </div>
-                      {conversation.unreadCount ? (
-                        <StatusBadge tone="primary">
-                          {conversation.unreadCount.toLocaleString("fa-IR")}{" "}
-                          جدید
-                        </StatusBadge>
-                      ) : (
-                        <StatusBadge tone="neutral">
-                          {conversation.status === "RESOLVED"
-                            ? "حل‌شده"
-                            : "خوانده‌شده"}
-                        </StatusBadge>
-                      )}
                     </div>
-                  </ContentListItem>
-                </Link>
+                    {conversation.unreadCount ? (
+                      <StatusBadge tone="primary">
+                        {conversation.unreadCount.toLocaleString("fa-IR")}{" "}
+                        جدید
+                      </StatusBadge>
+                    ) : (
+                      <StatusBadge tone="neutral">
+                        {conversation.status === "RESOLVED"
+                          ? "حل‌شده"
+                          : "خوانده‌شده"}
+                      </StatusBadge>
+                    )}
+                  </div>
+                </EntityLink>
               ))}
             </ContentList>
           ) : (
@@ -669,15 +683,25 @@ function EntitySection({
   )
 }
 
-function EntityLink({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link to={to}>
-      <ContentListItem className="flex items-center gap-3">
-        {children}
+function EntityLink({
+  to,
+  children,
+  showArrow = true,
+}: {
+  to?: string
+  children: ReactNode
+  showArrow?: boolean
+}) {
+  const content = (
+    <ContentListItem className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">{children}</div>
+      {to && showArrow ? (
         <ArrowLeft className="size-4 shrink-0 text-[var(--app-text-secondary)]" />
-      </ContentListItem>
-    </Link>
+      ) : null}
+    </ContentListItem>
   )
+
+  return to ? <Link to={to}>{content}</Link> : content
 }
 
 function SectionLink({ to, children }: { to: string; children: ReactNode }) {

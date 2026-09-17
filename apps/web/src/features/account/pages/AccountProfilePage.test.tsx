@@ -129,3 +129,45 @@ it("shows the personal workspace and preserves the correct activity drill-down f
   )
   expect(screen.getByTestId("location")).toHaveTextContent("&dateTo=")
 })
+
+it("does not expose entity navigation when the matching view permission is absent", () => {
+  useAuthStore.setState((state) => ({
+    user: state.user
+      ? { ...state.user, permissions: ["activity:view"] }
+      : null,
+  }))
+  vi.mocked(useAccountWorkspace).mockReturnValue({
+    data: {
+      ...workspace,
+      recent: {
+        ...workspace.recent,
+        tasks: [
+          {
+            id: "task-1",
+            title: "پیگیری قرارداد",
+            status: "IN_PROGRESS",
+            priority: "HIGH",
+            company: null,
+          },
+        ],
+      },
+    },
+    isLoading: false,
+    isError: false,
+    error: null,
+    isFetching: false,
+    refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useAccountWorkspace>)
+
+  render(
+    <MemoryRouter initialEntries={["/account/profile"]}>
+      <AccountProfilePage />
+    </MemoryRouter>
+  )
+
+  expect(screen.getByText("پیگیری قرارداد")).toBeInTheDocument()
+  expect(screen.getByText("در حال انجام")).toBeInTheDocument()
+  expect(
+    screen.queryByRole("link", { name: /پیگیری قرارداد/ })
+  ).not.toBeInTheDocument()
+})
