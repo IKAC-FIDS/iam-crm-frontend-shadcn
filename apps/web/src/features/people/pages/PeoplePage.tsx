@@ -14,17 +14,14 @@ import { useListQueryState } from "@/lib/listQuery"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { QueryContent } from "@/components/shared/QueryContent"
 
-import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
-import { Button } from "@workspace/ui/components/button"
-
 import { PeopleFilterBar } from "../components/PeopleFilterBar"
 import { CreatePersonDialog } from "../components/CreatePersonDialog"
 import { Person360WorkspaceDialog } from "../components/Person360WorkspaceDialog"
-import { PersonCard } from "../components/PersonCard"
+import { PersonCardList } from "../components/PersonCard"
 import { usePeopleDirectory, usePeopleLookups } from "../hooks/usePeople"
 import type { PeopleDirectoryQuery } from "../types/person.types"
 
@@ -111,19 +108,15 @@ export function PeoplePage() {
       <PageHero
         title={text.hero.title}
         description={text.hero.description}
-        eyebrow={text.hero.badge}
-        icon={Network}
-        actions={
-          canCreate ? (
-            <Button
-              type="button"
-              className="w-fit rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="size-4" />
-              {text.actions.create}
-            </Button>
-          ) : null
+        accessBadge={{ label: text.hero.badge, icon: Network }}
+        primaryAction={
+          canCreate
+            ? {
+                label: text.actions.create,
+                icon: Plus,
+                onClick: () => setCreateOpen(true),
+              }
+            : undefined
         }
       />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -170,21 +163,15 @@ export function PeoplePage() {
         />
       ) : (
         <QueryContent query={directory} errorTitle={text.errors.listTitle}>
-          {directory.data?.data.length ? (
-            <>
-              <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                {directory.data.data.map((person) => (
-                  <PersonCard
-                    key={person.id}
-                    person={person}
-                    lookups={lookups.data}
-                    onClick={() => {
-                      if (canViewPerson) setSelectedPersonId(person.id)
-                    }}
-                  />
-                ))}
-              </div>
+          <>
+            <PersonCardList
+              people={directory.data?.data ?? []}
+              lookups={lookups.data}
+              canViewPerson={canViewPerson}
+              onOpen={(person) => setSelectedPersonId(person.id)}
+            />
 
+            {directory.data ? (
               <PaginationControls
                 page={directory.data.meta.page}
                 pageCount={directory.data.meta.totalPages}
@@ -194,14 +181,8 @@ export function PeoplePage() {
                 onPageSizeChange={setPageSize}
                 disabled={directory.isFetching || query !== debouncedQuery}
               />
-            </>
-          ) : (
-            <EmptyState
-              icon={UsersRound}
-              title={text.empty.listTitle}
-              description={text.empty.listDescription}
-            />
-          )}
+            ) : null}
+          </>
         </QueryContent>
       )}
 

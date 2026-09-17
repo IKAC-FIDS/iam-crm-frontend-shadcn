@@ -1,4 +1,5 @@
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import { Filter } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -35,109 +36,137 @@ export function PeopleFilterBar({
 }) {
   const text = uiText.people
   const hasAdvanced =
-    Boolean(query.companyId) ||
     Boolean(query.department) ||
     Boolean(query.jobTitle) ||
     Boolean(query.personaRole) ||
     Boolean(query.seniorityLevel) ||
-    query.isPrimaryContact !== undefined ||
-    query.hasEmail !== undefined ||
-    query.hasPhone !== undefined
+    query.isPrimaryContact !== undefined
+  const advancedCount = [
+    query.department,
+    query.jobTitle,
+    query.personaRole,
+    query.seniorityLevel,
+    query.isPrimaryContact,
+  ].filter((value) => value !== undefined && value !== "").length
+
+  function clearAdvanced() {
+    onChange({
+      department: undefined,
+      jobTitle: undefined,
+      personaRole: undefined,
+      seniorityLevel: undefined,
+      isPrimaryContact: undefined,
+      page: 1,
+    })
+  }
 
   return (
     <DataTableToolbar
       searchValue={query.search ?? ""}
       onSearchChange={(search) => onChange({ search, page: 1 })}
       searchPlaceholder={text.filters.searchPlaceholder}
-      hasActiveFilters={hasAdvanced || Boolean(query.search)}
+      hasActiveFilters={
+        hasAdvanced ||
+        Boolean(query.search) ||
+        Boolean(query.companyId) ||
+        query.hasEmail === true ||
+        query.hasPhone === true
+      }
       onClearFilters={onClear}
-      filtersClassName="grid grid-cols-1 [&>div]:col-span-full"
+      filtersClassName="grid grid-cols-1 sm:grid-cols-2"
       filters={
         <>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <SearchableCompanySelect
-              value={query.companyId}
-              onChange={(companyId) => onChange({ companyId, page: 1 })}
-              placeholder={text.filters.allCompanies}
-            />
+          <SearchableCompanySelect
+            value={query.companyId}
+            onChange={(companyId) => onChange({ companyId, page: 1 })}
+            placeholder={text.filters.allCompanies}
+          />
 
-            <LookupSelect
-              value={query.jobTitle}
-              options={lookups.jobTitles}
-              placeholder={text.filters.allJobTitles}
-              onChange={(jobTitle) => onChange({ jobTitle, page: 1 })}
-            />
+          <AdvancedFilterPopover
+            activeCount={advancedCount}
+            label="فیلترهای تکمیلی"
+            title="فیلترهای تکمیلی افراد"
+            description="سمت، دپارتمان، نقش خرید و سطح ارشدیت را ترکیب کنید."
+            onClear={clearAdvanced}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <LookupSelect
+                value={query.jobTitle}
+                options={lookups.jobTitles}
+                placeholder={text.filters.allJobTitles}
+                onChange={(jobTitle) => onChange({ jobTitle, page: 1 })}
+              />
 
-            <LookupSelect
-              value={query.department}
-              options={lookups.departments}
-              placeholder={text.filters.allDepartments}
-              onChange={(department) => onChange({ department, page: 1 })}
-            />
+              <LookupSelect
+                value={query.department}
+                options={lookups.departments}
+                placeholder={text.filters.allDepartments}
+                onChange={(department) => onChange({ department, page: 1 })}
+              />
 
-            <NativeSelect
-              value={booleanToSelect(query.isPrimaryContact)}
-              onChange={(value) =>
-                onChange({
-                  isPrimaryContact: selectToBoolean(value),
-                  page: 1,
-                })
-              }
-            >
-              <option value="all">{text.filters.allContactRoles}</option>
-              <option value="true">{text.contactRole.primary}</option>
-              <option value="false">{text.filters.notPrimary}</option>
-            </NativeSelect>
-          </div>
+              <NativeSelect
+                value={booleanToSelect(query.isPrimaryContact)}
+                onChange={(value) =>
+                  onChange({
+                    isPrimaryContact: selectToBoolean(value),
+                    page: 1,
+                  })
+                }
+              >
+                <option value="all">{text.filters.allContactRoles}</option>
+                <option value="true">{text.contactRole.primary}</option>
+                <option value="false">{text.filters.notPrimary}</option>
+              </NativeSelect>
+              <LookupSelect
+                value={query.personaRole}
+                options={lookups.personaRoles}
+                placeholder={text.filters.allPersonaRoles}
+                onChange={(personaRole) => onChange({ personaRole, page: 1 })}
+              />
 
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <LookupSelect
-              value={query.personaRole}
-              options={lookups.personaRoles}
-              placeholder={text.filters.allPersonaRoles}
-              onChange={(personaRole) => onChange({ personaRole, page: 1 })}
-            />
-
-            <LookupSelect
-              value={query.seniorityLevel}
-              options={lookups.seniorityLevels}
-              placeholder={text.filters.allSeniorityLevels}
-              onChange={(seniorityLevel) =>
-                onChange({ seniorityLevel, page: 1 })
-              }
-            />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--app-divider)] pt-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--app-text-secondary)]">
-              <Filter className="size-3.5" />
-              {text.filters.quickFilters}
-            </span>
-
-            <FilterPill
-              active={query.hasPhone === true}
-              onClick={() =>
-                onChange({
-                  hasPhone: query.hasPhone === true ? undefined : true,
-                  page: 1,
-                })
-              }
-            >
-              {text.filters.hasPhone}
-            </FilterPill>
-
-            <FilterPill
-              active={query.hasEmail === true}
-              onClick={() =>
-                onChange({
-                  hasEmail: query.hasEmail === true ? undefined : true,
-                  page: 1,
-                })
-              }
-            >
-              {text.filters.hasEmail}
-            </FilterPill>
-          </div>
+              <LookupSelect
+                value={query.seniorityLevel}
+                options={lookups.seniorityLevels}
+                placeholder={text.filters.allSeniorityLevels}
+                onChange={(seniorityLevel) =>
+                  onChange({ seniorityLevel, page: 1 })
+                }
+              />
+            </div>
+          </AdvancedFilterPopover>
         </>
+      }
+      quickFilters={
+        <div className="flex min-w-max items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--app-text-secondary)]">
+            <Filter className="size-3.5" />
+            {text.filters.quickFilters}
+          </span>
+
+          <FilterPill
+            active={query.hasPhone === true}
+            onClick={() =>
+              onChange({
+                hasPhone: query.hasPhone === true ? undefined : true,
+                page: 1,
+              })
+            }
+          >
+            {text.filters.hasPhone}
+          </FilterPill>
+
+          <FilterPill
+            active={query.hasEmail === true}
+            onClick={() =>
+              onChange({
+                hasEmail: query.hasEmail === true ? undefined : true,
+                page: 1,
+              })
+            }
+          >
+            {text.filters.hasEmail}
+          </FilterPill>
+        </div>
       }
     />
   )
