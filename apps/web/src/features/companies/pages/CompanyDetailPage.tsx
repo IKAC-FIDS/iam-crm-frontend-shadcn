@@ -1,6 +1,7 @@
 import { QueryContent } from "@/components/shared/QueryContent"
 import {
-  Archive,  Building2,
+  Archive,
+  Building2,
   CalendarClock,
   CircleDollarSign,
   ExternalLink,
@@ -19,10 +20,11 @@ import { useNavigate, useParams } from "react-router-dom"
 import { useQueryClient } from "@tanstack/react-query"
 
 import { EmptyState } from "@/components/shared/EmptyState"
+import { ContentSection } from "@/components/shared/ContentSection"
+import { DashboardMetricGrid } from "@/components/shared/DashboardSection"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
@@ -35,11 +37,26 @@ import { MeetingFormDialog } from "@/features/meetings/components/MeetingFormDia
 import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog"
 import { OpportunityFormDialog } from "@/features/opportunities/components/OpportunityFormDialog"
-import { taskPriorityLabel, taskStatusLabel } from "@/features/tasks/utils/taskFormatters"
-import type { TaskPriority, TaskStatus } from "@/features/tasks/types/task.types"
-import { meetingModeLabel, meetingStatusLabel } from "@/features/meetings/utils/meetingFormatters"
-import type { MeetingMode, MeetingStatus } from "@/features/meetings/types/meeting.types"
-import { useCreateOpportunity, usePipelineStages } from "@/features/opportunities/hooks/useOpportunities"
+import {
+  taskPriorityLabel,
+  taskStatusLabel,
+} from "@/features/tasks/utils/taskFormatters"
+import type {
+  TaskPriority,
+  TaskStatus,
+} from "@/features/tasks/types/task.types"
+import {
+  meetingModeLabel,
+  meetingStatusLabel,
+} from "@/features/meetings/utils/meetingFormatters"
+import type {
+  MeetingMode,
+  MeetingStatus,
+} from "@/features/meetings/types/meeting.types"
+import {
+  useCreateOpportunity,
+  usePipelineStages,
+} from "@/features/opportunities/hooks/useOpportunities"
 import type { OpportunityPayload } from "@/features/opportunities/types/opportunity.types"
 import { useAuthStore } from "@/store/authStore"
 
@@ -47,7 +64,11 @@ import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { Company360ActionSection } from "../components/Company360ActionSection"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
-import { CreateCompanyBranchDialog, CreateCompanySocialDialog, UploadCompanyLegalDocumentDialog } from "../components/CompanyRelationCreateDialogs"
+import {
+  CreateCompanyBranchDialog,
+  CreateCompanySocialDialog,
+  UploadCompanyLegalDocumentDialog,
+} from "../components/CompanyRelationCreateDialogs"
 import { CompanyInfoGrid } from "../components/CompanyInfoGrid"
 import { CompanyMetricCard } from "../components/CompanyMetricCard"
 import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
@@ -96,7 +117,8 @@ type QuickViewState =
   | { kind: "document"; item: CompanyLegalDocument }
   | null
 
-type CreateSection = "opportunity" | "activity" | "task" | "branch" | "social" | "legal" | null
+type CreateSection =
+  "opportunity" | "activity" | "task" | "branch" | "social" | "legal" | null
 
 export function CompanyDetailPage() {
   const text = uiText.companies.detail
@@ -158,7 +180,9 @@ export function CompanyDetailPage() {
   const updateMutation = useUpdateCompany(companyId)
   const createOpportunity = useCreateOpportunity()
   const stagesQuery = usePipelineStages(canCreateOpportunity)
-  const opportunityStages = (Array.isArray(stagesQuery.data) ? stagesQuery.data : [])
+  const opportunityStages = (
+    Array.isArray(stagesQuery.data) ? stagesQuery.data : []
+  )
     .filter((stage) => stage.isActive !== false)
     .sort((left, right) => left.sortOrder - right.sortOrder)
 
@@ -291,7 +315,7 @@ export function CompanyDetailPage() {
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="mx-auto grid w-full max-w-[1500px] min-w-0 gap-5" dir="rtl">
       <PageHero
         title={displayName}
         description="نمای ۳۶۰ درجه اطلاعات، تعاملات و وضعیت همکاری با این شرکت"
@@ -309,14 +333,16 @@ export function CompanyDetailPage() {
             <CompanyPriorityBadge priority={company.priority} />
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
               <Building2 className="size-3.5" />
-              {company.industryRef?.name || company.industry || text.notSpecified}
+              {company.industryRef?.name ||
+                company.industry ||
+                text.notSpecified}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
               {company.owner?.id ? (
                 <IdentityAvatar
                   name={company.owner.fullName}
                   mediaPath={`/users/${company.owner.id}/avatar`}
-                  hasMedia
+                  hasMedia={Boolean(company.owner.avatarObjectKey)}
                   mediaVersion={company.owner.avatarObjectKey}
                   className="size-5 rounded-md text-[8px]"
                 />
@@ -333,60 +359,80 @@ export function CompanyDetailPage() {
         }
         secondaryActions={heroActions}
       />
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
+      <ContentSection
+        title="هویت بصری شرکت"
+        description="لوگوی رسمی شرکت در فهرست‌ها و ارتباطات مرتبط نمایش داده می‌شود."
+        icon={Building2}
+      >
         <ProfileMediaEditor
           name={displayName}
           mediaPath={`/companies/${company.id}/logo`}
-          hasMedia={Boolean(company.id)}
+          hasMedia={Boolean(company.logoObjectKey)}
           mediaVersion={company.logoObjectKey}
           canEdit={permissions.includes("company:update")}
           label="لوگوی شرکت"
-          onChanged={async () => { await query.refetch() }}
+          onChanged={async () => {
+            await query.refetch()
+          }}
         />
-      </section>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      </ContentSection>
+      <DashboardMetricGrid columns={6}>
         <CompanyMetricCard
           icon={CircleDollarSign}
           label={text.metrics.pipelineValue}
           value={formatCompanyNumber(pipelineValue)}
           hint={text.metrics.pipelineHint}
+          onClick={
+            canViewOpportunities
+              ? () => goToModule("/opportunities")
+              : undefined
+          }
         />
         <CompanyMetricCard
           icon={Building2}
           label={text.metrics.openOpportunities}
           value={formatCompanyNumber(openOpportunityCount)}
+          onClick={
+            canViewOpportunities
+              ? () => goToModule("/opportunities")
+              : undefined
+          }
         />
         <CompanyMetricCard
           icon={UsersRound}
           label={text.metrics.people}
           value={formatCompanyNumber(peopleCount)}
+          onClick={canViewPeople ? () => goToModule("/people") : undefined}
         />
         <CompanyMetricCard
           icon={ListTodo}
           label={uiText.navigation.tasks}
           value={formatCompanyNumber(activeTaskCount)}
+          onClick={canViewTasks ? () => goToModule("/tasks") : undefined}
         />
         <CompanyMetricCard
           icon={CalendarClock}
           label={uiText.navigation.meetings}
           value={formatCompanyNumber(upcomingMeetingCount)}
+          onClick={canViewMeetings ? () => goToModule("/meetings") : undefined}
         />
         <CompanyMetricCard
           icon={CalendarClock}
           label={text.metrics.lastInteraction}
           value={formatCompanyDate(lastActivity)}
+          onClick={
+            canViewActivities ? () => goToModule("/activities") : undefined
+          }
         />
-      </div>
+      </DashboardMetricGrid>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
         <div className="grid content-start gap-5">
-          <SurfaceCard className="p-5 sm:p-6">
-            <div className="mb-5">
-              <h2 className="ui-section-title">{text.sections.overview}</h2>
-              <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                {text.sections.overviewDescription}
-              </p>
-            </div>
+          <ContentSection
+            title={text.sections.overview}
+            description={text.sections.overviewDescription}
+            icon={Building2}
+          >
             <CompanyInfoGrid
               items={[
                 { label: text.fields.legalName, value: company.legalName },
@@ -408,13 +454,15 @@ export function CompanyDetailPage() {
                       <IdentityAvatar
                         name={company.owner.fullName}
                         mediaPath={`/users/${company.owner.id}/avatar`}
-                        hasMedia={Boolean(company.owner.id)}
+                        hasMedia={Boolean(company.owner.avatarObjectKey)}
                         mediaVersion={company.owner.avatarObjectKey}
                         className="size-7 rounded-lg text-[9px]"
                       />
                       {company.owner.fullName}
                     </span>
-                  ) : text.unassigned,
+                  ) : (
+                    text.unassigned
+                  ),
                 },
                 {
                   label: text.fields.city,
@@ -464,12 +512,9 @@ export function CompanyDetailPage() {
                 },
               ]}
             />
-          </SurfaceCard>
+          </ContentSection>
 
-          <SurfaceCard className="p-5 sm:p-6">
-            <div className="mb-5">
-              <h2 className="ui-section-title">{text.sections.legal}</h2>
-            </div>
+          <ContentSection title={text.sections.legal} icon={FileText}>
             <CompanyInfoGrid
               items={[
                 {
@@ -508,7 +553,7 @@ export function CompanyDetailPage() {
                 },
               ]}
             />
-          </SurfaceCard>
+          </ContentSection>
 
           {canViewOpportunities ? (
             <Company360ActionSection
@@ -528,7 +573,11 @@ export function CompanyDetailPage() {
                 setSectionPageSize("opportunities", pageSize)
               }
               icon={<CircleDollarSign className="size-5" />}
-              onCreate={canCreateOpportunity ? () => setCreateSection("opportunity") : undefined}
+              onCreate={
+                canCreateOpportunity
+                  ? () => setCreateSection("opportunity")
+                  : undefined
+              }
               createLabel="ثبت فرصت فروش"
               onViewAll={() => goToModule("/opportunities")}
             >
@@ -583,7 +632,11 @@ export function CompanyDetailPage() {
               }
               icon={<CalendarClock className="size-5" />}
               contentClassName="max-h-[476px]"
-              onCreate={canCreateActivity ? () => setCreateSection("activity") : undefined}
+              onCreate={
+                canCreateActivity
+                  ? () => setCreateSection("activity")
+                  : undefined
+              }
               createLabel="ثبت فعالیت"
               onViewAll={() => goToModule("/activities")}
             >
@@ -638,9 +691,12 @@ export function CompanyDetailPage() {
               setSectionPageSize("documents", pageSize)
             }
             icon={<FileText className="size-5" />}
-            onCreate={canCreateLegalDocument ? () => setCreateSection("legal") : undefined}
+            onCreate={
+              canCreateLegalDocument
+                ? () => setCreateSection("legal")
+                : undefined
+            }
             createLabel="ثبت سند حقوقی"
-            onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={documentsQuery}>
               {documentsQuery.data?.data.length ? (
@@ -657,9 +713,11 @@ export function CompanyDetailPage() {
                       <EntityRow
                         icon={<FileText className="size-4" />}
                         title={
-                          document.title || document.type || text.notSpecified
+                          document.title ||
+                          displayLegalDocumentType(document.type) ||
+                          text.notSpecified
                         }
-                        subtitle={document.type || undefined}
+                        subtitle={displayLegalDocumentType(document.type)}
                         meta={formatCompanyDate(
                           document.documentDate || document.createdAt
                         )}
@@ -755,7 +813,9 @@ export function CompanyDetailPage() {
                 setSectionPageSize("tasks", pageSize)
               }
               icon={<ListTodo className="size-5" />}
-              onCreate={canCreateTask ? () => setCreateSection("task") : undefined}
+              onCreate={
+                canCreateTask ? () => setCreateSection("task") : undefined
+              }
               createLabel="ثبت کار"
               onViewAll={() => goToModule("/tasks")}
             >
@@ -772,15 +832,25 @@ export function CompanyDetailPage() {
                         }
                       >
                         <EntityRow
-                          icon={task.assignedTo?.id ? (
-                            <IdentityAvatar
-                              name={task.assignedTo.fullName || task.assignedTo.email || task.title}
-                              mediaPath={`/users/${task.assignedTo.id}/avatar`}
-                              hasMedia
-                              mediaVersion={task.assignedTo.avatarObjectKey}
-                              className="size-9 rounded-xl text-[10px]"
-                            />
-                          ) : <ListTodo className="size-4" />}
+                          icon={
+                            task.assignedTo?.id ? (
+                              <IdentityAvatar
+                                name={
+                                  task.assignedTo.fullName ||
+                                  task.assignedTo.email ||
+                                  task.title
+                                }
+                                mediaPath={`/users/${task.assignedTo.id}/avatar`}
+                                hasMedia={Boolean(
+                                  task.assignedTo.avatarObjectKey
+                                )}
+                                mediaVersion={task.assignedTo.avatarObjectKey}
+                                className="size-9 rounded-xl text-[10px]"
+                              />
+                            ) : (
+                              <ListTodo className="size-4" />
+                            )
+                          }
                           title={task.title}
                           subtitle={[
                             task.assignedTo?.fullName,
@@ -834,15 +904,25 @@ export function CompanyDetailPage() {
                         onClick={() => navigate(`/meetings/${meeting.id}`)}
                       >
                         <EntityRow
-                          icon={meeting.organizer?.id ? (
-                            <IdentityAvatar
-                              name={meeting.organizer.fullName || meeting.organizer.email || meeting.title}
-                              mediaPath={`/users/${meeting.organizer.id}/avatar`}
-                              hasMedia
-                              mediaVersion={meeting.organizer.avatarObjectKey}
-                              className="size-9 rounded-xl text-[10px]"
-                            />
-                          ) : <CalendarClock className="size-4" />}
+                          icon={
+                            meeting.organizer?.id ? (
+                              <IdentityAvatar
+                                name={
+                                  meeting.organizer.fullName ||
+                                  meeting.organizer.email ||
+                                  meeting.title
+                                }
+                                mediaPath={`/users/${meeting.organizer.id}/avatar`}
+                                hasMedia={Boolean(
+                                  meeting.organizer.avatarObjectKey
+                                )}
+                                mediaVersion={meeting.organizer.avatarObjectKey}
+                                className="size-9 rounded-xl text-[10px]"
+                              />
+                            ) : (
+                              <CalendarClock className="size-4" />
+                            )
+                          }
                           title={meeting.title}
                           subtitle={[
                             displayMeetingMode(meeting.mode),
@@ -876,9 +956,10 @@ export function CompanyDetailPage() {
               setSectionPageSize("branches", pageSize)
             }
             icon={<MapPin className="size-5" />}
-            onCreate={canCreateBranch ? () => setCreateSection("branch") : undefined}
+            onCreate={
+              canCreateBranch ? () => setCreateSection("branch") : undefined
+            }
             createLabel="ثبت شعبه"
-            onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={branchesQuery}>
               {branchesQuery.data?.data.length ? (
@@ -920,9 +1001,10 @@ export function CompanyDetailPage() {
               setSectionPageSize("social", pageSize)
             }
             icon={<Share2 className="size-5" />}
-            onCreate={canCreateSocial ? () => setCreateSection("social") : undefined}
+            onCreate={
+              canCreateSocial ? () => setCreateSection("social") : undefined
+            }
             createLabel="ثبت کانال اجتماعی"
-            onViewAll={() => goToModule(`/companies/${companyId}`)}
           >
             <QueryContent query={socialQuery}>
               {socialQuery.data?.data.length ? (
@@ -952,7 +1034,11 @@ export function CompanyDetailPage() {
         </div>
       </div>
 
-      <ArtifactPanel entityType="COMPANY" entityId={companyId} title="مستندات و مراجع شرکت" />
+      <ArtifactPanel
+        entityType="COMPANY"
+        entityId={companyId}
+        title="مستندات و مراجع شرکت"
+      />
       <EntityConversationPanel entityType="COMPANY" entityId={companyId} />
 
       {selectedPersonId ? (
@@ -994,12 +1080,67 @@ export function CompanyDetailPage() {
         />
       ) : null}
 
-      {createSection === "task" ? <TaskFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialCompanyId={companyId} lockCompany onSaved={() => void tasksQuery.refetch()} /> : null}
-      {createSection === "activity" ? <ActivityFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialTargetType="COMPANY" initialCompanyId={companyId} lockTarget onSaved={async () => { await activitiesQuery.refetch() }} /> : null}
-      {createSection === "opportunity" ? <OpportunityFormDialog open onOpenChange={(open) => !open && setCreateSection(null)} initialCompanyId={companyId} lockCompany stages={opportunityStages} isPending={createOpportunity.isPending} onSubmit={async (payload) => { await createOpportunity.mutateAsync(payload as OpportunityPayload); await opportunitiesQuery.refetch(); await overviewQuery.refetch(); setCreateSection(null) }} /> : null}
-      <CreateCompanyBranchDialog companyId={companyId} open={createSection === "branch"} onClose={() => setCreateSection(null)} onCreated={async () => { await branchesQuery.refetch() }} />
-      <CreateCompanySocialDialog companyId={companyId} open={createSection === "social"} onClose={() => setCreateSection(null)} onCreated={async () => { await socialQuery.refetch() }} />
-      <UploadCompanyLegalDocumentDialog companyId={companyId} open={createSection === "legal"} onClose={() => setCreateSection(null)} onCreated={async () => { await documentsQuery.refetch() }} />
+      {createSection === "task" ? (
+        <TaskFormDialog
+          open
+          onOpenChange={(open) => !open && setCreateSection(null)}
+          initialCompanyId={companyId}
+          lockCompany
+          onSaved={() => void tasksQuery.refetch()}
+        />
+      ) : null}
+      {createSection === "activity" ? (
+        <ActivityFormDialog
+          open
+          onOpenChange={(open) => !open && setCreateSection(null)}
+          initialTargetType="COMPANY"
+          initialCompanyId={companyId}
+          lockTarget
+          onSaved={async () => {
+            await activitiesQuery.refetch()
+          }}
+        />
+      ) : null}
+      {createSection === "opportunity" ? (
+        <OpportunityFormDialog
+          open
+          onOpenChange={(open) => !open && setCreateSection(null)}
+          initialCompanyId={companyId}
+          lockCompany
+          stages={opportunityStages}
+          isPending={createOpportunity.isPending}
+          onSubmit={async (payload) => {
+            await createOpportunity.mutateAsync(payload as OpportunityPayload)
+            await opportunitiesQuery.refetch()
+            await overviewQuery.refetch()
+            setCreateSection(null)
+          }}
+        />
+      ) : null}
+      <CreateCompanyBranchDialog
+        companyId={companyId}
+        open={createSection === "branch"}
+        onClose={() => setCreateSection(null)}
+        onCreated={async () => {
+          await branchesQuery.refetch()
+        }}
+      />
+      <CreateCompanySocialDialog
+        companyId={companyId}
+        open={createSection === "social"}
+        onClose={() => setCreateSection(null)}
+        onCreated={async () => {
+          await socialQuery.refetch()
+        }}
+      />
+      <UploadCompanyLegalDocumentDialog
+        companyId={companyId}
+        open={createSection === "legal"}
+        onClose={() => setCreateSection(null)}
+        onCreated={async () => {
+          await documentsQuery.refetch()
+        }}
+      />
 
       <EntityQuickViewDialog
         open={Boolean(quickView)}
@@ -1016,7 +1157,9 @@ export function CompanyDetailPage() {
         company={company}
         isPending={updateMutation.isPending}
         submitError={updateMutation.error}
-        onMediaChanged={async () => { await query.refetch() }}
+        onMediaChanged={async () => {
+          await query.refetch()
+        }}
         onSubmit={async (payload) => {
           await updateMutation.mutateAsync(payload)
           setEditOpen(false)
@@ -1111,7 +1254,11 @@ function quickViewProps(
           { label: "مخاطب", value: item.person?.fullName },
           { label: "وضعیت", value: displayActivityStatus(item.status) },
           { label: "نتیجه", value: item.outcome, wide: true },
-          { label: "توضیحات", value: item.description || item.notes, wide: true },
+          {
+            label: "توضیحات",
+            value: item.description || item.notes,
+            wide: true,
+          },
         ],
       }
     }
@@ -1129,14 +1276,19 @@ function quickViewProps(
       return {
         title: state.item.platform || fallback,
         icon: <Share2 className="size-5" />,
-        fields: [{ label: "شناسه یا نشانی", value: state.item.handle, wide: true }],
+        fields: [
+          { label: "شناسه یا نشانی", value: state.item.handle, wide: true },
+        ],
       }
     case "document":
       return {
         title: state.item.title || state.item.type || fallback,
         icon: <FileText className="size-5" />,
         fields: [
-          { label: "نوع سند", value: displayLegalDocumentType(state.item.type) },
+          {
+            label: "نوع سند",
+            value: displayLegalDocumentType(state.item.type),
+          },
           {
             label: "تاریخ سند",
             value: formatCompanyDate(
@@ -1212,11 +1364,7 @@ function EntityRow({
 }
 
 function SectionEmpty() {
-  return (
-    <p className="rounded-2xl bg-[var(--app-background)]/55 p-4 text-center text-xs text-[var(--app-text-secondary)]">
-      {uiText.companies.detail.notSpecified}
-    </p>
-  )
+  return <EmptyState title="موردی برای نمایش ثبت نشده است" />
 }
 
 function displayTaskStatus(value?: string | null) {
