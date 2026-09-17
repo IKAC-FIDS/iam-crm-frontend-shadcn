@@ -29,6 +29,11 @@ import {
   ContentSection,
 } from "@/components/shared/ContentSection"
 import { EmptyState } from "@/components/shared/EmptyState"
+import {
+  DashboardMetricGrid,
+  DashboardSection,
+} from "@/components/shared/DashboardSection"
+import { DashboardToolbar } from "@/components/shared/DashboardToolbar"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
@@ -119,34 +124,22 @@ export function AccountProfilePage() {
         }
       />
 
-      <SurfaceCard className="p-4 sm:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-[var(--app-heading)]">
-              بازه گزارش عملکرد
-            </h2>
-            <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
-              آمار فعالیت‌ها در بازه انتخابی محاسبه می‌شود؛ فهرست‌های جاری مستقل
-              از این بازه‌اند.
-            </p>
-          </div>
-          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-            <div className="min-w-64">
-              <PersianDateRangePicker
-                value={period}
-                onChange={(value) => setPeriod(value || {})}
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setPeriod(defaultPeriod())}
-            >
-              <RotateCcw className="size-4" />
-              ۳۰ روز اخیر
-            </Button>
-          </div>
+      <DashboardToolbar
+        title="بازه گزارش عملکرد"
+        description="آمار فعالیت‌ها در بازه انتخابی محاسبه می‌شود؛ فهرست‌های جاری مستقل از این بازه‌اند."
+        icon={CalendarDays}
+      >
+        <div className="min-w-64 flex-1">
+          <PersianDateRangePicker
+            value={period}
+            onChange={(value) => setPeriod(value || {})}
+          />
         </div>
-      </SurfaceCard>
+        <Button variant="outline" onClick={() => setPeriod(defaultPeriod())}>
+          <RotateCcw className="size-4" />
+          ۳۰ روز اخیر
+        </Button>
+      </DashboardToolbar>
 
       <QueryContent
         query={workspaceQuery}
@@ -227,14 +220,20 @@ function WorkspaceContent({
 
   return (
     <div className="grid gap-6">
-      <section aria-labelledby="attention-title">
-        <div className="mb-3 flex items-center gap-2">
-          <TriangleAlert className="size-5 text-[var(--warning)]" />
-          <h2 id="attention-title" className="text-base font-bold">
-            نیازمند توجه شما
-          </h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <DashboardSection
+        id="attention"
+        title="نیازمند توجه شما"
+        description="موارد فوری را پیش از ادامه روز کاری بررسی کنید."
+        icon={TriangleAlert}
+        tone="warning"
+        badge={`${(
+          data.attention.overdueTasks +
+          data.attention.dueTodayTasks +
+          data.attention.unreadNotifications +
+          data.attention.unreadConversationMessages
+        ).toLocaleString("fa-IR")} مورد`}
+      >
+        <DashboardMetricGrid columns={5}>
           <MetricCard
             label="کارهای عقب‌افتاده"
             value={data.attention.overdueTasks}
@@ -269,14 +268,16 @@ function WorkspaceContent({
             tone="primary"
             onClick={go("/attention?tab=conversations", "activity:view")}
           />
-        </div>
-      </section>
+        </DashboardMetricGrid>
+      </DashboardSection>
 
-      <section aria-labelledby="summary-title">
-        <h2 id="summary-title" className="mb-3 text-base font-bold">
-          نمای کلی من
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <DashboardSection
+        id="overview"
+        title="نمای کلی من"
+        description="خلاصه عملکرد و موجودی کاری شما در یک نگاه"
+        icon={Activity}
+      >
+        <DashboardMetricGrid columns={6}>
           <MetricCard
             label="کارهای باز"
             value={data.summary.tasks.open}
@@ -327,8 +328,8 @@ function WorkspaceContent({
               "opportunity:view"
             )}
           />
-        </div>
-      </section>
+        </DashboardMetricGrid>
+      </DashboardSection>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <EntitySection
