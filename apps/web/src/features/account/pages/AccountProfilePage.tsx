@@ -1,174 +1,783 @@
-import type { ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import {
+  Activity,
+  ArrowLeft,
   AtSign,
+  Bell,
+  BriefcaseBusiness,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
   KeyRound,
+  ListChecks,
+  MessageSquareText,
+  RotateCcw,
   ShieldCheck,
+  TriangleAlert,
   UserRound,
 } from "lucide-react"
 
-import {
-  Card,
-  CardContent,
-} from "@workspace/ui/components/card"
-
+import { Button } from "@workspace/ui/components/button"
 import { uiText } from "@/config/uiText"
-import { useAuthStore } from "@/store/authStore"
+import { formatJalaliDateTime } from "@/lib/date/jalali"
+import { useAuthStore, type AuthUser } from "@/store/authStore"
+import {
+  ContentList,
+  ContentListItem,
+  ContentSection,
+} from "@/components/shared/ContentSection"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
+import {
+  PersianDateRangePicker,
+  type PersianDateRange,
+} from "@/components/shared/PersianDateRangePicker"
 import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
+import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { safeNotificationActionUrl } from "@/features/notifications/utils/notificationDisplay"
+import { useAccountWorkspace } from "../hooks/useAccountWorkspace"
+import type {
+  AccountWorkspace,
+  WorkspaceCompanyIdentity,
+} from "../types/accountWorkspace.types"
 
 const profileText = uiText.profile
+const taskLabels = {
+  TODO: "انجام‌نشده",
+  IN_PROGRESS: "در حال انجام",
+  DONE: "انجام‌شده",
+  CANCELLED: "لغوشده",
+}
+const taskTones: Record<keyof typeof taskLabels, StatusTone> = {
+  TODO: "neutral",
+  IN_PROGRESS: "primary",
+  DONE: "success",
+  CANCELLED: "error",
+}
+
+function dateInput(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function defaultPeriod(): PersianDateRange {
+  const to = new Date()
+  const from = new Date(to)
+  from.setDate(from.getDate() - 30)
+  return { from, to }
+}
+
+function money(value: number | null) {
+  return value == null
+    ? "محرمانه"
+    : `${new Intl.NumberFormat("fa-IR").format(value)} ریال`
+}
+
+function companyName(company?: WorkspaceCompanyIdentity | null) {
+  return company?.brandName || company?.legalName || "بدون شرکت"
+}
 
 export function AccountProfilePage() {
   const user = useAuthStore((state) => state.user)
   const patchUser = useAuthStore((state) => state.patchUser)
+  const [period, setPeriod] = useState<PersianDateRange>(defaultPeriod)
+  const filters = useMemo(
+    () => ({
+      startDate: period.from ? dateInput(period.from) : undefined,
+      endDate: period.to ? dateInput(period.to) : undefined,
+      recentLimit: 5,
+    }),
+    [period]
+  )
+  const workspaceQuery = useAccountWorkspace(filters)
 
   return (
     <div className="grid gap-6">
       <PageHero
-        title={profileText.title}
-        description={profileText.description}
+        title="مرکز کار شخصی"
+        description="کارها، فرصت‌ها، جلسات، اعلان‌ها و شاخص‌های کاری خودتان را در یک نمای یکپارچه دنبال کنید."
         accessBadge={{ label: "حساب کاربری", icon: UserRound }}
         backFallback="/dashboard"
+        onRefresh={() => workspaceQuery.refetch()}
+        refreshing={workspaceQuery.isFetching}
+        secondaryActions={[
+          {
+            id: "security",
+            label: "امنیت حساب",
+            icon: KeyRound,
+            href: "/account/security",
+            variant: "outline",
+          },
+        ]}
       />
-      <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-primary-soft)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-elevated)] sm:p-8">
-        <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
 
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-          {user ? <ProfileMediaEditor
+      <ProfileIdentity
+        user={user}
+        onAvatarChanged={(hasMedia) =>
+          patchUser({
+            avatarObjectKey: hasMedia ? `updated-${Date.now()}` : null,
+          })
+        }
+      />
+
+      <SurfaceCard className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-[var(--app-heading)]">
+              بازه گزارش عملکرد
+            </h2>
+            <p className="mt-1 text-xs leading-6 text-[var(--app-text-secondary)]">
+              آمار فعالیت‌ها در بازه انتخابی محاسبه می‌شود؛ فهرست‌های جاری مستقل
+              از این بازه‌اند.
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+            <div className="min-w-64">
+              <PersianDateRangePicker
+                value={period}
+                onChange={(value) => setPeriod(value || {})}
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setPeriod(defaultPeriod())}
+            >
+              <RotateCcw className="size-4" />
+              ۳۰ روز اخیر
+            </Button>
+          </div>
+        </div>
+      </SurfaceCard>
+
+      <QueryContent
+        query={workspaceQuery}
+        errorTitle="اطلاعات مرکز کار شخصی دریافت نشد"
+      >
+        {workspaceQuery.data ? (
+          <WorkspaceContent
+            data={workspaceQuery.data}
+            user={user}
+            reportStart={filters.startDate}
+            reportEnd={filters.endDate}
+          />
+        ) : null}
+      </QueryContent>
+
+      <AccountDetails user={user} />
+    </div>
+  )
+}
+
+function ProfileIdentity({
+  user,
+  onAvatarChanged,
+}: {
+  user: AuthUser | null
+  onAvatarChanged: (hasMedia: boolean) => void
+}) {
+  return (
+    <section className="relative overflow-hidden rounded-[var(--app-radius-feature)] border border-[var(--app-primary-soft)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-elevated)] sm:p-8">
+      <div className="pointer-events-none absolute -end-24 -top-24 size-80 rounded-full bg-[var(--app-primary-soft)]/60 blur-3xl" />
+      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
+        {user ? (
+          <ProfileMediaEditor
             name={user.fullName}
             mediaPath={`/users/${user.id}/avatar`}
             hasMedia={Boolean(user.avatarObjectKey)}
             mediaVersion={user.avatarObjectKey}
             canEdit
             label="تصویر پروفایل"
-            onChanged={async (hasMedia) => patchUser({ avatarObjectKey: hasMedia ? `updated-${Date.now()}` : null })}
-          /> : null}
+            onChanged={onAvatarChanged}
+          />
+        ) : null}
+        <div className="min-w-0">
+          <h2 className="text-xl font-bold text-[var(--app-heading)]">
+            {user?.fullName || uiText.common.notAvailable}
+          </h2>
+          <p className="mt-1 text-sm text-[var(--app-text-secondary)]">
+            {user?.roleName || user?.role}{" "}
+            {user?.teamName ? `· ${user.teamName}` : ""}
+          </p>
+          <p className="mt-2 flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
+            <AtSign className="size-4" />
+            {user?.email}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
 
-          <div className="min-w-0 text-sm leading-7 text-[var(--app-text-secondary)]">
-            اطلاعات هویتی و دسترسی فعال شما
-          </div>
+function WorkspaceContent({
+  data,
+  user,
+  reportStart,
+  reportEnd,
+}: {
+  data: AccountWorkspace
+  user: AuthUser | null
+  reportStart?: string
+  reportEnd?: string
+}) {
+  const navigate = useNavigate()
+  const can = (permission: string) =>
+    Boolean(user?.permissions.includes(permission))
+  const go = (path: string, permission?: string) =>
+    permission && !can(permission) ? undefined : () => navigate(path)
+  const activityBase = `/activities?scope=mine&ownerId=${user?.id || ""}${reportStart ? `&dateFrom=${encodeURIComponent(reportStart)}` : ""}${reportEnd ? `&dateTo=${encodeURIComponent(reportEnd)}` : ""}`
+
+  return (
+    <div className="grid gap-6">
+      <section aria-labelledby="attention-title">
+        <div className="mb-3 flex items-center gap-2">
+          <TriangleAlert className="size-5 text-[var(--warning)]" />
+          <h2 id="attention-title" className="text-base font-bold">
+            نیازمند توجه شما
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <MetricCard
+            label="کارهای عقب‌افتاده"
+            value={data.attention.overdueTasks}
+            icon={TriangleAlert}
+            tone="warning"
+            onClick={go("/tasks?page=1&quick=overdue", "task:view")}
+          />
+          <MetricCard
+            label="سررسید امروز"
+            value={data.attention.dueTodayTasks}
+            icon={Clock3}
+            tone="info"
+            onClick={go("/tasks?page=1&dueState=today&quick=mine", "task:view")}
+          />
+          <MetricCard
+            label="جلسات پیش‌رو"
+            value={data.attention.upcomingMeetings}
+            icon={CalendarDays}
+            onClick={go("/meetings?page=1&quick=upcoming", "meeting:view")}
+          />
+          <MetricCard
+            label="اعلان خوانده‌نشده"
+            value={data.attention.unreadNotifications}
+            icon={Bell}
+            tone="info"
+            onClick={go("/attention?tab=notifications", "notification:view")}
+          />
+          <MetricCard
+            label="پیام خوانده‌نشده"
+            value={data.attention.unreadConversationMessages}
+            icon={MessageSquareText}
+            tone="primary"
+            onClick={go("/attention?tab=conversations", "activity:view")}
+          />
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <ProfileCard
-          label={profileText.cards.userName}
-          value={user?.fullName || uiText.common.notAvailable}
-          icon={<UserRound className="size-5" />}
-        />
-        <ProfileCard
-          label={profileText.cards.organizationRole}
-          value={user?.roleName || user?.role || uiText.common.notAvailable}
-          icon={<ShieldCheck className="size-5" />}
-        />
-        <ProfileCard
-          label={profileText.cards.permissionCount}
-          value={String(user?.permissions.length ?? 0)}
-          icon={<KeyRound className="size-5" />}
-        />
-        <ProfileCard
-          label={profileText.cards.sessionStatus}
-          value={profileText.cards.sessionActive}
-          icon={<ShieldCheck className="size-5" />}
-          success
-        />
+      <section aria-labelledby="summary-title">
+        <h2 id="summary-title" className="mb-3 text-base font-bold">
+          نمای کلی من
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <MetricCard
+            label="کارهای باز"
+            value={data.summary.tasks.open}
+            helper={`${data.summary.tasks.completed.toLocaleString("fa-IR")} تکمیل‌شده`}
+            icon={ListChecks}
+            onClick={go("/tasks?page=1&quick=mine", "task:view")}
+          />
+          <MetricCard
+            label="فرصت‌های فعال"
+            value={data.summary.opportunities.active}
+            helper={money(data.summary.opportunities.activeValue)}
+            icon={BriefcaseBusiness}
+            onClick={go(
+              `/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`,
+              "opportunity:view"
+            )}
+          />
+          <MetricCard
+            label="شرکت‌های تحت مالکیت"
+            value={data.summary.companiesOwned}
+            icon={Building2}
+            onClick={go(
+              "/companies?page=1&ownershipScope=MINE",
+              "company:view"
+            )}
+          />
+          <MetricCard
+            label="فعالیت‌های بازه"
+            value={data.summary.activities}
+            icon={Activity}
+            tone="info"
+            onClick={go(activityBase, "activity:view")}
+          />
+          <MetricCard
+            label="جلسات پیش‌رو"
+            value={data.summary.upcomingMeetings}
+            icon={CalendarDays}
+            onClick={go("/meetings?page=1&quick=upcoming", "meeting:view")}
+          />
+          <MetricCard
+            label="کل فرصت‌ها"
+            value={data.summary.opportunities.total}
+            helper={money(data.summary.opportunities.totalValue)}
+            icon={BriefcaseBusiness}
+            tone="neutral"
+            onClick={go(
+              `/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`,
+              "opportunity:view"
+            )}
+          />
+        </div>
+      </section>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <EntitySection
+          title="کارهای جاری"
+          description="نزدیک‌ترین کارهای باز شما"
+          icon={ListChecks}
+          href="/tasks?page=1&quick=mine"
+          canView={can("task:view")}
+          empty="کار بازی برای شما وجود ندارد."
+        >
+          {data.recent.tasks.map((task) => (
+            <EntityLink key={task.id} to={`/tasks/${task.id}`}>
+              <CompanyAvatar company={task.company} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="truncate text-sm">{task.title}</strong>
+                  <StatusBadge tone={taskTones[task.status]}>
+                    {taskLabels[task.status]}
+                  </StatusBadge>
+                </div>
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                  {companyName(task.company)}
+                  {task.dueAt ? ` · ${formatJalaliDateTime(task.dueAt)}` : ""}
+                </p>
+              </div>
+            </EntityLink>
+          ))}
+        </EntitySection>
+
+        <EntitySection
+          title="جلسات پیش‌رو"
+          description="جلساتی که برگزارکننده یا عضو آن هستید"
+          icon={CalendarDays}
+          href="/meetings?page=1&quick=upcoming"
+          canView={can("meeting:view")}
+          empty="جلسه برنامه‌ریزی‌شده‌ای ندارید."
+        >
+          {data.recent.meetings.map((meeting) => (
+            <EntityLink key={meeting.id} to={`/meetings/${meeting.id}`}>
+              <CompanyAvatar company={meeting.company} />
+              <div className="min-w-0 flex-1">
+                <strong className="block truncate text-sm">
+                  {meeting.title}
+                </strong>
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                  {companyName(meeting.company)} ·{" "}
+                  {formatJalaliDateTime(meeting.startAt)}
+                </p>
+              </div>
+            </EntityLink>
+          ))}
+        </EntitySection>
+
+        <EntitySection
+          title="فرصت‌های اخیر"
+          description="فرصت‌هایی که مالک آن‌ها هستید"
+          icon={BriefcaseBusiness}
+          href={`/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`}
+          canView={can("opportunity:view")}
+          empty="فرصتی تحت مالکیت شما نیست."
+        >
+          {data.recent.opportunities.map((opportunity) => (
+            <EntityLink
+              key={opportunity.id}
+              to={`/opportunities/${opportunity.id}`}
+            >
+              <CompanyAvatar company={opportunity.company} />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="truncate text-sm">
+                    {opportunity.title}
+                  </strong>
+                  <StatusBadge
+                    tone={
+                      opportunity.stage.terminalType === "WON"
+                        ? "success"
+                        : opportunity.stage.terminalType === "LOST"
+                          ? "error"
+                          : "primary"
+                    }
+                  >
+                    {opportunity.stage.label}
+                  </StatusBadge>
+                </div>
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                  {companyName(opportunity.company)} ·{" "}
+                  {money(opportunity.estimatedValue)}
+                </p>
+              </div>
+            </EntityLink>
+          ))}
+        </EntitySection>
+
+        <EntitySection
+          title="شرکت‌های من"
+          description="آخرین شرکت‌های تحت مالکیت شما"
+          icon={Building2}
+          href="/companies?page=1&ownershipScope=MINE"
+          canView={can("company:view")}
+          empty="شرکتی تحت مالکیت شما نیست."
+        >
+          {data.recent.companies.map((company) => (
+            <EntityLink key={company.id} to={`/companies/${company.id}`}>
+              <CompanyAvatar company={company} />
+              <div className="min-w-0 flex-1">
+                <strong className="block truncate text-sm">
+                  {companyName(company)}
+                </strong>
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                  آخرین تغییر: {formatJalaliDateTime(company.updatedAt)}
+                </p>
+              </div>
+            </EntityLink>
+          ))}
+        </EntitySection>
       </div>
 
-      <Card className="overflow-hidden rounded-[var(--app-radius-card)] border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-        <CardContent className="p-0">
-          <div className="border-b border-[var(--app-divider)] px-6 py-5">
-            <h3 className="ui-card-title">{profileText.account.title}</h3>
-            <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-              {profileText.account.description}
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
+        <ContentSection
+          title="ترکیب فعالیت‌های من"
+          description="رویدادهای سیستمی محاسبه نمی‌شوند و فقط انواع فعال کتابخانه نمایش داده شده‌اند."
+          icon={Activity}
+          action={
+            can("activity:view") ? (
+              <SectionLink to={activityBase}>همه فعالیت‌ها</SectionLink>
+            ) : undefined
+          }
+        >
+          {data.activityBreakdown.length ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {data.activityBreakdown.map((item) => (
+                <button
+                  type="button"
+                  key={item.code}
+                  disabled={!can("activity:view")}
+                  onClick={go(
+                    `${activityBase}&activityType=${encodeURIComponent(item.code)}`,
+                    "activity:view"
+                  )}
+                  className="flex items-center justify-between rounded-xl bg-[var(--app-background)] p-3 text-start transition enabled:hover:bg-[var(--app-primary-soft)]"
+                >
+                  <span className="text-xs font-semibold">{item.label}</span>
+                  <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">
+                    {item.count.toLocaleString("fa-IR")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Activity}
+              title="نوع فعالیت فعالی تعریف نشده است"
+            />
+          )}
+        </ContentSection>
+        <ContentSection
+          title="نتیجه فرصت‌های من"
+          description="وضعیت و ارزش فرصت‌ها بر اساس مرحله فعلی"
+          icon={BriefcaseBusiness}
+        >
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <Outcome
+              label="فعال"
+              count={data.summary.opportunities.active}
+              value={data.summary.opportunities.activeValue}
+              tone="primary"
+            />
+            <Outcome
+              label="موفق"
+              count={data.summary.opportunities.won}
+              value={data.summary.opportunities.wonValue}
+              tone="success"
+            />
+            <Outcome
+              label="از دست‌رفته"
+              count={data.summary.opportunities.lost}
+              value={data.summary.opportunities.lostValue}
+              tone="error"
+            />
+          </div>
+        </ContentSection>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ContentSection
+          title="اعلان‌های اخیر"
+          description="آخرین اعلان‌های صادرشده برای شما"
+          icon={Bell}
+          action={
+            can("notification:view") ? (
+              <SectionLink to="/attention?tab=notifications">
+                همه اعلان‌ها
+              </SectionLink>
+            ) : undefined
+          }
+        >
+          {data.recent.notifications.length ? (
+            <ContentList>
+              {data.recent.notifications.map((notification) => {
+                const path =
+                  safeNotificationActionUrl(notification.actionUrl) ||
+                  "/attention?tab=notifications"
+                return (
+                  <Link key={notification.id} to={path}>
+                    <ContentListItem>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <strong className="block truncate text-sm">
+                            {notification.title}
+                          </strong>
+                          {notification.body ? (
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
+                              {notification.body}
+                            </p>
+                          ) : null}
+                          <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
+                            {formatJalaliDateTime(notification.createdAt)}
+                          </p>
+                        </div>
+                        <StatusBadge
+                          tone={notification.readAt ? "neutral" : "primary"}
+                        >
+                          {notification.readAt ? "خوانده‌شده" : "جدید"}
+                        </StatusBadge>
+                      </div>
+                    </ContentListItem>
+                  </Link>
+                )
+              })}
+            </ContentList>
+          ) : (
+            <EmptyState icon={Bell} title="اعلانی برای شما وجود ندارد" />
+          )}
+        </ContentSection>
+
+        <ContentSection
+          title="گفتگوهای اخیر"
+          description="پیام‌ها و پرسش‌های مرتبط با رکوردهای شما"
+          icon={MessageSquareText}
+          action={
+            <SectionLink to="/attention?tab=conversations">
+              مرکز توجه
+            </SectionLink>
+          }
+        >
+          {data.recent.conversations.length ? (
+            <ContentList>
+              {data.recent.conversations.map((conversation) => (
+                <Link key={conversation.id} to={conversation.actionUrl}>
+                  <ContentListItem>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <strong className="block truncate text-sm">
+                          {conversation.latestMessage?.author.fullName ||
+                            "گفتگوی مرتبط"}
+                        </strong>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
+                          {conversation.latestMessage?.body ||
+                            "پیامی ثبت نشده است."}
+                        </p>
+                        <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
+                          {formatJalaliDateTime(conversation.updatedAt)}
+                        </p>
+                      </div>
+                      {conversation.unreadCount ? (
+                        <StatusBadge tone="primary">
+                          {conversation.unreadCount.toLocaleString("fa-IR")}{" "}
+                          جدید
+                        </StatusBadge>
+                      ) : (
+                        <StatusBadge tone="neutral">
+                          {conversation.status === "RESOLVED"
+                            ? "حل‌شده"
+                            : "خوانده‌شده"}
+                        </StatusBadge>
+                      )}
+                    </div>
+                  </ContentListItem>
+                </Link>
+              ))}
+            </ContentList>
+          ) : (
+            <EmptyState
+              icon={MessageSquareText}
+              title="گفتگویی برای شما وجود ندارد"
+            />
+          )}
+        </ContentSection>
+      </div>
+    </div>
+  )
+}
+
+function EntitySection({
+  title,
+  description,
+  icon,
+  href,
+  canView,
+  empty,
+  children,
+}: {
+  title: string
+  description: string
+  icon: typeof ListChecks
+  href: string
+  canView: boolean
+  empty: string
+  children: ReactNode
+}) {
+  const hasChildren = Array.isArray(children)
+    ? children.length > 0
+    : Boolean(children)
+  return (
+    <ContentSection
+      title={title}
+      description={description}
+      icon={icon}
+      action={
+        canView ? <SectionLink to={href}>مشاهده همه</SectionLink> : undefined
+      }
+    >
+      {hasChildren ? (
+        <ContentList>{children}</ContentList>
+      ) : (
+        <EmptyState icon={icon} title={empty} />
+      )}
+    </ContentSection>
+  )
+}
+
+function EntityLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link to={to}>
+      <ContentListItem className="flex items-center gap-3">
+        {children}
+        <ArrowLeft className="size-4 shrink-0 text-[var(--app-text-secondary)]" />
+      </ContentListItem>
+    </Link>
+  )
+}
+
+function SectionLink({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--app-primary)] hover:underline"
+    >
+      {children}
+      <ArrowLeft className="size-3.5" />
+    </Link>
+  )
+}
+
+function CompanyAvatar({
+  company,
+}: {
+  company?: WorkspaceCompanyIdentity | null
+}) {
+  const name = companyName(company)
+  return (
+    <IdentityAvatar
+      name={name}
+      mediaPath={company ? `/companies/${company.id}/logo` : null}
+      hasMedia={Boolean(company?.logoObjectKey)}
+      mediaVersion={company?.logoObjectKey}
+      className="size-10 rounded-xl"
+    />
+  )
+}
+
+function Outcome({
+  label,
+  count,
+  value,
+  tone,
+}: {
+  label: string
+  count: number
+  value: number | null
+  tone: StatusTone
+}) {
+  return (
+    <div className="rounded-xl bg-[var(--app-background)] p-3">
+      <div className="flex items-center justify-between gap-2">
+        <StatusBadge tone={tone}>{label}</StatusBadge>
+        <strong className="text-base">{count.toLocaleString("fa-IR")}</strong>
+      </div>
+      <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
+        {money(value)}
+      </p>
+    </div>
+  )
+}
+
+function AccountDetails({ user }: { user: AuthUser | null }) {
+  const items = [
+    {
+      label: profileText.account.fields.email,
+      value: user?.email,
+      icon: AtSign,
+    },
+    {
+      label: profileText.cards.organizationRole,
+      value: user?.roleName || user?.role,
+      icon: ShieldCheck,
+    },
+    {
+      label: profileText.cards.permissionCount,
+      value: String(user?.permissions.length ?? 0),
+      icon: KeyRound,
+    },
+    {
+      label: profileText.cards.sessionStatus,
+      value: profileText.cards.sessionActive,
+      icon: CheckCircle2,
+    },
+  ]
+  return (
+    <ContentSection
+      title={profileText.account.title}
+      description="اطلاعات هویتی و سطح دسترسی فعال شما"
+      icon={UserRound}
+    >
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {items.map(({ label, value, icon: Icon }) => (
+          <div
+            key={label}
+            className="rounded-xl bg-[var(--app-background)] p-4"
+          >
+            <Icon className="size-5 text-[var(--app-primary)]" />
+            <p className="mt-3 text-xs text-[var(--app-text-secondary)]">
+              {label}
+            </p>
+            <p className="mt-1 truncate text-sm font-bold">
+              {value || uiText.common.notAvailable}
             </p>
           </div>
-
-          <div className="grid gap-0 sm:grid-cols-2">
-            <UserField
-              label={profileText.account.fields.name}
-              value={user?.fullName}
-              icon={<UserRound className="size-4" />}
-            />
-            <UserField
-              label={profileText.account.fields.email}
-              value={user?.email}
-              icon={<AtSign className="size-4" />}
-              ltr
-            />
-            <UserField
-              label={profileText.account.fields.role}
-              value={user?.roleName || user?.role}
-              icon={<ShieldCheck className="size-4" />}
-            />
-            <UserField
-              label={profileText.account.fields.permissionCount}
-              value={String(user?.permissions.length ?? 0)}
-              icon={<KeyRound className="size-4" />}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-function ProfileCard({
-  label,
-  value,
-  icon,
-  success = false,
-}: {
-  label: string
-  value: string
-  icon: ReactNode
-  success?: boolean
-}) {
-  return (
-    <div className="rounded-[18px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[var(--app-shadow-card-hover)]">
-      <div
-        className={[
-          "mb-4 grid size-10 place-items-center rounded-xl",
-          success
-            ? "bg-[var(--success-light)] text-[var(--success)]"
-            : "bg-[var(--app-primary-soft)] text-[var(--app-primary)]",
-        ].join(" ")}
-      >
-        {icon}
+        ))}
       </div>
-
-      <div className="text-xs text-[var(--app-text-secondary)]">{label}</div>
-
-      <div className="mt-1 truncate text-base font-bold text-[var(--app-heading)]">
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function UserField({
-  label,
-  value,
-  icon,
-  ltr = false,
-}: {
-  label: string
-  value?: string | null
-  icon: ReactNode
-  ltr?: boolean
-}) {
-  return (
-    <div className="border-b border-[var(--app-divider)] px-6 py-5 odd:sm:border-e">
-      <div className="flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
-        {icon}
-        {label}
-      </div>
-
-      <div
-        dir={ltr ? "ltr" : undefined}
-        className="mt-2 text-sm font-semibold text-[var(--app-heading)]"
-      >
-        {value || uiText.common.notAvailable}
-      </div>
-    </div>
+    </ContentSection>
   )
 }
