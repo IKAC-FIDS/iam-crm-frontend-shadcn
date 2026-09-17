@@ -21,7 +21,10 @@ import {
 
 import { Button } from "@workspace/ui/components/button"
 import { uiText } from "@/config/uiText"
-import { formatJalaliDateTime } from "@/lib/date/jalali"
+import {
+  formatJalaliDateTime,
+  type DateRangeValue,
+} from "@/lib/date/jalali"
 import { useAuthStore, type AuthUser } from "@/store/authStore"
 import {
   ContentList,
@@ -37,10 +40,7 @@ import { DashboardToolbar } from "@/components/shared/DashboardToolbar"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
-import {
-  PersianDateRangePicker,
-  type PersianDateRange,
-} from "@/components/shared/PersianDateRangePicker"
+import { PersianDateRangePicker } from "@/components/shared/date"
 import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
@@ -64,7 +64,7 @@ function dateInput(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function defaultPeriod(): PersianDateRange {
+function defaultPeriod(): DateRangeValue {
   const to = new Date()
   const from = new Date(to)
   from.setDate(from.getDate() - 30)
@@ -84,7 +84,7 @@ function companyName(company?: WorkspaceCompanyIdentity | null) {
 export function AccountProfilePage() {
   const user = useAuthStore((state) => state.user)
   const patchUser = useAuthStore((state) => state.patchUser)
-  const [period, setPeriod] = useState<PersianDateRange>(defaultPeriod)
+  const [period, setPeriod] = useState<DateRangeValue>(defaultPeriod)
   const filters = useMemo(
     () => ({
       startDate: period.from ? dateInput(period.from) : undefined,
@@ -132,7 +132,7 @@ export function AccountProfilePage() {
         <div className="min-w-64 flex-1">
           <PersianDateRangePicker
             value={period}
-            onChange={(value) => setPeriod(value || {})}
+            onChange={setPeriod}
           />
         </div>
         <Button variant="outline" onClick={() => setPeriod(defaultPeriod())}>
