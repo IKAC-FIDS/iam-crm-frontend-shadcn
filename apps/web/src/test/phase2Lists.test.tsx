@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
@@ -165,15 +165,11 @@ it("Admin Users uses shared pagination, server filters and unchanged create perm
     <AdminUsersPage />,
     "/admin/users?page=2&limit=50&role=REP&status=ACTIVE&teamId=t1"
   )
-  expect(await screen.findByRole("table")).toHaveTextContent("کاربر نمونه")
+  expect(await screen.findByText("کاربر نمونه")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expect(
-    within(screen.getByRole("table")).getByText("کاربر نمونه").closest("tr")
-  ).toHaveClass("h-[var(--app-table-row-height)]")
-  expect(
-    within(screen.getByRole("table")).getByRole("button", {
-      name: "مشاهده جزئیات کاربر",
-    })
-  ).toHaveClass("rounded-xl", "text-[var(--app-primary)]")
+    screen.getByRole("button", { name: "مشاهده جزئیات" })
+  ).toBeInTheDocument()
   expect(api.get).toHaveBeenCalledWith("/users", {
     params: { page: 2, limit: 50, role: "REP", teamId: "t1", isActive: true },
   })

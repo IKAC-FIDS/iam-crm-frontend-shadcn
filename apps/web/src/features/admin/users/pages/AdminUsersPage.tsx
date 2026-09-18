@@ -1,13 +1,13 @@
 import { EntityListPage } from "@/components/shared/EntityListPage"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { PageHero } from "@/components/shared/PageHero"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -25,9 +25,12 @@ import { CreateUserModal } from "../components/CreateUserModal"
 import {
   Ban,
   CircleGauge,
-  MoreHorizontal,
+  Eye,
+  Mail,
   Plus,
+  ShieldCheck,
   Sparkles,
+  Users,
   UserCheck,
   UsersRound,
 } from "lucide-react"
@@ -50,14 +53,6 @@ import {
 
 const fa = (v: number) => new Intl.NumberFormat("fa-IR").format(v)
 const can = (p: string[], action: string) => p.includes(action)
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join("")
-    .toUpperCase() || "U"
 const roleLabel = (u: AdminUser) =>
   u.assignedRole?.name || USER_ROLE_LABELS[u.role] || u.role
 const teamLabel = (u: AdminUser) =>
@@ -89,6 +84,8 @@ export function AdminUsersPage() {
   const refresh = useRefreshAdminUsers()
   const canCreate = can(permissions, "user:create")
   const canChangeRole = can(permissions, "user:change-role")
+  const canActivate = can(permissions, "user:activate")
+  const canDeactivate = can(permissions, "user:deactivate")
   const canViewTeams =
     can(permissions, "team:view") || can(permissions, "team:manage")
   const canViewRoles = can(permissions, "role:view")
@@ -156,74 +153,34 @@ export function AdminUsersPage() {
     })
   }
 
-  const columns = useMemo<DataTableColumn<AdminUser>[]>(
+  const cardFields = useMemo<EntityCardField<AdminUser>[]>(
     () => [
       {
-        id: "user",
-        header: "کاربر",
-        cell: (u) => (
-          <EntityTableCell
-            title={u.fullName}
-            subtitle={u.email}
-            subtitleDir="ltr"
-            avatar={initials(u.fullName)}
-          />
-        ),
+        id: "email",
+        label: uiText.adminUsers.fields.email,
+        icon: Mail,
+        render: (user) => <span dir="ltr">{user.email}</span>,
+        priority: "primary",
       },
       {
         id: "role",
-        header: uiText.adminUsers.fields.roleChoice,
-        cell: (u) => (
-          <>
-            <StatusBadge tone="primary" dot={false}>
-              {roleLabel(u)}
-            </StatusBadge>
-          </>
-        ),
+        label: uiText.adminUsers.fields.roleChoice,
+        icon: ShieldCheck,
+        render: roleLabel,
       },
       {
         id: "team",
-        header: uiText.adminUsers.fields.teamId,
-        cell: (u) => <>{teamLabel(u)}</>,
-      },
-      {
-        id: "status",
-        header: uiText.adminUsers.fields.status,
-        cell: (u) => (
-          <>
-            <StatusBadge tone={u.isActive ? "success" : "neutral"}>
-              {u.isActive ? uiText.common.active : uiText.common.inactive}
-            </StatusBadge>
-          </>
-        ),
+        label: uiText.adminUsers.fields.teamId,
+        icon: Users,
+        render: teamLabel,
       },
       {
         id: "updated",
-        header: "آخرین تغییر",
-        cell: (u) => <>{formatDate(u.updatedAt || u.createdAt)}</>,
-      },
-      {
-        id: "actions",
-        header: "عملیات",
-        headerClassName: "w-28 text-end",
-        cell: (u) => (
-          <EntityRowActions
-            label="مشاهده جزئیات کاربر"
-            onView={() => navigate(`/admin/users/${u.id}`)}
-            actions={[
-              {
-                id: "manage",
-                label: "عملیات کاربر",
-                icon: MoreHorizontal,
-                onClick: () => navigate(`/admin/users/${u.id}`),
-                enabled: canChangeRole,
-              },
-            ]}
-          />
-        ),
+        label: "آخرین تغییر",
+        render: (user) => formatDate(user.updatedAt || user.createdAt),
       },
     ],
-    [navigate, canChangeRole]
+    []
   )
 
   return (
@@ -233,13 +190,14 @@ export function AdminUsersPage() {
         eyebrow="مرکز مدیریت کاربران"
         icon={Sparkles}
         description="کاربران، نقش‌ها، تیم‌ها، وضعیت دسترسی و تاریخچه تغییرات را از یک فضای واحد مدیریت کنید."
-        actions={
-          canCreate ? (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="ms-2 size-4" />
-              {uiText.adminUsers.create}
-            </Button>
-          ) : null
+        primaryAction={
+          canCreate
+            ? {
+                label: uiText.adminUsers.create,
+                icon: Plus,
+                onClick: () => setCreateOpen(true),
+              }
+            : undefined
         }
         onRefresh={refresh}
         refreshing={
@@ -344,24 +302,58 @@ export function AdminUsersPage() {
       />
 
       <QueryContent query={users}>
-        <DataTableShell
-          entityRows
-          caption="فهرست کاربران"
+        <EntityCardList
           rows={users.data?.data ?? []}
-          columns={columns}
+          fields={cardFields}
           getRowKey={(user) => user.id}
           onRowClick={(user) => navigate(`/admin/users/${user.id}`)}
-          mobile={{
-            title: (user) => user.fullName,
-            subtitle: (user) => user.email,
-            avatar: (user) => initials(user.fullName),
-            status: (user) => <StatusBadge tone={user.isActive ? "success" : "neutral"}>{user.isActive ? uiText.common.active : uiText.common.inactive}</StatusBadge>,
-            fields: [
-              { id: "role", label: uiText.adminUsers.fields.roleChoice, render: roleLabel },
-              { id: "team", label: uiText.adminUsers.fields.teamId, render: teamLabel },
-              { id: "updated", label: "آخرین تغییر", render: (user) => formatDate(user.updatedAt || user.createdAt) },
-            ],
-          }}
+          layout="row"
+          density="compact"
+          fieldsClassName="lg:grid-cols-3"
+          title={(user) => user.fullName}
+          subtitle={(user) => user.email}
+          media={(user) => (
+            <IdentityAvatar
+              name={user.fullName}
+              mediaPath={`/users/${user.id}/avatar`}
+              hasMedia={Boolean(user.avatarObjectKey)}
+              mediaVersion={user.avatarObjectKey}
+              className="size-12"
+            />
+          )}
+          badges={(user) => (
+            <>
+              <StatusBadge tone={user.isActive ? "success" : "neutral"}>
+                {user.isActive ? uiText.common.active : uiText.common.inactive}
+              </StatusBadge>
+              <StatusBadge tone="primary" dot={false}>
+                {roleLabel(user)}
+              </StatusBadge>
+            </>
+          )}
+          actions={(user) => (
+            <EntityRowActions
+              presentation="buttons"
+              actions={[
+                {
+                  id: "view",
+                  label: "مشاهده جزئیات",
+                  icon: Eye,
+                  onClick: () => navigate(`/admin/users/${user.id}`),
+                },
+                {
+                  id: "toggle-status",
+                  label: user.isActive ? "غیرفعال‌سازی" : "فعال‌سازی",
+                  icon: user.isActive ? Ban : UserCheck,
+                  onClick: () => setStatusTarget(user),
+                  enabled:
+                    user.id !== current?.id &&
+                    (user.isActive ? canDeactivate : canActivate),
+                  tone: user.isActive ? "danger" : "default",
+                },
+              ]}
+            />
+          )}
           emptyState={
             <EmptyState
               icon={UsersRound}
