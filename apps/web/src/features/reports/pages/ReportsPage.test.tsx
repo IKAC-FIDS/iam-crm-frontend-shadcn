@@ -34,6 +34,13 @@ describe("ReportsPage", () => {
 
     expect(salesView).toHaveAttribute("aria-pressed", "true")
     expect(usersView).toHaveAttribute("aria-pressed", "false")
+    expect(screen.getByRole("button", { name: "همه" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    expect(
+      screen.queryByRole("button", { name: "به‌روزرسانی" })
+    ).not.toBeInTheDocument()
 
     fireEvent.click(usersView)
 

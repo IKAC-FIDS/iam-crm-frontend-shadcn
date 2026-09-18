@@ -12,6 +12,13 @@ import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import {
+  DashboardMetricGrid,
+  DashboardSection,
+} from "@/components/shared/DashboardSection"
+import { DashboardToolbar } from "@/components/shared/DashboardToolbar"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { PersianDateRangePicker } from "@/components/shared/date"
 import type { DateRangeValue } from "@/lib/date/jalali"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -56,8 +63,12 @@ export function UserPerformanceReport() {
 
   return (
     <div className="grid gap-5">
-      <SurfaceCard className="p-4 sm:p-5">
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)_auto] lg:items-end">
+      <DashboardToolbar
+        title="فیلتر گزارش عملکرد"
+        description="با انتخاب تیم، عملکرد همه اعضای فعال آن در کارت‌های جداگانه نمایش داده می‌شود؛ بدون فیلتر همه اعضای سازمان محاسبه می‌شوند."
+        icon={UsersRound}
+      >
+        <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[minmax(300px,1fr)_minmax(260px,0.8fr)_auto] lg:items-end">
           <label className="grid gap-2">
             <span className="text-xs font-bold text-[var(--app-heading)]">
               بازه گزارش
@@ -94,11 +105,7 @@ export function UserPerformanceReport() {
             پاک‌کردن فیلترها
           </Button>
         </div>
-        <p className="mt-3 text-xs leading-6 text-[var(--app-text-secondary)]">
-          با انتخاب تیم، عملکرد تمام اعضای فعال آن در کارت‌های جداگانه نمایش
-          داده می‌شود. بدون فیلتر، همه اعضای سازمان محاسبه می‌شوند.
-        </p>
-      </SurfaceCard>
+      </DashboardToolbar>
       <QueryContent query={query} errorTitle="دریافت گزارش عملکرد انجام نشد">
         {query.data ? (
           <PerformanceContent data={query.data} dateRange={dateRange} />
@@ -117,55 +124,62 @@ function PerformanceContent({
 }) {
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <UsersRound className="size-4 text-[var(--app-primary)]" />
-          <h2 className="text-base font-bold text-[var(--app-heading)]">
-            مقایسه عملکرد اعضا
-          </h2>
-        </div>
-        <StatusBadge tone="neutral" dot={false}>
-          {number.format(data.members.length)} عضو
-        </StatusBadge>
-      </div>
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <Metric
-          icon={Activity}
-          label="فعالیت‌های ثبت‌شده"
-          value={data.activity.total}
-        />
-        <Metric
-          icon={Building2}
-          label="شرکت‌های ایجادشده"
-          value={data.companiesCreated}
-        />
-        <Metric icon={CalendarDays} label="جلسات" value={data.meetings} />
-        <Metric
-          icon={ListChecks}
-          label="کارهای ایجادشده"
-          value={data.tasksCreated}
-        />
-        <Metric
-          icon={Target}
-          label="فرصت‌های ایجادشده"
-          value={data.opportunities.total}
-        />
-      </section>
-      <section className="grid gap-5 xl:grid-cols-2">
-        {data.members.map((member) => (
-          <MemberCard
-            key={member.user.id}
-            member={member}
-            financialVisible={data.financialVisible}
-            dateRange={dateRange}
+      <DashboardSection
+        id="reports-user-summary"
+        title="خلاصه عملکرد اعضا"
+        description="مجموع شاخص‌های اعضای انتخاب‌شده در بازه گزارش"
+        icon={Activity}
+      >
+        <DashboardMetricGrid columns={5}>
+          <MetricCard
+            icon={Activity}
+            label="فعالیت‌های ثبت‌شده"
+            value={data.activity.total}
           />
-        ))}
-      </section>
-      {!data.members.length ? (
-        <SurfaceCard className="p-8 text-center text-sm text-[var(--app-text-secondary)]">
-          عضو فعالی برای این تیم پیدا نشد.
-        </SurfaceCard>
-      ) : null}
+          <MetricCard
+            icon={Building2}
+            label="شرکت‌های ایجادشده"
+            value={data.companiesCreated}
+          />
+          <MetricCard icon={CalendarDays} label="جلسات" value={data.meetings} />
+          <MetricCard
+            icon={ListChecks}
+            label="کارهای ایجادشده"
+            value={data.tasksCreated}
+          />
+          <MetricCard
+            icon={Target}
+            label="فرصت‌های ایجادشده"
+            value={data.opportunities.total}
+          />
+        </DashboardMetricGrid>
+      </DashboardSection>
+      <DashboardSection
+        id="reports-user-members"
+        title="مقایسه عملکرد اعضا"
+        description="جزئیات فعالیت، کار، جلسه و فرصت هر عضو"
+        icon={UsersRound}
+        badge={`${number.format(data.members.length)} عضو`}
+      >
+        {data.members.length ? (
+          <div className="grid gap-5 xl:grid-cols-2">
+            {data.members.map((member) => (
+              <MemberCard
+                key={member.user.id}
+                member={member}
+                financialVisible={data.financialVisible}
+                dateRange={dateRange}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={UsersRound}
+            title="عضوی پیدا نشد"
+            description="عضو فعالی مطابق تیم و بازه انتخاب‌شده وجود ندارد."
+          />
+        )}
+      </DashboardSection>
     </>
   )
 }
@@ -198,7 +212,12 @@ function MemberCard({
   return (
     <SurfaceCard className="min-w-0 overflow-hidden">
       <header className="flex items-center gap-3 border-b border-[var(--app-divider)] bg-[var(--app-background)] p-4 sm:p-5">
-        <IdentityAvatar name={member.user.fullName} className="size-11" />
+        <IdentityAvatar
+          name={member.user.fullName}
+          mediaPath={`/users/${member.user.id}/avatar`}
+          hasMedia
+          className="size-11"
+        />
         <div className="min-w-0">
           <h3 className="truncate text-sm font-bold text-[var(--app-heading)]">
             {member.user.fullName}
@@ -310,27 +329,6 @@ function withQuery(path: string, values: Record<string, string | undefined>) {
     if (value) query.set(key, value)
   })
   return `${path}?${query.toString()}`
-}
-function Metric({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Activity
-  label: string
-  value: number
-}) {
-  return (
-    <SurfaceCard className="flex items-center gap-3 p-4">
-      <span className="grid size-10 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-        <Icon className="size-5" />
-      </span>
-      <div>
-        <p className="text-xs text-[var(--app-text-secondary)]">{label}</p>
-        <p className="mt-1 text-xl font-bold">{number.format(value)}</p>
-      </div>
-    </SurfaceCard>
-  )
 }
 function PlainMetric({
   label,

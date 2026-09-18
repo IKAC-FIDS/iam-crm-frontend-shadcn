@@ -16,7 +16,10 @@ function renderHero(props: Partial<ComponentProps<typeof PageHero>> = {}) {
       <PageHero
         title="شرکت‌ها"
         description="مدیریت حساب‌های مشتری"
-        breadcrumbs={[{ label: "خانه", href: "/dashboard" }, { label: "شرکت‌ها" }]}
+        breadcrumbs={[
+          { label: "خانه", href: "/dashboard" },
+          { label: "شرکت‌ها" },
+        ]}
         accessBadge={{ label: "مدیریت مشتریان", icon: ShieldCheck }}
         onBack={onBack}
         onRefresh={onRefresh}
@@ -32,7 +35,9 @@ describe("PageHero", () => {
     renderHero()
     expect(screen.getByRole("heading", { name: "شرکت‌ها" })).toBeInTheDocument()
     expect(screen.getByText("مدیریت حساب‌های مشتری")).toBeInTheDocument()
-    expect(screen.getByRole("navigation", { name: "مسیر صفحه" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("navigation", { name: "مسیر صفحه" })
+    ).toBeInTheDocument()
     expect(screen.getByText("مدیریت مشتریان")).toBeInTheDocument()
     expect(screen.getByTestId("page-hero-accent")).toBeInTheDocument()
   })
@@ -53,6 +58,13 @@ describe("PageHero", () => {
     expect(refresh.querySelector("svg")).toHaveClass("motion-safe:animate-spin")
   })
 
+  it("can omit refresh when the page has no meaningful refresh action", () => {
+    renderHero({ showRefresh: false })
+    expect(
+      screen.queryByRole("button", { name: "به‌روزرسانی" })
+    ).not.toBeInTheDocument()
+  })
+
   it("renders optional actions and changes the active view", async () => {
     const user = userEvent.setup()
     const onPrimary = vi.fn()
@@ -60,8 +72,18 @@ describe("PageHero", () => {
     const onViewChange = vi.fn()
     renderHero({
       primaryAction: { id: "create", label: "ایجاد", onClick: onPrimary },
-      secondaryActions: [{ id: "export", label: "خروجی", onClick: onSecondary, variant: "outline" }],
-      viewOptions: [{ id: "list", label: "فهرست" }, { id: "cards", label: "کارت" }],
+      secondaryActions: [
+        {
+          id: "export",
+          label: "خروجی",
+          onClick: onSecondary,
+          variant: "outline",
+        },
+      ],
+      viewOptions: [
+        { id: "list", label: "فهرست" },
+        { id: "cards", label: "کارت" },
+      ],
       activeView: "list",
       onViewChange,
     })
@@ -71,13 +93,20 @@ describe("PageHero", () => {
     expect(onPrimary).toHaveBeenCalledOnce()
     expect(onSecondary).toHaveBeenCalledOnce()
     expect(onViewChange).toHaveBeenCalledWith("cards")
-    expect(screen.getByRole("button", { name: "فهرست" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "فهرست" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
   })
 
   it("omits optional regions when they are not configured", () => {
     renderHero()
-    expect(screen.queryByRole("group", { name: "نوع نمایش" })).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "ایجاد" })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("group", { name: "نوع نمایش" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "ایجاد" })
+    ).not.toBeInTheDocument()
   })
 
   it("keeps legacy detail pages on the same standard through PageHeader", () => {
@@ -86,8 +115,12 @@ describe("PageHero", () => {
         <PageHeader title="پیگیری قرارداد" description="جزئیات کار" />
       </MemoryRouter>
     )
-    expect(screen.getByRole("heading", { name: "پیگیری قرارداد" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "پیگیری قرارداد" })
+    ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "بازگشت" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "به‌روزرسانی" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "به‌روزرسانی" })
+    ).toBeInTheDocument()
   })
 })

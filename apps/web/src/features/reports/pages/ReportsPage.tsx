@@ -2,6 +2,8 @@ import {
   Activity,
   ArrowDown,
   ArrowUp,
+  BarChart3,
+  CalendarRange,
   CircleAlert,
   RotateCcw,
   Target,
@@ -12,6 +14,13 @@ import {
 import { useMemo, useState } from "react"
 
 import { MetricCard } from "@/components/shared/MetricCard"
+import {
+  DashboardMetricGrid,
+  DashboardSection,
+} from "@/components/shared/DashboardSection"
+import { DashboardToolbar } from "@/components/shared/DashboardToolbar"
+import { ContentSection } from "@/components/shared/ContentSection"
+import { EntityListPage } from "@/components/shared/EntityListPage"
 import { PageHero } from "@/components/shared/PageHero"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { PersianDateRangePicker } from "@/components/shared/date"
@@ -36,6 +45,7 @@ function fa(value: number, digits = 0) {
 function monthLabel(value: string) {
   const [year, month] = value.split("-").map(Number)
   return new Intl.DateTimeFormat("fa-IR", {
+    calendar: "persian",
     year: "2-digit",
     month: "short",
   }).format(new Date(Date.UTC(year, month - 1, 1)))
@@ -434,9 +444,13 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
           return (
             <div
               key={phase.key}
+              tabIndex={0}
+              aria-label={`${phase.label}: ${fa(phase.rate, 1)} درصد، حدود ${fa(count)} مورد`}
               className="group grid gap-2 rounded-[18px] border border-transparent px-2 py-2 transition hover:border-[var(--app-divider)] hover:bg-muted/25 lg:grid-cols-[110px_minmax(0,1fr)_86px]"
               onMouseEnter={() => setHoveredKey(phase.key)}
               onMouseLeave={() => setHoveredKey(null)}
+              onFocus={() => setHoveredKey(phase.key)}
+              onBlur={() => setHoveredKey(null)}
             >
               <div className="flex items-center justify-between gap-3 lg:block">
                 <div className="text-sm font-bold">{phase.label}</div>
@@ -816,8 +830,13 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             return (
               <g
                 key={item.ownerId}
-                className="cursor-pointer"
+                tabIndex={0}
+                role="img"
+                aria-label={`${item.ownerName}: ${fa(item.conversionRate, 1)} درصد نرخ تبدیل، ${fa(item.pipelineValue)} ریال ارزش فرصت`}
+                className="cursor-pointer outline-none"
                 onMouseEnter={() => setHoveredOwnerId(item.ownerId)}
+                onFocus={() => setHoveredOwnerId(item.ownerId)}
+                onBlur={() => setHoveredOwnerId(null)}
               >
                 <circle
                   cx={x}
@@ -848,54 +867,40 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
 function InsightCards({ data }: { data: ConversionHealth }) {
   const leakage = data.biggestLeakage
   return (
-    <section className="grid gap-4 lg:grid-cols-3">
-      <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5">
-        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-          <CircleAlert className="size-5" />
-          <h3 className="font-bold">بیشترین ریزش</h3>
-        </div>
-        {leakage ? (
-          <>
-            <p className="mt-4 text-2xl font-black">
-              {fa(leakage.dropRate, 1)}٪
-            </p>
-            <p className="mt-1 text-sm leading-7 text-muted-foreground">
-              بین «{leakage.fromLabel}» و «{leakage.toLabel}»؛{" "}
-              {fa(leakage.dropCount)} فرصت به مرحله بعد نرسیده‌اند.
-            </p>
-          </>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
-            برای تشخیص نقطه ریزش داده کافی وجود ندارد.
-          </p>
-        )}
-      </article>
-
-      <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5">
-        <div className="flex items-center gap-2 text-[var(--app-primary)]">
-          <Target className="size-5" />
-          <h3 className="font-bold">کیفیت تبدیل</h3>
-        </div>
-        <p className="mt-4 text-2xl font-black">
-          {fa(data.summary.leadToCustomer.current, 1)}٪
-        </p>
-        <p className="mt-1 text-sm leading-7 text-muted-foreground">
-          از سرنخ‌های بازه انتخابی، این درصد در نهایت به مشتری تبدیل شده‌اند.
-        </p>
-      </article>
-
-      <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5">
-        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-          <RotateCcw className="size-5" />
-          <h3 className="font-bold">بازگشت از توقف</h3>
-        </div>
-        <p className="mt-4 text-2xl font-black">{fa(data.recovery.rate, 1)}٪</p>
-        <p className="mt-1 text-sm leading-7 text-muted-foreground">
-          از فرصت‌هایی که وارد «متوقف شده» شده‌اند، این درصد دوباره به مسیر فروش
-          برگشته‌اند.
-        </p>
-      </article>
-    </section>
+    <DashboardSection
+      id="reports-sales-insights"
+      title="بینش‌های مدیریتی"
+      description="مهم‌ترین نقاط قوت و ریسک مسیر فروش در بازه انتخابی"
+      icon={CircleAlert}
+    >
+      <DashboardMetricGrid columns={3}>
+        <MetricCard
+          label="بیشترین ریزش"
+          value={leakage ? `${fa(leakage.dropRate, 1)}٪` : "داده ناکافی"}
+          helper={
+            leakage
+              ? `بین «${leakage.fromLabel}» و «${leakage.toLabel}»؛ ${fa(leakage.dropCount)} فرصت به مرحله بعد نرسیده‌اند.`
+              : "برای تشخیص نقطه ریزش داده کافی وجود ندارد."
+          }
+          icon={CircleAlert}
+          tone="warning"
+        />
+        <MetricCard
+          label="کیفیت تبدیل"
+          value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
+          helper="سهم سرنخ‌هایی که در نهایت به مشتری تبدیل شده‌اند."
+          icon={Target}
+          tone="primary"
+        />
+        <MetricCard
+          label="بازگشت از توقف"
+          value={`${fa(data.recovery.rate, 1)}٪`}
+          helper="سهم فرصت‌های متوقف‌شده‌ای که دوباره به مسیر فروش برگشته‌اند."
+          icon={RotateCcw}
+          tone="success"
+        />
+      </DashboardMetricGrid>
+    </DashboardSection>
   )
 }
 
@@ -920,13 +925,12 @@ export function ReportsPage() {
   const data = query.data
 
   return (
-    <div className="grid gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
         title="گزارش‌ها"
         description="سلامت مسیر فروش و عملکرد کاربران را در یک نمای تحلیلی بررسی کنید."
         accessBadge={{ label: "تحلیل و گزارش", icon: TrendingUp }}
-        onRefresh={view === "sales" ? () => query.refetch() : undefined}
-        refreshing={view === "sales" && query.isFetching}
+        showRefresh={false}
         viewOptions={[
           { id: "sales", label: "سلامت مسیر فروش", icon: TrendingUp },
           { id: "users", label: "عملکرد کاربران", icon: UsersRound },
@@ -937,33 +941,36 @@ export function ReportsPage() {
 
       {view === "sales" ? (
         <>
-          <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)]">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-              <div className="min-w-0 flex-1">
-                <PersianDateRangePicker
-                  value={dateRange}
-                  onChange={setDateRange}
-                />
-              </div>
-              <div className="flex rounded-2xl bg-muted p-1">
-                {(["all", "mine"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setScope(value)}
-                    className={[
-                      "rounded-xl px-4 py-2 text-sm transition",
-                      scope === value
-                        ? "bg-background font-medium shadow-sm"
-                        : "text-muted-foreground",
-                    ].join(" ")}
-                  >
-                    {value === "all" ? "همه" : "متعلق به من"}
-                  </button>
-                ))}
-              </div>
+          <DashboardToolbar
+            title="فیلتر گزارش سلامت فروش"
+            description="بازه زمانی و دامنه مالکیت را برای تحلیل انتخاب کنید."
+            icon={CalendarRange}
+          >
+            <div className="min-w-0 flex-1 lg:min-w-80">
+              <PersianDateRangePicker
+                value={dateRange}
+                onChange={setDateRange}
+              />
             </div>
-          </section>
+            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
+              {(["all", "mine"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={scope === value}
+                  onClick={() => setScope(value)}
+                  className={[
+                    "rounded-lg px-4 py-2 text-sm transition",
+                    scope === value
+                      ? "bg-[var(--app-surface)] font-medium text-[var(--app-primary)] shadow-sm"
+                      : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
+                  ].join(" ")}
+                >
+                  {value === "all" ? "همه" : "متعلق به من"}
+                </button>
+              ))}
+            </div>
+          </DashboardToolbar>
 
           <QueryContent
             query={query}
@@ -971,87 +978,81 @@ export function ReportsPage() {
           >
             {data ? (
               <>
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <KpiCard
-                    title="تبدیل سرنخ به مشتری"
-                    value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
-                    helper={`از ${fa(data.summary.totalLeads)} سرنخ در بازه انتخابی`}
-                    metric={data.summary.leadToCustomer}
-                    icon={Target}
-                  />
-                  <KpiCard
-                    title="میانه زمان تبدیل"
-                    value={`${fa(data.summary.medianTimeToWinDays.current, 1)} روز`}
-                    helper="از ایجاد سرنخ تا تبدیل به مشتری"
-                    metric={data.summary.medianTimeToWinDays}
-                    inverse
-                    suffix=" روز"
-                    icon={TimerReset}
-                  />
-                  <KpiCard
-                    title="نرخ عدم موفقیت"
-                    value={`${fa(data.summary.lostRate.current, 1)}٪`}
-                    helper="سهم از دست رفته و بدون پاسخ از کل سرنخ‌ها"
-                    metric={data.summary.lostRate}
-                    inverse
-                    icon={CircleAlert}
-                  />
-                  <KpiCard
-                    title="بازگشت از توقف"
-                    value={`${fa(data.summary.recoveryRate.current, 1)}٪`}
-                    helper="فرصت‌هایی که از توقف دوباره فعال شده‌اند"
-                    metric={data.summary.recoveryRate}
-                    icon={RotateCcw}
-                  />
-                </section>
+                <DashboardSection
+                  id="reports-sales-summary"
+                  title="شاخص‌های کلیدی فروش"
+                  description="مقایسه شاخص‌های بازه انتخابی با دوره قبل"
+                  icon={TrendingUp}
+                >
+                  <DashboardMetricGrid>
+                    <KpiCard
+                      title="تبدیل سرنخ به مشتری"
+                      value={`${fa(data.summary.leadToCustomer.current, 1)}٪`}
+                      helper={`از ${fa(data.summary.totalLeads)} سرنخ در بازه انتخابی`}
+                      metric={data.summary.leadToCustomer}
+                      icon={Target}
+                    />
+                    <KpiCard
+                      title="میانه زمان تبدیل"
+                      value={`${fa(data.summary.medianTimeToWinDays.current, 1)} روز`}
+                      helper="از ایجاد سرنخ تا تبدیل به مشتری"
+                      metric={data.summary.medianTimeToWinDays}
+                      inverse
+                      suffix=" روز"
+                      icon={TimerReset}
+                    />
+                    <KpiCard
+                      title="نرخ عدم موفقیت"
+                      value={`${fa(data.summary.lostRate.current, 1)}٪`}
+                      helper="سهم از دست رفته و بدون پاسخ از کل سرنخ‌ها"
+                      metric={data.summary.lostRate}
+                      inverse
+                      icon={CircleAlert}
+                    />
+                    <KpiCard
+                      title="بازگشت از توقف"
+                      value={`${fa(data.summary.recoveryRate.current, 1)}٪`}
+                      helper="فرصت‌هایی که از توقف دوباره فعال شده‌اند"
+                      metric={data.summary.recoveryRate}
+                      icon={RotateCcw}
+                    />
+                  </DashboardMetricGrid>
+                </DashboardSection>
 
-                <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-                  <div className="mb-5">
-                    <h2 className="text-lg font-bold">روند جذب تا تبدیل</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      مقایسه تعداد سرنخ‌های ایجادشده با تعداد مشتری‌شده در طول
-                      بازه زمانی
-                    </p>
-                  </div>
+                <ContentSection
+                  title="روند جذب تا تبدیل"
+                  description="مقایسه تعداد سرنخ‌های ایجادشده با تعداد مشتری‌شده در طول بازه زمانی"
+                  icon={BarChart3}
+                >
                   <TrendChart data={data.trend} />
-                </section>
+                </ContentSection>
 
                 <section className="grid gap-5 xl:grid-cols-2">
-                  <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-                    <div className="mb-5">
-                      <h2 className="text-lg font-bold">وضعیت سرنخ‌ها</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        توزیع فعلی سرنخ‌ها در وضعیت‌های اصلی بازه انتخابی
-                      </p>
-                    </div>
+                  <ContentSection
+                    title="وضعیت سرنخ‌ها"
+                    description="توزیع فعلی سرنخ‌ها در وضعیت‌های اصلی بازه انتخابی"
+                    icon={Activity}
+                  >
                     <LeadStatusChart data={data.outcomes} />
-                  </article>
+                  </ContentSection>
 
-                  <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-                    <div className="mb-5">
-                      <h2 className="text-lg font-bold">پیشرفت در مسیر فروش</h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        نمایش فازهای فانل و استیج‌های هر فاز بر اساس مسیر
-                        توافق‌شده
-                      </p>
-                    </div>
+                  <ContentSection
+                    title="پیشرفت در مسیر فروش"
+                    description="نمایش فازهای فانل و استیج‌های هر فاز بر اساس مسیر توافق‌شده"
+                    icon={Target}
+                  >
                     <FunnelChart data={data} />
-                  </article>
+                  </ContentSection>
                 </section>
 
                 {financialVisible ? (
-                  <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-                    <div className="mb-3 flex items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-base font-bold">عملکرد تیم فروش</h2>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس
-                        </p>
-                      </div>
-                      <UsersRound className="size-4 text-[var(--app-primary)]" />
-                    </div>
+                  <ContentSection
+                    title="عملکرد تیم فروش"
+                    description="مقایسه ارزش فرصت‌ها و نرخ تبدیل هر کارشناس"
+                    icon={UsersRound}
+                  >
                     <OwnerScatter data={data.owners} />
-                  </section>
+                  </ContentSection>
                 ) : null}
 
                 <InsightCards data={data} />
@@ -1062,6 +1063,6 @@ export function ReportsPage() {
       ) : (
         <UserPerformanceReport />
       )}
-    </div>
+    </EntityListPage>
   )
 }

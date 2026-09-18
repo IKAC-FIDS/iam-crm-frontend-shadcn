@@ -1,10 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import {
-  ArrowRight,
-  ChevronLeft,
-  Layers3,
-  RefreshCcw,
-} from "lucide-react"
+import { ArrowRight, ChevronLeft, Layers3, RefreshCcw } from "lucide-react"
 import type { ReactNode } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 
@@ -63,6 +58,7 @@ export type PageHeroProps = {
   backFallback?: string
   onRefresh?: () => void | Promise<unknown>
   refreshing?: boolean
+  showRefresh?: boolean
 
   // Optional page-specific capabilities
   metadata?: ReactNode
@@ -191,7 +187,7 @@ function FactItem({ fact }: { fact: PageHeroFact }) {
         <span className="block text-[11px] leading-5 text-[var(--app-text-secondary)]">
           {fact.label}
         </span>
-        <strong className="mt-0.5 block min-w-0 break-words text-xs font-bold text-[var(--app-heading)]">
+        <strong className="mt-0.5 block min-w-0 text-xs font-bold break-words text-[var(--app-heading)]">
           {fact.value}
         </strong>
       </span>
@@ -202,7 +198,7 @@ function FactItem({ fact }: { fact: PageHeroFact }) {
     "flex min-w-0 items-start gap-2 rounded-xl border px-3 py-2.5",
     "transition-[transform,box-shadow,border-color] duration-200",
     "motion-safe:hover:-translate-y-px motion-safe:hover:shadow-sm",
-    factToneClass(fact.tone),
+    factToneClass(fact.tone)
   )
 
   if (fact.href) {
@@ -240,6 +236,7 @@ export function PageHero({
   backFallback,
   onRefresh,
   refreshing = false,
+  showRefresh = true,
   viewOptions,
   activeView,
   onViewChange,
@@ -254,8 +251,7 @@ export function PageHero({
   const currentRoute = getRouteByPath(location.pathname)
 
   const BadgeIcon = accessBadge?.icon || icon || Layers3
-  const badgeLabel =
-    accessBadge?.label || eyebrow || routePresentation.title
+  const badgeLabel = accessBadge?.label || eyebrow || routePresentation.title
 
   const inferredBreadcrumbs: PageBreadcrumbItem[] =
     routePresentation.breadcrumbs.map((item) => ({
@@ -293,14 +289,14 @@ export function PageHero({
     <SurfaceCard
       className={cn(
         "relative overflow-hidden rounded-[var(--app-radius-hero)] px-4 py-5 sm:px-7 sm:py-6",
-        className,
+        className
       )}
     >
       <div
         data-testid="page-hero-accent"
         className="pointer-events-none absolute -end-20 -top-24 size-64 rounded-full bg-[var(--app-primary-soft)] blur-3xl"
       />
-      <div className="pointer-events-none absolute -bottom-24 start-1/4 size-52 rounded-full bg-[var(--info-light)]/45 blur-3xl" />
+      <div className="pointer-events-none absolute start-1/4 -bottom-24 size-52 rounded-full bg-[var(--info-light)]/45 blur-3xl" />
 
       <div className="relative grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="min-w-0">
@@ -314,10 +310,7 @@ export function PageHero({
                 className="flex min-w-0 items-center gap-1"
               >
                 {index ? (
-                  <ChevronLeft
-                    className="size-3 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <ChevronLeft className="size-3 shrink-0" aria-hidden="true" />
                 ) : null}
 
                 {item.href ? (
@@ -343,18 +336,14 @@ export function PageHero({
           </nav>
 
           <div className="ui-eyebrow mb-3 inline-flex max-w-full items-center gap-2">
-            <BadgeIcon
-              className="size-4 shrink-0"
-              aria-hidden="true"
-            />
+            <BadgeIcon className="size-4 shrink-0" aria-hidden="true" />
             <span className="truncate">{badgeLabel}</span>
           </div>
 
           <h1 className="ui-page-title break-words">{title}</h1>
 
           <div className="ui-body mt-2 line-clamp-2 max-w-3xl">
-            {description ||
-              "اطلاعات و عملیات این بخش را مشاهده و مدیریت کنید."}
+            {description || "اطلاعات و عملیات این بخش را مشاهده و مدیریت کنید."}
           </div>
 
           {metadata ? (
@@ -374,7 +363,7 @@ export function PageHero({
                 (() =>
                   navigate(
                     backFallback ||
-                      safeParent(location.pathname, currentRoute?.path),
+                      safeParent(location.pathname, currentRoute?.path)
                   ))
               }
               className={actionMotionClass()}
@@ -382,22 +371,24 @@ export function PageHero({
               <ArrowRight className="size-4" />
             </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="به‌روزرسانی"
-              disabled={refreshing}
-              onClick={() => void refresh()}
-              className={actionMotionClass()}
-            >
-              <RefreshCcw
-                className={cn(
-                  "size-4",
-                  refreshing && "motion-safe:animate-spin",
-                )}
-              />
-            </Button>
+            {showRefresh ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="به‌روزرسانی"
+                disabled={refreshing}
+                onClick={() => void refresh()}
+                className={actionMotionClass()}
+              >
+                <RefreshCcw
+                  className={cn(
+                    "size-4",
+                    refreshing && "motion-safe:animate-spin"
+                  )}
+                />
+              </Button>
+            ) : null}
 
             {viewOptions?.length ? (
               <div
@@ -419,9 +410,7 @@ export function PageHero({
                       onClick={() => onViewChange?.(option.id)}
                       className={cn("rounded-lg", actionMotionClass())}
                     >
-                      {ViewIcon ? (
-                        <ViewIcon className="size-4" />
-                      ) : null}
+                      {ViewIcon ? <ViewIcon className="size-4" /> : null}
                       {option.label}
                     </Button>
                   )
@@ -457,9 +446,7 @@ export function PageHero({
           <div className="min-w-0 lg:col-span-2">{filters}</div>
         ) : null}
 
-        {tabs ? (
-          <div className="min-w-0 lg:col-span-2">{tabs}</div>
-        ) : null}
+        {tabs ? <div className="min-w-0 lg:col-span-2">{tabs}</div> : null}
       </div>
     </SurfaceCard>
   )
