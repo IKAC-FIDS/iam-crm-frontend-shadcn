@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react"
+import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
@@ -10,6 +10,7 @@ import { TasksPage } from "@/features/tasks/pages/TasksPage"
 import { AdminAuditLogsPage } from "@/features/admin/audit-logs/pages/AdminAuditLogsPage"
 import { AdminLibrariesPage } from "@/features/admin/libraries/pages/AdminLibrariesPage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
+import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
 import { useCompanyActivities, useCompanyTasks } from "@/features/companies/hooks/useCompany360Sections"
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/store/authStore"
@@ -29,6 +30,7 @@ beforeEach(()=>{
     const params=config?.params as {page?:number;limit?:number}|undefined
     if(url==="/teams/t1")return response(team)
     if(url==="/teams/t1/members")return response(members)
+    if(url==="/teams")return page([team],params)
     if(url==="/admin/audit-logs/summary")return response({totalEvents:60,uniqueActors:2,byAction:[],byEntityType:[],byActor:[],trend:[]})
     if(url==="/admin/audit-logs/filter-options")return response({actors:[],entityTypes:[],actions:[],requestMethods:[]})
     if(String(url).includes("types/options"))return response([{id:"demo",code:"DEMO",label:"جلسه دمو",isActive:true}])
@@ -105,13 +107,20 @@ it("Libraries opens with section buttons and supports dedicated section routes",
 })
 it("Team members paginate the returned array without inventing server page requests",async()=>{
   mount(<AdminTeamDetailsPage/>,"/admin/teams/t1","/admin/teams/:teamId")
-  const table=await screen.findByRole("table")
-  expect(within(table).getByText("عضو 0")).toBeInTheDocument()
-  expect(within(table).queryByText("عضو 20")).not.toBeInTheDocument()
+  expect(await screen.findByText("عضو 0")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  expect(screen.queryByText("عضو 20")).not.toBeInTheDocument()
   await userEvent.click(screen.getByRole("button",{name:uiText.common.pagination.next}))
-  expect(within(table).getByText("عضو 20")).toBeInTheDocument()
-  expect(within(table).queryByText("عضو 0")).not.toBeInTheDocument()
+  expect(screen.getByText("عضو 20")).toBeInTheDocument()
+  expect(screen.queryByText("عضو 0")).not.toBeInTheDocument()
   expect(vi.mocked(api.get).mock.calls.filter(([url])=>url==="/teams/t1/members")).toHaveLength(1)
+})
+it("Teams uses one standard card view while preserving legacy view links",async()=>{
+  mount(<AdminTeamsPage/>,"/admin/teams?view=TABLE&page=2&status=ACTIVE")
+  expect(await screen.findByText("تیم نمونه")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  expect(screen.queryByRole("button",{name:"نمای جدول"})).not.toBeInTheDocument()
+  expectParams("/teams",{page:2,isActive:true})
 })
 function CompanySections(){
   const [activityPage,setActivityPage]=useState(1)

@@ -1,5 +1,8 @@
-import { DataTableShell } from "@/components/shared/DataTableShell"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -8,8 +11,11 @@ import { useTeamDetailQueries } from "../hooks/useTeams"
 import {  BadgeCheck,
   Ban,
   Clock3,
+  Eye,
+  Mail,
   Plus,
   Save,
+  ShieldCheck,
   Trash2,
   UserCog,
   UsersRound,
@@ -32,6 +38,7 @@ import {
   deactivateTeam,
   removeTeamMember,
   updateTeam,
+  type TeamMember,
 } from "../api/adminTeamsApi"
 
 function fa(value: number) {
@@ -52,6 +59,13 @@ function dateTime(value?: string) {
 
 function can(permissions: string[] | undefined, permission: string) {
   return Boolean(permissions?.includes(permission))
+}
+
+const roleLabels: Record<string, string> = {
+  ADMIN: "مدیر سامانه",
+  MANAGER: "مدیر",
+  REP: "کارشناس",
+  BOARDS: "هیئت‌مدیره",
 }
 
 function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
@@ -241,6 +255,21 @@ export function AdminTeamDetailsPage() {
     (safeMemberPage - 1) * memberPageSize,
     safeMemberPage * memberPageSize
   )
+  const memberFields: EntityCardField<TeamMember>[] = [
+    {
+      id: "email",
+      label: "ایمیل",
+      icon: Mail,
+      render: (member) => <span dir="ltr">{member.email}</span>,
+      priority: "primary",
+    },
+    {
+      id: "role",
+      label: "نقش",
+      icon: ShieldCheck,
+      render: (member) => roleLabels[member.role] || member.role,
+    },
+  ]
 
   return (
     <div className="grid gap-5" dir="rtl">
@@ -429,75 +458,56 @@ export function AdminTeamDetailsPage() {
         </div>
 
         <QueryContent query={membersQuery}>
-          <DataTableShell
-            entityRows
+          <EntityCardList
             rows={visibleMembers}
+            fields={memberFields}
+            layout="row"
+            density="compact"
             getRowKey={(member) => member.id}
             onRowClick={(member) => navigate(`/admin/users/${member.id}`)}
-            mobile={{
-              title: (member) => member.fullName,
-              subtitle: (member) => member.email,
-              avatar: (member) => member.fullName.slice(0, 1),
-              status: (member) => <StatusBadge tone={member.isActive ? "success" : "neutral"}>{member.isActive ? "فعال" : "غیرفعال"}</StatusBadge>,
-              fields: [{ id: "role", label: "نقش", render: (member) => member.role }],
-            }}
+            title={(member) => member.fullName}
+            subtitle={(member) => member.email}
+            media={(member) => (
+              <IdentityAvatar name={member.fullName} className="size-12" />
+            )}
+            badges={(member) => (
+              <StatusBadge tone={member.isActive ? "success" : "neutral"}>
+                {member.isActive ? "فعال" : "غیرفعال"}
+              </StatusBadge>
+            )}
+            actions={(member) => (
+              <EntityRowActions
+                presentation="buttons"
+                actions={[
+                  {
+                    id: "view",
+                    label: "مشاهده جزئیات",
+                    icon: Eye,
+                    onClick: () => navigate(`/admin/users/${member.id}`),
+                  },
+                  {
+                    id: "delete",
+                    label: "حذف از تیم",
+                    icon: Trash2,
+                    enabled: canManage,
+                    disabled: removeMemberMutation.isPending,
+                    tone: "danger",
+                    confirmation: {
+                      title: "حذف عضو از تیم",
+                      description: `آیا «${member.fullName}» از تیم حذف شود؟`,
+                    },
+                    onClick: () =>
+                      removeMemberMutation.mutateAsync(member.id),
+                  },
+                ]}
+              />
+            )}
             emptyState={
               <EmptyState
                 title="عضوی در این تیم وجود ندارد."
                 description="اعضای تیم در این بخش نمایش داده می‌شوند."
               />
             }
-            columns={[
-              {
-                id: "user",
-                header: "کاربر",
-                cell: (member) => (
-                  <EntityTableCell
-                    title={member.fullName}
-                    subtitle={member.email}
-                    subtitleDir="ltr"
-                    avatar={member.fullName.slice(0, 1)}
-                  />
-                ),
-              },
-              { id: "role", header: "نقش", cell: (member) => member.role },
-              {
-                id: "status",
-                header: "وضعیت",
-                cell: (member) => (
-                  <StatusBadge tone={member.isActive ? "success" : "neutral"}>
-                    {member.isActive ? "فعال" : "غیرفعال"}
-                  </StatusBadge>
-                ),
-              },
-              {
-                id: "actions",
-                header: "عملیات",
-                headerClassName: "text-end",
-                cell: (member) => (
-                  <EntityRowActions
-                    label="مشاهده جزئیات کاربر"
-                    onView={() => navigate(`/admin/users/${member.id}`)}
-                    actions={[
-                      {
-                        id: "delete",
-                        label: "حذف از تیم",
-                        icon: Trash2,
-                        enabled: canManage,
-                        disabled: removeMemberMutation.isPending,
-                        tone: "danger",
-                        confirmation: {
-                          title: "حذف عضو از تیم",
-                          description: "این عضو از تیم حذف شود؟",
-                        },
-                        onClick: () =>
-                          removeMemberMutation.mutateAsync(member.id),
-                      },
-                    ]}
-                  />
-                ),
-              },
-            ]}
           />
         </QueryContent>
         {members.length ? (

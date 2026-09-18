@@ -5,8 +5,11 @@ import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PageHero } from "@/components/shared/PageHero"
-import { DataTableShell } from "@/components/shared/DataTableShell"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { useTeamsQueries } from "../hooks/useTeams"
@@ -15,8 +18,8 @@ import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import {
   Activity,
   BadgeCheck,
+  Eye,
   LayoutGrid,
-  List,
   Plus,
   RefreshCcw,
   Sparkles,
@@ -44,20 +47,9 @@ import {
 } from "../api/adminTeamsApi"
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE"
-type ViewMode = "CARDS" | "TABLE"
 
 function fa(value: number) {
   return new Intl.NumberFormat("fa-IR").format(value)
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts.length
-    ? parts
-        .slice(0, 2)
-        .map((item) => item[0])
-        .join("")
-    : "T"
 }
 
 function can(permissions: string[] | undefined, permission: string) {
@@ -91,12 +83,10 @@ export function AdminTeamsPage() {
     "ALL"
   )
   const managerId = params.get("managerId") || "ALL"
-  const view = enumParam(params.get("view"), ["CARDS", "TABLE"], "CARDS")
   const setSearchInput = (search: string) =>
     patch({ search }, { replace: true })
   const setStatus = (status: StatusFilter) => patch({ status })
   const setManagerId = (managerId: string) => patch({ managerId })
-  const setView = (view: ViewMode) => patch({ view }, { resetPage: false })
   const [createOpen, setCreateOpen] = useState(false)
   const [statusTarget, setStatusTarget] = useState<Team | null>(null)
 
@@ -154,6 +144,31 @@ export function AdminTeamsPage() {
       toast.error(getApiErrorMessage(error, "تغییر وضعیت تیم انجام نشد.")),
   })
 
+  const cardFields = useMemo<EntityCardField<Team>[]>(
+    () => [
+      {
+        id: "manager",
+        label: "مدیر تیم",
+        icon: UserCog,
+        render: (team) => team.manager?.fullName || "بدون مدیر",
+      },
+      {
+        id: "members",
+        label: "تعداد اعضا",
+        icon: UsersRound,
+        render: (team) => `${fa(team.memberCount)} نفر`,
+      },
+      {
+        id: "description",
+        label: "توضیحات",
+        render: (team) =>
+          team.description || "برای این تیم توضیحی ثبت نشده است.",
+        priority: "primary",
+      },
+    ],
+    []
+  )
+
   return (
     <EntityListPage>
       <PageHero
@@ -163,45 +178,14 @@ export function AdminTeamsPage() {
         }
         eyebrow={"مرکز مدیریت تیم‌ها"}
         icon={Sparkles}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            {canManage ? (
-              <Button onClick={() => setCreateOpen(true)}>
-                <Plus className="ms-2 size-4" />
-                ایجاد تیم
-              </Button>
-            ) : null}
-            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className={
-                  view === "CARDS"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => setView("CARDS")}
-                aria-label="نمای کارت"
-              >
-                <LayoutGrid className="size-4" />
-                کارت‌ها
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className={
-                  view === "TABLE"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => setView("TABLE")}
-                aria-label="نمای جدول"
-              >
-                <List className="size-4" />
-                جدول
-              </Button>
-            </div>
-          </div>
+        primaryAction={
+          canManage
+            ? {
+                label: "ایجاد تیم",
+                icon: Plus,
+                onClick: () => setCreateOpen(true),
+              }
+            : undefined
         }
         onRefresh={refreshAll}
         refreshing={teamsQuery.isFetching || usersQuery.isFetching}
@@ -277,141 +261,53 @@ export function AdminTeamsPage() {
       />
 
       <QueryContent query={teamsQuery}>
-        {!pageTeams.length ? (
-          <EmptyState title="تیمی پیدا نشد." />
-        ) : view === "CARDS" ? (
-          <section className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            {pageTeams.map((team) => (
-              <article
-                key={team.id}
-                className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)] transition hover:-translate-y-0.5"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary-soft)] font-black text-[var(--app-primary)]">
-                      {initials(team.name)}
-                    </div>
-                    <div>
-                      <h2 className="font-black">{team.name}</h2>
-                      <p
-                        className="mt-0.5 text-xs text-muted-foreground"
-                        dir="ltr"
-                      >
-                        {team.code}
-                      </p>
-                    </div>
-                  </div>
-                  <StatusBadge tone={team.isActive ? "success" : "neutral"}>
-                    {team.isActive
-                      ? uiText.common.active
-                      : uiText.common.inactive}
-                  </StatusBadge>
-                </div>
-
-                <p className="mt-4 min-h-12 text-sm leading-6 text-muted-foreground">
-                  {team.description || "برای این تیم توضیحی ثبت نشده است."}
-                </p>
-
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-muted/35 p-3">
-                    <div className="text-xs text-muted-foreground">
-                      مدیر تیم
-                    </div>
-                    <div className="mt-1 truncate text-sm font-bold">
-                      {team.manager?.fullName || "بدون مدیر"}
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-muted/35 p-3">
-                    <div className="text-xs text-muted-foreground">اعضا</div>
-                    <div className="mt-1 text-sm font-bold">
-                      {fa(team.memberCount)} نفر
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5">
-                  <EntityRowActions
-                    onView={() => navigate(`/admin/teams/${team.id}`)}
-                    actions={[
-                      {
-                        id: "toggle",
-                        label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی",
-                        icon: RefreshCcw,
-                        enabled: canManage,
-                        onClick: () => setStatusTarget(team),
-                      },
-                    ]}
-                  />
-                </div>
-              </article>
-            ))}
-          </section>
-        ) : (
-          <>
-            <DataTableShell
-              entityRows
-              rows={pageTeams}
-              getRowKey={(team) => team.id}
-              onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
-              mobile={{
-                title: (team) => team.name,
-                subtitle: (team) => team.code,
-                avatar: (team) => team.name.slice(0, 1),
-                status: (team) => <StatusBadge tone={team.isActive ? "success" : "neutral"}>{team.isActive ? uiText.common.active : uiText.common.inactive}</StatusBadge>,
-                fields: [
-                  { id: "manager", label: "مدیر", render: (team) => team.manager?.fullName || "بدون مدیر" },
-                  { id: "members", label: "اعضا", render: (team) => fa(team.memberCount) },
-                ],
-              }}
-              columns={[
+        <EntityCardList
+          rows={pageTeams}
+          fields={cardFields}
+          layout="row"
+          density="compact"
+          fieldsClassName="lg:grid-cols-3"
+          getRowKey={(team) => team.id}
+          onRowClick={(team) => navigate(`/admin/teams/${team.id}`)}
+          title={(team) => team.name}
+          subtitle={(team) => <span dir="ltr">{team.code}</span>}
+          media={(team) => (
+            <IdentityAvatar name={team.name} className="size-12" />
+          )}
+          badges={(team) => (
+            <StatusBadge tone={team.isActive ? "success" : "neutral"}>
+              {team.isActive ? uiText.common.active : uiText.common.inactive}
+            </StatusBadge>
+          )}
+          actions={(team) => (
+            <EntityRowActions
+              presentation="buttons"
+              actions={[
                 {
-                  id: "team",
-                  header: "تیم",
-                  cell: (team) => (
-                    <EntityTableCell
-                      title={team.name}
-                      subtitle={team.code}
-                      subtitleDir="ltr"
-                      avatar={team.name.slice(0, 1)}
-                    />
-                  ),
+                  id: "view",
+                  label: "مشاهده جزئیات",
+                  icon: Eye,
+                  onClick: () => navigate(`/admin/teams/${team.id}`),
                 },
                 {
-                  id: "manager",
-                  header: "مدیر",
-                  cell: (team) => team.manager?.fullName || "بدون مدیر",
-                },
-                {
-                  id: "members",
-                  header: "اعضا",
-                  cell: (team) => fa(team.memberCount),
-                },
-                {
-                  id: "status",
-                  header: "وضعیت",
-                  cell: (team) => (
-                    <StatusBadge tone={team.isActive ? "success" : "neutral"}>
-                      {team.isActive
-                        ? uiText.common.active
-                        : uiText.common.inactive}
-                    </StatusBadge>
-                  ),
-                },
-                {
-                  id: "actions",
-                  header: "عملیات",
-                  headerClassName: "text-end",
-                  cell: (team) => (
-                    <EntityRowActions
-                      label="مشاهده جزئیات تیم"
-                      onView={() => navigate(`/admin/teams/${team.id}`)}
-                    />
-                  ),
+                  id: "toggle",
+                  label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی",
+                  icon: RefreshCcw,
+                  enabled: canManage,
+                  tone: team.isActive ? "danger" : "default",
+                  onClick: () => setStatusTarget(team),
                 },
               ]}
             />
-          </>
-        )}
+          )}
+          emptyState={
+            <EmptyState
+              icon={LayoutGrid}
+              title="تیمی پیدا نشد"
+              description="فیلترها را تغییر دهید یا یک تیم جدید ایجاد کنید."
+            />
+          }
+        />
       </QueryContent>
       <PaginationControls
         page={teamsQuery.data?.meta.page ?? page}
