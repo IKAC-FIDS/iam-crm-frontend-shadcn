@@ -8,6 +8,7 @@ import { ActivitiesPage } from "@/features/activities/pages/ActivitiesPage"
 import { MeetingsPage } from "@/features/meetings/pages/MeetingsPage"
 import { TasksPage } from "@/features/tasks/pages/TasksPage"
 import { AdminAuditLogsPage } from "@/features/admin/audit-logs/pages/AdminAuditLogsPage"
+import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/AdminExchangeRatesPage"
 import { AdminLibrariesPage } from "@/features/admin/libraries/pages/AdminLibrariesPage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
@@ -25,7 +26,7 @@ function page(data:unknown[],params?:{page?:number;limit?:number}) {
 }
 beforeEach(()=>{
   vi.clearAllMocks()
-  useAuthStore.setState({user:{...user,permissions:["activity:view","meeting:view","task:view","team:view","audit-log:view","product:view"]},status:"authenticated"})
+  useAuthStore.setState({user:{...user,permissions:["activity:view","meeting:view","task:view","team:view","audit-log:view","product:view","exchange-rate:view","financial:view"]},status:"authenticated"})
   vi.mocked(api.get).mockImplementation(async(url,config)=>{
     const params=config?.params as {page?:number;limit?:number}|undefined
     if(url==="/teams/t1")return response(team)
@@ -38,6 +39,8 @@ beforeEach(()=>{
     if(url==="/activities")return page([{id:"a1",type:"CALL",outcome:"فعالیت نمونه",status:"RECORDED"}],params)
     if(url==="/meetings")return page([{id:"m1",title:"جلسه نمونه",status:"SCHEDULED",mode:"ONLINE",startAt:"2026-08-28T10:00:00Z",endAt:"2026-08-28T11:00:00Z",assignees:[],attendees:[],type:{id:"demo",code:"DEMO",label:"جلسه دمو"}}],params)
     if(url==="/tasks")return page([{id:"task1",title:"کار نمونه",status:"TODO",priority:"MEDIUM"}],params)
+    if(url==="/admin/exchange-rates/current")return response({id:"rate-current",rate:"1050000",validFrom:"2026-09-01T08:00:00Z",status:"ACTIVE",createdBy:{id:"u1",fullName:"مدیر مالی",email:"finance@example.test"}})
+    if(url==="/admin/exchange-rates")return page([{id:"rate-current",rate:"1050000",validFrom:"2026-09-01T08:00:00Z",status:"ACTIVE",note:"نرخ شهریور",createdBy:{id:"u1",fullName:"مدیر مالی",email:"finance@example.test"}}],params)
     if(url==="/product-catalog")return page([{id:"p1",name:"محصول نمونه",code:"P1",type:"HARDWARE",isActive:true,inPersonPriceIRR:"100",digikalaPriceIRR:"200"}],params)
     return page([],params)
   })
@@ -121,6 +124,15 @@ it("Teams uses one standard card view while preserving legacy view links",async(
   expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expect(screen.queryByRole("button",{name:"نمای جدول"})).not.toBeInTheDocument()
   expectParams("/teams",{page:2,isActive:true})
+})
+it("Exchange-rate history uses the standard card list and keeps server pagination",async()=>{
+  mount(<AdminExchangeRatesPage/>,"/admin/exchange-rates")
+  expect(await screen.findAllByText("۱٬۰۵۰٬۰۰۰ ریال")).not.toHaveLength(0)
+  expect(screen.getByText("نرخ شهریور")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  expectParams("/admin/exchange-rates",{page:1,limit:20})
+  await userEvent.selectOptions(screen.getByLabelText(uiText.common.pagination.rowsPerPage),"50")
+  await waitFor(()=>expectParams("/admin/exchange-rates",{page:1,limit:50}))
 })
 function CompanySections(){
   const [activityPage,setActivityPage]=useState(1)

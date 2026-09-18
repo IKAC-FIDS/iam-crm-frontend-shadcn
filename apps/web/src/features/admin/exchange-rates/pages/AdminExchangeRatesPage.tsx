@@ -7,27 +7,31 @@ import {
   CalendarClock,
   CircleDollarSign,
   History,
+  Mail,
+  MessageSquareText,
   UserRound,
 } from "lucide-react"
 import { useMemo, useState } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { Controller, useForm, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
 import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { FormActions } from "@/components/shared/FormActions"
 import { FormSection } from "@/components/shared/FormSection"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { PersianDateTimePicker } from "@/components/shared/date"
 import { applyServerFieldErrors } from "@/lib/formErrors"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
@@ -174,71 +178,71 @@ export function AdminExchangeRatesPage() {
     },
   })
 
-  const rows = historyQuery.data?.data ?? []
-  const columns: DataTableColumn<ExchangeRate>[] = [
-    {
-      id: "rate",
-      header: "نرخ دلار",
-      cell: (item) => (
-        <div>
-          <b>{formatIrr(item.rate)}</b>
-          <div className="text-xs text-muted-foreground">
-            {formatToman(item.rate)}
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: "change",
-      header: "تغییر",
-      cell: (item) => {
-        const index = rows.findIndex((row) => row.id === item.id)
-        const older = rows[index + 1]
-        return (
-          <Change
-            value={
-              older
-                ? percentChange(toNumber(item.rate), toNumber(older.rate))
-                : null
-            }
-          />
-        )
+  const rows = useMemo(
+    () => historyQuery.data?.data ?? [],
+    [historyQuery.data?.data]
+  )
+  const cardFields = useMemo<EntityCardField<ExchangeRate>[]>(
+    () => [
+      {
+        id: "change",
+        label: "تغییر نسبت به نرخ قبلی",
+        icon: History,
+        render: (item) => {
+          const index = rows.findIndex((row) => row.id === item.id)
+          const older = rows[index + 1]
+          return (
+            <Change
+              value={
+                older
+                  ? percentChange(toNumber(item.rate), toNumber(older.rate))
+                  : null
+              }
+            />
+          )
+        },
       },
-    },
-    {
-      id: "validFrom",
-      header: "شروع اعتبار",
-      cell: (item) => formatDateTime(item.validFrom),
-    },
-    {
-      id: "validTo",
-      header: "پایان اعتبار",
-      cell: (item) => (item.validTo ? formatDateTime(item.validTo) : "تاکنون"),
-    },
-    {
-      id: "creator",
-      header: "ثبت‌کننده",
-      cell: (item) => item.createdBy?.fullName || "—",
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (item) => (
-        <StatusBadge tone={item.status === "ACTIVE" ? "success" : "neutral"}>
-          {item.status === "ACTIVE" ? "فعال" : "تاریخی"}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "note",
-      header: "توضیحات",
-      cell: (item) => (
-        <span className="line-clamp-2 max-w-64 whitespace-normal">
-          {item.note || "—"}
-        </span>
-      ),
-    },
-  ]
+      {
+        id: "validFrom",
+        label: "شروع اعتبار",
+        icon: CalendarClock,
+        render: (item) => formatDateTime(item.validFrom),
+      },
+      {
+        id: "validTo",
+        label: "پایان اعتبار",
+        icon: CalendarClock,
+        render: (item) =>
+          item.validTo ? formatDateTime(item.validTo) : "تاکنون",
+      },
+      {
+        id: "creator",
+        label: "ثبت‌کننده",
+        icon: UserRound,
+        render: (item) => item.createdBy?.fullName || "—",
+      },
+      {
+        id: "creatorEmail",
+        label: "ایمیل ثبت‌کننده",
+        icon: Mail,
+        render: (item) => (
+          <span dir="ltr">{item.createdBy?.email || "—"}</span>
+        ),
+      },
+      {
+        id: "note",
+        label: "توضیحات",
+        icon: MessageSquareText,
+        priority: "primary",
+        render: (item) => (
+          <span className="line-clamp-2 whitespace-normal">
+            {item.note || "بدون توضیح"}
+          </span>
+        ),
+      },
+    ],
+    [rows]
+  )
 
   const refresh = () =>
     Promise.all([currentQuery.refetch(), historyQuery.refetch()])
@@ -343,63 +347,45 @@ export function AdminExchangeRatesPage() {
           query={historyQuery}
           errorTitle="خطا در دریافت تاریخچه نرخ دلار"
         >
-          <DataTableShell
+          <EntityCardList
             rows={rows}
-            columns={columns}
+            fields={cardFields}
             getRowKey={(item) => item.id}
+            layout="row"
+            density="compact"
+            fieldsClassName="md:grid-cols-2 xl:grid-cols-3"
+            title={(item) => formatIrr(item.rate)}
+            subtitle={(item) => formatToman(item.rate)}
+            media={() => (
+              <span className="grid size-11 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                <Banknote className="size-5" />
+              </span>
+            )}
+            badges={(item) => (
+              <StatusBadge
+                tone={item.status === "ACTIVE" ? "success" : "neutral"}
+              >
+                {item.status === "ACTIVE" ? "فعال" : "تاریخی"}
+              </StatusBadge>
+            )}
             emptyState={
               <EmptyState
                 title="سابقه‌ای ثبت نشده است"
                 description="نرخ‌های ثبت‌شده در این بخش نمایش داده می‌شوند."
               />
             }
-            pagination={{
-              page: historyQuery.data?.meta.page ?? page,
-              pageCount: historyQuery.data?.meta.totalPages ?? 1,
-              pageSize,
-              total: historyQuery.data?.meta.total,
-              onPageChange: setPage,
-              onPageSizeChange: (size) => {
-                setPageSize(size)
-                setPage(1)
-              },
-              disabled: historyQuery.isFetching,
+          />
+          <PaginationControls
+            page={historyQuery.data?.meta.page ?? page}
+            pageCount={historyQuery.data?.meta.totalPages ?? 1}
+            pageSize={pageSize}
+            total={historyQuery.data?.meta.total}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size)
+              setPage(1)
             }}
-            mobile={{
-              title: (item) => formatIrr(item.rate),
-              subtitle: (item) => formatToman(item.rate),
-              avatar: () => <Banknote className="size-5" />,
-              status: (item) => (
-                <StatusBadge
-                  tone={item.status === "ACTIVE" ? "success" : "neutral"}
-                >
-                  {item.status === "ACTIVE" ? "فعال" : "تاریخی"}
-                </StatusBadge>
-              ),
-              fields: [
-                {
-                  id: "from",
-                  label: "شروع اعتبار",
-                  render: (item) => formatDateTime(item.validFrom),
-                },
-                {
-                  id: "to",
-                  label: "پایان اعتبار",
-                  render: (item) =>
-                    item.validTo ? formatDateTime(item.validTo) : "تاکنون",
-                },
-                {
-                  id: "creator",
-                  label: "ثبت‌کننده",
-                  render: (item) => item.createdBy?.fullName || "—",
-                },
-                {
-                  id: "note",
-                  label: "توضیحات",
-                  render: (item) => item.note || "—",
-                },
-              ],
-            }}
+            disabled={historyQuery.isFetching}
           />
         </QueryContent>
       </FormSection>
@@ -433,7 +419,19 @@ export function AdminExchangeRatesPage() {
           </label>
           <label className="grid gap-2 text-sm font-bold">
             شروع اعتبار
-            <Input {...form.register("effectiveFrom")} type="datetime-local" />
+            <Controller
+              control={form.control}
+              name="effectiveFrom"
+              render={({ field }) => (
+                <PersianDateTimePicker
+                  value={field.value ? new Date(field.value) : undefined}
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : "")
+                  }
+                  placeholder="انتخاب تاریخ و زمان شروع اعتبار"
+                />
+              )}
+            />
             {form.formState.errors.effectiveFrom ? (
               <span role="alert" className="text-xs text-destructive">
                 {form.formState.errors.effectiveFrom.message}
