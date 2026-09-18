@@ -7,8 +7,15 @@ import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { EmptyState } from "@/components/shared/EmptyState"
+import {
+  ContentList,
+  ContentListItem,
+  ContentSection,
+} from "@/components/shared/ContentSection"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { useTeamDetailQueries } from "../hooks/useTeams"
-import {  BadgeCheck,
+import {
+  BadgeCheck,
   Ban,
   Clock3,
   Eye,
@@ -17,7 +24,9 @@ import {  BadgeCheck,
   Save,
   ShieldCheck,
   Trash2,
+  UserCheck,
   UserCog,
+  UserRoundX,
   UsersRound,
 } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -275,7 +284,10 @@ export function AdminTeamDetailsPage() {
     <div className="grid gap-5" dir="rtl">
       <PageHero
         title={team.name}
-        description={team.description || "اعضا، مدیر، تنظیمات و سابقه تغییرات این تیم را مدیریت کنید."}
+        description={
+          team.description ||
+          "اعضا، مدیر، تنظیمات و سابقه تغییرات این تیم را مدیریت کنید."
+        }
         accessBadge={{ label: "مدیریت تیم‌ها", icon: UsersRound }}
         backFallback="/admin/teams"
         onRefresh={refreshTeam}
@@ -287,54 +299,73 @@ export function AdminTeamDetailsPage() {
         }
         metadata={
           <>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
+            >
               {team.isActive ? "فعال" : "غیرفعال"}
             </span>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs" dir="ltr">{team.code}</span>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">مدیر: {team.manager?.fullName || "بدون مدیر"}</span>
+            <span
+              className="rounded-full bg-muted px-2.5 py-1 text-xs"
+              dir="ltr"
+            >
+              {team.code}
+            </span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+              مدیر: {team.manager?.fullName || "بدون مدیر"}
+            </span>
           </>
         }
         secondaryActions={
           canManage
-            ? [{
-                id: "toggle-status",
-                label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد",
-                icon: team.isActive ? Ban : BadgeCheck,
-                variant: team.isActive ? "destructive" : "default",
-                disabled: statusMutation.isPending,
-                onClick: () => statusMutation.mutate(),
-              }]
+            ? [
+                {
+                  id: "toggle-status",
+                  label: team.isActive ? "غیرفعال‌سازی" : "فعال‌سازی مجدد",
+                  icon: team.isActive ? Ban : BadgeCheck,
+                  variant: team.isActive ? "destructive" : "default",
+                  disabled: statusMutation.isPending,
+                  onClick: () => statusMutation.mutate(),
+                },
+              ]
             : []
         }
       />
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
-          <div className="text-xs text-muted-foreground">کل اعضا</div>
-          <div className="mt-2 text-2xl font-black">{fa(members.length)}</div>
-        </article>
-        <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
-          <div className="text-xs text-muted-foreground">اعضای فعال</div>
-          <div className="mt-2 text-2xl font-black">{fa(activeMembers)}</div>
-        </article>
-        <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
-          <div className="text-xs text-muted-foreground">اعضای غیرفعال</div>
-          <div className="mt-2 text-2xl font-black">{fa(inactiveMembers)}</div>
-        </article>
-        <article className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4">
-          <div className="text-xs text-muted-foreground">مدیر تیم</div>
-          <div className="mt-2 truncate font-black">
-            {team.manager?.fullName || "بدون مدیر"}
-          </div>
-        </article>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="کل اعضا"
+          value={members.length}
+          helper="اعضای ثبت‌شده در تیم"
+          icon={UsersRound}
+        />
+        <MetricCard
+          label="اعضای فعال"
+          value={activeMembers}
+          helper="کاربران فعال تیم"
+          icon={UserCheck}
+          tone="success"
+        />
+        <MetricCard
+          label="اعضای غیرفعال"
+          value={inactiveMembers}
+          helper="کاربران غیرفعال تیم"
+          icon={UserRoundX}
+          tone="neutral"
+        />
+        <MetricCard
+          label="مدیر تیم"
+          value={team.manager?.fullName || "بدون مدیر"}
+          helper="مسئول فعلی تیم"
+          icon={UserCog}
+          tone="info"
+        />
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-          <div className="mb-4 flex items-center gap-2">
-            <UserCog className="size-5 text-[var(--app-primary)]" />
-            <h2 className="font-bold">تنظیمات تیم</h2>
-          </div>
-
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]">
+        <ContentSection
+          title="تنظیمات تیم"
+          description="نام، کد، مدیر و توضیحات تیم را از این بخش مدیریت کنید."
+          icon={UserCog}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
@@ -389,29 +420,28 @@ export function AdminTeamDetailsPage() {
 
           {canManage ? (
             <Button
-              className="mt-4"
+              className="mt-5 w-full sm:w-auto"
               onClick={() => updateMutation.mutate()}
               disabled={updateMutation.isPending}
             >
               <Save className="ms-2 size-4" />
-              ذخیره تغییرات
+              {updateMutation.isPending ? "در حال ذخیره..." : "ذخیره تغییرات"}
             </Button>
           ) : null}
-        </article>
+        </ContentSection>
 
-        <article className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-          <div className="mb-4 flex items-center gap-2">
-            <UsersRound className="size-5 text-[var(--app-primary)]" />
-            <h2 className="font-bold">افزودن عضو</h2>
-          </div>
-
+        <ContentSection
+          title="افزودن عضو"
+          description="کاربر موردنظر را انتخاب و به این تیم اضافه کنید."
+          icon={UsersRound}
+        >
           {canManage ? (
             <>
-              <p className="mb-4 text-xs leading-6 text-muted-foreground">
+              <p className="mb-4 rounded-xl bg-[var(--app-background)]/70 p-3 text-xs leading-6 text-muted-foreground">
                 افزودن کاربری که عضو تیم دیگری است، او را به این تیم منتقل
                 می‌کند.
               </p>
-              <div className="flex gap-2">
+              <div className="grid gap-3">
                 <NativeSelect
                   value={newMemberId}
                   onChange={(event) => setNewMemberId(event.target.value)}
@@ -420,11 +450,12 @@ export function AdminTeamDetailsPage() {
                   <option value="">انتخاب کاربر</option>
                   {addableUsers.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.fullName} — {user.role}
+                      {user.fullName} — {roleLabels[user.role] || user.role}
                     </option>
                   ))}
                 </NativeSelect>
                 <Button
+                  className="w-full"
                   onClick={() => addMemberMutation.mutate()}
                   disabled={
                     !newMemberId ||
@@ -432,7 +463,10 @@ export function AdminTeamDetailsPage() {
                     addMemberMutation.isPending
                   }
                 >
-                  <Plus className="size-4" />
+                  <Plus className="ms-2 size-4" />
+                  {addMemberMutation.isPending
+                    ? "در حال افزودن..."
+                    : "افزودن به تیم"}
                 </Button>
               </div>
               {!team.isActive ? (
@@ -446,17 +480,14 @@ export function AdminTeamDetailsPage() {
               مجوز مدیریت تیم برای افزودن عضو لازم است.
             </p>
           )}
-        </article>
+        </ContentSection>
       </section>
 
-      <section className="overflow-hidden rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] shadow-[var(--app-shadow-card)]">
-        <div className="border-b border-[var(--app-divider)] px-5 py-4">
-          <h2 className="font-bold">اعضای تیم</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {fa(members.length)} عضو
-          </p>
-        </div>
-
+      <ContentSection
+        title="اعضای تیم"
+        description={`${fa(members.length)} عضو؛ برای مشاهده پروفایل هر عضو، کارت او را انتخاب کنید.`}
+        icon={UsersRound}
+      >
         <QueryContent query={membersQuery}>
           <EntityCardList
             rows={visibleMembers}
@@ -496,8 +527,7 @@ export function AdminTeamDetailsPage() {
                       title: "حذف عضو از تیم",
                       description: `آیا «${member.fullName}» از تیم حذف شود؟`,
                     },
-                    onClick: () =>
-                      removeMemberMutation.mutateAsync(member.id),
+                    onClick: () => removeMemberMutation.mutateAsync(member.id),
                   },
                 ]}
               />
@@ -505,13 +535,13 @@ export function AdminTeamDetailsPage() {
             emptyState={
               <EmptyState
                 title="عضوی در این تیم وجود ندارد."
-                description="اعضای تیم در این بخش نمایش داده می‌شوند."
+                description="برای شروع، یک کاربر را از بخش افزودن عضو انتخاب کنید."
               />
             }
           />
         </QueryContent>
         {members.length ? (
-          <div className="border-t border-[var(--app-divider)] p-3">
+          <div className="mt-4 border-t border-[var(--app-divider)] pt-4">
             <PaginationControls
               page={safeMemberPage}
               pageCount={memberPageCount}
@@ -526,15 +556,14 @@ export function AdminTeamDetailsPage() {
             />
           </div>
         ) : null}
-      </section>
+      </ContentSection>
 
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-5 shadow-[var(--app-shadow-card)]">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Clock3 className="size-5 text-[var(--app-primary)]" />
-            <h2 className="font-bold">تاریخچه مدیریتی</h2>
-          </div>
-          {canViewAudit ? (
+      <ContentSection
+        title="تاریخچه مدیریتی"
+        description="آخرین تغییرات انجام‌شده روی تیم و اعضای آن"
+        icon={Clock3}
+        action={
+          canViewAudit ? (
             <Button
               type="button"
               size="sm"
@@ -548,9 +577,9 @@ export function AdminTeamDetailsPage() {
             >
               مشاهده همه رویدادها
             </Button>
-          ) : null}
-        </div>
-
+          ) : null
+        }
+      >
         {!canViewAudit ? (
           <p className="text-sm text-muted-foreground">
             مجوز مشاهده Audit Log برای این بخش لازم است.
@@ -564,28 +593,33 @@ export function AdminTeamDetailsPage() {
             رویدادی برای این تیم ثبت نشده است.
           </p>
         ) : (
-          <div className="grid gap-3">
+          <ContentList>
             {(auditQuery.data ?? []).map((item) => (
-              <div key={item.id} className="rounded-2xl bg-muted/30 p-4">
-                <div className="font-bold">
-                  {item.action === "team.created"
-                    ? "تیم ایجاد شد"
-                    : item.action === "team.updated"
-                      ? "اطلاعات تیم تغییر کرد"
-                      : item.action === "team.member_added"
-                        ? "عضو به تیم اضافه شد"
-                        : item.action === "team.member_removed"
-                          ? "عضو از تیم حذف شد"
-                          : item.action || "تغییر مدیریتی"}
+              <ContentListItem key={item.id}>
+                <div className="flex items-start gap-3">
+                  <span className="mt-2 size-2 shrink-0 rounded-full bg-[var(--app-primary)]" />
+                  <div className="min-w-0">
+                    <div className="font-bold">
+                      {item.action === "team.created"
+                        ? "تیم ایجاد شد"
+                        : item.action === "team.updated"
+                          ? "اطلاعات تیم تغییر کرد"
+                          : item.action === "team.member_added"
+                            ? "عضو به تیم اضافه شد"
+                            : item.action === "team.member_removed"
+                              ? "عضو از تیم حذف شد"
+                              : item.action || "تغییر مدیریتی"}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {dateTime(item.createdAt)}
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {dateTime(item.createdAt)}
-                </div>
-              </div>
+              </ContentListItem>
             ))}
-          </div>
+          </ContentList>
         )}
-      </section>
+      </ContentSection>
     </div>
   )
 }
