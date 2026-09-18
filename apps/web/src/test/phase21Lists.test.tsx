@@ -49,7 +49,7 @@ function mount(element:ReactNode,url:string,path="*"){
 function expectParams(url:string,params:object){expect(api.get).toHaveBeenCalledWith(url,expect.objectContaining({params:expect.objectContaining(params)}))}
 it("Activities retains URL filters, uses server paging, and resets page on status changes",async()=>{
   const {router}=mount(<ActivitiesPage/>,"/activities?page=2&limit=20&activityType=CALL&companyId=c1")
-  expect(await screen.findByRole("table")).toHaveTextContent("فعالیت نمونه")
+  expect(await screen.findByText("فعالیت نمونه")).toBeInTheDocument()
   expectParams("/activities",{page:2,limit:20,companyId:"c1",activityType:"CALL"})
   await userEvent.selectOptions(screen.getByLabelText("وضعیت"),"COMPLETED")
   await waitFor(()=>expectParams("/activities",{page:1,status:"COMPLETED"}))

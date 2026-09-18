@@ -1,5 +1,9 @@
 import { EntityListPage } from "@/components/shared/EntityListPage"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
@@ -8,16 +12,15 @@ import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
 import { QueryContent } from "@/components/shared/QueryContent"
 import {
   Activity as ActivityIcon,
+  Building2,
+  CalendarClock,
   Filter,
   Plus,
   SlidersHorizontal,
+  UserRound,
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PageHero } from "@/components/shared/PageHero"
@@ -81,6 +84,34 @@ function activityTypeLabel(
 
 function companyName(activity: Activity) {
   return activity.company?.brandName || activity.company?.legalName || "—"
+}
+
+function activityTitle(
+  activity: Activity,
+  stageItems: Parameters<typeof localizeStageChangeText>[1],
+  typeOptions: readonly { value: string; label: string }[]
+) {
+  if (activity.type === "STAGE_CHANGE") {
+    return (
+      localizeStageChangeText(activity.title || activity.outcome, stageItems) ||
+      activityTypeLabel(activity.type, typeOptions)
+    )
+  }
+
+  return (
+    (activity.title && activity.title !== activity.type
+      ? activity.title
+      : activity.outcome) || activityTypeLabel(activity.type, typeOptions)
+  )
+}
+
+function activitySubtitle(
+  activity: Activity,
+  stageItems: Parameters<typeof localizeStageChangeText>[1]
+) {
+  return activity.type === "STAGE_CHANGE"
+    ? localizeStageChangeText(activity.description || activity.notes, stageItems)
+    : activity.description || activity.notes
 }
 
 export function ActivitiesPage() {
@@ -263,98 +294,70 @@ export function ActivitiesPage() {
     setPersonSearch("")
   }
 
-  const columns = useMemo<DataTableColumn<Activity>[]>(
+  const fields = useMemo<EntityCardField<Activity>[]>(
     () => [
       {
-        id: "activity",
-        header: "فعالیت",
-        cell: (item) => (
-          <EntityTableCell
-            avatar={<ActivityIcon className="size-5" />}
-            title={
-              item.type === "STAGE_CHANGE"
-                ? localizeStageChangeText(
-                    item.title || item.outcome,
-                    stageItems
-                  ) || activityTypeLabel(item.type, typeOptions)
-                : (item.title && item.title !== item.type
-                    ? item.title
-                    : item.outcome) || activityTypeLabel(item.type, typeOptions)
-            }
-            subtitle={
-              item.type === "STAGE_CHANGE"
-                ? localizeStageChangeText(
-                    item.description || item.notes,
-                    stageItems
-                  )
-                : item.description || item.notes
-            }
-          />
-        ),
-      },
-      {
-        id: "type",
-        header: "نوع",
-        cell: (item) => (
-          <StatusBadge tone="primary" dot={false}>
-            {activityTypeLabel(item.type, typeOptions)}
-          </StatusBadge>
-        ),
-      },
-      {
         id: "company",
-        header: "شرکت",
-        cell: companyName,
+        label: "شرکت",
+        icon: Building2,
+        render: (item) => {
+          const name = companyName(item)
+          return (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <IdentityAvatar
+                name={name}
+                mediaPath={item.company?.id ? `/companies/${item.company.id}/logo` : null}
+                hasMedia={Boolean(item.company?.id)}
+                fallbackIcon={<Building2 className="size-4" />}
+                className="size-8 rounded-xl text-[10px]"
+              />
+              <span className="truncate">{name}</span>
+            </span>
+          )
+        },
       },
       {
         id: "person",
-        header: "شخص",
-        cell: (item) => item.person?.fullName || "—",
+        label: "شخص مرتبط",
+        icon: UserRound,
+        render: (item) => item.person?.fullName || "—",
       },
       {
         id: "creator",
-        header: "ایجادکننده",
-        cell: (item) => item.createdBy?.fullName || item.user?.fullName || "—",
-      },
-      {
-        id: "status",
-        header: "وضعیت",
-        cell: (item) => (
-          <StatusBadge
-            tone={item.status === "COMPLETED" ? "success" : "neutral"}
-          >
-            {item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}
-          </StatusBadge>
-        ),
+        label: "ایجادکننده",
+        icon: UserRound,
+        render: (item) => {
+          const creator = item.createdBy || item.user
+          const name = creator?.fullName || "—"
+          return (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <IdentityAvatar
+                name={name}
+                mediaPath={creator?.id ? `/users/${creator.id}/avatar` : null}
+                hasMedia={Boolean(creator?.id)}
+                className="size-8 rounded-xl text-[10px]"
+              />
+              <span className="truncate">{name}</span>
+            </span>
+          )
+        },
       },
       {
         id: "activityDate",
-        header: "تاریخ فعالیت",
-        cell: (item) => formatDate(item.activityDate || item.occurredAt),
-        className: "whitespace-nowrap",
+        label: "تاریخ فعالیت",
+        icon: CalendarClock,
+        render: (item) => formatDate(item.activityDate || item.occurredAt),
+        valueClassName: "whitespace-nowrap",
       },
       {
         id: "createdAt",
-        header: "تاریخ ایجاد",
-        cell: (item) => formatDate(item.createdAt),
-        className: "whitespace-nowrap",
-      },
-      {
-        id: "actions",
-        header: "عملیات",
-        headerClassName: "text-center",
-        className: "text-center",
-        cell: (item) => (
-          <ActivityActionsMenu
-            onView={() => setDetailActivity(item)}
-            activity={item}
-            canUpdate={canUpdate}
-            onEdit={() => setEditActivity(item)}
-          />
-        ),
+        label: "تاریخ ایجاد",
+        icon: CalendarClock,
+        render: (item) => formatDate(item.createdAt),
+        valueClassName: "whitespace-nowrap",
       },
     ],
-    [canUpdate, stageItems, typeOptions]
+    []
   )
 
   if (!canView) {
@@ -559,25 +562,44 @@ export function ActivitiesPage() {
       <QueryContent query={activities} errorTitle="خطا در دریافت فعالیت‌ها">
         {activities.data ? (
           <div className="grid gap-3">
-            <DataTableShell
+            <EntityCardList
               rows={
                 Array.isArray(activities.data.data) ? activities.data.data : []
               }
-              columns={columns}
+              fields={fields}
               getRowKey={(item) => item.id}
+              layout="row"
+              density="compact"
+              fieldsClassName="sm:grid-cols-2 xl:grid-cols-5"
+              title={(item) => activityTitle(item, stageItems, typeOptions)}
+              subtitle={(item) => activitySubtitle(item, stageItems)}
+              media={() => (
+                <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
+                  <ActivityIcon className="size-5" />
+                </span>
+              )}
+              badges={(item) => (
+                <StatusBadge
+                  tone={item.status === "COMPLETED" ? "success" : "neutral"}
+                >
+                  {item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}
+                </StatusBadge>
+              )}
+              tags={(item) => (
+                <StatusBadge tone="primary" dot={false}>
+                  {activityTypeLabel(item.type, typeOptions)}
+                </StatusBadge>
+              )}
               onRowClick={setDetailActivity}
-              mobile={{
-                title: (item) => (item.title && item.title !== item.type ? item.title : item.outcome) || activityTypeLabel(item.type, typeOptions),
-                subtitle: (item) => item.description || item.notes,
-                avatar: () => <ActivityIcon className="size-5" />,
-                status: (item) => <StatusBadge tone={item.status === "COMPLETED" ? "success" : "neutral"}>{item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}</StatusBadge>,
-                fields: [
-                  { id: "type", label: "نوع", render: (item) => activityTypeLabel(item.type, typeOptions) },
-                  { id: "company", label: "شرکت", render: companyName },
-                  { id: "owner", label: "ایجادکننده", render: (item) => item.createdBy?.fullName || item.user?.fullName || "—" },
-                  { id: "date", label: "تاریخ فعالیت", render: (item) => formatDate(item.activityDate || item.occurredAt) },
-                ],
-              }}
+              actions={(item) => (
+                <ActivityActionsMenu
+                  presentation="buttons"
+                  onView={() => setDetailActivity(item)}
+                  activity={item}
+                  canUpdate={canUpdate}
+                  onEdit={() => setEditActivity(item)}
+                />
+              )}
               emptyState={
                 <EmptyState
                   icon={ActivityIcon}
