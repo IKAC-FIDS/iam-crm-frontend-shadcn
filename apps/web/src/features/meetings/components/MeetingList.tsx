@@ -1,12 +1,9 @@
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
-import { CalendarDays } from "lucide-react"
+import { Building2, CalendarDays, Clock3, MapPin, UserRound } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
+import { EntityCardList, type EntityCardField } from "@/components/shared/EntityCardList"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
 import { formatJalaliDate } from "@/lib/date/jalali"
@@ -47,136 +44,133 @@ export function MeetingList({
   const text = uiText.meetings
   const navigate = useNavigate()
 
-  const columns: DataTableColumn<Meeting>[] = [
-    {
-      id: "meeting",
-      header: text.fields.meeting,
-      className: "min-w-52",
-      cell: (meeting) => (
-        <EntityTableCell
-          title={meeting.title}
-          subtitle={meeting.opportunity?.title}
-          avatar={<CalendarDays className="size-5" />}
-        />
-      ),
-    },
+  const fields: EntityCardField<Meeting>[] = [
     {
       id: "company",
-      header: text.table.company,
-      className: "min-w-40",
-      cell: meetingCompanyName,
+      label: text.table.company,
+      icon: Building2,
+      render: (meeting) => {
+        const companyName = meetingCompanyName(meeting)
+        return (
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <IdentityAvatar
+              name={companyName}
+              mediaPath={meeting.company?.id ? `/companies/${meeting.company.id}/logo` : null}
+              hasMedia={Boolean(meeting.company?.id)}
+              fallbackIcon={<Building2 className="size-4" />}
+              className="size-8 rounded-xl text-[10px]"
+            />
+            <span className="truncate">{companyName}</span>
+          </span>
+        )
+      },
     },
     {
       id: "schedule",
-      header: text.table.schedule,
-      className: "min-w-44",
-      cell: (meeting) => (
-        <div>
-          <p className="text-xs">{formatJalaliDate(meeting.startAt)}</p>
-          <p
-            dir="ltr"
-            className="mt-1 text-left text-xs text-[var(--app-text-secondary)] tabular-nums"
-          >
+      label: text.table.schedule,
+      icon: Clock3,
+      render: (meeting) => (
+        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>{formatJalaliDate(meeting.startAt)}</span>
+          <span dir="ltr" className="tabular-nums text-[var(--app-text-secondary)]">
             {meetingTimeRange(meeting)}
-          </p>
-        </div>
+          </span>
+        </span>
       ),
-    },
-    {
-      id: "type",
-      header: text.table.type,
-      className: "min-w-36",
-      cell: (meeting) => (
-        <StatusBadge tone="primary" dot={false}>
-          {meetingTypeLabel(meeting.type)}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "mode",
-      header: text.table.mode,
-      className: "min-w-24",
-      cell: (meeting) => meetingModeLabel(meeting.mode),
     },
     {
       id: "owner",
-      header: text.table.owner,
-      className: "min-w-44",
-      cell: (meeting) =>
-        meeting.assignees
-          ?.map((item) => item.user.fullName)
-          .filter(Boolean)
-          .join(uiText.common.listSeparator) ||
-        meeting.organizer?.fullName ||
-        uiText.common.notAvailable,
+      label: text.table.owner,
+      icon: UserRound,
+      render: (meeting) => {
+        const assignedUsers = meeting.assignees?.map((item) => item.user) ?? []
+        const people = assignedUsers.length
+          ? assignedUsers
+          : meeting.organizer
+            ? [meeting.organizer]
+            : []
+
+        if (!people.length) return uiText.common.notAvailable
+
+        return (
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="flex shrink-0 -space-x-2 space-x-reverse">
+              {people.slice(0, 3).map((user) => (
+                <IdentityAvatar
+                  key={user.id}
+                  name={user.fullName || user.email || uiText.common.notAvailable}
+                  mediaPath={`/users/${user.id}/avatar`}
+                  hasMedia
+                  className="size-8 rounded-xl border-2 border-[var(--app-surface)] text-[10px]"
+                />
+              ))}
+            </span>
+            <span className="truncate">
+              {people
+                .map((user) => user.fullName || user.email)
+                .filter(Boolean)
+                .join(uiText.common.listSeparator)}
+            </span>
+          </span>
+        )
+      },
     },
     {
-      id: "status",
-      header: text.table.status,
-      className: "min-w-36",
-      cell: (meeting) => (
-        <StatusBadge tone={meetingStatusTone(meeting.status)}>
-          {meetingStatusLabel(meeting.status)}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "actions",
-      header: text.fields.actions,
-      className: "w-16",
-      cell: (meeting) => (
-        <div
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <MeetingActionsMenu
-            onView={() => navigate(`/meetings/${meeting.id}`)}
-            meeting={meeting}
-            canUpdate={canUpdate}
-            canComplete={canComplete}
-            canCancel={canCancel}
-            onEdit={() => onEdit(meeting)}
-            onComplete={() => onComplete(meeting)}
-            onCancel={() => onCancel(meeting)}
-          />
-        </div>
-      ),
+      id: "delivery",
+      label: text.table.mode,
+      icon: MapPin,
+      render: (meeting) => meetingModeLabel(meeting.mode),
     },
   ]
 
   return (
-    <>
-      <DataTableShell
-        rows={meetings}
-        columns={columns}
-        getRowKey={(meeting) => meeting.id}
-        onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
-        mobile={{
-          title: (meeting) => meeting.title,
-          subtitle: meetingCompanyName,
-          avatar: () => <CalendarDays className="size-5" />,
-          status: (meeting) => <StatusBadge tone={meetingStatusTone(meeting.status)}>{meetingStatusLabel(meeting.status)}</StatusBadge>,
-          fields: [
-            { id: "schedule", label: text.table.schedule, render: (meeting) => `${formatJalaliDate(meeting.startAt)}، ${meetingTimeRange(meeting)}` },
-            { id: "type", label: text.table.type, render: (meeting) => meetingTypeLabel(meeting.type) },
-            { id: "owner", label: text.table.owner, render: (meeting) => meeting.assignees?.map((item) => item.user.fullName).filter(Boolean).join(uiText.common.listSeparator) || meeting.organizer?.fullName || uiText.common.notAvailable },
-          ],
-        }}
-        emptyState={
-          <EmptyState
-            icon={CalendarDays}
-            title={text.empty.title}
-            description={text.empty.description}
-            action={
-              canCreate ? (
-                <Button className="rounded-xl" onClick={onCreate}>
-                  {text.actions.create}
-                </Button>
-              ) : undefined
-            }
-          />
-        }
-      />
-    </>
+    <EntityCardList
+      rows={meetings}
+      fields={fields}
+      getRowKey={(meeting) => meeting.id}
+      layout="row"
+      density="compact"
+      fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
+      title={(meeting) => meeting.title}
+      subtitle={(meeting) => meeting.opportunity?.title || meeting.agenda || meetingCompanyName(meeting)}
+      media={() => (
+        <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
+          <CalendarDays className="size-5" />
+        </span>
+      )}
+      badges={(meeting) => (
+        <StatusBadge tone={meetingStatusTone(meeting.status)}>
+          {meetingStatusLabel(meeting.status)}
+        </StatusBadge>
+      )}
+      tags={(meeting) => (
+        <>
+          <StatusBadge tone="primary" dot={false}>{meetingTypeLabel(meeting.type)}</StatusBadge>
+          <StatusBadge tone="neutral" dot={false}>{meetingModeLabel(meeting.mode)}</StatusBadge>
+        </>
+      )}
+      onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
+      actions={(meeting) => (
+        <MeetingActionsMenu
+          presentation="buttons"
+          meeting={meeting}
+          canUpdate={canUpdate}
+          canComplete={canComplete}
+          canCancel={canCancel}
+          onView={() => navigate(`/meetings/${meeting.id}`)}
+          onEdit={() => onEdit(meeting)}
+          onComplete={() => onComplete(meeting)}
+          onCancel={() => onCancel(meeting)}
+        />
+      )}
+      emptyState={
+        <EmptyState
+          icon={CalendarDays}
+          title={text.empty.title}
+          description={text.empty.description}
+          action={canCreate ? <Button className="rounded-xl" onClick={onCreate}>{text.actions.create}</Button> : undefined}
+        />
+      }
+    />
   )
 }

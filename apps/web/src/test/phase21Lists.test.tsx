@@ -60,7 +60,7 @@ it("Activities retains URL filters, uses server paging, and resets page on statu
 })
 it("Meetings preserves list view and sends meeting type to the server",async()=>{
   mount(<MeetingsPage/>,"/meetings?view=list&meetingTypeId=demo&page=2&limit=50")
-  expect(await screen.findByRole("table")).toHaveTextContent("جلسه نمونه")
+  expect(await screen.findByText("جلسه نمونه")).toBeInTheDocument()
   expectParams("/meetings",{page:2,limit:50,meetingTypeId:"demo"})
   expect(screen.queryByRole("button",{name:uiText.meetings.actions.create})).not.toBeInTheDocument()
 })

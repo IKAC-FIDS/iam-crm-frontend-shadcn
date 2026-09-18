@@ -1,6 +1,7 @@
 import { CheckCircle2, Pencil, XCircle, Eye } from "lucide-react"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { uiText } from "@/config/uiText"
+import { Button } from "@workspace/ui/components/button"
 import type { Meeting } from "../types/meeting.types"
 export function MeetingActionsMenu({
   meeting,
@@ -11,6 +12,7 @@ export function MeetingActionsMenu({
   onEdit,
   onComplete,
   onCancel,
+  presentation = "menu",
 }: {
   meeting: Meeting
   canUpdate: boolean
@@ -20,42 +22,72 @@ export function MeetingActionsMenu({
   onEdit: () => void
   onComplete: () => void
   onCancel: () => void
+  presentation?: "menu" | "buttons"
 }) {
   const text = uiText.meetings.actions
   const active = meeting.status === "SCHEDULED"
+  const actions = [
+    {
+      id: "view",
+      label: uiText.common.view,
+      icon: Eye,
+      onClick: () => onView?.(),
+      enabled: Boolean(onView),
+    },
+    {
+      id: "edit",
+      label: text.edit,
+      icon: Pencil,
+      onClick: onEdit,
+      enabled: active && canUpdate,
+    },
+    {
+      id: "complete",
+      label: text.complete,
+      icon: CheckCircle2,
+      onClick: onComplete,
+      enabled: active && canComplete,
+    },
+    {
+      id: "cancel",
+      label: text.cancel,
+      icon: XCircle,
+      onClick: onCancel,
+      enabled: active && canCancel,
+      tone: "danger" as const,
+    },
+  ]
+
+  if (presentation === "buttons") {
+    return (
+      <>
+        {actions
+          .filter((action) => action.enabled && action.id !== "view")
+          .map((action) => {
+            const Icon = action.icon
+            return (
+              <Button
+                key={action.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={
+                  action.tone === "danger"
+                    ? "rounded-xl text-[var(--destructive)] hover:text-[var(--destructive)]"
+                    : "rounded-xl"
+                }
+                onClick={action.onClick}
+              >
+                <Icon className="size-4" />
+                {action.label}
+              </Button>
+            )
+          })}
+      </>
+    )
+  }
+
   return (
-    <EntityRowActions
-      actions={[
-        {
-          id: "view",
-          label: uiText.common.view,
-          icon: Eye,
-          onClick: () => onView?.(),
-          enabled: Boolean(onView),
-        },
-        {
-          id: "edit",
-          label: text.edit,
-          icon: Pencil,
-          onClick: onEdit,
-          enabled: active && canUpdate,
-        },
-        {
-          id: "complete",
-          label: text.complete,
-          icon: CheckCircle2,
-          onClick: onComplete,
-          enabled: active && canComplete,
-        },
-        {
-          id: "cancel",
-          label: text.cancel,
-          icon: XCircle,
-          onClick: onCancel,
-          enabled: active && canCancel,
-          tone: "danger",
-        },
-      ]}
-    />
+    <EntityRowActions actions={actions} />
   )
 }
