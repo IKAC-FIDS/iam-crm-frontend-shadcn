@@ -46,6 +46,9 @@ const task: Task = {
     fullName: "ایجادکننده نمونه",
     avatarObjectKey: "creator-avatar",
   },
+  meeting: { id: "meeting-1", title: "جلسه نمونه" },
+  activity: { id: "activity-1", type: "CALL" },
+  product: { id: "product-1", code: "P-01", name: "محصول نمونه" },
   createdAt: "2026-09-01T08:00:00.000Z",
   updatedAt: "2026-09-02T08:00:00.000Z",
 }
@@ -96,6 +99,9 @@ vi.mock("../components/TaskReviewSection", () => ({
 vi.mock("@/features/artifacts/components/ArtifactPanel", () => ({
   ArtifactPanel: () => null,
 }))
+vi.mock("@/features/conversations/components/EntityConversationPanel", () => ({
+  EntityConversationPanel: () => null,
+}))
 vi.mock("@/features/people/components/Person360WorkspaceDialog", () => ({
   Person360WorkspaceDialog: () => null,
 }))
@@ -145,6 +151,20 @@ describe("TaskDetailPage", () => {
         (element) => element.getAttribute("data-has-media") === "true",
       ),
     ).toBe(true)
+    expect(screen.getByText("تماس تلفنی")).toBeInTheDocument()
+    expect(screen.queryByText("CALL")).not.toBeInTheDocument()
+  })
+
+  it("does not expose linked entity navigation without its permission", () => {
+    render(
+      <MemoryRouter initialEntries={["/tasks/task-1"]}>
+        <TaskDetailPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText("جلسه نمونه").closest("a")).toBeNull()
+    expect(screen.getByText("تماس تلفنی").closest("a")).toBeNull()
+    expect(screen.getByText("محصول نمونه (P-01)").closest("a")).toBeNull()
   })
 
   it("returns to the task list after a successful delete", async () => {

@@ -1,5 +1,6 @@
 import {
-Archive,  BriefcaseBusiness,
+  Archive,
+  BriefcaseBusiness,
   Building2,
   CircleDollarSign,
   FileClock,
@@ -319,6 +320,34 @@ export function OpportunityDetailPage() {
           </>
         }
         secondaryActions={heroActions}
+        tabs={
+          <nav
+            aria-label="بخش‌های فرصت"
+            role="tablist"
+            className="flex w-full max-w-full min-w-0 gap-1 overflow-x-auto rounded-xl border border-[var(--app-primary)]/15 bg-[var(--app-surface)] p-1 shadow-sm"
+          >
+            {navItems.map((item) => (
+              <Button
+                key={item.id}
+                id={`opportunity-${item.id}-tab`}
+                type="button"
+                role="tab"
+                aria-selected={tab === item.id}
+                aria-controls={`opportunity-${item.id}-panel`}
+                variant="ghost"
+                className={
+                  tab === item.id
+                    ? "h-9 min-w-fit shrink-0 rounded-lg bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)] sm:flex-1"
+                    : "h-9 min-w-fit shrink-0 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-primary-soft)]/55 sm:flex-1"
+                }
+                onClick={() => setTab(item.id)}
+              >
+                <item.icon className="size-4" />
+                {item.label}
+              </Button>
+            ))}
+          </nav>
+        }
       />
 
       <OpportunityExecutiveSummary opportunity={opportunity} />
@@ -337,54 +366,51 @@ export function OpportunityDetailPage() {
         </p>
       ) : null}
 
-      <nav className="flex w-full max-w-full min-w-0 gap-1 overflow-x-auto rounded-xl border border-[var(--app-primary)]/15 bg-[var(--app-surface)] p-1 shadow-sm">
-        {navItems.map((item) => (
-          <Button
-            key={item.id}
-            type="button"
-            variant="ghost"
-            className={
-              tab === item.id
-                ? "h-9 min-w-fit shrink-0 rounded-lg bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm hover:bg-[var(--app-primary-hover)] sm:flex-1"
-                : "h-9 min-w-fit shrink-0 rounded-lg text-[var(--app-text-secondary)] hover:bg-[var(--app-primary-soft)]/55 sm:flex-1"
-            }
-            onClick={() => setTab(item.id)}
-          >
-            <item.icon className="size-4" />
-            {item.label}
-          </Button>
-        ))}
-      </nav>
-
-      {tab === "overview" ? (
-        <OpportunityOverview
-          opportunity={opportunity}
-          canViewCompany={permissions.includes("company:view")}
-          canViewPerson={permissions.includes("person:view")}
-          canEdit={canUpdate && !archived}
-          onCompany={() => navigate(`/companies/${opportunity.companyId}`)}
-          onPerson={() => setPersonOpen(true)}
-          onEdit={() => setEditOpen(true)}
-        />
-      ) : null}
-      {tab === "commercial" ? (
-        <OpportunityCommercialSection
-          opportunity={opportunity}
-          permissions={permissions}
-        />
-      ) : null}
-      {tab === "execution" ? (
-        <OpportunityExecutionSection
-          opportunity={opportunity}
-          permissions={permissions}
-        />
-      ) : null}
-      {tab === "files" ? (
-        <div className="grid gap-4">
-          <ArtifactPanel entityType="OPPORTUNITY" entityId={opportunity.id} readOnly={Boolean(opportunity.archivedAt)} />
-          <OpportunityFilesHistorySection opportunity={opportunity} permissions={permissions} hideAttachments />
-        </div>
-      ) : null}
+      <section
+        id={`opportunity-${tab}-panel`}
+        role="tabpanel"
+        aria-labelledby={`opportunity-${tab}-tab`}
+        tabIndex={0}
+        className="min-w-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {tab === "overview" ? (
+          <OpportunityOverview
+            opportunity={opportunity}
+            canViewCompany={permissions.includes("company:view")}
+            canViewPerson={permissions.includes("person:view")}
+            canEdit={canUpdate && !archived}
+            onCompany={() => navigate(`/companies/${opportunity.companyId}`)}
+            onPerson={() => setPersonOpen(true)}
+            onEdit={() => setEditOpen(true)}
+          />
+        ) : null}
+        {tab === "commercial" ? (
+          <OpportunityCommercialSection
+            opportunity={opportunity}
+            permissions={permissions}
+          />
+        ) : null}
+        {tab === "execution" ? (
+          <OpportunityExecutionSection
+            opportunity={opportunity}
+            permissions={permissions}
+          />
+        ) : null}
+        {tab === "files" ? (
+          <div className="grid gap-4">
+            <ArtifactPanel
+              entityType="OPPORTUNITY"
+              entityId={opportunity.id}
+              readOnly={Boolean(opportunity.archivedAt)}
+            />
+            <OpportunityFilesHistorySection
+              opportunity={opportunity}
+              permissions={permissions}
+              hideAttachments
+            />
+          </div>
+        ) : null}
+      </section>
 
       {editOpen ? (
         <OpportunityFormDialog

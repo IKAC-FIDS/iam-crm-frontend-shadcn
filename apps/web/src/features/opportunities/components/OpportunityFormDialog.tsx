@@ -11,7 +11,7 @@ import { useEffect, useMemo } from "react"
 import type { ReactNode } from "react"
 
 import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
-import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { PersianDatePicker } from "@/components/shared/date"
 import { CurrencyInput } from "@/components/shared/inputs"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { uiText } from "@/config/uiText"
@@ -138,7 +138,9 @@ export function OpportunityFormDialog({
       description: state.description.trim() || undefined,
       priority: state.priority,
       estimatedValue: financialVisible
-        ? state.estimatedValue === "" ? undefined : Number(state.estimatedValue)
+        ? state.estimatedValue === ""
+          ? undefined
+          : Number(state.estimatedValue)
         : undefined,
       expectedCloseDate: toApiDate(state.expectedCloseDate) ?? undefined,
       sourceOptionId: state.sourceOptionId || undefined,
@@ -312,16 +314,20 @@ export function OpportunityFormDialog({
                   <option value="LOW">{text.priorities.LOW}</option>
                 </select>
               </Field>
-              {financialVisible ? <Field
-                name="estimatedValue"
-                error={errors.estimatedValue?.message}
-                label={text.fields.estimatedValue}
-              >
-                <CurrencyInput
-                  value={state.estimatedValue}
-                  onValueChange={(estimatedValue) => patch({ estimatedValue })}
-                />
-              </Field> : null}
+              {financialVisible ? (
+                <Field
+                  name="estimatedValue"
+                  error={errors.estimatedValue?.message}
+                  label={text.fields.estimatedValue}
+                >
+                  <CurrencyInput
+                    value={state.estimatedValue}
+                    onValueChange={(estimatedValue) =>
+                      patch({ estimatedValue })
+                    }
+                  />
+                </Field>
+              ) : null}
               <Field
                 name="expectedCloseDate"
                 error={errors.expectedCloseDate?.message}

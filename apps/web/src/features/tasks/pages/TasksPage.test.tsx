@@ -83,4 +83,22 @@ describe("TasksPage query parameters", () => {
       screen.getByRole("button", { name: "کارهای سازمان" })
     ).toHaveAttribute("aria-pressed", "true")
   })
+
+  it("does not send invalid enum or legacy presentation values to the API", () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/tasks?view=list&dueState=late&linkedEntityType=DEAL&reviewStatus=WAITING",
+        ]}
+      >
+        <TasksPage />
+      </MemoryRouter>
+    )
+
+    expect(receivedQuery).toMatchObject({ page: 1, limit: 20 })
+    expect(receivedQuery?.view).toBeUndefined()
+    expect(receivedQuery?.dueState).toBeUndefined()
+    expect(receivedQuery?.linkedEntityType).toBeUndefined()
+    expect(receivedQuery?.reviewStatus).toBeUndefined()
+  })
 })

@@ -16,6 +16,7 @@ import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/date"
 import { uiText } from "@/config/uiText"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
+import { getActivityTypeLabel } from "@/features/activities/utils/activityDisplay"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -151,7 +152,7 @@ export function TaskFormDialog({
       linkedEntity: task?.meeting
         ? { id: task.meeting.id, label: task.meeting.title }
         : task?.activity
-          ? { id: task.activity.id, label: task.activity.type }
+          ? { id: task.activity.id, label: getActivityTypeLabel(task.activity.type) }
           : task?.product
             ? {
                 id: task.product.id,

@@ -1,20 +1,15 @@
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import { Filter, SlidersHorizontal } from "lucide-react"
-
 import {
   PersianDateRangePicker,
-  type PersianDateRange,
-} from "@/components/shared/PersianDateRangePicker"
+  type PersianDateRangePickerProps,
+} from "@/components/shared/date"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { uiText } from "@/config/uiText"
+import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@workspace/ui/components/popover"
-import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 
 import { useOpportunityCompanyPeople } from "../hooks/useOpportunities"
 import type {
@@ -23,9 +18,6 @@ import type {
   OpportunitySourceOption,
   OpportunityStage,
 } from "../types/opportunity.types"
-
-const selectClass =
-  "h-11 w-full rounded-xl border border-input bg-transparent px-3 text-xs outline-none focus:border-[var(--app-primary)]"
 
 export function OpportunityFilterBar({
   filters,
@@ -45,52 +37,69 @@ export function OpportunityFilterBar({
   const text = uiText.opportunities
   const people = useOpportunityCompanyPeople(filters.companyId)
   const contacts = Array.isArray(people.data) ? people.data : []
-  const dateRange: PersianDateRange = {
+  const dateRange: PersianDateRangePickerProps["value"] = {
     from: fromApiDate(filters.expectedCloseFrom),
     to: fromApiDate(filters.expectedCloseTo),
   }
-  const activeAdvanced = [
+  const advancedCount = [
     filters.team,
     filters.ownerId,
     filters.stageId,
     filters.sourceOptionId,
     filters.primaryContactId,
-    filters.archiveState !== "active",
+    filters.archiveState !== "active" ? filters.archiveState : undefined,
   ].filter(Boolean).length
+  const hasActiveFilters =
+    Boolean(filters.search) ||
+    filters.ownershipScope !== "all" ||
+    Boolean(filters.companyId) ||
+    Boolean(filters.priority) ||
+    Boolean(filters.expectedCloseFrom) ||
+    Boolean(filters.expectedCloseTo) ||
+    advancedCount > 0
+
+  function clearAdvanced() {
+    onChange({
+      team: undefined,
+      ownerId: undefined,
+      stageId: undefined,
+      sourceOptionId: undefined,
+      primaryContactId: undefined,
+      archiveState: "active",
+    })
+  }
 
   return (
     <DataTableToolbar
-      filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+      filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
       searchValue={filters.search ?? ""}
       onSearchChange={(search) => onChange({ search })}
       searchPlaceholder={text.filters.search}
-      hasActiveFilters
+      hasActiveFilters={hasActiveFilters}
       onClearFilters={onClear}
+      quickFilters={(["all", "mine", "team", "unassigned"] as const).map(
+        (scope) => (
+          <Button
+            key={scope}
+            type="button"
+            size="sm"
+            variant={filters.ownershipScope === scope ? "default" : "outline"}
+            aria-pressed={filters.ownershipScope === scope}
+            className="shrink-0 rounded-xl"
+            onClick={() => onChange({ ownershipScope: scope })}
+          >
+            {scope === "all"
+              ? text.filters.all
+              : scope === "mine"
+                ? text.filters.mine
+                : scope === "team"
+                  ? text.filters.teamMine
+                  : text.filters.unassigned}
+          </Button>
+        )
+      )}
       filters={
         <>
-          <div className="flex min-w-max rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-            {(["all", "mine", "team"] as const).map((scope) => (
-              <button
-                key={scope}
-                aria-pressed={filters.ownershipScope === scope}
-                type="button"
-                onClick={() => onChange({ ownershipScope: scope })}
-                className={[
-                  "rounded-lg px-3 py-2 text-xs font-bold transition",
-                  filters.ownershipScope === scope
-                    ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm"
-                    : "text-[var(--app-text-secondary)] hover:text-[var(--app-primary)]",
-                ].join(" ")}
-              >
-                {scope === "all"
-                  ? text.filters.all
-                  : scope === "mine"
-                    ? text.filters.mine
-                    : text.filters.teamMine}
-              </button>
-            ))}
-          </div>
-
           <SearchableCompanySelect
             value={filters.companyId}
             onChange={(companyId) =>
@@ -98,25 +107,22 @@ export function OpportunityFilterBar({
             }
           />
 
-          <select
-            aria-label={text.filters.priority}
-            className={selectClass}
-            value={filters.priority ?? ""}
-            onChange={(event) =>
+          <StaticSelect
+            ariaLabel={text.filters.priority}
+            value={filters.priority}
+            placeholder={`${text.filters.priority}: ${text.filters.allOptions}`}
+            options={[
+              { id: "STRATEGIC", label: text.priorities.STRATEGIC },
+              { id: "HIGH", label: text.priorities.HIGH },
+              { id: "MEDIUM", label: text.priorities.MEDIUM },
+              { id: "LOW", label: text.priorities.LOW },
+            ]}
+            onChange={(priority) =>
               onChange({
-                priority: (event.target.value ||
-                  undefined) as OpportunityFilters["priority"],
+                priority: priority as OpportunityFilters["priority"],
               })
             }
-          >
-            <option value="">
-              {text.filters.priority}: {text.filters.allOptions}
-            </option>
-            <option value="STRATEGIC">{text.priorities.STRATEGIC}</option>
-            <option value="HIGH">{text.priorities.HIGH}</option>
-            <option value="MEDIUM">{text.priorities.MEDIUM}</option>
-            <option value="LOW">{text.priorities.LOW}</option>
-          </select>
+          />
 
           <PersianDateRangePicker
             value={dateRange}
@@ -126,157 +132,123 @@ export function OpportunityFilterBar({
                 expectedCloseTo: toApiDate(range?.to) ?? undefined,
               })
             }
-            placeholder={text.filters.closeDate}
           />
 
-          <Popover>
-            <PopoverTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 rounded-xl"
-                />
-              }
-            >
-              <SlidersHorizontal className="size-4" />
-              {text.filters.more}
-              {activeAdvanced ? (
-                <span className="rounded-full bg-[var(--app-primary-soft)] px-1.5 text-xs text-[var(--app-primary)]">
-                  {activeAdvanced.toLocaleString("fa-IR")}
-                </span>
-              ) : null}
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-[min(680px,calc(100vw-24px))] rounded-2xl p-4"
-              dir="rtl"
-            >
-              <div className="mb-4 flex items-center gap-2 text-sm font-bold text-[var(--app-heading)]">
-                <Filter className="size-4 text-[var(--app-primary)]" />
-                {text.filters.more}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select
-                  aria-label={text.filters.all}
-                  className={selectClass}
-                  value={filters.ownershipScope}
-                  onChange={(event) =>
-                    onChange({
-                      ownershipScope: event.target
-                        .value as OpportunityFilters["ownershipScope"],
-                    })
-                  }
-                >
-                  <option value="all">{text.filters.all}</option>
-                  <option value="mine">{text.filters.mine}</option>
-                  <option value="team">{text.filters.teamMine}</option>
-                  <option value="unassigned">{text.filters.unassigned}</option>
-                </select>
-                <Input
-                  aria-label={text.filters.teamPlaceholder}
-                  value={filters.team ?? ""}
-                  onChange={(event) =>
-                    onChange({ team: event.target.value || undefined })
-                  }
-                  placeholder={text.filters.teamPlaceholder}
-                  className="h-11 rounded-xl"
-                />
-                <select
-                  aria-label={text.filters.owner}
-                  className={selectClass}
-                  value={filters.ownerId ?? ""}
-                  onChange={(event) =>
-                    onChange({ ownerId: event.target.value || undefined })
-                  }
-                >
-                  <option value="">
-                    {text.filters.owner}: {text.filters.allOptions}
-                  </option>
-                  {owners.map((owner) => (
-                    <option key={owner.id} value={owner.id}>
-                      {owner.fullName}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label={text.filters.stage}
-                  className={selectClass}
-                  value={filters.stageId ?? ""}
-                  onChange={(event) =>
-                    onChange({ stageId: event.target.value || undefined })
-                  }
-                >
-                  <option value="">
-                    {text.filters.stage}: {text.filters.allOptions}
-                  </option>
-                  {stages.map((stage) => (
-                    <option key={stage.id} value={stage.id}>
-                      {stage.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label={text.filters.source}
-                  className={selectClass}
-                  value={filters.sourceOptionId ?? ""}
-                  onChange={(event) =>
-                    onChange({
-                      sourceOptionId: event.target.value || undefined,
-                    })
-                  }
-                >
-                  <option value="">
-                    {text.filters.source}: {text.filters.allOptions}
-                  </option>
-                  {sources.map((source) => (
-                    <option key={source.id} value={source.id}>
-                      {source.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label={text.filters.primaryContact}
-                  className={selectClass}
-                  disabled={
-                    !filters.companyId || people.isLoading || people.isError
-                  }
-                  value={filters.primaryContactId ?? ""}
-                  onChange={(event) =>
-                    onChange({
-                      primaryContactId: event.target.value || undefined,
-                    })
-                  }
-                >
-                  <option value="">
-                    {text.filters.primaryContact}: {text.filters.allOptions}
-                  </option>
-                  {contacts.map((person) => (
-                    <option key={person.id} value={person.id}>
-                      {person.fullName}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  aria-label={text.filters.allArchive}
-                  className={selectClass}
-                  value={filters.archiveState}
-                  onChange={(event) =>
-                    onChange({
-                      archiveState: event.target
-                        .value as OpportunityFilters["archiveState"],
-                    })
-                  }
-                >
-                  <option value="active">{text.filters.active}</option>
-                  <option value="all">{text.filters.allArchive}</option>
-                  <option value="archived">{text.filters.archived}</option>
-                </select>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <AdvancedFilterPopover
+            activeCount={advancedCount}
+            label={text.filters.more}
+            title={text.filters.more}
+            description="مرحله، مالک، منبع، مخاطب اصلی و وضعیت بایگانی را دقیق‌تر کنید."
+            onClear={clearAdvanced}
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                aria-label={text.filters.teamPlaceholder}
+                value={filters.team ?? ""}
+                onChange={(event) =>
+                  onChange({ team: event.target.value || undefined })
+                }
+                placeholder={text.filters.teamPlaceholder}
+                className="h-11 rounded-xl"
+              />
+              <StaticSelect
+                ariaLabel={text.filters.owner}
+                value={filters.ownerId}
+                placeholder={`${text.filters.owner}: ${text.filters.allOptions}`}
+                options={owners.map((owner) => ({
+                  id: owner.id,
+                  label: owner.fullName,
+                  secondary: owner.email || undefined,
+                }))}
+                onChange={(ownerId) => onChange({ ownerId })}
+              />
+              <StaticSelect
+                ariaLabel={text.filters.stage}
+                value={filters.stageId}
+                placeholder={`${text.filters.stage}: ${text.filters.allOptions}`}
+                options={stages.map((stage) => ({
+                  id: stage.id,
+                  label: stage.label,
+                }))}
+                onChange={(stageId) => onChange({ stageId })}
+              />
+              <StaticSelect
+                ariaLabel={text.filters.source}
+                value={filters.sourceOptionId}
+                placeholder={`${text.filters.source}: ${text.filters.allOptions}`}
+                options={sources.map((source) => ({
+                  id: source.id,
+                  label: source.label,
+                }))}
+                onChange={(sourceOptionId) => onChange({ sourceOptionId })}
+              />
+              <SearchableOptionSelect
+                ariaLabel={text.filters.primaryContact}
+                value={filters.primaryContactId}
+                options={contacts.map((person) => ({
+                  id: person.id,
+                  label: person.fullName,
+                }))}
+                search=""
+                onSearchChange={() => undefined}
+                onChange={(primaryContactId) => onChange({ primaryContactId })}
+                placeholder={`${text.filters.primaryContact}: ${text.filters.allOptions}`}
+                searchable={false}
+                disabled={
+                  !filters.companyId || people.isLoading || people.isError
+                }
+              />
+              <StaticSelect
+                ariaLabel={text.filters.allArchive}
+                value={filters.archiveState}
+                placeholder={text.filters.active}
+                allowEmpty={false}
+                options={[
+                  { id: "active", label: text.filters.active },
+                  { id: "all", label: text.filters.allArchive },
+                  { id: "archived", label: text.filters.archived },
+                ]}
+                onChange={(archiveState) =>
+                  onChange({
+                    archiveState:
+                      archiveState as OpportunityFilters["archiveState"],
+                  })
+                }
+              />
+            </div>
+          </AdvancedFilterPopover>
         </>
       }
+    />
+  )
+}
+
+function StaticSelect({
+  ariaLabel,
+  value,
+  placeholder,
+  options,
+  allowEmpty = true,
+  onChange,
+}: {
+  ariaLabel: string
+  value?: string
+  placeholder: string
+  options: Array<{ id: string; label: string; secondary?: string }>
+  allowEmpty?: boolean
+  onChange: (value?: string) => void
+}) {
+  return (
+    <SearchableOptionSelect
+      ariaLabel={ariaLabel}
+      value={value}
+      options={options}
+      search=""
+      onSearchChange={() => undefined}
+      onChange={onChange}
+      placeholder={placeholder}
+      searchable={false}
+      allowEmpty={allowEmpty}
     />
   )
 }

@@ -34,6 +34,7 @@ import { uiText } from "@/config/uiText"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
+import { getActivityTypeLabel } from "@/features/activities/utils/activityDisplay"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -72,6 +73,9 @@ export function TaskDetailPage() {
   const canViewCompany = permissions.includes("company:view")
   const canViewOpportunity = permissions.includes("opportunity:view")
   const canViewPerson = permissions.includes("person:view")
+  const canViewMeeting = permissions.includes("meeting:view")
+  const canViewActivity = permissions.includes("activity:view")
+  const canViewProduct = permissions.includes("product:view")
   const canViewAudit = permissions.includes("audit-log:view") || permissions.includes("audit:view")
 
   const taskQuery = useTask(id, canView)
@@ -247,6 +251,9 @@ export function TaskDetailPage() {
             canViewCompany={canViewCompany}
             canViewOpportunity={canViewOpportunity}
             canViewPerson={canViewPerson}
+            canViewMeeting={canViewMeeting}
+            canViewActivity={canViewActivity}
+            canViewProduct={canViewProduct}
             onPerson={() => setPersonId(task.person?.id || null)}
           />
           <OwnershipCard task={task} />
@@ -419,12 +426,18 @@ function ContextCard({
   canViewCompany,
   canViewOpportunity,
   canViewPerson,
+  canViewMeeting,
+  canViewActivity,
+  canViewProduct,
   onPerson,
 }: {
   task: Task
   canViewCompany: boolean
   canViewOpportunity: boolean
   canViewPerson: boolean
+  canViewMeeting: boolean
+  canViewActivity: boolean
+  canViewProduct: boolean
   onPerson: () => void
 }) {
   const detail = uiText.tasks.detail
@@ -463,9 +476,9 @@ function ContextCard({
               : undefined
           }
         />
-        {task.meeting ? <ContextLink icon={<CalendarDays className="size-4" />} label="جلسه" value={task.meeting.title} to={`/meetings/${task.meeting.id}`} /> : null}
-        {task.activity ? <ContextLink icon={<ActivityIcon className="size-4" />} label="فعالیت" value={task.activity.type} to="/activities" /> : null}
-        {task.product ? <ContextLink icon={<Package className="size-4" />} label="محصول" value={`${task.product.name} (${task.product.code})`} to="/admin/libraries/products" /> : null}
+        {task.meeting ? <ContextLink icon={<CalendarDays className="size-4" />} label="جلسه" value={task.meeting.title} to={canViewMeeting ? `/meetings/${task.meeting.id}` : undefined} /> : null}
+        {task.activity ? <ContextLink icon={<ActivityIcon className="size-4" />} label="فعالیت" value={getActivityTypeLabel(task.activity.type)} to={canViewActivity ? "/activities" : undefined} /> : null}
+        {task.product ? <ContextLink icon={<Package className="size-4" />} label="محصول" value={`${task.product.name} (${task.product.code})`} to={canViewProduct ? "/admin/libraries?section=products" : undefined} /> : null}
         <ContextLink
           icon={<BriefcaseBusiness className="size-4" />}
           label={detail.labels.opportunity}

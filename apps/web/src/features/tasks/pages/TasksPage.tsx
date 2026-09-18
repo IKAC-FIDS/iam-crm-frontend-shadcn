@@ -59,7 +59,6 @@ export function TasksPage() {
   const canCreate = permissions.includes("task:create")
   const canUpdate = permissions.includes("task:update")
   const canAssign = canReassignTask(permissions)
-  const canComplete = permissions.includes("task:complete")
   const canDelete = permissions.includes("task:delete")
 
   const quick = normalizeQuick(params.get("quick"))
@@ -77,12 +76,11 @@ export function TasksPage() {
   const dueFrom = params.get("dueFrom") || ""
   const dueTo = params.get("dueTo") || ""
   const teamId = params.get("teamId") || ""
-  const dueState = (params.get("dueState") || "") as
-    TaskListQuery["dueState"] | ""
-  const linkedEntityType = (params.get("linkedEntityType") || "") as
-    TaskEntityType | ""
-  const reviewStatus = (params.get("reviewStatus") || "") as
-    TaskListQuery["reviewStatus"] | ""
+  const dueState = normalizeDueState(params.get("dueState"))
+  const linkedEntityType = normalizeLinkedEntityType(
+    params.get("linkedEntityType")
+  )
+  const reviewStatus = normalizeReviewStatus(params.get("reviewStatus"))
   const reviewerId = params.get("reviewerId") || ""
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -324,6 +322,8 @@ export function TasksPage() {
               onOpenChange={setAdvancedOpen}
               activeCount={advancedCount}
               label={text.actions.filters}
+              title="فیلترهای پیشرفته کارها"
+              description="کارها را براساس ارتباط، مسئول، موعد و وضعیت بازبینی محدود کنید."
               onClear={clearAdvancedFilters}
             >
               <div className="grid gap-3 md:grid-cols-2">
@@ -495,29 +495,30 @@ export function TasksPage() {
       />
 
       <QueryContent query={tasks} errorTitle={text.errors.listTitle}>
-        <TaskList
-          tasks={tasks.data?.data ?? []}
-          canCreate={canCreate}
-          canUpdate={canUpdate}
-          canAssign={canAssign}
-          canComplete={canComplete}
-          canDelete={canDelete}
-          onCreate={() => setCreateOpen(true)}
-          onEdit={setEditTask}
-          onAction={openAction}
-        />
+        <div className="grid gap-4">
+          <TaskList
+            tasks={tasks.data?.data ?? []}
+            canCreate={canCreate}
+            canUpdate={canUpdate}
+            canAssign={canAssign}
+            canDelete={canDelete}
+            onCreate={() => setCreateOpen(true)}
+            onEdit={setEditTask}
+            onAction={openAction}
+          />
+          {tasks.data ? (
+            <PaginationControls
+              page={tasks.data.meta.page}
+              pageCount={tasks.data.meta.totalPages}
+              onPageChange={(next) => updateParam("page", String(next))}
+              disabled={tasks.isFetching}
+              pageSize={pageSize}
+              total={tasks.data.meta.total}
+              onPageSizeChange={setPageSize}
+            />
+          ) : null}
+        </div>
       </QueryContent>
-      {tasks.data ? (
-        <PaginationControls
-          page={tasks.data.meta.page}
-          pageCount={tasks.data.meta.totalPages}
-          onPageChange={(next) => updateParam("page", String(next))}
-          disabled={tasks.isFetching}
-          pageSize={pageSize}
-          total={tasks.data.meta.total}
-          onPageSizeChange={setPageSize}
-        />
-      ) : null}
 
       {createOpen ? (
         <TaskFormDialog
@@ -563,6 +564,45 @@ function normalizeQuick(value: string | null): QuickFilter {
 function normalizePriority(value: string | null): TaskPriority | undefined {
   return ["LOW", "MEDIUM", "HIGH", "STRATEGIC"].includes(value || "")
     ? (value as TaskPriority)
+    : undefined
+}
+
+function normalizeDueState(
+  value: string | null
+): TaskListQuery["dueState"] | undefined {
+  return ["none", "upcoming", "today", "overdue", "completed"].includes(
+    value || ""
+  )
+    ? (value as TaskListQuery["dueState"])
+    : undefined
+}
+
+function normalizeLinkedEntityType(
+  value: string | null
+): TaskEntityType | undefined {
+  return [
+    "COMPANY",
+    "OPPORTUNITY",
+    "PERSON",
+    "MEETING",
+    "ACTIVITY",
+    "PRODUCT",
+  ].includes(value || "")
+    ? (value as TaskEntityType)
+    : undefined
+}
+
+function normalizeReviewStatus(
+  value: string | null
+): TaskListQuery["reviewStatus"] | undefined {
+  return [
+    "NOT_REQUIRED",
+    "DRAFT",
+    "PENDING_REVIEW",
+    "CHANGES_REQUESTED",
+    "APPROVED",
+  ].includes(value || "")
+    ? (value as TaskListQuery["reviewStatus"])
     : undefined
 }
 

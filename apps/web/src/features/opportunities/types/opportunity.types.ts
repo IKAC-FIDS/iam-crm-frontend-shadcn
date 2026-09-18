@@ -36,6 +36,7 @@ export interface Opportunity {
     legalName: string
     brandName?: string | null
     industry?: string | null
+    logoObjectKey?: string | null
   } | null
   ownerId?: string | null
   owner?: {
@@ -43,6 +44,7 @@ export interface Opportunity {
     fullName: string
     email?: string | null
     team?: string | null
+    avatarObjectKey?: string | null
   } | null
   stageId: string
   stage: OpportunityStage

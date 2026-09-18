@@ -227,14 +227,10 @@ it("Opportunities preserves company/view parameters and paginates on the server"
     <List />,
     "/opportunities?view=list&companyId=c1&page=2&limit=20"
   )
-  expect(await screen.findByRole("table")).toHaveTextContent("فرصت نمونه")
-  expect(
-    within(screen.getByRole("table")).getByText("فرصت نمونه").closest("tr")
-  ).toHaveClass("h-[var(--app-table-row-height)]")
+  expect(await screen.findByText("فرصت نمونه")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
   await userEvent.click(
-    within(screen.getByRole("table")).getByRole("button", {
-      name: "مشاهده جزئیات فرصت",
-    })
+    screen.getByRole("button", { name: "مشاهده جزئیات فرصت" })
   )
   expect(onView).toHaveBeenCalledTimes(1)
   onView.mockClear()
@@ -255,9 +251,7 @@ it("Opportunities preserves company/view parameters and paginates on the server"
     )
   )
   expect(router.state.location.search).toContain("view=list")
-  await userEvent.click(
-    within(screen.getByRole("table")).getByText("فرصت نمونه")
-  )
+  await userEvent.click(screen.getByText("فرصت نمونه"))
   expect(onView).toHaveBeenCalledWith(expect.objectContaining({ id: "o1" }))
 })
 it("a migrated page presents a normalized server error, not a false empty result", async () => {

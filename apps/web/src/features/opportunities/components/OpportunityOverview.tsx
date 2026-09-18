@@ -11,6 +11,9 @@ import {
 import { useEffect, useState, type ReactNode } from "react"
 
 import { EmptyState } from "@/components/shared/EmptyState"
+import { DashboardMetricGrid } from "@/components/shared/DashboardSection"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import { MetricCard } from "@/components/shared/MetricCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
@@ -55,73 +58,62 @@ export function OpportunityExecutiveSummary({
     ? opportunity.activities
     : []
   return (
-    <div className="grid w-full min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-      {financialVisible ? <SummaryCard icon={<CircleDollarSign />} title={text.commercial}>
-        <Metric
-          label={text.estimated}
+    <DashboardMetricGrid columns={4} className="lg:grid-cols-2">
+      {financialVisible ? (
+        <MetricCard
+          icon={CircleDollarSign}
+          label={text.commercial}
           value={valueLabel(opportunity.estimatedValue)}
-        />
-        <Metric
-          label={text.weighted}
-          value={
+          helper={`${text.weighted}: ${
             weighted === null
               ? uiText.common.notAvailable
               : valueLabel(weighted)
-          }
+          }`}
         />
-      </SummaryCard> : null}
-      <SummaryCard icon={<CalendarClock />} title={text.timing}>
-        <Metric
-          label={uiText.opportunities.fields.expectedCloseDate}
-          value={
-            formatJalaliDate(opportunity.expectedCloseDate) ||
-            uiText.common.notAvailable
-          }
-        />
-        <Metric
-          label={text.remaining}
-          value={
-            days === null
-              ? uiText.common.notAvailable
-              : days === 0
-                ? text.today
-                : `${Math.abs(days).toLocaleString("fa-IR")} ${text.days}${days < 0 ? ` · ${text.overdue}` : ""}`
-          }
-        />
-      </SummaryCard>
-      <SummaryCard icon={<Target />} title={text.engagement}>
-        <Metric
-          label={uiText.opportunities.fields.probability}
-          value={
-            probability === null || probability === undefined
-              ? uiText.common.notAvailable
-              : `${probability.toLocaleString("fa-IR")}%`
-          }
-        />
-        <Metric
-          label={uiText.opportunities.fields.primaryContact}
-          value={
-            opportunity.primaryContact?.fullName || uiText.common.notAvailable
-          }
-        />
-      </SummaryCard>
-      <SummaryCard icon={<Activity />} title={text.activity}>
-        <Metric
-          label={text.activity}
-          value={
-            activities[0]?.occurredAt
-              ? formatJalaliDateTime(activities[0].occurredAt)
-              : text.noActivity
-          }
-        />
-        <Metric
-          label={uiText.opportunities.detail.fields.owner}
-          value={
-            opportunity.owner?.fullName || uiText.opportunities.fields.noOwner
-          }
-        />
-      </SummaryCard>
-    </div>
+      ) : null}
+      <MetricCard
+        icon={CalendarClock}
+        label={uiText.opportunities.fields.expectedCloseDate}
+        value={
+          formatJalaliDate(opportunity.expectedCloseDate) ||
+          uiText.common.notAvailable
+        }
+        helper={`${text.remaining}: ${
+          days === null
+            ? uiText.common.notAvailable
+            : days === 0
+              ? text.today
+              : `${Math.abs(days).toLocaleString("fa-IR")} ${text.days}${days < 0 ? ` · ${text.overdue}` : ""}`
+        }`}
+        tone={days !== null && days < 0 ? "warning" : "primary"}
+      />
+      <MetricCard
+        icon={Target}
+        label={uiText.opportunities.fields.probability}
+        value={
+          probability === null || probability === undefined
+            ? uiText.common.notAvailable
+            : `${probability.toLocaleString("fa-IR")}%`
+        }
+        helper={`${uiText.opportunities.fields.primaryContact}: ${
+          opportunity.primaryContact?.fullName || uiText.common.notAvailable
+        }`}
+        tone="info"
+      />
+      <MetricCard
+        icon={Activity}
+        label={text.activity}
+        value={
+          activities[0]?.occurredAt
+            ? formatJalaliDateTime(activities[0].occurredAt)
+            : text.noActivity
+        }
+        helper={`${uiText.opportunities.detail.fields.owner}: ${
+          opportunity.owner?.fullName || uiText.opportunities.fields.noOwner
+        }`}
+        tone="success"
+      />
+    </DashboardMetricGrid>
   )
 }
 
@@ -240,9 +232,18 @@ export function OpportunityOverview({
       <aside className="grid min-w-0 content-start gap-3">
         <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-              <Building2 className="size-4.5" />
-            </div>
+            <IdentityAvatar
+              name={opportunityCompanyName(opportunity)}
+              mediaPath={
+                opportunity.company?.id
+                  ? `/companies/${opportunity.company.id}/logo`
+                  : null
+              }
+              hasMedia={Boolean(opportunity.company?.logoObjectKey)}
+              mediaVersion={opportunity.company?.logoObjectKey}
+              fallbackIcon={<Building2 className="size-4.5" />}
+              className="size-9 rounded-xl text-xs"
+            />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-[var(--app-heading)]">
                 {text.sections.company}
@@ -269,9 +270,13 @@ export function OpportunityOverview({
         </SurfaceCard>
         <SurfaceCard className="min-w-0 p-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <div className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-              <ContactRound className="size-4.5" />
-            </div>
+            <IdentityAvatar
+              name={
+                opportunity.primaryContact?.fullName || text.sections.contact
+              }
+              fallbackIcon={<ContactRound className="size-4.5" />}
+              className="size-9 rounded-xl text-xs"
+            />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-[var(--app-heading)]">
                 {text.sections.contact}
@@ -331,7 +336,22 @@ export function OpportunityOverview({
             <Info
               icon={<UserRound />}
               label={text.fields.owner}
-              value={opportunity.owner?.fullName}
+              value={
+                opportunity.owner ? (
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <IdentityAvatar
+                      name={opportunity.owner.fullName}
+                      mediaPath={`/users/${opportunity.owner.id}/avatar`}
+                      hasMedia={Boolean(opportunity.owner.avatarObjectKey)}
+                      mediaVersion={opportunity.owner.avatarObjectKey}
+                      className="size-7 rounded-lg text-[9px]"
+                    />
+                    <span className="truncate">
+                      {opportunity.owner.fullName}
+                    </span>
+                  </span>
+                ) : null
+              }
             />
             <Info
               icon={<CalendarClock />}
@@ -345,44 +365,13 @@ export function OpportunityOverview({
   )
 }
 
-function SummaryCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: ReactNode
-  title: string
-  children: ReactNode
-}) {
-  return (
-    <SurfaceCard className="w-full min-w-0 p-3 shadow-sm">
-      <div className="flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
-        <span className="grid size-7 place-items-center rounded-lg bg-[var(--app-primary-soft)] text-[var(--app-primary)] [&_svg]:size-3.5">
-          {icon}
-        </span>
-        {title}
-      </div>
-      <div className="mt-2 grid gap-1.5">{children}</div>
-    </SurfaceCard>
-  )
-}
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 text-xs">
-      <span className="text-[var(--app-text-secondary)]">{label}</span>
-      <span className="min-w-0 text-end font-bold break-words text-[var(--app-heading)]">
-        {value}
-      </span>
-    </div>
-  )
-}
 function Info({
   label,
   value,
   icon,
 }: {
   label: string
-  value?: string | null
+  value?: ReactNode
   icon?: ReactNode
 }) {
   return (

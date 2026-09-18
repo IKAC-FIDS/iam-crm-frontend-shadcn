@@ -18,7 +18,6 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
   canCreate: boolean
   canUpdate: boolean
   canAssign: boolean
-  canComplete: boolean
   canDelete: boolean
   onCreate: () => void
   onEdit: (task: Task) => void

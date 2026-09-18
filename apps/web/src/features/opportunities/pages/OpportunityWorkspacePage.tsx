@@ -18,8 +18,6 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
-import { Button } from "@workspace/ui/components/button"
-
 import { ChangeOpportunityOwnerDialog } from "../components/ChangeOpportunityOwnerDialog"
 import { ChangeOpportunityStageDialog } from "../components/ChangeOpportunityStageDialog"
 import { OpportunityFilterBar } from "../components/OpportunityFilterBar"
@@ -243,53 +241,25 @@ export function OpportunityWorkspacePage() {
   return (
     <EntityListPage>
       <PageHero
-        icon={BriefcaseBusiness}
-        eyebrow={text.hero.badge}
+        accessBadge={{ label: text.hero.badge, icon: BriefcaseBusiness }}
         title={text.hero.title}
         description={text.hero.description}
-        actions={
-          <>
-            {canCreate ? (
-              <Button
-                type="button"
-                className="rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]"
-                onClick={() => setFormOpportunity(null)}
-              >
-                <Plus className="size-4" />
-                {text.actions.create}
-              </Button>
-            ) : null}
-            <div className="flex rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "pipeline"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => switchView("pipeline")}
-              >
-                <Rows3 className="size-4" />
-                {text.views.pipeline}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  view === "list"
-                    ? "rounded-lg bg-[var(--app-surface)] text-[var(--app-primary)] shadow-sm"
-                    : "rounded-lg"
-                }
-                onClick={() => switchView("list")}
-              >
-                <LayoutList className="size-4" />
-                {text.views.list}
-              </Button>
-            </div>
-          </>
+        primaryAction={
+          canCreate
+            ? {
+                label: text.actions.create,
+                icon: Plus,
+                onClick: () => setFormOpportunity(null),
+              }
+            : undefined
+        }
+        viewOptions={[
+          { id: "pipeline", label: text.views.pipeline, icon: Rows3 },
+          { id: "list", label: text.views.list, icon: LayoutList },
+        ]}
+        activeView={view}
+        onViewChange={(nextView) =>
+          switchView(nextView === "list" ? "list" : "pipeline")
         }
       />
 

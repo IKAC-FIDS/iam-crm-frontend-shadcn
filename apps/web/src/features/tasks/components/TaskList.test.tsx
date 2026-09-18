@@ -29,7 +29,7 @@ describe("TaskList", () => {
 
     render(
       <MemoryRouter>
-        <TaskList tasks={[task]} canCreate canUpdate canAssign canComplete canDelete onCreate={vi.fn()} onEdit={onEdit} onAction={onAction} />
+        <TaskList tasks={[task]} canCreate canUpdate canAssign canDelete onCreate={vi.fn()} onEdit={onEdit} onAction={onAction} />
       </MemoryRouter>
     )
 

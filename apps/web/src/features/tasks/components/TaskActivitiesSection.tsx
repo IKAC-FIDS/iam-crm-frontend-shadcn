@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { ActivityFormDialog } from "@/features/activities/components/ActivityFormDialog"
 import { useTaskActivities } from "@/features/activities/hooks/useActivities"
+import { getActivityTypeLabel } from "@/features/activities/utils/activityDisplay"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -112,10 +113,10 @@ export function TaskActivitiesSection({ task }: { task: Task }) {
                       <strong className="text-xs text-[var(--app-heading)]">
                         {activity.outcome?.trim() ||
                           activity.notes?.trim() ||
-                          activity.type}
+                          getActivityTypeLabel(activity.type)}
                       </strong>
                       <StatusBadge tone="neutral" dot={false}>
-                        {activity.type}
+                        {getActivityTypeLabel(activity.type)}
                       </StatusBadge>
                     </div>
                     {activity.notes?.trim() &&

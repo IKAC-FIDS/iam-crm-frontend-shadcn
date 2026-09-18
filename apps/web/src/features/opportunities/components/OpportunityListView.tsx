@@ -1,18 +1,24 @@
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BriefcaseBusiness } from "lucide-react"
-import { useListQueryState } from "@/lib/listQuery"
-
 import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { QueryContent } from "@/components/shared/QueryContent"
-import { uiText } from "@/config/uiText"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { PaginationControls } from "@/components/shared/PaginationControls"
-import { useAuthStore } from "@/store/authStore"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { uiText } from "@/config/uiText"
 import { canViewFinancials } from "@/lib/permissions"
+import { useListQueryState } from "@/lib/listQuery"
+import { useAuthStore } from "@/store/authStore"
+import {
+  BriefcaseBusiness,
+  Building2,
+  CalendarDays,
+  CircleDollarSign,
+  Percent,
+  UserRound,
+} from "lucide-react"
 
 import { useOpportunityList } from "../hooks/useOpportunities"
 import type {
@@ -62,116 +68,110 @@ export function OpportunityListView({
     useAuthStore((state) => state.user?.permissions)
   )
 
-  const columns: DataTableColumn<Opportunity>[] = [
+  const fields: EntityCardField<Opportunity>[] = [
     {
-      id: "opportunity",
-      header: text.table.opportunity,
-      cell: (item) => (
-        <EntityTableCell
-          title={item.title}
-          avatar={<BriefcaseBusiness className="size-5" />}
-        />
-      ),
+      id: "owner",
+      label: text.table.owner,
+      icon: UserRound,
+      render: (item) =>
+        item.owner ? (
+          <span className="flex min-w-0 items-center gap-2">
+            <IdentityAvatar
+              name={item.owner.fullName}
+              className="size-7 rounded-lg text-[10px]"
+            />
+            <span className="truncate">{item.owner.fullName}</span>
+          </span>
+        ) : (
+          text.fields.noOwner
+        ),
     },
-    { id: "company", header: text.table.company, cell: opportunityCompanyName },
-    {
-      id: "stage",
-      header: text.table.stage,
-      cell: (item) => item.stage?.label || uiText.common.notAvailable,
-    },
-    ...(financialVisible ? [{
-      id: "value",
-      header: text.table.estimatedValue,
-      cell: (item) =>
-        `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}`,
-      className: "whitespace-nowrap",
-    } satisfies DataTableColumn<Opportunity>] : []),
+    ...(financialVisible
+      ? [
+          {
+            id: "value",
+            label: text.table.estimatedValue,
+            icon: CircleDollarSign,
+            render: (item: Opportunity) =>
+              `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}`,
+          } satisfies EntityCardField<Opportunity>,
+        ]
+      : []),
     {
       id: "probability",
-      header: text.table.probability,
-      cell: (item) =>
+      label: text.table.probability,
+      icon: Percent,
+      render: (item) =>
         item.probability === null || item.probability === undefined
           ? uiText.common.notAvailable
           : `${item.probability.toLocaleString("fa-IR")}%`,
     },
     {
-      id: "priority",
-      header: text.table.priority,
-      cell: (item) => (
-        <StatusBadge
-          tone={
-            item.priority === "STRATEGIC"
-              ? "primary"
-              : item.priority === "HIGH"
-                ? "warning"
-                : item.priority === "MEDIUM"
-                  ? "info"
-                  : "neutral"
-          }
-        >
-          {priorityLabel(item.priority)}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "owner",
-      header: text.table.owner,
-      cell: (item) => item.owner?.fullName || text.fields.noOwner,
-    },
-    {
       id: "close",
-      header: text.table.closeDate,
-      cell: (item) => formatOpportunityDate(item.expectedCloseDate),
-      className: "whitespace-nowrap",
-    },
-    {
-      id: "status",
-      header: text.table.status,
-      cell: (item) => (
-        <StatusBadge tone={item.archivedAt ? "warning" : "success"}>
-          {item.archivedAt ? text.status.archived : text.status.active}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "actions",
-      header: text.fields.actions,
-      headerClassName: "w-28 text-end",
-      cell: (item) => (
-        <OpportunityActionsMenu
-          opportunity={item}
-          permissions={permissions}
-          onView={() => onView(item)}
-          onEdit={() => onEdit(item)}
-          onChangeOwner={() => onChangeOwner(item)}
-          onChangeStage={() => onChangeStage(item)}
-          onArchiveToggle={() => onArchiveToggle(item)}
-        />
-      ),
+      label: text.table.closeDate,
+      icon: CalendarDays,
+      priority: "secondary",
+      render: (item) => formatOpportunityDate(item.expectedCloseDate),
     },
   ]
 
   return (
     <QueryContent query={query} errorTitle={text.errors.listTitle}>
       <div className="grid gap-3">
-        <DataTableShell
-          entityRows
+        <EntityCardList
           rows={rows}
-          columns={columns}
+          fields={fields}
           getRowKey={(item) => item.id}
+          layout="row"
+          density="compact"
+          fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
+          title={(item) => item.title}
+          subtitle={opportunityCompanyName}
+          media={(item) => (
+            <IdentityAvatar
+              name={opportunityCompanyName(item)}
+              fallbackIcon={<Building2 className="size-5" />}
+              className="size-12 rounded-2xl text-sm"
+            />
+          )}
+          badges={(item) => (
+            <StatusBadge tone={item.archivedAt ? "warning" : "success"}>
+              {item.archivedAt ? text.status.archived : text.status.active}
+            </StatusBadge>
+          )}
+          tags={(item) => (
+            <>
+              <StatusBadge
+                tone={
+                  item.priority === "STRATEGIC"
+                    ? "primary"
+                    : item.priority === "HIGH"
+                      ? "warning"
+                      : item.priority === "MEDIUM"
+                        ? "info"
+                        : "neutral"
+                }
+                dot={false}
+              >
+                {priorityLabel(item.priority)}
+              </StatusBadge>
+              <StatusBadge tone="neutral" dot={false}>
+                {item.stage?.label || uiText.common.notAvailable}
+              </StatusBadge>
+            </>
+          )}
           onRowClick={onView}
-          mobile={{
-            title: (item) => item.title,
-            subtitle: opportunityCompanyName,
-            avatar: () => <BriefcaseBusiness className="size-5" />,
-            status: (item) => <StatusBadge tone={item.archivedAt ? "warning" : "success"}>{item.archivedAt ? text.status.archived : text.status.active}</StatusBadge>,
-            fields: [
-              { id: "stage", label: text.table.stage, render: (item) => item.stage?.label || uiText.common.notAvailable },
-              { id: "owner", label: text.table.owner, render: (item) => item.owner?.fullName || text.fields.noOwner },
-              ...(financialVisible ? [{ id: "value", label: text.table.estimatedValue, render: (item: Opportunity) => `${formatOpportunityValue(item.estimatedValue)} ${text.fields.valueUnit}` }] : []),
-              { id: "close", label: text.table.closeDate, render: (item) => formatOpportunityDate(item.expectedCloseDate) },
-            ],
-          }}
+          actions={(item) => (
+            <OpportunityActionsMenu
+              opportunity={item}
+              permissions={permissions}
+              onView={() => onView(item)}
+              onEdit={() => onEdit(item)}
+              onChangeOwner={() => onChangeOwner(item)}
+              onChangeStage={() => onChangeStage(item)}
+              onArchiveToggle={() => onArchiveToggle(item)}
+            />
+          )}
           emptyState={
             <EmptyState
               icon={BriefcaseBusiness}
@@ -180,6 +180,7 @@ export function OpportunityListView({
             />
           }
         />
+
         {query.data ? (
           <PaginationControls
             page={query.data.meta.page}
