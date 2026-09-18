@@ -165,6 +165,7 @@ export function OpportunityListView({
             <OpportunityActionsMenu
               opportunity={item}
               permissions={permissions}
+              presentation="buttons"
               onView={() => onView(item)}
               onEdit={() => onEdit(item)}
               onChangeOwner={() => onChangeOwner(item)}
