@@ -1,7 +1,11 @@
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { safeNotificationActionUrl, notificationInboxState } from "@/features/notifications/utils/notificationDisplay"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
-import { Eye, Archive, Trash2, CalendarClock } from "lucide-react"
+import { Eye, Archive, Trash2, CalendarClock, Building2, UserRound } from "lucide-react"
 import { PageHero } from "@/components/shared/PageHero"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { MetricCard } from "@/components/shared/MetricCard"
@@ -14,10 +18,6 @@ import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
@@ -308,61 +308,57 @@ function FollowUpList({
           (item) => dueStatus(item.nextActionDate) === filter.toLowerCase()
         )
 
-  const columns: DataTableColumn<FollowUpActivity>[] = [
+  const fields: EntityCardField<FollowUpActivity>[] = [
     {
-      id: "followUp",
-      header: "پیگیری",
-      className: "min-w-60",
-      cell: (item) => (
-        <EntityTableCell
-          title={item.outcome || activityLabel(item.type)}
-          subtitle={item.notes}
-          avatar={<ClipboardCheck className="size-5" />}
-        />
-      ),
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      className: "min-w-28",
-      cell: (item) => {
-        const status = dueStatus(item.nextActionDate)
+      id: "company",
+      label: "شرکت",
+      icon: Building2,
+      render: (item) => {
+        const name = item.company?.brandName || item.company?.legalName || "—"
         return (
-          <StatusBadge tone={followUpTone(status)}>
-            {dueLabel(status)}
-          </StatusBadge>
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <IdentityAvatar
+              name={name}
+              mediaPath={item.companyId ? `/companies/${item.companyId}/logo` : null}
+              hasMedia={Boolean(item.companyId)}
+              fallbackIcon={<Building2 className="size-4" />}
+              className="size-8 rounded-xl text-[10px]"
+            />
+            <span className="truncate">{name}</span>
+          </span>
         )
       },
     },
     {
-      id: "type",
-      header: "نوع",
-      className: "min-w-32",
-      cell: (item) => activityLabel(item.type),
-    },
-    {
-      id: "company",
-      header: "شرکت",
-      className: "min-w-44",
-      cell: (item) => item.company?.brandName || item.company?.legalName || "—",
-    },
-    {
       id: "person",
-      header: "شخص",
-      className: "min-w-40",
-      cell: (item) => item.person?.fullName || "—",
+      label: "شخص مرتبط",
+      icon: UserRound,
+      render: (item) => item.person?.fullName || "—",
     },
     {
       id: "owner",
-      header: "ثبت‌کننده",
-      className: "min-w-40",
-      cell: (item) => item.user?.fullName || item.user?.email || "—",
+      label: "ثبت‌کننده",
+      icon: UserRound,
+      render: (item) => {
+        const name = item.user?.fullName || item.user?.email || "—"
+        return (
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <IdentityAvatar
+              name={name}
+              mediaPath={item.user?.id ? `/users/${item.user.id}/avatar` : null}
+              hasMedia={Boolean(item.user?.id)}
+              className="size-8 rounded-xl text-[10px]"
+            />
+            <span className="truncate">{name}</span>
+          </span>
+        )
+      },
     },
     {
       id: "due",
-      header: "موعد پیگیری",
-      className: "min-w-44",
-      cell: (item) => (
+      label: "موعد پیگیری",
+      icon: CalendarClock,
+      render: (item) => (
         <span
           className={
             dueStatus(item.nextActionDate) === "overdue"
@@ -372,44 +368,6 @@ function FollowUpList({
         >
           {dt(item.nextActionDate)}
         </span>
-      ),
-    },
-    {
-      id: "actions",
-      header: "عملیات",
-      className: "w-16",
-      cell: (item) => (
-        <EntityRowActions
-          actions={[
-            {
-              id: "view",
-              label: "مشاهده شرکت",
-              icon: Eye,
-              onClick: () => onCompany(item.companyId),
-              enabled: Boolean(item.companyId),
-            },
-            {
-              id: "reschedule",
-              label: "زمان‌بندی مجدد",
-              icon: CalendarClock,
-              onClick: () => {
-                setSelected(item)
-                setMode("reschedule")
-              },
-              enabled: canReschedule,
-            },
-            {
-              id: "complete",
-              label: "انجام شد",
-              icon: CheckCircle2,
-              onClick: () => {
-                setSelected(item)
-                setMode("complete")
-              },
-              enabled: canComplete,
-            },
-          ]}
-        />
       ),
     },
   ]
@@ -445,10 +403,67 @@ function FollowUpList({
         query={{ isLoading: loading, isError, error, refetch: onRetry }}
         errorTitle="دریافت پیگیری‌ها ناموفق بود"
       >
-        <DataTableShell
+        <EntityCardList
           rows={shown}
-          columns={columns}
+          fields={fields}
           getRowKey={(item) => item.id}
+          layout="row"
+          density="compact"
+          fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
+          title={(item) => item.outcome || activityLabel(item.type)}
+          subtitle={(item) => item.notes}
+          media={() => (
+            <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
+              <ClipboardCheck className="size-5" />
+            </span>
+          )}
+          badges={(item) => {
+            const status = dueStatus(item.nextActionDate)
+            return (
+              <StatusBadge tone={followUpTone(status)}>
+                {dueLabel(status)}
+              </StatusBadge>
+            )
+          }}
+          tags={(item) => (
+            <StatusBadge tone="primary" dot={false}>
+              {activityLabel(item.type)}
+            </StatusBadge>
+          )}
+          actions={(item) => (
+            <EntityRowActions
+              presentation="buttons"
+              actions={[
+                {
+                  id: "view",
+                  label: "مشاهده شرکت",
+                  icon: Eye,
+                  onClick: () => onCompany(item.companyId),
+                  enabled: Boolean(item.companyId),
+                },
+                {
+                  id: "reschedule",
+                  label: "زمان‌بندی مجدد",
+                  icon: CalendarClock,
+                  onClick: () => {
+                    setSelected(item)
+                    setMode("reschedule")
+                  },
+                  enabled: canReschedule,
+                },
+                {
+                  id: "complete",
+                  label: "انجام شد",
+                  icon: CheckCircle2,
+                  onClick: () => {
+                    setSelected(item)
+                    setMode("complete")
+                  },
+                  enabled: canComplete,
+                },
+              ]}
+            />
+          )}
           emptyState={
             <EmptyState
               icon={ClipboardCheck}
@@ -629,108 +644,38 @@ function NotificationList({
 
   const [detail, setDetail] = useState<Notification | null>(null)
 
-  const columns: DataTableColumn<Notification>[] = [
-    {
-      id: "notification",
-      header: "اعلان",
-      className: "min-w-72",
-      cell: (n) => (
-        <EntityTableCell
-          title={n.title}
-          subtitle={n.body}
-          avatar={<Bell className="size-5" />}
-        />
-      ),
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      className: "min-w-32",
-      cell: (n) => (
-        <StatusBadge tone={n.readAt || n.archivedAt ? "neutral" : "primary"}>
-          {notificationInboxState(n)}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "priority",
-      header: "اولویت",
-      className: "min-w-28",
-      cell: (n) => (
-        <StatusBadge tone={notificationPriorityTone(n.priority)} dot={false}>
-          {notificationPriorityLabel(n.priority)}
-        </StatusBadge>
-      ),
-    },
+  const fields: EntityCardField<Notification>[] = [
     {
       id: "type",
-      header: "نوع",
-      className: "min-w-44",
-      cell: (n) => notificationTypeLabel(n.type),
+      label: "نوع اعلان",
+      icon: Bell,
+      render: (n) => notificationTypeLabel(n.type),
     },
     {
       id: "actor",
-      header: "ایجادکننده",
-      className: "min-w-40",
-      cell: (n) => n.actor?.fullName || n.actor?.email || "سیستم",
+      label: "ایجادکننده",
+      icon: UserRound,
+      render: (n) => {
+        const name = n.actor?.fullName || n.actor?.email || "سیستم"
+        return (
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <IdentityAvatar
+              name={name}
+              mediaPath={n.actor?.id ? `/users/${n.actor.id}/avatar` : null}
+              hasMedia={Boolean(n.actor?.id)}
+              className="size-8 rounded-xl text-[10px]"
+            />
+            <span className="truncate">{name}</span>
+          </span>
+        )
+      },
     },
     {
       id: "createdAt",
-      header: "تاریخ",
-      className: "min-w-44",
-      cell: (n) => dt(n.createdAt),
-    },
-    {
-      id: "actions",
-      header: "عملیات",
-      className: "w-16",
-      cell: (n) => (
-        <EntityRowActions
-          actions={[
-            {
-              id: "view",
-              label: "مشاهده",
-              icon: Eye,
-              onClick: () => openNotification(n),
-              enabled: true,
-            },
-            {
-              id: "read",
-              label: n.readAt
-                ? "علامت‌گذاری به‌عنوان خوانده‌نشده"
-                : "علامت‌گذاری به‌عنوان خوانده‌شده",
-              icon: CheckCircle2,
-              onClick: () =>
-                n.readAt
-                  ? markUnread.mutateAsync(n.id)
-                  : markRead.mutateAsync(n.id),
-              enabled: canManage,
-            },
-            {
-              id: "archive",
-              label: n.archivedAt ? "خروج از بایگانی" : "بایگانی",
-              icon: Archive,
-              onClick: () =>
-                n.archivedAt
-                  ? unarchive.mutateAsync(n.id)
-                  : archive.mutateAsync(n.id),
-              enabled: canManage,
-            },
-            {
-              id: "delete",
-              label: "حذف",
-              icon: Trash2,
-              onClick: () => remove.mutateAsync(n.id),
-              enabled: canManage,
-              tone: "danger",
-              confirmation: {
-                title: "حذف اعلان",
-                description: "این اعلان حذف شود؟",
-              },
-            },
-          ]}
-        />
-      ),
+      label: "تاریخ اعلان",
+      icon: CalendarClock,
+      render: (n) => dt(n.createdAt),
+      valueClassName: "whitespace-nowrap",
     },
   ]
 
@@ -771,11 +716,79 @@ function NotificationList({
       />
 
       <QueryContent query={query} errorTitle="دریافت اعلان‌ها ناموفق بود">
-        <DataTableShell
+        <EntityCardList
           rows={query.data?.data ?? []}
-          columns={columns}
+          fields={fields}
           getRowKey={(n) => n.id}
+          layout="row"
+          density="compact"
+          fieldsClassName="sm:grid-cols-2 xl:grid-cols-3"
+          title={(n) => n.title}
+          subtitle={(n) => n.body}
+          media={() => (
+            <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
+              <Bell className="size-5" />
+            </span>
+          )}
+          badges={(n) => (
+            <StatusBadge tone={n.readAt || n.archivedAt ? "neutral" : "primary"}>
+              {notificationInboxState(n)}
+            </StatusBadge>
+          )}
+          tags={(n) => (
+            <StatusBadge tone={notificationPriorityTone(n.priority)} dot={false}>
+              {notificationPriorityLabel(n.priority)}
+            </StatusBadge>
+          )}
           onRowClick={(n) => void openNotification(n)}
+          actions={(n) => (
+            <EntityRowActions
+              presentation="buttons"
+              actions={[
+                {
+                  id: "view",
+                  label: "مشاهده",
+                  icon: Eye,
+                  onClick: () => openNotification(n),
+                  enabled: true,
+                },
+                {
+                  id: "read",
+                  label: n.readAt
+                    ? "علامت‌گذاری به‌عنوان خوانده‌نشده"
+                    : "علامت‌گذاری به‌عنوان خوانده‌شده",
+                  icon: CheckCircle2,
+                  onClick: () =>
+                    n.readAt
+                      ? markUnread.mutateAsync(n.id)
+                      : markRead.mutateAsync(n.id),
+                  enabled: canManage,
+                },
+                {
+                  id: "archive",
+                  label: n.archivedAt ? "خروج از بایگانی" : "بایگانی",
+                  icon: Archive,
+                  onClick: () =>
+                    n.archivedAt
+                      ? unarchive.mutateAsync(n.id)
+                      : archive.mutateAsync(n.id),
+                  enabled: canManage,
+                },
+                {
+                  id: "delete",
+                  label: "حذف",
+                  icon: Trash2,
+                  onClick: () => remove.mutateAsync(n.id),
+                  enabled: canManage,
+                  tone: "danger",
+                  confirmation: {
+                    title: "حذف اعلان",
+                    description: "این اعلان حذف شود؟",
+                  },
+                },
+              ]}
+            />
+          )}
           emptyState={
             <EmptyState
               icon={Bell}

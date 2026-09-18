@@ -26,11 +26,13 @@ export function EntityRowActions({
   onView,
   children,
   actions = [],
+  presentation = "menu",
 }: {
   label?: string
   onView?: () => void
   children?: ReactNode
   actions?: readonly EntityAction[]
+  presentation?: "menu" | "buttons"
 }) {
   const [confirm, setConfirm] = useState<EntityAction>()
   const [pending, setPending] = useState(false)
@@ -73,6 +75,53 @@ export function EntityRowActions({
     } else void run(action)
   }
   if (!available.length && !children) return null
+
+  if (presentation === "buttons") {
+    return (
+      <div
+        className="flex min-w-0 flex-wrap items-center justify-end gap-1"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        {children}
+        {available.map((action) => (
+          <Button
+            key={action.id}
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={
+              action.tone === "danger"
+                ? "rounded-xl text-destructive hover:text-destructive"
+                : "rounded-xl"
+            }
+            disabled={action.disabled || pending}
+            onClick={() => activate(action)}
+          >
+            <action.icon aria-hidden="true" className="size-4" />
+            {action.label}
+          </Button>
+        ))}
+        {error && !confirm ? (
+          <span role="alert" className="max-w-52 text-xs whitespace-normal text-destructive">
+            {error}
+          </span>
+        ) : null}
+        <ConfirmDialog
+          open={Boolean(confirm)}
+          onOpenChange={(open) => {
+            if (!open && !pending) setConfirm(undefined)
+          }}
+          title={confirm?.confirmation?.title || ""}
+          description={error || confirm?.confirmation?.description}
+          tone={confirm?.tone === "danger" ? "danger" : "primary"}
+          isPending={pending}
+          onConfirm={() => (confirm ? run(confirm) : undefined)}
+        />
+      </div>
+    )
+  }
+
   return (
     <div
       className="flex min-w-20 items-center justify-end gap-1"

@@ -56,7 +56,9 @@ it("supports read-all through the existing API hook", async () => {
 it.each([false, true])("supports archive/unarchive with archived=%s", async archived => {
   mocks.row.archivedAt = archived ? "2026-09-07T12:00:00Z" : null
   show()
-  await userEvent.click(screen.getByRole("button", { name: "عملیات بیشتر" }))
-  await userEvent.click(await screen.findByRole("menuitem", { name: archived ? "خروج از بایگانی" : "بایگانی" }))
+  const buttons = screen.getAllByRole("button", {
+    name: archived ? "خروج از بایگانی" : "بایگانی",
+  })
+  await userEvent.click(buttons.at(-1)!)
   expect(archived ? mocks.unarchive : mocks.archive).toHaveBeenCalledWith("notification-1")
 })
