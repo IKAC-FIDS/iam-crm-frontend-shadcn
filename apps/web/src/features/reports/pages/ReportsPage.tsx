@@ -129,10 +129,10 @@ function KpiCard({
 
 function LeadStatusChart({ data }: { data: ConversionHealth["outcomes"] }) {
   const colors: Record<string, string> = {
-    won: "#2E7D32",
-    lost: "#C62828",
-    onHold: "#F9A825",
-    active: "#2196F3",
+    won: "var(--success)",
+    lost: "var(--destructive)",
+    onHold: "var(--warning)",
+    active: "var(--info)",
   }
 
   const ordered = ["active", "won", "lost", "onHold"]
@@ -232,11 +232,11 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
     <div>
       <div className="mb-4 flex flex-wrap gap-4 text-xs">
         <span className="inline-flex items-center gap-2">
-          <i className="h-0.5 w-5 bg-[#2196F3]" />
+          <i className="h-0.5 w-5 bg-[var(--info)]" />
           سرنخ‌های ایجادشده
         </span>
         <span className="inline-flex items-center gap-2">
-          <i className="h-0.5 w-5 bg-[#2E7D32]" />
+          <i className="h-0.5 w-5 bg-[var(--success)]" />
           مشتری‌شده
         </span>
       </div>
@@ -256,7 +256,7 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
           ))}
           <polyline
             fill="none"
-            stroke="#2196F3"
+            stroke="var(--info)"
             strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -264,7 +264,7 @@ function TrendChart({ data }: { data: ConversionHealth["trend"] }) {
           />
           <polyline
             fill="none"
-            stroke="#2E7D32"
+            stroke="var(--success)"
             strokeWidth="4"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -367,12 +367,12 @@ function FunnelChart({ data }: { data: ConversionHealth }) {
     totalLeads === 0 ? 0 : Math.round((totalLeads * rate) / 100)
 
   const tones = [
-    "var(--chart-1, #2563EB)",
-    "var(--chart-2, #3B82F6)",
-    "var(--chart-3, #60A5FA)",
-    "var(--chart-4, #7C9CF5)",
-    "var(--chart-5, #93B4F7)",
-    "var(--success, #2E7D32)",
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
+    "var(--success)",
   ]
 
   return (
@@ -662,7 +662,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={plotTop}
             width={Math.max(0, valueX - plotLeft)}
             height={Math.max(0, rateY - plotTop)}
-            fill="#2E7D32"
+            fill="var(--success)"
             opacity="0.035"
           />
           <rect
@@ -670,7 +670,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={plotTop}
             width={Math.max(0, plotRight - valueX)}
             height={Math.max(0, rateY - plotTop)}
-            fill="#2E7D32"
+            fill="var(--success)"
             opacity="0.08"
           />
           <rect
@@ -678,7 +678,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={rateY}
             width={Math.max(0, valueX - plotLeft)}
             height={Math.max(0, plotBottom - rateY)}
-            fill="#64748B"
+            fill="var(--app-text-secondary)"
             opacity="0.04"
           />
           <rect
@@ -686,7 +686,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             y={rateY}
             width={Math.max(0, plotRight - valueX)}
             height={Math.max(0, plotBottom - rateY)}
-            fill="#C62828"
+            fill="var(--destructive)"
             opacity="0.04"
           />
 
@@ -730,7 +730,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             textAnchor="middle"
             fontSize="11"
             fontWeight="600"
-            fill="#2E7D32"
+            fill="var(--success)"
           >
             تبدیل خوب، فرصت کم
           </text>
@@ -740,7 +740,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             textAnchor="middle"
             fontSize="11"
             fontWeight="600"
-            fill="#2E7D32"
+            fill="var(--success)"
           >
             عملکرد برتر
           </text>
@@ -750,7 +750,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             textAnchor="middle"
             fontSize="11"
             fontWeight="600"
-            fill="#64748B"
+            fill="var(--app-text-secondary)"
           >
             نیازمند بررسی
           </text>
@@ -760,7 +760,7 @@ function OwnerScatter({ data }: { data: ConversionHealth["owners"] }) {
             textAnchor="middle"
             fontSize="11"
             fontWeight="600"
-            fill="#C62828"
+            fill="var(--destructive)"
           >
             فرصت زیاد، تبدیل پایین
           </text>

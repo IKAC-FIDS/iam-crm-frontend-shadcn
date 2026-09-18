@@ -1,36 +1,15 @@
+/** Typed reference only. Runtime theme values are owned by the CSS token files. */
 export const appColors = {
-  brand: {
-    primary: "#0053B2",
-    hover: "#004A9F",
-    active: "#003F88",
-    alt: "#55677F",
-    soft: "#D6E3FF",
-    onPrimary: "#FFFFFF",
-    onPrimaryContainer: "#001B3D",
+  light: {
+    interactive: { primary: "#2563EB", hover: "#1D4ED8", active: "#1E40AF", soft: "#EFF6FF" },
+    neutral: { heading: "#1C1917", textSecondary: "#57534E", background: "#FAFAF9", surface: "#FFFFFF", surfaceSoft: "#F5F5F4", divider: "#E7E5E4", outline: "#D6D3D1" },
+    semantic: { success: "#15803D", warning: "#B45309", error: "#DC2626", info: "#2563EB" },
   },
-  semantic: {
-    success: "#048A3B",
-    successLight: "#E6F9EE",
-    warning: "#F59E0B",
-    warningLight: "#FFF4E0",
-    error: "#BA1A1A",
-    errorLight: "#FFDAD6",
-    info: "#1371D3",
-    infoLight: "#D0E5FB",
+  dark: {
+    interactive: { primary: "#60A5FA", hover: "#93C5FD", active: "#3B82F6", soft: "#172554" },
+    neutral: { heading: "#FAFAF9", textSecondary: "#A8A29E", background: "#0C0A09", surface: "#1C1917", surfaceSoft: "#292524", divider: "#44403C", outline: "#57534E" },
+    semantic: { success: "#4ADE80", warning: "#FBBF24", error: "#F87171", info: "#60A5FA" },
   },
-  neutral: {
-    heading: "#0F172A",
-    textSecondary: "#64748B",
-    background: "#EFF5FA",
-    surface: "#FCFCFF",
-    surfaceSoft: "#F7FAFD",
-    divider: "#E4EAF3",
-    outline: "#C2CAD6",
-  },
-  accent: "#E91E63",
-  black: "#000000",
-  white: "#FFFFFF",
-  chart: ["#0053B2", "#55677F", "#1371D3", "#64748B"] as const,
 } as const
 
 export type AppColors = typeof appColors

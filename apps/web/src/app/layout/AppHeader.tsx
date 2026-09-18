@@ -22,6 +22,7 @@ import { useAuth } from "@/features/auth/hooks/useAuth"
 import { NotificationBell } from "@/features/notifications/components/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
 import { AppTopNavigation } from "./AppTopNavigation"
+import { ThemeSelector } from "./ThemeSelector"
 
 export function AppHeader() {
   const location = useLocation()
@@ -52,6 +53,8 @@ export function AppHeader() {
         <NotificationBell
           enabled={Boolean(user?.permissions?.includes("notification:view"))}
         />
+
+        <ThemeSelector />
 
         <DropdownMenu>
           <DropdownMenuTrigger

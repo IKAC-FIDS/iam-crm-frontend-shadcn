@@ -16,69 +16,36 @@
 
 :root {
   --app-font-family: "BYekan", Tahoma, Arial, sans-serif;
-
-  --primary: #0053b2;
-  --primary-foreground: #ffffff;
-  --primary-hover: #004a9f;
-  --primary-active: #003f88;
-  --primary-alt: #55677f;
-  --primary-soft: #d6e3ff;
-  --on-primary-container: #001b3d;
-
-  --background: #eff5fa;
-  --foreground: #0f172a;
-  --card: #fcfcff;
-  --card-foreground: #0f172a;
-  --popover: #fcfcff;
-  --popover-foreground: #0f172a;
-  --surface: #fcfcff;
-  --surface-soft: #f7fafd;
-  --surface-muted: #eff5fa;
-
-  --secondary: #e4eaf3;
-  --secondary-foreground: #0f172a;
-  --muted: #e4eaf3;
-  --muted-foreground: #64748b;
-  --border: #e4eaf3;
-  --input: #e4eaf3;
-  --outline: #c2cad6;
-  --ring: #0053b2;
-
-  --accent: #d6e3ff;
-  --accent-foreground: #001b3d;
-  --destructive: #ba1a1a;
-  --destructive-soft: #ffdad6;
-  --success: #048a3b;
-  --success-light: #e6f9ee;
-  --warning: #f59e0b;
-  --warning-light: #fff4e0;
-  --info: #1371d3;
-  --info-light: #d0e5fb;
-  --brand-accent: #e91e63;
-
-  --app-primary: #0053b2;
-  --app-primary-hover: #004a9f;
-  --app-primary-active: #003f88;
-  --app-primary-alt: #55677f;
-  --app-primary-soft: #d6e3ff;
+  --app-primary: #2563eb;
+  --app-primary-hover: #1d4ed8;
+  --app-primary-active: #1e40af;
+  --app-primary-alt: #57534e;
+  --app-primary-soft: #eff6ff;
   --app-on-primary: #ffffff;
-  --app-on-primary-container: #001b3d;
-
-  --app-heading: #0f172a;
-  --app-on-surface: #0f172a;
-  --app-text-secondary: #64748b;
-  --app-icon-muted: #64748b;
-  --app-background: #eff5fa;
-  --app-surface: #fcfcff;
-  --app-surface-soft: #f7fafd;
-  --app-divider: #e4eaf3;
-  --app-outline: #c2cad6;
-  --app-accent: #e91e63;
-
-  --app-chart-1: #0053b2;
-  --app-chart-2: #55677f;
-  --app-chart-3: #1371d3;
-  --app-chart-4: #64748b;
+  --app-on-primary-container: #1e3a8a;
+  --app-heading: #1c1917;
+  --app-on-surface: #1c1917;
+  --app-text-secondary: #57534e;
+  --app-icon-muted: #78716c;
+  --app-background: #fafaf9;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f5f5f4;
+  --app-divider: #e7e5e4;
+  --app-outline: #d6d3d1;
+  --app-focus: #2563eb;
+  --app-link: #2563eb;
+  --app-link-hover: #1d4ed8;
+  --success: #15803d;
+  --success-light: #f0fdf4;
+  --warning: #b45309;
+  --warning-light: #fffbeb;
+  --destructive-soft: #fef2f2;
+  --info: #2563eb;
+  --info-light: #eff6ff;
+  --app-chart-1: var(--chart-1);
+  --app-chart-2: var(--chart-2);
+  --app-chart-3: var(--chart-3);
+  --app-chart-4: var(--chart-4);
 
   --app-drawer-width: 260px;
   --app-content-max-width: 1680px;
@@ -98,12 +65,47 @@
   --app-table-header-height: 44px;
   --app-table-cell-padding: 16px;
 
-  --app-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08);
-  --app-shadow-card-hover: 0 14px 35px rgba(15, 23, 42, 0.07);
-  --app-shadow-popover: 0 8px 24px rgba(15, 23, 42, 0.12);
-  --app-shadow-elevated: 0 18px 50px rgba(15, 23, 42, 0.08);
-  --app-shadow-brand: 0 20px 50px rgba(0, 83, 178, 0.24);
-  --app-shadow-hero: 0 24px 70px rgba(0, 63, 136, 0.22);
+  --app-shadow-card: 0 1px 3px rgb(28 25 23 / 0.08);
+  --app-shadow-card-hover: 0 14px 35px rgb(28 25 23 / 0.08);
+  --app-shadow-popover: 0 8px 24px rgb(28 25 23 / 0.14);
+  --app-shadow-elevated: 0 18px 50px rgb(28 25 23 / 0.1);
+  --app-shadow-brand: 0 16px 38px rgb(37 99 235 / 0.16);
+  --app-shadow-hero: 0 24px 70px rgb(28 25 23 / 0.16);
+}
+
+.dark {
+  --app-primary: #60a5fa;
+  --app-primary-hover: #93c5fd;
+  --app-primary-active: #3b82f6;
+  --app-primary-alt: #d6d3d1;
+  --app-primary-soft: #172554;
+  --app-on-primary: #0c0a09;
+  --app-on-primary-container: #dbeafe;
+  --app-heading: #fafaf9;
+  --app-on-surface: #fafaf9;
+  --app-text-secondary: #a8a29e;
+  --app-icon-muted: #a8a29e;
+  --app-background: #0c0a09;
+  --app-surface: #1c1917;
+  --app-surface-soft: #292524;
+  --app-divider: #44403c;
+  --app-outline: #57534e;
+  --app-focus: #60a5fa;
+  --app-link: #60a5fa;
+  --app-link-hover: #93c5fd;
+  --success: #4ade80;
+  --success-light: #052e16;
+  --warning: #fbbf24;
+  --warning-light: #451a03;
+  --destructive-soft: #450a0a;
+  --info: #60a5fa;
+  --info-light: #172554;
+  --app-shadow-card: 0 1px 3px rgb(0 0 0 / 0.35);
+  --app-shadow-card-hover: 0 14px 35px rgb(0 0 0 / 0.32);
+  --app-shadow-popover: 0 12px 32px rgb(0 0 0 / 0.48);
+  --app-shadow-elevated: 0 18px 50px rgb(0 0 0 / 0.38);
+  --app-shadow-brand: 0 16px 38px rgb(96 165 250 / 0.14);
+  --app-shadow-hero: 0 24px 70px rgb(0 0 0 / 0.42);
 }
 
 html {
@@ -153,7 +155,7 @@ body {
   background:
     radial-gradient(
       circle at 15% 10%,
-      rgba(214, 227, 255, 0.38),
+      color-mix(in srgb, var(--app-primary-soft) 55%, transparent),
       transparent 28rem
     ),
     var(--app-background);
@@ -249,8 +251,17 @@ body {
 }
 
 .ui-focus-ring:focus-visible {
-  outline: 2px solid var(--app-primary);
+  outline: 2px solid var(--app-focus);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Consistent visual baseline for every Radix/Base UI dialog header. */

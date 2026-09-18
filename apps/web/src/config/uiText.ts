@@ -38,6 +38,12 @@
     logoutFromAccount: "خروج از حساب",
     notifications: "اعلان‌ها",
     accountSecurity: "امنیت حساب",
+    theme: {
+      label: "پوسته نمایش",
+      light: "روشن",
+      dark: "تیره",
+      system: "هماهنگ با دستگاه",
+    },
     openCloseMainMenu: "باز و بسته کردن منوی اصلی",
     underDevelopment: "در حال توسعه",
     notAvailable: "-",

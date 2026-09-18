@@ -13,6 +13,7 @@ import {
   Trophy,
   X,
 } from "lucide-react"
+
 import { useMemo, useState, type DragEvent } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -24,6 +25,9 @@ import { PageHero } from "@/components/shared/PageHero"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+
+// Stored stage colors and native color inputs require a concrete color value.
+const DEFAULT_PIPELINE_COLOR = "#78716C"
 
 import {
   createPipelineStage,
@@ -572,7 +576,7 @@ function StageEditor({
   const [label, setLabel] = useState(item?.label ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
   const [sortOrder, setSortOrder] = useState(String(item?.sortOrder ?? 0))
-  const [color, setColor] = useState(item?.color ?? "#64748B")
+  const [color, setColor] = useState(item?.color ?? DEFAULT_PIPELINE_COLOR)
   const [isActive, setIsActive] = useState(item?.isActive ?? true)
   const [terminalType, setTerminalType] = useState<TerminalType>(
     item?.terminalType ?? "NONE"
@@ -646,7 +650,7 @@ function StageEditor({
           <div className="flex gap-2">
             <input
               type="color"
-              value={/^#[0-9A-Fa-f]{6}$/.test(color) ? color : "#64748B"}
+              value={/^#[0-9A-Fa-f]{6}$/.test(color) ? color : DEFAULT_PIPELINE_COLOR}
               onChange={(event) => setColor(event.target.value.toUpperCase())}
               className="h-10 w-12 rounded-xl border border-input bg-background p-1"
             />
@@ -654,7 +658,7 @@ function StageEditor({
               value={color}
               dir="ltr"
               onChange={(event) => setColor(event.target.value)}
-              placeholder="#64748B"
+              placeholder={DEFAULT_PIPELINE_COLOR}
             />
           </div>
         </div>
