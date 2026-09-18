@@ -3,11 +3,8 @@ import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import type { MobileEntityConfig } from "@/components/shared/MobileEntityCard"
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
+import { EntityCardList } from "@/components/shared/EntityCardList"
+import { PaginationControls } from "@/components/shared/PaginationControls"
 import type { KnowledgeArticle, PageMeta, TechnicalRelease } from "../types"
 export function TechnicalStatusBadge<T extends string>({
   status,
@@ -85,7 +82,7 @@ export function KnowledgeReviewBadge({
     return <StatusBadge tone="neutral">بدون برنامه بازبینی</StatusBadge>
   }
   const dueAt = new Date(nextReviewAt).getTime()
-if (dueAt <= reviewNow) {
+  if (dueAt <= reviewNow) {
     return <StatusBadge tone="error">بازبینی سررسید شده</StatusBadge>
   }
   if (dueAt - reviewNow <= 30 * 24 * 60 * 60 * 1000) {
@@ -95,8 +92,7 @@ if (dueAt <= reviewNow) {
 }
 export function ResponsiveTechnicalList<Row>({
   rows,
-  columns,
-  mobile,
+  card,
   getKey,
   onOpen,
   meta,
@@ -107,8 +103,17 @@ export function ResponsiveTechnicalList<Row>({
   renderRowActions,
 }: {
   rows: Row[]
-  columns: DataTableColumn<Row>[]
-  mobile: MobileEntityConfig<Row>
+  card: {
+    title: (row: Row) => ReactNode
+    subtitle?: (row: Row) => ReactNode
+    media?: (row: Row) => ReactNode
+    status?: (row: Row) => ReactNode
+    fields: {
+      id: string
+      label: ReactNode
+      render: (row: Row) => ReactNode
+    }[]
+  }
   getKey: (r: Row) => string
   onOpen: (r: Row) => void
   meta?: PageMeta
@@ -119,27 +124,33 @@ export function ResponsiveTechnicalList<Row>({
   renderRowActions?: (row: Row) => ReactNode
 }) {
   return (
-    <DataTableShell
-      rows={rows}
-      columns={columns}
-      getRowKey={getKey}
-      onRowClick={onOpen}
-      emptyState={emptyState}
-      mobile={mobile}
-      renderRowActions={renderRowActions}
-      pagination={
-        meta
-          ? {
-              page: meta.page,
-              pageCount: meta.totalPages,
-              total: meta.total,
-              pageSize,
-              onPageChange: onPage,
-              onPageSizeChange: onPageSize,
-            }
-          : undefined
-      }
-    />
+    <div className="grid gap-4">
+      <EntityCardList
+        rows={rows}
+        getRowKey={getKey}
+        onRowClick={onOpen}
+        emptyState={emptyState}
+        layout="row"
+        density="compact"
+        title={card.title}
+        subtitle={card.subtitle}
+        media={card.media}
+        badges={card.status}
+        fields={card.fields}
+        actions={renderRowActions}
+        fieldsClassName="lg:grid-cols-3"
+      />
+      {meta ? (
+        <PaginationControls
+          page={meta.page}
+          pageCount={meta.totalPages}
+          total={meta.total}
+          pageSize={pageSize}
+          onPageChange={onPage}
+          onPageSizeChange={onPageSize}
+        />
+      ) : null}
+    </div>
   )
 }
 export function LifecycleActions<T extends string>({
@@ -169,18 +180,18 @@ export function LifecycleActions<T extends string>({
         {allowed.map((t) => {
           const blockReason = getTargetBlockReason(t)
           return (
-          <Button
-            key={t}
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setTarget(t)}
-            disabled={pending || Boolean(blockReason)}
-            title={blockReason}
-          >
-            <ArrowLeft className="size-4" />
-            {presentation.label[t]}
-          </Button>
+            <Button
+              key={t}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setTarget(t)}
+              disabled={pending || Boolean(blockReason)}
+              title={blockReason}
+            >
+              <ArrowLeft className="size-4" />
+              {presentation.label[t]}
+            </Button>
           )
         })}
       </div>
@@ -188,7 +199,11 @@ export function LifecycleActions<T extends string>({
         <ul className="mt-3 grid gap-2 text-xs leading-5 text-muted-foreground">
           {allowed.map((item) => {
             const reason = getTargetBlockReason(item)
-            return reason ? <li key={item}>برای «{presentation.label[item]}»: {reason}</li> : null
+            return reason ? (
+              <li key={item}>
+                برای «{presentation.label[item]}»: {reason}
+              </li>
+            ) : null
           })}
         </ul>
       ) : null}
@@ -203,7 +218,9 @@ export function LifecycleActions<T extends string>({
         title={target ? `تغییر وضعیت به «${presentation.label[target]}»` : ""}
         description="این تغییر مطابق سیاست چرخه عمر Backend ثبت می‌شود."
         isPending={pending}
-        confirmDisabled={Boolean(target && requiresReason(target) && !reason.trim())}
+        confirmDisabled={Boolean(
+          target && requiresReason(target) && !reason.trim()
+        )}
         onConfirm={async () => {
           if (target) await onTransition(target, reason)
         }}

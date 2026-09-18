@@ -6,6 +6,7 @@ import {
   FileText,
   FolderOpen,
   Gavel,
+  Eye,
   PackageOpen,
   Plus,
 } from "lucide-react"
@@ -14,11 +15,10 @@ import { Input } from "@workspace/ui/components/input"
 import { PageHero } from "@/components/shared/PageHero"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
-import { EntityRowActions } from "@/components/shared/EntityRowActions"
-import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
+import { PersianDatePicker } from "@/components/shared/date"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
@@ -44,7 +44,6 @@ import {
   tenderPresentation,
   tenderTypeLabels,
 } from "../presentation"
-import type { DataTableColumn } from "@/components/shared/DataTableShell"
 import type {
   KnowledgeArticle,
   TechnicalDocument,
@@ -180,8 +179,7 @@ function Shell<T extends { id: string }>({
   createLabel = "ایجاد",
   statuses,
   types,
-  columns,
-  mobile,
+  card,
 }: {
   title: string
   description: string
@@ -192,11 +190,10 @@ function Shell<T extends { id: string }>({
   createLabel?: string
   statuses: Record<string, string>
   types?: Record<string, string>
-  columns: DataTableColumn<T>[]
-  mobile: {
+  card: {
     title: (r: T) => React.ReactNode
     subtitle?: (r: T) => React.ReactNode
-    avatar?: (r: T) => React.ReactNode
+    media?: (r: T) => React.ReactNode
     status?: (r: T) => React.ReactNode
     fields: {
       id: string
@@ -245,8 +242,7 @@ function Shell<T extends { id: string }>({
       ownerId: ownerId || undefined,
       version: version || undefined,
       category: category || undefined,
-      visibility:
-        (visibility as "INTERNAL" | "RESTRICTED") || undefined,
+      visibility: (visibility as "INTERNAL" | "RESTRICTED") || undefined,
       reviewDue: reviewDue || undefined,
       from: from || undefined,
       to: to || undefined,
@@ -276,6 +272,22 @@ function Shell<T extends { id: string }>({
     ]
   )
   const query = useTechnicalList(kind, params, canView)
+  const advancedFilterCount = [
+    productId,
+    releaseId,
+    companyId,
+    tenderId,
+    confidentiality,
+    ownerId,
+    version,
+    category,
+    visibility,
+    reviewDue,
+    from,
+    to,
+    sort !== "updatedAt" ? sort : "",
+    sortDirection !== "desc" ? sortDirection : "",
+  ].filter(Boolean).length
   return (
     <EntityListPage>
       <PageHero
@@ -283,13 +295,15 @@ function Shell<T extends { id: string }>({
         description={description}
         eyebrow="مرکز فنی"
         icon={Icon}
-        actions={
-          canManage ? (
-            <Button onClick={() => patch({ create: 1 })}>
-              <Plus className="size-4" />
-              {createLabel}
-            </Button>
-          ) : null
+        showRefresh={false}
+        primaryAction={
+          canManage
+            ? {
+                label: createLabel,
+                icon: Plus,
+                onClick: () => patch({ create: 1 }),
+              }
+            : undefined
         }
       />
       <Filters
@@ -299,20 +313,7 @@ function Shell<T extends { id: string }>({
         type={type}
         types={types}
         patch={patch}
-        hasExtra={Boolean(
-          productId ||
-          releaseId ||
-          companyId ||
-          tenderId ||
-          confidentiality ||
-          ownerId ||
-          version ||
-          category ||
-          visibility ||
-          reviewDue ||
-          from ||
-          to
-        )}
+        hasExtra={advancedFilterCount > 0}
         clearExtra={{
           productId: undefined,
           releaseId: undefined,
@@ -330,40 +331,69 @@ function Shell<T extends { id: string }>({
           sortDirection: undefined,
         }}
         extra={
-          <SupportedFilters
-            kind={kind}
-            values={{
-              productId,
-              releaseId,
-              companyId,
-              tenderId,
-              confidentiality,
-              ownerId,
-              version,
-              category,
-              visibility,
-              reviewDue,
-              from,
-              to,
-              sort,
-              sortDirection,
-            }}
-            patch={patch}
-          />
+          <AdvancedFilterPopover
+            activeCount={advancedFilterCount}
+            label="فیلترهای پیشرفته"
+            onClear={() =>
+              patch({
+                productId: undefined,
+                releaseId: undefined,
+                companyId: undefined,
+                tenderId: undefined,
+                confidentiality: undefined,
+                ownerId: undefined,
+                version: undefined,
+                category: undefined,
+                visibility: undefined,
+                reviewDue: undefined,
+                from: undefined,
+                to: undefined,
+                sort: undefined,
+                sortDirection: undefined,
+              })
+            }
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <SupportedFilters
+                kind={kind}
+                values={{
+                  productId,
+                  releaseId,
+                  companyId,
+                  tenderId,
+                  confidentiality,
+                  ownerId,
+                  version,
+                  category,
+                  visibility,
+                  reviewDue,
+                  from,
+                  to,
+                  sort,
+                  sortDirection,
+                }}
+                patch={patch}
+              />
+            </div>
+          </AdvancedFilterPopover>
         }
       />
       <QueryContent query={query} errorTitle={`دریافت ${title} ناموفق بود`}>
         <ResponsiveTechnicalList
           rows={(query.data?.data ?? []) as unknown as T[]}
-          columns={columns}
-          mobile={mobile}
+          card={card}
           getKey={(r) => r.id}
           onOpen={(r) => nav(`/technical/${kind}/${r.id}`)}
           renderRowActions={(r) => (
-            <EntityRowActions
-              label="مشاهده جزئیات"
-              onView={() => nav(`/technical/${kind}/${r.id}`)}
-            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => nav(`/technical/${kind}/${r.id}`)}
+            >
+              <Eye className="size-4" />
+              مشاهده جزئیات
+            </Button>
           )}
           meta={query.data?.meta}
           pageSize={limit}
@@ -603,50 +633,8 @@ function dateParam(date?: Date) {
 }
 
 export function TechnicalReleasesPage() {
-  const columns: DataTableColumn<TechnicalRelease>[] = [
-    {
-      id: "release",
-      header: "انتشار",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.title}
-          subtitle={r.version}
-          avatar={<PackageOpen className="size-5" />}
-        />
-      ),
-    },
-    { id: "product", header: "محصول", cell: (r) => relationName(r.product) },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <TechnicalStatusBadge
-          status={r.status}
-          presentation={releasePresentation}
-        />
-      ),
-    },
-    {
-      id: "releaseDate",
-      header: "تاریخ انتشار",
-      cell: (r) => faDate(r.releaseDate),
-    },
-    {
-      id: "support",
-      header: "چرخه پشتیبانی",
-      cell: (r) => (
-        <div className="grid gap-1.5 text-xs">
-          <ReleaseSupportBadge release={r} />
-          <div className="text-muted-foreground">
-            پایان پشتیبانی: {faDate(r.supportEndDate)}
-          </div>
-        </div>
-      ),
-    },
-    { id: "updated", header: "آخرین تغییر", cell: (r) => faDate(r.updatedAt) },
-  ]
   return (
-    <Shell
+    <Shell<TechnicalRelease>
       title="انتشارهای فنی"
       description="نسخه‌ها، زمان‌بندی انتشار و چرخه پشتیبانی محصولات"
       icon={PackageOpen}
@@ -654,11 +642,10 @@ export function TechnicalReleasesPage() {
       viewPermission="technical-release:view"
       managePermission="technical-release:manage"
       statuses={releasePresentation.label}
-      columns={columns}
-      mobile={{
+      card={{
         title: (r) => r.title,
         subtitle: (r) => `${relationName(r.product)} · ${r.version}`,
-        avatar: () => <PackageOpen className="size-5" />,
+        media: () => <PackageOpen className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
             status={r.status}
@@ -677,62 +664,19 @@ export function TechnicalReleasesPage() {
             label: "پایان پشتیبانی",
             render: (r) => faDate(r.supportEndDate),
           },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
+          },
         ],
       }}
     />
   )
 }
 export function TechnicalKnowledgeBasePage() {
-  const columns: DataTableColumn<KnowledgeArticle>[] = [
-    {
-      id: "title",
-      header: "مقاله",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.title}
-          subtitle={r.summary || r.slug}
-          avatar={<BookOpen className="size-5" />}
-        />
-      ),
-    },
-    { id: "category", header: "دسته", cell: (r) => r.category || "—" },
-    { id: "contentType", header: "محتوا", cell: (r) => r.contentType === "EXTERNAL_LINK" ? "لینک خارجی" : "متن داخلی" },
-    {
-      id: "product",
-      header: "محصول",
-      cell: (r) => relationName(r.product),
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <TechnicalStatusBadge
-          status={r.status}
-          presentation={knowledgePresentation}
-        />
-      ),
-    },
-    {
-      id: "visibility",
-      header: "دسترسی",
-      cell: (r) => <KnowledgeVisibilityBadge visibility={r.visibility} />,
-    },
-    {
-      id: "review",
-      header: "بازبینی بعدی",
-      cell: (r) => (
-        <div className="grid gap-1.5 text-xs">
-          <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />
-          <span className="text-muted-foreground">
-            {faDate(r.nextReviewAt)}
-          </span>
-        </div>
-      ),
-    },
-    { id: "updated", header: "آخرین تغییر", cell: (r) => faDate(r.updatedAt) },
-  ]
   return (
-    <Shell
+    <Shell<KnowledgeArticle>
       title="پایگاه دانش"
       description="دانش فنی قابل استفاده مجدد، قابل بازبینی و انتشار"
       icon={BookOpen}
@@ -741,14 +685,15 @@ export function TechnicalKnowledgeBasePage() {
       managePermission="technical-knowledge:manage"
       createLabel="ایجاد دانش"
       statuses={knowledgePresentation.label}
-      columns={columns}
-      mobile={{
+      card={{
         title: (r) => r.title,
         subtitle: (r) =>
           [r.category, relationName(r.product)]
             .filter((value) => value && value !== "—")
-            .join(" · ") || r.summary || "—",
-        avatar: () => <BookOpen className="size-5" />,
+            .join(" · ") ||
+          r.summary ||
+          "—",
+        media: () => <BookOpen className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
             status={r.status}
@@ -757,6 +702,12 @@ export function TechnicalKnowledgeBasePage() {
         ),
         fields: [
           { id: "category", label: "دسته", render: (r) => r.category || "—" },
+          {
+            id: "content-type",
+            label: "نوع محتوا",
+            render: (r) =>
+              r.contentType === "EXTERNAL_LINK" ? "لینک خارجی" : "متن داخلی",
+          },
           {
             id: "visibility",
             label: "دسترسی",
@@ -767,7 +718,9 @@ export function TechnicalKnowledgeBasePage() {
           {
             id: "review",
             label: "بازبینی",
-            render: (r) => <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />,
+            render: (r) => (
+              <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />
+            ),
           },
           {
             id: "owner",
@@ -785,54 +738,8 @@ export function TechnicalKnowledgeBasePage() {
   )
 }
 export function TechnicalDocumentsPage() {
-  const columns: DataTableColumn<TechnicalDocument>[] = [
-    {
-      id: "title",
-      header: "سند",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.title}
-          subtitle={r.documentType}
-          avatar={<FileText className="size-5" />}
-        />
-      ),
-    },
-    {
-      id: "version",
-      header: "نسخه فعلی",
-      cell: (r) => r.versions?.[0]?.version || "—",
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <TechnicalStatusBadge
-          status={r.status}
-          presentation={documentPresentation}
-        />
-      ),
-    },
-    {
-      id: "conf",
-      header: "محرمانگی",
-      cell: (r) => confidentialityLabels[r.confidentiality],
-    },
-    {
-      id: "relation",
-      header: "ارتباط",
-      cell: (r) =>
-        r.product
-          ? relationName(r.product)
-          : r.company
-            ? relationName(r.company)
-            : r.opportunity
-              ? relationName(r.opportunity)
-              : "—",
-    },
-    { id: "updated", header: "آخرین تغییر", cell: (r) => faDate(r.updatedAt) },
-  ]
   return (
-    <Shell
+    <Shell<TechnicalDocument>
       title="اسناد فنی"
       description="مستندات نسخه‌بندی‌شده با چرخه تأیید و محرمانگی"
       icon={FileText}
@@ -840,12 +747,11 @@ export function TechnicalDocumentsPage() {
       viewPermission="technical-document:view"
       managePermission="technical-document:manage"
       statuses={documentPresentation.label}
-      columns={columns}
-      mobile={{
+      card={{
         title: (r) => r.title,
         subtitle: (r) =>
           `${r.documentType} · ${r.versions?.[0]?.version || "بدون نسخه"}`,
-        avatar: () => <FileText className="size-5" />,
+        media: () => <FileText className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
             status={r.status}
@@ -859,6 +765,18 @@ export function TechnicalDocumentsPage() {
             render: (r) => confidentialityLabels[r.confidentiality],
           },
           {
+            id: "relation",
+            label: "ارتباط",
+            render: (r) =>
+              r.product
+                ? relationName(r.product)
+                : r.company
+                  ? relationName(r.company)
+                  : r.opportunity
+                    ? relationName(r.opportunity)
+                    : "—",
+          },
+          {
             id: "updated",
             label: "آخرین تغییر",
             render: (r) => faDate(r.updatedAt),
@@ -869,57 +787,8 @@ export function TechnicalDocumentsPage() {
   )
 }
 export function TechnicalResourcesPage() {
-  const columns: DataTableColumn<TechnicalResource>[] = [
-    {
-      id: "title",
-      header: "منبع",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.title}
-          subtitle={r.version || resourceTypeLabels[r.resourceType]}
-          avatar={<FolderOpen className="size-5" />}
-        />
-      ),
-    },
-    {
-      id: "type",
-      header: "نوع",
-      cell: (r) => resourceTypeLabels[r.resourceType],
-    },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <TechnicalStatusBadge
-          status={r.status}
-          presentation={resourcePresentation}
-        />
-      ),
-    },
-    {
-      id: "source",
-      header: "دسترسی",
-      cell: (r) =>
-        r.url ? (
-          <a
-            href={r.url}
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            پیوند خارجی
-          </a>
-        ) : (r.artifactCount ?? 0) > 0 || r.attachmentId ? (
-          `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک`
-        ) : (
-          "—"
-        ),
-    },
-    { id: "updated", header: "آخرین تغییر", cell: (r) => faDate(r.updatedAt) },
-  ]
   return (
-    <Shell
+    <Shell<TechnicalResource>
       title="منابع فنی"
       description="SDK، نمونه‌کد، اسکریپت، Firmware و پیوندهای قابل استفاده مجدد"
       icon={FolderOpen}
@@ -928,11 +797,10 @@ export function TechnicalResourcesPage() {
       managePermission="technical-resource:manage"
       statuses={resourcePresentation.label}
       types={resourceTypeLabels}
-      columns={columns}
-      mobile={{
+      card={{
         title: (r) => r.title,
         subtitle: (r) => resourceTypeLabels[r.resourceType],
-        avatar: () => <FolderOpen className="size-5" />,
+        media: () => <FolderOpen className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
             status={r.status}
@@ -944,7 +812,17 @@ export function TechnicalResourcesPage() {
           {
             id: "source",
             label: "منبع",
-            render: (r) => (r.url ? "پیوند" : (r.artifactCount ?? 0) > 0 || r.attachmentId ? `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک` : "—"),
+            render: (r) =>
+              r.url
+                ? "پیوند"
+                : (r.artifactCount ?? 0) > 0 || r.attachmentId
+                  ? `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک`
+                  : "—",
+          },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
           },
         ],
       }}
@@ -952,56 +830,8 @@ export function TechnicalResourcesPage() {
   )
 }
 export function TechnicalTendersPage() {
-  const columns: DataTableColumn<Tender>[] = [
-    {
-      id: "title",
-      header: "مناقصه",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.title}
-          subtitle={r.referenceNumber || "بدون شماره مرجع"}
-          avatar={<Gavel className="size-5" />}
-        />
-      ),
-    },
-    { id: "company", header: "شرکت", cell: (r) => relationName(r.company) },
-    {
-      id: "opportunity",
-      header: "فرصت",
-      cell: (r) => relationName(r.opportunity),
-    },
-    { id: "type", header: "نوع", cell: (r) => tenderTypeLabels[r.tenderType] },
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <TechnicalStatusBadge
-          status={r.status}
-          presentation={tenderPresentation}
-        />
-      ),
-    },
-    {
-      id: "deadline",
-      header: "مهلت ارسال",
-      cell: (r) => <Deadline value={r.submissionDeadline} />,
-    },
-    {
-      id: "readiness",
-      header: "آمادگی",
-      cell: (r) => <span className={`rounded-full border px-2 py-1 text-xs font-bold ${r.readiness?.overallReady ? "text-emerald-700" : "text-amber-700"}`}>{r.readiness?.overallReady ? "آماده" : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع`}</span>,
-    },
-    {
-      id: "value",
-      header: "ارزش",
-      cell: (r) =>
-        r.estimatedValue
-          ? `${Number(r.estimatedValue).toLocaleString("fa-IR")} ${r.currency || ""}`
-          : "—",
-    },
-  ]
   return (
-    <Shell
+    <Shell<Tender>
       title="مناقصه‌ها"
       description="فضای فنی–تجاری RFP/RFQ/RFI و الزامات تحویل"
       icon={Gavel}
@@ -1011,11 +841,10 @@ export function TechnicalTendersPage() {
       createLabel="ایجاد مناقصه"
       statuses={tenderPresentation.label}
       types={tenderTypeLabels}
-      columns={columns}
-      mobile={{
+      card={{
         title: (r) => r.title,
         subtitle: (r) => r.referenceNumber || relationName(r.company),
-        avatar: () => <Gavel className="size-5" />,
+        media: () => <Gavel className="size-5" />,
         status: (r) => (
           <TechnicalStatusBadge
             status={r.status}
@@ -1029,11 +858,36 @@ export function TechnicalTendersPage() {
             render: (r) => relationName(r.company),
           },
           {
+            id: "opportunity",
+            label: "فرصت",
+            render: (r) => relationName(r.opportunity),
+          },
+          {
+            id: "type",
+            label: "نوع",
+            render: (r) => tenderTypeLabels[r.tenderType],
+          },
+          {
             id: "deadline",
             label: "مهلت ارسال",
             render: (r) => <Deadline value={r.submissionDeadline} />,
           },
-          { id: "readiness", label: "آمادگی", render: (r) => r.readiness?.overallReady ? "آماده" : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع` },
+          {
+            id: "readiness",
+            label: "آمادگی",
+            render: (r) =>
+              r.readiness?.overallReady
+                ? "آماده"
+                : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع`,
+          },
+          {
+            id: "value",
+            label: "ارزش",
+            render: (r) =>
+              r.estimatedValue
+                ? `${Number(r.estimatedValue).toLocaleString("fa-IR")} ${r.currency || ""}`
+                : "—",
+          },
         ],
       }}
     />
