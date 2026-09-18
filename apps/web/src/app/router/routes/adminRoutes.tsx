@@ -88,6 +88,15 @@ export const adminRoutes = [
     lazyRoute(
       () => import("@/features/admin/libraries/pages/AdminLibrariesPage"),
       "AdminLibrariesPage"
-    )
+    ),
+    [
+      {
+        path: "/admin/libraries/:sectionId",
+        element: lazyRoute(
+          () => import("@/features/admin/libraries/pages/AdminLibrariesPage"),
+          "AdminLibrariesPage"
+        ),
+      },
+    ]
   ),
 ]

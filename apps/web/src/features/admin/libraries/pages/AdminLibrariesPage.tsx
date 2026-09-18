@@ -15,6 +15,7 @@ import { useLibraryItems, useProducts } from "../hooks/useLibraries"
 import { useListQueryState, enumParam } from "@/lib/listQuery"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import { canViewFinancials } from "@/lib/permissions"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -573,6 +574,8 @@ function ProductForm({
 }
 
 export function AdminLibrariesPage() {
+  const navigate = useNavigate()
+  const { sectionId } = useParams<{ sectionId?: string }>()
   const permissions = useAuthStore((s) => s.user?.permissions ?? [])
   const financialVisible = canViewFinancials(permissions)
   const available = sections.filter(
@@ -580,8 +583,10 @@ export function AdminLibrariesPage() {
   )
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
-  const activeId = params.get("section") || available[0]?.id || "industries"
-  const section = available.find((s) => s.id === activeId) ?? available[0]
+  const requestedSectionId = sectionId || params.get("section") || undefined
+  const selectedSection = available.find((s) => s.id === requestedSectionId)
+  const showOverview = !requestedSectionId || !selectedSection
+  const section = selectedSection ?? available[0]
   const search = params.get("search") || ""
   const status = enumParam(
     params.get("status"),
@@ -601,10 +606,13 @@ export function AdminLibrariesPage() {
     Product | null | undefined
   >()
   const client = useQueryClient()
-  const canManage = Boolean(section && permissions.includes(section.manage))
+  const canManage = Boolean(
+    !showOverview && section && permissions.includes(section.manage)
+  )
   const canManageCurrent =
     canManage && (section?.kind !== "products" || financialVisible)
-  const kind = section?.kind !== "products" ? section?.kind : undefined
+  const kind =
+    !showOverview && section?.kind !== "products" ? section?.kind : undefined
   const group = section?.group
   const items = useLibraryItems(kind, group)
   const productParams = {
@@ -617,7 +625,9 @@ export function AdminLibrariesPage() {
   const debouncedSearch = useDebouncedValue(search, 300)
   const products = useProducts(
     { ...productParams, search: debouncedSearch.trim() || undefined },
-    section?.kind === "products" && search === debouncedSearch
+    !showOverview &&
+      section?.kind === "products" &&
+      search === debouncedSearch
   )
   const filtered = (items.data ?? []).filter(
     (i) =>
@@ -815,28 +825,77 @@ export function AdminLibrariesPage() {
       ),
     },
   ]
+  if (showOverview) {
+    return (
+      <EntityListPage>
+        <PageHero
+          title="مرکز کتابخانه‌ها"
+          eyebrow="داده‌های پایه CRM"
+          icon={LibraryBig}
+          description="کتابخانه موردنظر را انتخاب کنید تا تنظیمات و آیتم‌های همان بخش را در صفحه‌ای مستقل مدیریت کنید."
+          showRefresh={false}
+        />
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {available.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() =>
+                  navigate(`/admin/libraries/${encodeURIComponent(item.id)}`)
+                }
+                className="group flex min-h-36 items-start gap-3 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-start shadow-[var(--app-shadow-card)] transition hover:border-[var(--app-primary)]/35 hover:bg-[var(--app-primary-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/35 sm:p-5"
+              >
+                <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)] transition group-hover:bg-[var(--app-surface)]">
+                  <Icon className="size-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block text-sm text-[var(--app-heading)]">
+                    {item.label}
+                  </strong>
+                  <span className="mt-2 block text-xs leading-6 text-[var(--app-text-secondary)]">
+                    {item.description}
+                  </span>
+                  <span className="mt-4 inline-flex text-xs font-bold text-[var(--app-primary)]">
+                    ورود به تنظیمات
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </section>
+        {!available.length ? (
+          <EmptyState
+            icon={LibraryBig}
+            title="کتابخانه‌ای در دسترس نیست"
+            description="سطح دسترسی حساب شما شامل هیچ‌کدام از کتابخانه‌ها نیست."
+          />
+        ) : null}
+      </EntityListPage>
+    )
+  }
   const SectionIcon = section.icon
   return (
     <EntityListPage>
       <PageHero
-        title="مرکز کتابخانه‌ها"
-        eyebrow="داده‌های پایه CRM"
-        icon={LibraryBig}
-        description="داده‌های مرجع فرم‌ها، فرایند فروش و کاتالوگ محصولات را از یک فضای منظم مدیریت کنید."
-        actions={
-          canManageCurrent ? (
-              <Button
-                onClick={() =>
+        title={section.label}
+        eyebrow="مرکز کتابخانه‌ها"
+        icon={section.icon}
+        description={section.description}
+        primaryAction={
+          canManageCurrent
+            ? {
+                label: `افزودن ${section.label}`,
+                icon: Plus,
+                onClick: () =>
                   section.kind === "products"
                     ? setProductEditing(null)
-                    : setEditing(null)
-                }
-              >
-                <Plus className="size-4" />
-                افزودن {section.label}
-              </Button>
-          ) : null
+                    : setEditing(null),
+              }
+            : undefined
         }
+        backFallback="/admin/libraries"
         onRefresh={() => Promise.all([items.refetch(), products.refetch()])}
         refreshing={items.isFetching || products.isFetching}
       />
@@ -872,39 +931,7 @@ export function AdminLibrariesPage() {
           tone="success"
         />
       </section>
-      <div className="grid min-w-0 gap-4 xl:h-[680px] xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="max-h-[360px] overflow-y-auto overscroll-contain rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] xl:max-h-none xl:min-h-0">
-          <div className="mb-2 px-2 text-xs font-bold text-muted-foreground">
-            انتخاب کتابخانه
-          </div>
-          <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-1">
-            {available.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  patch({
-                    section: s.id,
-                    search: undefined,
-                    status: undefined,
-                    type: undefined,
-                  })
-                }}
-                className={`flex items-center gap-3 rounded-2xl p-3 text-start transition ${s.id === section.id ? "bg-[var(--app-primary-soft)] text-[var(--app-primary)]" : "hover:bg-[var(--app-background)]"}`}
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--app-surface)] shadow-sm">
-                  <s.icon className="size-5" />
-                </span>
-                <span>
-                  <b className="block text-sm">{s.label}</b>
-                  <small className="line-clamp-1 text-muted-foreground">
-                    {s.description}
-                  </small>
-                </span>
-              </button>
-            ))}
-          </div>
-        </aside>
-        <main className="grid min-w-0 content-start gap-4 xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain xl:pe-1">
+      <main className="grid min-w-0 content-start gap-4">
           <section className="grid gap-3">
             <div className="mb-4">
               <h2 className="text-xl font-black">{section.label}</h2>
@@ -1050,8 +1077,7 @@ export function AdminLibrariesPage() {
               />
             </QueryContent>
           )}
-        </main>
-      </div>
+      </main>
       {editing !== undefined ? (
         <LibraryForm
           key={editing?.id ?? `new-${kind}-${group}`}

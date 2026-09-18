@@ -87,6 +87,20 @@ it("Products preserves hardware/software filtering and resets the server page",a
   await userEvent.selectOptions(screen.getByLabelText(uiText.products.type),"SOFTWARE")
   await waitFor(()=>expectParams("/product-catalog",{page:1,type:"SOFTWARE"}))
 })
+it("Libraries opens with section buttons and supports dedicated section routes",async()=>{
+  const overview=mount(<AdminLibrariesPage/>,"/admin/libraries")
+  const productsButton=await screen.findByRole("button",{name:/محصولات/})
+  await userEvent.click(productsButton)
+  expect(overview.router.state.location.pathname).toBe("/admin/libraries/products")
+
+  mount(
+    <AdminLibrariesPage/>,
+    "/admin/libraries/products",
+    "/admin/libraries/:sectionId"
+  )
+  expect(await screen.findByRole("table")).toHaveTextContent("محصول نمونه")
+  expect(screen.queryByText("انتخاب کتابخانه")).not.toBeInTheDocument()
+})
 it("Team members paginate the returned array without inventing server page requests",async()=>{
   mount(<AdminTeamDetailsPage/>,"/admin/teams/t1","/admin/teams/:teamId")
   const table=await screen.findByRole("table")
