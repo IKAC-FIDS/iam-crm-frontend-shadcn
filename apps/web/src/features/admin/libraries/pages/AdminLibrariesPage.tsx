@@ -1,5 +1,8 @@
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
-import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -44,13 +47,8 @@ import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { PageHero } from "@/components/shared/PageHero"
 import { MetricCard } from "@/components/shared/MetricCard"
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -649,27 +647,15 @@ export function AdminLibrariesPage() {
   })
   const productToggle = useToggleProduct()
 
-  const cols: DataTableColumn<LibraryItem>[] = [
-    {
-      id: "title",
-      header: "عنوان",
-      cell: (r) => (
-        <div>
-          <div className="font-bold">{r.label}</div>
-          <div className="mt-1 line-clamp-1 max-w-xl text-xs text-muted-foreground">
-            {r.description || "بدون توضیحات"}
-          </div>
-        </div>
-      ),
-    },
+  const libraryFields: EntityCardField<LibraryItem>[] = [
     ...(kind === "leadSources" ||
     kind === "lookupOptions" ||
     kind === "universities"
       ? [
           {
             id: "code",
-            header: "کد",
-            cell: (r: LibraryItem) => <code dir="ltr">{r.code || "—"}</code>,
+            label: "کد",
+            render: (r: LibraryItem) => <code dir="ltr">{r.code || "—"}</code>,
           },
         ]
       : []),
@@ -677,80 +663,29 @@ export function AdminLibrariesPage() {
       ? [
           {
             id: "category",
-            header: "دسته‌بندی",
-            cell: (r: LibraryItem) => (
-              <Badge variant="outline">{r.category || "بدون دسته"}</Badge>
-            ),
+            label: "دسته‌بندی",
+            render: (r: LibraryItem) => r.category || "بدون دسته",
           },
         ]
       : []),
     {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-          {r.isActive ? uiText.common.active : uiText.common.inactive}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "actions",
-      header: "عملیات",
-      cell: (r) => (
-        <EntityRowActions
-          actions={[
-            {
-              id: "edit",
-              label: "ویرایش آیتم",
-              icon: Pencil,
-              onClick: () => setEditing(r),
-              enabled: canManage,
-            },
-            {
-              id: "delete",
-              label: "حذف آیتم",
-              icon: Trash2,
-              onClick: () => remove.mutateAsync(r),
-              enabled: canManage,
-              disabled: remove.isPending,
-              tone: "danger",
-              confirmation: {
-                title: "حذف آیتم",
-                description: `آیا از حذف «${r.label}» مطمئن هستید؟`,
-              },
-            },
-          ]}
-        />
-      ),
+      id: "description",
+      label: "توضیحات",
+      render: (r) => r.description || "بدون توضیحات",
+      priority: "primary",
     },
   ]
-  const productCols: DataTableColumn<Product>[] = [
+  const productFields: EntityCardField<Product>[] = [
     {
       id: "type",
-      header: uiText.products.type,
-      cell: (r) => (
-        <StatusBadge tone="primary" dot={false}>
-          {uiText.products.types[r.type] ?? "—"}
-        </StatusBadge>
-      ),
+      label: uiText.products.type,
+      render: (r) => uiText.products.types[r.type] ?? "—",
     },
-    {
-      id: "name",
-      header: "محصول",
-      cell: (r) => (
-        <EntityTableCell
-          title={r.name}
-          subtitle={r.code}
-          subtitleDir="ltr"
-          avatar={<Package className="size-5" />}
-        />
-      ),
-    },
-    { id: "category", header: "دسته‌بندی", cell: (r) => r.category || "—" },
+    { id: "category", label: "دسته‌بندی", render: (r) => r.category || "—" },
     {
       id: "digikalaCode",
-      header: "کد دیجی‌کالا",
-      cell: (r) => (
+      label: "کد دیجی‌کالا",
+      render: (r) => (
         <code className="whitespace-nowrap" dir="ltr">
           {r.digikalaCode || "—"}
         </code>
@@ -758,72 +693,18 @@ export function AdminLibrariesPage() {
     },
     ...(financialVisible ? [{
       id: "in",
-      header: "قیمت حضوری",
-      cell: (r) => (
+      label: "قیمت حضوری",
+      render: (r: Product) => (
         <span className="whitespace-nowrap">{money(r.inPersonPriceIrr)}</span>
       ),
-    } satisfies DataTableColumn<Product>,
+    } satisfies EntityCardField<Product>,
     {
       id: "digi",
-      header: "قیمت دیجی‌کالا",
-      cell: (r) => (
+      label: "قیمت دیجی‌کالا",
+      render: (r: Product) => (
         <span className="whitespace-nowrap">{money(r.digikalaPriceIrr)}</span>
       ),
-    } satisfies DataTableColumn<Product>] : []),
-    {
-      id: "status",
-      header: "وضعیت",
-      cell: (r) => (
-        <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-          {r.isActive ? uiText.common.active : uiText.common.inactive}
-        </StatusBadge>
-      ),
-    },
-    {
-      id: "actions",
-      header: "عملیات",
-      cell: (r) => (
-        <EntityRowActions
-          actions={[
-            {
-              id: "edit",
-              label: "ویرایش محصول",
-              icon: Pencil,
-              onClick: () => setProductEditing(r),
-              enabled: canManageCurrent,
-            },
-            {
-              id: "digikala",
-              label: "مشاهده صفحه محصول در دیجی‌کالا",
-              icon: ShoppingBag,
-              onClick: () => {
-                const url = safeExternalUrl(r.digikalaUrl)
-                if (url) window.open(url, "_blank", "noopener,noreferrer")
-              },
-              enabled: Boolean(safeExternalUrl(r.digikalaUrl)),
-            },
-            {
-              id: "toggle",
-              label: r.isActive ? "غیرفعال‌کردن محصول" : "فعال‌کردن محصول",
-              icon: r.isActive ? CircleOff : CircleCheckBig,
-              enabled: canManage,
-              disabled: productToggle.isPending,
-              tone: r.isActive ? "danger" : "default",
-              confirmation: r.isActive
-                ? {
-                    title: "غیرفعال‌کردن محصول",
-                    description: `آیا از غیرفعال‌کردن «${r.name}» مطمئن هستید؟`,
-                  }
-                : undefined,
-              onClick: async () => {
-                await productToggle.mutateAsync(r)
-                toast.success("وضعیت محصول به‌روزرسانی شد.")
-              },
-            },
-          ]}
-        />
-      ),
-    },
+    } satisfies EntityCardField<Product>] : []),
   ]
   if (showOverview) {
     return (
@@ -991,46 +872,69 @@ export function AdminLibrariesPage() {
           </section>
           {section.kind === "products" ? (
             <QueryContent query={products}>
-              <DataTableShell
+              <EntityCardList
                 rows={products.data?.data ?? []}
-                columns={productCols}
+                fields={productFields}
                 getRowKey={(r) => r.id}
                 onRowClick={(r) => canManageCurrent && setProductEditing(r)}
                 emptyState={<Empty />}
-                mobile={{
-                  title: (r) => r.name,
-                  subtitle: (r) => r.code,
-                  avatar: () => <Package className="size-5" />,
-                  status: (r) => (
-                    <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-                      {r.isActive
-                        ? uiText.common.active
-                        : uiText.common.inactive}
-                    </StatusBadge>
-                  ),
-                  fields: [
-                    {
-                      id: "type",
-                      label: uiText.products.type,
-                      render: (r) => uiText.products.types[r.type] ?? "—",
-                    },
-                    {
-                      id: "category",
-                      label: "دسته‌بندی",
-                      render: (r) => r.category || "—",
-                    },
-                    ...(financialVisible ? [{
-                      id: "in",
-                      label: "قیمت حضوری",
-                      render: (r: Product) => money(r.inPersonPriceIrr),
-                    },
-                    {
-                      id: "digi",
-                      label: "قیمت دیجی‌کالا",
-                      render: (r: Product) => money(r.digikalaPriceIrr),
-                    }] : []),
-                  ],
-                }}
+                layout="row"
+                density="compact"
+                title={(r) => r.name}
+                subtitle={(r) => <span dir="ltr">{r.code || "—"}</span>}
+                media={() => (
+                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--app-surface)] text-[var(--app-primary)]">
+                    <Package className="size-5" />
+                  </span>
+                )}
+                badges={(r) => (
+                  <StatusBadge tone={r.isActive ? "success" : "neutral"}>
+                    {r.isActive ? uiText.common.active : uiText.common.inactive}
+                  </StatusBadge>
+                )}
+                actions={(r) => (
+                  <EntityRowActions
+                    presentation="buttons"
+                    actions={[
+                      {
+                        id: "edit",
+                        label: "ویرایش محصول",
+                        icon: Pencil,
+                        onClick: () => setProductEditing(r),
+                        enabled: canManageCurrent,
+                      },
+                      {
+                        id: "digikala",
+                        label: "مشاهده در دیجی‌کالا",
+                        icon: ShoppingBag,
+                        onClick: () => {
+                          const url = safeExternalUrl(r.digikalaUrl)
+                          if (url)
+                            window.open(url, "_blank", "noopener,noreferrer")
+                        },
+                        enabled: Boolean(safeExternalUrl(r.digikalaUrl)),
+                      },
+                      {
+                        id: "toggle",
+                        label: r.isActive ? "غیرفعال‌کردن" : "فعال‌کردن",
+                        icon: r.isActive ? CircleOff : CircleCheckBig,
+                        enabled: canManage,
+                        disabled: productToggle.isPending,
+                        tone: r.isActive ? "danger" : "default",
+                        confirmation: r.isActive
+                          ? {
+                              title: "غیرفعال‌کردن محصول",
+                              description: `آیا از غیرفعال‌کردن «${r.name}» مطمئن هستید؟`,
+                            }
+                          : undefined,
+                        onClick: async () => {
+                          await productToggle.mutateAsync(r)
+                          toast.success("وضعیت محصول به‌روزرسانی شد.")
+                        },
+                      },
+                    ]}
+                  />
+                )}
               />
               <PaginationControls
                 page={page}
@@ -1044,36 +948,53 @@ export function AdminLibrariesPage() {
             </QueryContent>
           ) : (
             <QueryContent query={items}>
-              <DataTableShell
+              <EntityCardList
                 rows={filtered}
-                columns={cols}
+                fields={libraryFields}
                 getRowKey={(r) => r.id}
                 onRowClick={(r) => canManage && setEditing(r)}
                 emptyState={<Empty />}
-                mobile={{
-                  title: (r) => r.label,
-                  subtitle: (r) => r.code || r.description || "—",
-                  avatar: () => <SectionIcon className="size-5" />,
-                  status: (r) => (
-                    <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-                      {r.isActive
-                        ? uiText.common.active
-                        : uiText.common.inactive}
-                    </StatusBadge>
-                  ),
-                  fields: [
-                    {
-                      id: "category",
-                      label: "دسته‌بندی",
-                      render: (r) => r.category || "—",
-                    },
-                    {
-                      id: "description",
-                      label: "توضیحات",
-                      render: (r) => r.description || "—",
-                    },
-                  ],
-                }}
+                layout="row"
+                density="compact"
+                title={(r) => r.label}
+                subtitle={(r) => r.code || section.description}
+                media={() => (
+                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--app-surface)] text-[var(--app-primary)]">
+                    <SectionIcon className="size-5" />
+                  </span>
+                )}
+                badges={(r) => (
+                  <StatusBadge tone={r.isActive ? "success" : "neutral"}>
+                    {r.isActive ? uiText.common.active : uiText.common.inactive}
+                  </StatusBadge>
+                )}
+                actions={(r) => (
+                  <EntityRowActions
+                    presentation="buttons"
+                    actions={[
+                      {
+                        id: "edit",
+                        label: "ویرایش آیتم",
+                        icon: Pencil,
+                        onClick: () => setEditing(r),
+                        enabled: canManage,
+                      },
+                      {
+                        id: "delete",
+                        label: "حذف آیتم",
+                        icon: Trash2,
+                        onClick: () => remove.mutateAsync(r),
+                        enabled: canManage,
+                        disabled: remove.isPending,
+                        tone: "danger",
+                        confirmation: {
+                          title: "حذف آیتم",
+                          description: `آیا از حذف «${r.label}» مطمئن هستید؟`,
+                        },
+                      },
+                    ]}
+                  />
+                )}
               />
             </QueryContent>
           )}

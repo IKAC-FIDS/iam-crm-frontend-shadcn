@@ -82,7 +82,8 @@ it("Audit deep links preserve every operational filter at the API boundary",asyn
 })
 it("Products preserves hardware/software filtering and resets the server page",async()=>{
   mount(<AdminLibrariesPage/>,"/admin/libraries?section=products&type=HARDWARE&page=2")
-  expect(await screen.findByRole("table")).toHaveTextContent("محصول نمونه")
+  expect(await screen.findByText("محصول نمونه")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expectParams("/product-catalog",{page:2,type:"HARDWARE"})
   await userEvent.selectOptions(screen.getByLabelText(uiText.products.type),"SOFTWARE")
   await waitFor(()=>expectParams("/product-catalog",{page:1,type:"SOFTWARE"}))
@@ -98,7 +99,8 @@ it("Libraries opens with section buttons and supports dedicated section routes",
     "/admin/libraries/products",
     "/admin/libraries/:sectionId"
   )
-  expect(await screen.findByRole("table")).toHaveTextContent("محصول نمونه")
+  expect(await screen.findByText("محصول نمونه")).toBeInTheDocument()
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expect(screen.queryByText("انتخاب کتابخانه")).not.toBeInTheDocument()
 })
 it("Team members paginate the returned array without inventing server page requests",async()=>{
