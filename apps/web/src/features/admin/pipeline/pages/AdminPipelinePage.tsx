@@ -20,9 +20,23 @@ import { toast } from "sonner"
 
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
+import { ContentSection } from "@/components/shared/ContentSection"
+import { DashboardToolbar } from "@/components/shared/DashboardToolbar"
+import {
+  EntityCardList,
+  type EntityCardField,
+} from "@/components/shared/EntityCardList"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { ErrorState } from "@/components/shared/ErrorState"
+import { FormActions } from "@/components/shared/FormActions"
+import { LoadingState } from "@/components/shared/LoadingState"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { PageHero } from "@/components/shared/PageHero"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -133,10 +147,9 @@ export function AdminPipelinePage() {
   }
 
   return (
-    <div className="grid min-w-0 gap-4 sm:gap-5" dir="rtl">
+    <EntityListPage>
       <PageHero
-        eyebrow="Pipeline Administration"
-        icon={Sparkles}
+        accessBadge={{ label: "مدیریت پایپ‌لاین", icon: Sparkles }}
         title="طراح پایپ‌لاین فروش"
         description="مراحل فروش، ترتیب نمایش، وضعیت‌های نهایی و قوانین مجاز انتقال بین مراحل را مدیریت کنید."
         onRefresh={refresh}
@@ -152,6 +165,36 @@ export function AdminPipelinePage() {
                 },
               }
             : undefined
+        }
+        tabs={
+          <div
+            role="tablist"
+            aria-label="بخش تنظیمات پایپ‌لاین"
+            className="flex flex-wrap gap-2"
+          >
+            {canViewStages ? (
+              <Button
+                role="tab"
+                aria-selected={tab === "stages"}
+                variant={tab === "stages" ? "default" : "outline"}
+                onClick={() => setTab("stages")}
+              >
+                <GitBranch className="size-4" />
+                مراحل پایپ‌لاین
+              </Button>
+            ) : null}
+            {canViewTransitions ? (
+              <Button
+                role="tab"
+                aria-selected={tab === "transitions"}
+                variant={tab === "transitions" ? "default" : "outline"}
+                onClick={() => setTab("transitions")}
+              >
+                <ArrowLeftRight className="size-4" />
+                قوانین انتقال
+              </Button>
+            ) : null}
+          </div>
         }
       />
 
@@ -182,32 +225,6 @@ export function AdminPipelinePage() {
         />
       </section>
 
-      <section className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-2 shadow-[var(--app-shadow-card)]">
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          {canViewStages ? (
-            <Button
-              className="min-w-0 px-2 sm:px-4"
-              variant={tab === "stages" ? "default" : "ghost"}
-              onClick={() => setTab("stages")}
-            >
-              <GitBranch className="ms-2 size-4" />
-              مراحل پایپ‌لاین
-            </Button>
-          ) : null}
-
-          {canViewTransitions ? (
-            <Button
-              className="min-w-0 px-2 sm:px-4"
-              variant={tab === "transitions" ? "default" : "ghost"}
-              onClick={() => setTab("transitions")}
-            >
-              <ArrowLeftRight className="ms-2 size-4" />
-              قوانین انتقال
-            </Button>
-          ) : null}
-        </div>
-      </section>
-
       {tab === "stages" ? (
         <StagesDesigner
           stages={stages}
@@ -228,7 +245,7 @@ export function AdminPipelinePage() {
           onRefresh={refresh}
         />
       )}
-    </div>
+    </EntityListPage>
   )
 }
 
@@ -337,32 +354,27 @@ function StagesDesigner({
   }
 
   if (loading) {
-    return (
-      <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">
-        در حال دریافت مراحل...
-      </div>
-    )
+    return <LoadingState rows={4} />
   }
 
   if (error) {
     return (
-      <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">
-        دریافت مراحل پایپ‌لاین با خطا مواجه شد.
-      </div>
+      <ErrorState
+        title="دریافت مراحل پایپ‌لاین انجام نشد"
+        description="در دریافت اطلاعات مراحل مشکلی رخ داد. دوباره تلاش کنید."
+        retryLabel="تلاش دوباره"
+        onRetry={() => void onRefresh()}
+      />
     )
   }
 
   return (
     <>
-      <section className="min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] sm:rounded-[26px] sm:p-4">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="font-black">جریان مراحل</h2>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              برای تغییر ترتیب، کارت‌ها را Drag & Drop کنید.
-            </p>
-          </div>
-
+      <ContentSection
+        title="جریان مراحل"
+        description="برای تغییر ترتیب، کارت‌ها را بکشید و در جای دلخواه رها کنید."
+        icon={GitBranch}
+        action={
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {ordered ? (
               <>
@@ -383,13 +395,14 @@ function StagesDesigner({
                 </Button>
               </>
             ) : null}
-
           </div>
-        </div>
+        }
+      >
 
-        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {displayed.map((stage, index) => (
-            <article
+        {displayed.length ? (
+          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {displayed.map((stage, index) => (
+            <SurfaceCard
               key={stage.id}
               draggable={canManage}
               onDragStart={(event) => startDrag(event, stage.id)}
@@ -400,7 +413,7 @@ function StagesDesigner({
                 finishDrag()
               }}
               onDragEnd={finishDrag}
-              className={`min-w-0 rounded-[22px] border bg-[var(--app-surface)] p-4 shadow-sm transition-[transform,opacity,border-color,box-shadow] duration-150 ${
+              className={`min-w-0 p-4 transition-[transform,opacity,border-color,box-shadow] duration-150 ${
                 canManage ? "cursor-grab active:cursor-grabbing" : ""
               } ${
                 draggedId === stage.id
@@ -432,24 +445,16 @@ function StagesDesigner({
 
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {stage.isDefault ? (
-                  <span className="rounded-full bg-violet-500/10 px-2 py-1 text-xs font-bold text-violet-700">
-                    پیش‌فرض
-                  </span>
+                  <StatusBadge tone="primary">پیش‌فرض</StatusBadge>
                 ) : null}
 
-                <span
-                  className={`rounded-full px-2 py-1 text-xs font-bold ${
-                    stage.isActive
-                      ? "bg-emerald-500/10 text-emerald-700"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
+                <StatusBadge tone={stage.isActive ? "success" : "neutral"}>
                   {stage.isActive ? "فعال" : "غیرفعال"}
-                </span>
+                </StatusBadge>
 
-                <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-muted-foreground">
+                <StatusBadge tone="neutral">
                   {TERMINAL_LABELS[stage.terminalType]}
-                </span>
+                </StatusBadge>
               </div>
 
               <div className="mt-4 flex items-center gap-2">
@@ -493,10 +498,17 @@ function StagesDesigner({
                   ) : null}
                 </div>
               ) : null}
-            </article>
-          ))}
-        </div>
-      </section>
+            </SurfaceCard>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={GitBranch}
+            title="مرحله‌ای تعریف نشده است"
+            description="برای شروع طراحی پایپ‌لاین، اولین مرحله را ایجاد کنید."
+          />
+        )}
+      </ContentSection>
 
       <StageEditor
         stage={editor}
@@ -544,9 +556,10 @@ function StagesDesigner({
             >
               انصراف
             </Button>
-            <Button
-              className="w-full sm:w-auto"
-              onClick={() => deactivateMutation.mutate()}
+          <Button
+            className="w-full sm:w-auto"
+            variant="destructive"
+            onClick={() => deactivateMutation.mutate()}
               disabled={deactivateMutation.isPending}
             >
               غیرفعال‌سازی
@@ -627,7 +640,13 @@ function StageEditor({
       title={item ? `ویرایش مرحله — ${item.label}` : "ایجاد مرحله جدید"}
       description="مرحله Default باید فعال و غیرنهایی باشد."
     >
-      <div className="grid gap-4">
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          mutation.mutate()
+        }}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <Input
             value={label}
@@ -703,23 +722,12 @@ function StageEditor({
           </label>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-          <Button
-            className="w-full sm:w-auto"
-            variant="outline"
-            onClick={onClose}
-          >
-            انصراف
-          </Button>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            ذخیره
-          </Button>
-        </div>
-      </div>
+        <FormActions
+          onCancel={onClose}
+          pending={mutation.isPending}
+          submitLabel="ذخیره مرحله"
+        />
+      </form>
     </Modal>
   )
 }
@@ -777,35 +785,54 @@ function TransitionDesigner({
     return map
   }, [filteredRules])
 
+  const transitionFields = useMemo<EntityCardField<PipelineTransition>[]>(
+    () => [
+      {
+        id: "from",
+        label: "مرحله مبدأ",
+        icon: GitBranch,
+        render: (rule) => rule.fromStage?.label ?? "هر مرحله / شروع",
+      },
+      {
+        id: "to",
+        label: "مرحله مقصد",
+        icon: GitBranch,
+        render: (rule) => rule.toStage?.label ?? rule.toStageId,
+      },
+      {
+        id: "role",
+        label: "نقش مجاز",
+        icon: ShieldCheck,
+        render: (rule) => (rule.role ? ROLE_LABELS[rule.role] : "همه نقش‌ها"),
+      },
+    ],
+    []
+  )
+
   if (loading) {
-    return (
-      <div className="grid min-h-64 place-items-center text-sm text-muted-foreground">
-        در حال دریافت قوانین انتقال...
-      </div>
-    )
+    return <LoadingState rows={4} />
   }
 
   if (error) {
     return (
-      <div className="rounded-[24px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-8 text-center text-red-600">
-        دریافت قوانین انتقال با خطا مواجه شد.
-      </div>
+      <ErrorState
+        title="دریافت قوانین انتقال انجام نشد"
+        description="در دریافت قوانین پایپ‌لاین مشکلی رخ داد. دوباره تلاش کنید."
+        retryLabel="تلاش دوباره"
+        onRetry={() => void onRefresh()}
+      />
     )
   }
 
   return (
     <>
-      <section className="min-w-0 rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-[var(--app-shadow-card)] sm:rounded-[26px] sm:p-4">
-        <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <h2 className="font-black">قوانین انتقال</h2>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground">
-              Rule مخصوص Role بر Rule عمومی اولویت دارد.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+      <DashboardToolbar
+        title="نمایش و فیلتر قوانین"
+        description="قانون ویژه هر نقش بر قانون عمومی اولویت دارد."
+        icon={ArrowLeftRight}
+      >
             <NativeSelect
+              aria-label="فیلتر نقش"
               value={roleFilter}
               onChange={(event) =>
                 setRoleFilter(event.target.value as PipelineRole | "GENERAL")
@@ -823,6 +850,7 @@ function TransitionDesigner({
             <Button
               className="w-full sm:w-auto"
               variant={view === "matrix" ? "default" : "outline"}
+              aria-pressed={view === "matrix"}
               onClick={() => setView("matrix")}
             >
               ماتریس
@@ -830,6 +858,7 @@ function TransitionDesigner({
             <Button
               className="w-full sm:w-auto"
               variant={view === "list" ? "default" : "outline"}
+              aria-pressed={view === "list"}
               onClick={() => setView("list")}
             >
               لیست
@@ -844,8 +873,13 @@ function TransitionDesigner({
                 ایجاد قانون
               </Button>
             ) : null}
-          </div>
-        </div>
+      </DashboardToolbar>
+
+      <ContentSection
+        title="قوانین انتقال"
+        description={view === "matrix" ? "مقایسه مسیرهای مجاز و مسدود بین مراحل" : "فهرست عملیاتی قوانین انتقال"}
+        icon={ArrowLeftRight}
+      >
 
         {view === "matrix" ? (
           <div className="-mx-3 overflow-x-auto rounded-none border-y border-[var(--app-divider)] sm:mx-0 sm:rounded-2xl sm:border">
@@ -910,55 +944,57 @@ function TransitionDesigner({
             </table>
           </div>
         ) : (
-          <div className="grid gap-3">
-            {filteredRules.length ? (
-              filteredRules.map((rule) => (
-                <article
-                  key={rule.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-[var(--app-divider)] p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 font-bold">
-                      <span>{rule.fromStage?.label ?? "هر مرحله / شروع"}</span>
-                      <ArrowLeftRight className="size-4 text-muted-foreground" />
-                      <span>{rule.toStage?.label ?? rule.toStageId}</span>
-                    </div>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      {rule.role ? ROLE_LABELS[rule.role] : "همه نقش‌ها"} •{" "}
-                      {rule.isAllowed ? "مجاز" : "مسدود"}
-                    </div>
-                  </div>
-
-                  {canManage ? (
-                    <div className="grid grid-cols-2 gap-2 sm:flex">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditor(rule)}
-                      >
-                        <Pencil className="ms-2 size-4" />
-                        ویرایش
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setDeleteTarget(rule)}
-                      >
-                        <Trash2 className="ms-2 size-4 text-red-600" />
-                        حذف
-                      </Button>
-                    </div>
-                  ) : null}
-                </article>
-              ))
-            ) : (
-              <div className="grid min-h-40 place-items-center text-sm text-muted-foreground">
-                قانونی برای این نقش ثبت نشده است.
-              </div>
+          <EntityCardList
+            rows={filteredRules}
+            fields={transitionFields}
+            getRowKey={(rule) => rule.id}
+            layout="row"
+            density="compact"
+            fieldsClassName="md:grid-cols-3"
+            title={(rule) => `${rule.fromStage?.label ?? "هر مرحله / شروع"} ← ${rule.toStage?.label ?? rule.toStageId}`}
+            subtitle={(rule) => rule.role ? ROLE_LABELS[rule.role] : "قانون عمومی برای همه نقش‌ها"}
+            media={() => (
+              <span className="grid size-11 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                <ArrowLeftRight className="size-5" />
+              </span>
             )}
-          </div>
+            badges={(rule) => (
+              <StatusBadge tone={rule.isAllowed ? "success" : "error"}>
+                {rule.isAllowed ? "مجاز" : "مسدود"}
+              </StatusBadge>
+            )}
+            actions={(rule) => (
+              <EntityRowActions
+                presentation="buttons"
+                actions={[
+                  {
+                    id: "edit",
+                    label: "ویرایش",
+                    icon: Pencil,
+                    enabled: canManage,
+                    onClick: () => setEditor(rule),
+                  },
+                  {
+                    id: "delete",
+                    label: "حذف",
+                    icon: Trash2,
+                    enabled: canManage,
+                    tone: "danger",
+                    onClick: () => setDeleteTarget(rule),
+                  },
+                ]}
+              />
+            )}
+            emptyState={
+              <EmptyState
+                icon={ArrowLeftRight}
+                title="قانونی برای این نقش ثبت نشده است"
+                description="یک قانون جدید بسازید یا فیلتر نقش را تغییر دهید."
+              />
+            }
+          />
         )}
-      </section>
+      </ContentSection>
 
       <TransitionEditor
         item={editor}
@@ -987,6 +1023,7 @@ function TransitionDesigner({
           </Button>
           <Button
             className="w-full sm:w-auto"
+            variant="destructive"
             onClick={() =>
               deleteTarget && deleteMutation.mutate(deleteTarget.id)
             }
@@ -1063,7 +1100,13 @@ function TransitionEditor({
       onClose={onClose}
       title={rule ? "ویرایش قانون انتقال" : "ایجاد قانون انتقال"}
     >
-      <div className="grid gap-4">
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          mutation.mutate()
+        }}
+      >
         <NativeSelect
           value={fromStageId ?? ""}
           onChange={(event) => setFromStageId(event.target.value)}
@@ -1117,23 +1160,12 @@ function TransitionEditor({
           BOARDS را می‌پذیرد.
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-          <Button
-            className="w-full sm:w-auto"
-            variant="outline"
-            onClick={onClose}
-          >
-            انصراف
-          </Button>
-          <Button
-            className="w-full sm:w-auto"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            ذخیره قانون
-          </Button>
-        </div>
-      </div>
+        <FormActions
+          onCancel={onClose}
+          pending={mutation.isPending}
+          submitLabel="ذخیره قانون"
+        />
+      </form>
     </Modal>
   )
 }

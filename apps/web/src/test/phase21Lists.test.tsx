@@ -10,6 +10,7 @@ import { TasksPage } from "@/features/tasks/pages/TasksPage"
 import { AdminAuditLogsPage } from "@/features/admin/audit-logs/pages/AdminAuditLogsPage"
 import { AdminExchangeRatesPage } from "@/features/admin/exchange-rates/pages/AdminExchangeRatesPage"
 import { AdminLibrariesPage } from "@/features/admin/libraries/pages/AdminLibrariesPage"
+import { AdminPipelinePage } from "@/features/admin/pipeline/pages/AdminPipelinePage"
 import { AdminTeamDetailsPage } from "@/features/admin/teams/pages/AdminTeamDetailsPage"
 import { AdminTeamsPage } from "@/features/admin/teams/pages/AdminTeamsPage"
 import { useCompanyActivities, useCompanyTasks } from "@/features/companies/hooks/useCompany360Sections"
@@ -26,7 +27,7 @@ function page(data:unknown[],params?:{page?:number;limit?:number}) {
 }
 beforeEach(()=>{
   vi.clearAllMocks()
-  useAuthStore.setState({user:{...user,permissions:["activity:view","meeting:view","task:view","team:view","audit-log:view","product:view","exchange-rate:view","financial:view"]},status:"authenticated"})
+  useAuthStore.setState({user:{...user,permissions:["activity:view","meeting:view","task:view","team:view","audit-log:view","product:view","exchange-rate:view","financial:view","pipeline:config:view","pipeline:config:manage","pipeline:transition:view","pipeline:transition:manage"]},status:"authenticated"})
   vi.mocked(api.get).mockImplementation(async(url,config)=>{
     const params=config?.params as {page?:number;limit?:number}|undefined
     if(url==="/teams/t1")return response(team)
@@ -41,6 +42,13 @@ beforeEach(()=>{
     if(url==="/tasks")return page([{id:"task1",title:"کار نمونه",status:"TODO",priority:"MEDIUM"}],params)
     if(url==="/admin/exchange-rates/current")return response({id:"rate-current",rate:"1050000",validFrom:"2026-09-01T08:00:00Z",status:"ACTIVE",createdBy:{id:"u1",fullName:"مدیر مالی",email:"finance@example.test"}})
     if(url==="/admin/exchange-rates")return page([{id:"rate-current",rate:"1050000",validFrom:"2026-09-01T08:00:00Z",status:"ACTIVE",note:"نرخ شهریور",createdBy:{id:"u1",fullName:"مدیر مالی",email:"finance@example.test"}}],params)
+    if(url==="/admin/pipeline/stages")return response([
+      {id:"s1",code:"LEAD",label:"سرنخ",sortOrder:10,color:"#2563EB",isActive:true,isTerminal:false,terminalType:"NONE",isDefault:true},
+      {id:"s2",code:"WON",label:"موفق",sortOrder:20,color:"#16A34A",isActive:true,isTerminal:true,terminalType:"WON",isDefault:false},
+    ])
+    if(url==="/admin/pipeline/transitions")return response([
+      {id:"tr1",fromStageId:"s1",toStageId:"s2",fromStage:{id:"s1",code:"LEAD",label:"سرنخ"},toStage:{id:"s2",code:"WON",label:"موفق"},role:null,isAllowed:true},
+    ])
     if(url==="/product-catalog")return page([{id:"p1",name:"محصول نمونه",code:"P1",type:"HARDWARE",isActive:true,inPersonPriceIRR:"100",digikalaPriceIRR:"200"}],params)
     return page([],params)
   })
@@ -133,6 +141,17 @@ it("Exchange-rate history uses the standard card list and keeps server paginatio
   expectParams("/admin/exchange-rates",{page:1,limit:20})
   await userEvent.selectOptions(screen.getByLabelText(uiText.common.pagination.rowsPerPage),"50")
   await waitFor(()=>expectParams("/admin/exchange-rates",{page:1,limit:50}))
+})
+it("Pipeline keeps its comparison matrix and uses standard cards for the operational rule list",async()=>{
+  mount(<AdminPipelinePage/>,"/admin/pipeline")
+  expect(await screen.findAllByText("سرنخ")).not.toHaveLength(0)
+  await userEvent.click(screen.getByRole("tab",{name:"قوانین انتقال"}))
+  expect(await screen.findByRole("table")).toBeInTheDocument()
+  await userEvent.click(screen.getByRole("button",{name:"لیست"}))
+  expect(screen.queryByRole("table")).not.toBeInTheDocument()
+  expect(screen.getByText("سرنخ ← موفق")).toBeInTheDocument()
+  expect(screen.getByRole("button",{name:"ویرایش"})).toBeInTheDocument()
+  expect(screen.getByRole("button",{name:"حذف"})).toBeInTheDocument()
 })
 function CompanySections(){
   const [activityPage,setActivityPage]=useState(1)
