@@ -511,6 +511,7 @@ function StagesDesigner({
       </ContentSection>
 
       <StageEditor
+        key={editor === "NEW" ? "new-stage" : editor?.id ?? "closed-stage"}
         stage={editor}
         open={editor !== null}
         onClose={() => setEditor(null)}
@@ -997,6 +998,7 @@ function TransitionDesigner({
       </ContentSection>
 
       <TransitionEditor
+        key={editor === "NEW" ? `new-transition-${roleFilter}` : editor?.id ?? "closed-transition"}
         item={editor}
         stages={activeStages}
         open={editor !== null}
