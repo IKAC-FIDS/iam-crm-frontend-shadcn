@@ -6,6 +6,13 @@ import { EntityConversationPanel } from "./EntityConversationPanel"
 const mocks = vi.hoisted(() => ({ send: vi.fn(), read: vi.fn(), edit: vi.fn(), remove: vi.fn(), status: vi.fn(), refetch: vi.fn(), data: undefined as unknown }))
 
 vi.mock("@/store/authStore", () => ({ useAuthStore: (selector: (state: unknown) => unknown) => selector({ user: { id: "user-1", role: "REP" } }) }))
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>()
+  return {
+    ...actual,
+    useQuery: () => ({ data: [{ id: "user-2", fullName: "همکار دوم", email: "second@example.test" }], isLoading: false, isFetching: false }),
+  }
+})
 vi.mock("../hooks/useConversation", () => ({
   useConversation: () => ({ data: mocks.data, isLoading: false, isError: false, refetch: mocks.refetch }),
   useConversationMutations: () => ({
@@ -42,6 +49,18 @@ describe("EntityConversationPanel", () => {
     await user.click(screen.getByRole("button", { name: "پرسش" }))
     await user.type(screen.getByLabelText("متن پیام"), "نیاز به پیگیری دارد")
     await user.click(send)
-    expect(mocks.send).toHaveBeenCalledWith({ body: "نیاز به پیگیری دارد", type: "QUESTION", parentMessageId: undefined })
+    expect(mocks.send).toHaveBeenCalledWith({ body: "نیاز به پیگیری دارد", type: "QUESTION", parentMessageId: undefined, mentionedUserIds: [] })
+  })
+
+  it("adds selected mentions to the message payload", async () => {
+    mocks.send.mockResolvedValue({})
+    const user = userEvent.setup()
+    render(<EntityConversationPanel entityType="TASK" entityId="task-1" />)
+    await user.click(screen.getByRole("button", { name: "افزودن فرد به منشن‌های پیام" }))
+    await user.click(screen.getByRole("button", { name: /همکار دوم/ }))
+    expect(screen.getByText("همکار دوم")).toBeInTheDocument()
+    await user.type(screen.getByLabelText("متن پیام"), "لطفاً بررسی کنید")
+    await user.click(screen.getByRole("button", { name: "ارسال" }))
+    expect(mocks.send).toHaveBeenCalledWith({ body: "لطفاً بررسی کنید", type: "COMMENT", parentMessageId: undefined, mentionedUserIds: ["user-2"] })
   })
 })

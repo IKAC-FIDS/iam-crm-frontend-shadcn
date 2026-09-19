@@ -16,7 +16,7 @@ export function useConversationMutations(type: ConversationEntityType, id: strin
   const client = useQueryClient()
   const invalidate = () => client.invalidateQueries({ queryKey: conversationKeys.detail(type, id) })
   return {
-    send: useMutation({ mutationFn: (payload: { body: string; type: ConversationMessageType; parentMessageId?: string }) => createConversationMessage(type, id, payload), onSuccess: invalidate }),
+    send: useMutation({ mutationFn: (payload: { body: string; type: ConversationMessageType; parentMessageId?: string; mentionedUserIds?: string[] }) => createConversationMessage(type, id, payload), onSuccess: invalidate }),
     read: useMutation({ mutationFn: () => markConversationRead(type, id), onSuccess: invalidate }),
     edit: useMutation({ mutationFn: ({ messageId, body }: { messageId: string; body: string }) => updateConversationMessage(messageId, body), onSuccess: invalidate }),
     remove: useMutation({ mutationFn: deleteConversationMessage, onSuccess: invalidate }),

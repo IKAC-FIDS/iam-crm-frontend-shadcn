@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { CheckCircle2, MessageSquareText, Pencil, Reply, Send, Trash2 } from "lucide-react"
+import { AtSign, CheckCircle2, MessageSquareText, Pencil, Reply, Send, Trash2, X } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 
@@ -7,13 +8,16 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { LoadingState } from "@/components/shared/LoadingState"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { getConversationMentionOptions } from "../api/conversations.api"
 import { useConversation, useConversationMutations } from "../hooks/useConversation"
-import type { ConversationEntityType, ConversationMessage } from "../types/conversation.types"
+import type { ConversationEntityType, ConversationMentionOption, ConversationMessage } from "../types/conversation.types"
 
 export function EntityConversationPanel({ entityType, entityId, enabled = true }: { entityType: ConversationEntityType; entityId: string; enabled?: boolean }) {
   const user = useAuthStore((state) => state.user)
@@ -24,6 +28,14 @@ export function EntityConversationPanel({ entityType, entityId, enabled = true }
   const [replyTo, setReplyTo] = useState<ConversationMessage | null>(null)
   const [editing, setEditing] = useState<ConversationMessage | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ConversationMessage | null>(null)
+  const [mentionSearch, setMentionSearch] = useState("")
+  const [mentionedUsers, setMentionedUsers] = useState<ConversationMentionOption[]>([])
+  const debouncedMentionSearch = useDebouncedValue(mentionSearch, 250)
+  const mentionOptions = useQuery({
+    queryKey: ["conversation-mention-options", debouncedMentionSearch],
+    queryFn: () => getConversationMentionOptions(debouncedMentionSearch),
+    staleTime: 30_000,
+  })
   const composer = useRef<HTMLTextAreaElement>(null)
   const markRead = mutations.read.mutate
   const isMarkingRead = mutations.read.isPending
@@ -40,11 +52,13 @@ export function EntityConversationPanel({ entityType, entityId, enabled = true }
     if (!value) return
     try {
       if (editing) await mutations.edit.mutateAsync({ messageId: editing.id, body: value })
-      else await mutations.send.mutateAsync({ body: value, type: replyTo ? "ANSWER" : type, parentMessageId: replyTo?.id })
+      else await mutations.send.mutateAsync({ body: value, type: replyTo ? "ANSWER" : type, parentMessageId: replyTo?.id, mentionedUserIds: mentionedUsers.map((item) => item.id) })
       setBody("")
       setReplyTo(null)
       setEditing(null)
       setType("COMMENT")
+      setMentionedUsers([])
+      setMentionSearch("")
       composer.current?.focus()
     } catch (error) {
       toast.error(getApiErrorMessage(error, "ثبت پیام انجام نشد."))
@@ -81,8 +95,8 @@ export function EntityConversationPanel({ entityType, entityId, enabled = true }
               </div>
               <div className="flex flex-wrap items-center justify-end gap-1">
                 {message.type === "QUESTION" ? <StatusBadge tone={answeredQuestions.has(message.id) ? "success" : "warning"}>{answeredQuestions.has(message.id) ? "پاسخ داده شد" : "نیازمند پاسخ"}</StatusBadge> : message.type === "ANSWER" ? <StatusBadge tone="info">پاسخ</StatusBadge> : null}
-                {!message.deletedAt ? <Button type="button" size="icon" variant="ghost" className="size-8" aria-label="پاسخ به پیام" onClick={() => { setReplyTo(message); setEditing(null); setBody(""); composer.current?.focus() }}><Reply className="size-3.5" /></Button> : null}
-                {!message.deletedAt && (message.authorId === user?.id || canModerate) ? <><Button type="button" size="icon" variant="ghost" className="size-8" aria-label="ویرایش پیام" onClick={() => { setEditing(message); setReplyTo(null); setBody(message.body || ""); composer.current?.focus() }}><Pencil className="size-3.5" /></Button><Button type="button" size="icon" variant="ghost" className="size-8 text-[var(--destructive)]" aria-label="حذف پیام" onClick={() => setDeleteTarget(message)}><Trash2 className="size-3.5" /></Button></> : null}
+                {!message.deletedAt ? <Button type="button" size="icon" variant="ghost" className="size-8" aria-label="پاسخ به پیام" onClick={() => { setReplyTo(message); setEditing(null); setBody(""); setMentionedUsers([]); setMentionSearch(""); composer.current?.focus() }}><Reply className="size-3.5" /></Button> : null}
+                {!message.deletedAt && (message.authorId === user?.id || canModerate) ? <><Button type="button" size="icon" variant="ghost" className="size-8" aria-label="ویرایش پیام" onClick={() => { setEditing(message); setReplyTo(null); setBody(message.body || ""); setMentionedUsers([]); setMentionSearch(""); composer.current?.focus() }}><Pencil className="size-3.5" /></Button><Button type="button" size="icon" variant="ghost" className="size-8 text-[var(--destructive)]" aria-label="حذف پیام" onClick={() => setDeleteTarget(message)}><Trash2 className="size-3.5" /></Button></> : null}
               </div>
             </div>
             {message.parentMessage ? <div className="mt-3 rounded-xl border-r-2 border-[var(--app-primary)] bg-[var(--app-surface)] p-2.5 text-xs text-[var(--app-text-secondary)]"><span className="font-bold">{message.parentMessage.author.fullName}: </span>{message.parentMessage.body}</div> : null}
@@ -92,8 +106,43 @@ export function EntityConversationPanel({ entityType, entityId, enabled = true }
       </div>
 
       <div className="border-t border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4 sm:p-5">
-        {replyTo || editing ? <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--app-primary-soft)] px-3 py-2 text-xs"><span className="line-clamp-1">{editing ? "ویرایش پیام" : `پاسخ به ${replyTo?.author.fullName}`}</span><Button type="button" variant="ghost" size="sm" onClick={() => { setReplyTo(null); setEditing(null); setBody("") }}>انصراف</Button></div> : null}
+        {replyTo || editing ? <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--app-primary-soft)] px-3 py-2 text-xs"><span className="line-clamp-1">{editing ? "ویرایش پیام" : `پاسخ به ${replyTo?.author.fullName}`}</span><Button type="button" variant="ghost" size="sm" onClick={() => { setReplyTo(null); setEditing(null); setBody(""); setMentionedUsers([]); setMentionSearch("") }}>انصراف</Button></div> : null}
         {!replyTo && !editing ? <div className="mb-3 flex gap-2" role="group" aria-label="نوع پیام"><Button type="button" size="sm" variant={type === "COMMENT" ? "default" : "outline"} onClick={() => setType("COMMENT")}>یادداشت</Button><Button type="button" size="sm" variant={type === "QUESTION" ? "default" : "outline"} onClick={() => setType("QUESTION")}>پرسش</Button></div> : null}
+        {!editing ? (
+          <div className="mb-3 grid gap-2">
+            <SearchableOptionSelect
+              options={(mentionOptions.data ?? [])
+                .filter((option) => option.id !== user?.id && !mentionedUsers.some((selected) => selected.id === option.id))
+                .map((option) => ({ id: option.id, label: option.fullName, secondary: option.email || undefined }))}
+              onChange={(selectedId) => {
+                const selected = mentionOptions.data?.find((option) => option.id === selectedId)
+                if (selected) setMentionedUsers((current) => [...current, selected])
+              }}
+              search={mentionSearch}
+              onSearchChange={setMentionSearch}
+              loading={mentionOptions.isLoading || mentionOptions.isFetching}
+              allowEmpty={false}
+              placeholder="منشن کردن همکار"
+              searchPlaceholder="جست‌وجوی نام یا ایمیل..."
+              emptyText="کاربری پیدا نشد."
+              ariaLabel="افزودن فرد به منشن‌های پیام"
+            />
+            {mentionedUsers.length ? (
+              <div className="flex flex-wrap gap-2" aria-label="افراد منشن‌شده">
+                {mentionedUsers.map((mentionedUser) => (
+                  <span key={mentionedUser.id} className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">
+                    <AtSign className="size-3.5" />
+                    {mentionedUser.fullName}
+                    <button type="button" className="rounded-full p-0.5 hover:bg-black/5" aria-label={`حذف منشن ${mentionedUser.fullName}`} onClick={() => setMentionedUsers((current) => current.filter((item) => item.id !== mentionedUser.id))}>
+                      <X className="size-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <p className="text-xs text-[var(--app-text-secondary)]">افراد منشن‌شده علاوه بر مسئولان مرتبط، اعلان این پیام را دریافت می‌کنند.</p>
+          </div>
+        ) : null}
         <label className="sr-only" htmlFor={`conversation-${entityType}-${entityId}`}>متن پیام</label>
         <textarea ref={composer} id={`conversation-${entityType}-${entityId}`} rows={3} maxLength={4000} value={body} onChange={(event) => setBody(event.target.value)} placeholder={replyTo ? "پاسخ خود را بنویسید..." : "یادداشت یا پرسش خود را بنویسید..."} className="w-full resize-y rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-7 outline-none focus:border-[var(--app-primary)]" />
         <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs text-[var(--app-text-secondary)]">{body.length.toLocaleString("fa-IR")} از ۴۰۰۰</span><Button type="button" disabled={!body.trim() || pending} onClick={() => void submit()}><Send className="size-4" />{pending ? "در حال ثبت..." : editing ? "ذخیره" : "ارسال"}</Button></div>

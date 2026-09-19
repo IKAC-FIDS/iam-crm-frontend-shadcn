@@ -2,6 +2,12 @@ export type ConversationEntityType = "COMPANY" | "TASK" | "ACTIVITY"
 export type ConversationMessageType = "COMMENT" | "QUESTION" | "ANSWER"
 export type ConversationThreadStatus = "OPEN" | "RESOLVED"
 
+export type ConversationMentionOption = {
+  id: string
+  fullName: string
+  email?: string | null
+}
+
 export type ConversationMessage = {
   id: string
   threadId: string

@@ -1,6 +1,6 @@
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
-import type { ConversationEntityType, ConversationMessage, ConversationMessageType, ConversationResponse, ConversationThreadStatus } from "../types/conversation.types"
+import type { ConversationEntityType, ConversationMentionOption, ConversationMessage, ConversationMessageType, ConversationResponse, ConversationThreadStatus } from "../types/conversation.types"
 
 const path = (type: ConversationEntityType, id: string) => `/conversations/${type}/${id}`
 
@@ -9,9 +9,21 @@ export async function getConversation(type: ConversationEntityType, id: string) 
   return unwrapApiResponse<ConversationResponse>(response.data)
 }
 
-export async function createConversationMessage(type: ConversationEntityType, id: string, payload: { body: string; type: ConversationMessageType; parentMessageId?: string }) {
+export async function createConversationMessage(type: ConversationEntityType, id: string, payload: { body: string; type: ConversationMessageType; parentMessageId?: string; mentionedUserIds?: string[] }) {
   const response = await api.post(`${path(type, id)}/messages`, payload)
   return unwrapApiResponse<ConversationMessage>(response.data)
+}
+
+export async function getConversationMentionOptions(search: string) {
+  const response = await api.get("/conversations/mention-options", {
+    params: { search: search.trim() || undefined },
+  })
+  const result = unwrapApiResponse<unknown>(response.data)
+  if (Array.isArray(result)) return result as ConversationMentionOption[]
+  if (result && typeof result === "object" && "data" in result && Array.isArray((result as { data: unknown }).data)) {
+    return (result as { data: ConversationMentionOption[] }).data
+  }
+  return []
 }
 
 export async function markConversationRead(type: ConversationEntityType, id: string) {
