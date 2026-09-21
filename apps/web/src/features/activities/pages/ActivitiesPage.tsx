@@ -307,7 +307,8 @@ export function ActivitiesPage() {
               <IdentityAvatar
                 name={name}
                 mediaPath={item.company?.id ? `/companies/${item.company.id}/logo` : null}
-                hasMedia={Boolean(item.company?.id)}
+                hasMedia={Boolean(item.company?.logoObjectKey)}
+                mediaVersion={item.company?.logoObjectKey}
                 fallbackIcon={<Building2 className="size-4" />}
                 className="size-8 rounded-xl text-[10px]"
               />
@@ -334,7 +335,8 @@ export function ActivitiesPage() {
               <IdentityAvatar
                 name={name}
                 mediaPath={creator?.id ? `/users/${creator.id}/avatar` : null}
-                hasMedia={Boolean(creator?.id)}
+                hasMedia={Boolean(creator?.avatarObjectKey)}
+                mediaVersion={creator?.avatarObjectKey}
                 className="size-8 rounded-xl text-[10px]"
               />
               <span className="truncate">{name}</span>

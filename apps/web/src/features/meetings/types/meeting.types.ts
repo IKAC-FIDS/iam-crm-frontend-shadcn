@@ -9,6 +9,7 @@ export interface MeetingUser {
   role?: string | null
   teamId?: string | null
   team?: { id: string; name: string } | null
+  avatarObjectKey?: string | null
 }
 
 export interface MeetingPerson {
@@ -41,6 +42,7 @@ export interface Meeting {
     id: string
     legalName: string
     brandName?: string | null
+    logoObjectKey?: string | null
   } | null
   opportunity?: {
     id: string

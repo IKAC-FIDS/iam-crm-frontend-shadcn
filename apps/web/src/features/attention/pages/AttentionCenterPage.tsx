@@ -320,7 +320,8 @@ function FollowUpList({
             <IdentityAvatar
               name={name}
               mediaPath={item.companyId ? `/companies/${item.companyId}/logo` : null}
-              hasMedia={Boolean(item.companyId)}
+              hasMedia={Boolean(item.company?.logoObjectKey)}
+              mediaVersion={item.company?.logoObjectKey}
               fallbackIcon={<Building2 className="size-4" />}
               className="size-8 rounded-xl text-[10px]"
             />
@@ -346,7 +347,8 @@ function FollowUpList({
             <IdentityAvatar
               name={name}
               mediaPath={item.user?.id ? `/users/${item.user.id}/avatar` : null}
-              hasMedia={Boolean(item.user?.id)}
+              hasMedia={Boolean(item.user?.avatarObjectKey)}
+              mediaVersion={item.user?.avatarObjectKey}
               className="size-8 rounded-xl text-[10px]"
             />
             <span className="truncate">{name}</span>
@@ -662,7 +664,8 @@ function NotificationList({
             <IdentityAvatar
               name={name}
               mediaPath={n.actor?.id ? `/users/${n.actor.id}/avatar` : null}
-              hasMedia={Boolean(n.actor?.id)}
+              hasMedia={Boolean(n.actor?.avatarObjectKey)}
+              mediaVersion={n.actor?.avatarObjectKey}
               className="size-8 rounded-xl text-[10px]"
             />
             <span className="truncate">{name}</span>

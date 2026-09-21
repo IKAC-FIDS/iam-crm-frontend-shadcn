@@ -56,7 +56,8 @@ export function MeetingList({
             <IdentityAvatar
               name={companyName}
               mediaPath={meeting.company?.id ? `/companies/${meeting.company.id}/logo` : null}
-              hasMedia={Boolean(meeting.company?.id)}
+              hasMedia={Boolean(meeting.company?.logoObjectKey)}
+              mediaVersion={meeting.company?.logoObjectKey}
               fallbackIcon={<Building2 className="size-4" />}
               className="size-8 rounded-xl text-[10px]"
             />
@@ -100,7 +101,8 @@ export function MeetingList({
                   key={user.id}
                   name={user.fullName || user.email || uiText.common.notAvailable}
                   mediaPath={`/users/${user.id}/avatar`}
-                  hasMedia
+                  hasMedia={Boolean(user.avatarObjectKey)}
+                  mediaVersion={user.avatarObjectKey}
                   className="size-8 rounded-xl border-2 border-[var(--app-surface)] text-[10px]"
                 />
               ))}

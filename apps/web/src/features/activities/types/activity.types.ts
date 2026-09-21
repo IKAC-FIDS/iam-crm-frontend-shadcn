@@ -31,12 +31,14 @@ export interface ActivityUser {
   email?: string | null
   role?: string | null
   team?: string | null
+  avatarObjectKey?: string | null
 }
 
 export interface ActivityCompany {
   id: string
   legalName: string
   brandName?: string | null
+  logoObjectKey?: string | null
 }
 
 export interface ActivityTaskSummary {

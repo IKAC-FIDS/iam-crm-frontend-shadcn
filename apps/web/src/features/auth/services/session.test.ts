@@ -109,6 +109,18 @@ describe("session lifecycle", () => {
     await expect(refreshSession()).rejects.toBeDefined()
     expect(useAuthStore.getState().user?.id).toBe(user.id)
   })
+  it("does not refresh or clear the session for a missing optional resource", async () => {
+    applyAuthenticatedSession({ user, accessToken: "current" })
+    const post = vi.spyOn(sessionClient, "post")
+    const adapter = vi.fn(async config => { throw httpError(404, {}, config) })
+
+    await expect(api.get("/companies/company-1/logo", { adapter })).rejects.toBeDefined()
+
+    expect(post).not.toHaveBeenCalled()
+    expect(useAuthStore.getState().status).toBe("authenticated")
+    expect(useAuthStore.getState().user?.id).toBe(user.id)
+    expect(useAuthStore.getState().accessToken).toBe("current")
+  })
   it("does not resurrect the session when refresh finishes after local logout", async () => {
     let finish!: (value: ReturnType<typeof response>) => void
     const post = vi.spyOn(sessionClient, "post").mockImplementation(() => new Promise(resolve => { finish = resolve }))
