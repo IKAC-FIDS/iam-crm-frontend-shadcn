@@ -33,8 +33,9 @@ const metricLabels: [keyof Metrics, string][] = [['regularWorkedMinutes', 'کا�
 function Summary({ metrics }: { metrics?: Metrics }) { return metrics ? <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{metricLabels.map(([key, label]) => <MetricCard key={key} icon={Clock} label={label} value={minutesLabel(metrics[key])} helper="ساعت:دقیقه" />)}</div> : null }
 function useFilters() {
   const [period, setPeriod] = useState<DateRangeValue>(initialPeriod)
-  const [page, setPage] = useState(1), [status, setStatus] = useState(''), [employee, setEmployee] = useState(''), [team, setTeam] = useState('')
-  return { period, page, status, employee, team, setPage,
+  const [page, setPage] = useState(1), [pageSize, setPageSize] = useState(20), [status, setStatus] = useState(''), [employee, setEmployee] = useState(''), [team, setTeam] = useState('')
+  return { period, page, pageSize, status, employee, team, setPage,
+    setPageSize: (value: number) => { setPageSize(value); setPage(1) },
     setPeriod: (value: DateRangeValue) => { setPeriod(value); setPage(1) },
     setStatus: (value: string) => { setStatus(value); setPage(1) }, setEmployee: (value: string) => { setEmployee(value); setPage(1) }, setTeam: (value: string) => { setTeam(value); setEmployee(''); setPage(1) },
     valid: !!period.from && !!period.to, from: period.from ? localDate(period.from) : '', to: period.to ? localDate(period.to) : '' }
@@ -61,8 +62,8 @@ function EntriesPage({ manager, initialDomain }: { manager: boolean; initialDoma
   const filters = useFilters(), client = useQueryClient()
   const [form, setForm] = useState<{ entry?: Entry } | null>(null), [detail, setDetail] = useState<Entry | null>(null), [reject, setReject] = useState<Entry | null>(null), [reason, setReason] = useState('')
   const [message, setMessage] = useState('')
-  const query = useQuery({ queryKey: ['timesheet-entries', domain, manager, filters.from, filters.to, filters.page, filters.status, filters.team, filters.employee, tab, type],
-    queryFn: () => listEntries(domain, manager, { startDate: filters.from, endDate: filters.to, page: filters.page, limit: 20, status: filters.status,
+  const query = useQuery({ queryKey: ['timesheet-entries', domain, manager, filters.from, filters.to, filters.page, filters.pageSize, filters.status, filters.team, filters.employee, tab, type],
+    queryFn: () => listEntries(domain, manager, { startDate: filters.from, endDate: filters.to, page: filters.page, limit: filters.pageSize, status: filters.status,
       ...(manager ? { employeeId: filters.employee, teamId: filters.team, type: tab === 'leave' ? undefined : tab === 'overtime' ? 'OVERTIME' : 'REGULAR' } : { type }) }), enabled: filters.valid && (!manager || canList(domain)) })
   const summary = useQuery({ queryKey: ['timesheet-summary', filters.from, filters.to], queryFn: () => timesheetReport(true, { dateFrom: filters.from, dateTo: filters.to }), enabled: !manager && filters.valid && permissions.includes('timesheet:view') })
   async function refresh() { await Promise.all([client.invalidateQueries({ queryKey: ['timesheet-entries'] }), client.invalidateQueries({ queryKey: ['timesheet-summary'] }), client.invalidateQueries({ queryKey: ['timesheet-report'] })]) }
@@ -97,7 +98,7 @@ function EntriesPage({ manager, initialDomain }: { manager: boolean; initialDoma
     {message && <p role="status">{message}</p>}
     <QueryContent query={query}><DataTableShell rows={query.data?.data ?? []} columns={columns} getRowKey={row => row.id} renderRowActions={actions}
       mobile={{ title: row => manager ? row.user?.fullName ?? '—' : labels[row.type], status, fields: columns.filter(column => column.id !== 'status').map(column => ({ id: column.id, label: column.header, render: column.cell })) }}
-      pagination={{ page: filters.page, pageCount: query.data?.meta.totalPages ?? 1, total: query.data?.meta.total, onPageChange: filters.setPage, disabled: query.isFetching }} /></QueryContent>
+      pagination={{ page: filters.page, pageCount: query.data?.meta.totalPages ?? 1, total: query.data?.meta.total, onPageChange: filters.setPage, pageSize: filters.pageSize, onPageSizeChange: filters.setPageSize, disabled: query.isFetching }} /></QueryContent>
     {form && <EntryForm domain={domain} entry={form.entry} onClose={() => setForm(null)} onSaved={() => { setForm(null); void refresh() }} />}
     {reject && <ResponsiveModal open title="رد درخواست" onClose={() => { if (!decision.isPending) setReject(null) }}><form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (reason.trim() && !decision.isPending) decision.mutate({ row: reject, action: 'reject', reason: reason.trim() }) }}><label className="grid gap-2">دلیل رد<textarea className="min-h-24 rounded-xl border bg-background p-3" required maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label>{message && <p role="alert">{message}</p>}<FormActions onCancel={() => setReject(null)} pending={decision.isPending} disabled={!reason.trim()} submitLabel="رد درخواست" /></form></ResponsiveModal>}
     {detail && <ResponsiveModal open title="جزئیات درخواست" onClose={() => setDetail(null)}><div className="grid gap-4"><p>{detail.description || detail.reason || 'بدون توضیح'}</p><p>تیم هنگام ثبت: {detail.teamNameSnapshot ?? '—'}</p>{detail.rejectionReason && <p>دلیل رد: {detail.rejectionReason}</p>}<h3>سوابق تصمیم‌گیری (حداکثر ۱۰۰ رویداد)</h3>{detail.approvalHistory?.map(item => <SurfaceCard key={item.id} className="p-3"><p>{item.actorMembership?.user.fullName ?? '—'}؛ {labels[item.action] ?? 'تغییر وضعیت'}</p><p>{labels[item.fromStatus] ?? '—'} ← {labels[item.toStatus] ?? '—'}</p><p>{new Date(item.createdAt).toLocaleString('fa-IR')}</p><p>{item.reason}</p></SurfaceCard>)}</div></ResponsiveModal>}
@@ -106,7 +107,7 @@ function EntriesPage({ manager, initialDomain }: { manager: boolean; initialDoma
 
 export function TimesheetReportsPage() {
   const filters = useFilters(), permissions = useAuthStore(s => s.user?.permissions ?? []), [type, setType] = useState('')
-  const params = { dateFrom: filters.from, dateTo: filters.to, page: filters.page, limit: 20, employeeId: filters.employee, teamId: filters.team, status: filters.status, entryType: type }
+  const params = { dateFrom: filters.from, dateTo: filters.to, page: filters.page, limit: filters.pageSize, employeeId: filters.employee, teamId: filters.team, status: filters.status, entryType: type }
   const query = useQuery({ queryKey: ['timesheet-report', params], queryFn: () => timesheetReport(false, params), enabled: filters.valid })
   const download = useMutation({ mutationFn: () => exportTimesheets(params) })
   const columns = [{ id: 'name', header: 'کارمند', cell: (row: import('./api').EmployeeReport) => row.employeeName }, { id: 'team', header: 'تیم تاریخی', cell: (row: import('./api').EmployeeReport) => row.historicalTeams.map(team => team.name ?? '—').join('، ') },
@@ -118,6 +119,6 @@ export function TimesheetReportsPage() {
     {download.isError && <p role="alert">{getApiErrorMessage(download.error, 'خروجی دریافت نشد؛ بازه را محدود و دوباره تلاش کنید.')}</p>}
     <QueryContent query={query}><Summary metrics={query.data?.totals} /><DataTableShell rows={query.data?.data ?? []} columns={columns} getRowKey={row => row.employeeId}
       mobile={{ title: row => row.employeeName, fields: columns.slice(1).map(column => ({ id: column.id, label: column.header, render: column.cell })) }}
-      pagination={{ page: filters.page, pageCount: query.data?.meta.totalPages ?? 1, total: query.data?.meta.total, onPageChange: filters.setPage, disabled: query.isFetching }} /></QueryContent>
+      pagination={{ page: filters.page, pageCount: query.data?.meta.totalPages ?? 1, total: query.data?.meta.total, onPageChange: filters.setPage, pageSize: filters.pageSize, onPageSizeChange: filters.setPageSize, disabled: query.isFetching }} /></QueryContent>
   </EntityListPage>
 }
