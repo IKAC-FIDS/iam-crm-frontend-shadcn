@@ -1,6 +1,6 @@
-import { ChevronRight, PanelRightClose, PanelRightOpen } from "lucide-react"
-import { useCallback, useMemo, useRef, useState } from "react"
-import { useLocation } from "react-router-dom"
+import { PanelRightClose, PanelRightOpen } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Link, useLocation } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -11,20 +11,20 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarSeparator,
 } from "@workspace/ui/components/sidebar"
 import { useSidebar } from "@workspace/ui/hooks/use-sidebar"
 
 import {
   getNavigationItems,
-  type NavigationFlyoutItem,
 } from "@/app/navigation/navigationConfig"
 import { isMenuRouteActive } from "@/app/navigation/routeNavigation"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 
-import { NavigationFlyout } from "./NavigationFlyout"
-import { NavigationGroup } from "./NavigationGroup"
 import { SidebarNavigationItem } from "./SidebarNavigationItem"
 
 function isNavigationItemActive(item: ReturnType<typeof getNavigationItems>[number], pathname: string) {
@@ -37,39 +37,23 @@ function isNavigationItemActive(item: ReturnType<typeof getNavigationItems>[numb
 export function AppSidebar() {
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
-  const { state, isMobile, setOpenMobile, toggleSidebar } = useSidebar()
+  const { state, isMobile, setOpen, setOpenMobile, toggleSidebar } = useSidebar()
   const items = useMemo(() => getNavigationItems(user), [user])
-  const [openFlyoutId, setOpenFlyoutId] = useState<string | null>(null)
-  const [mobileAreaId, setMobileAreaId] = useState<string | null>(null)
-  const anchorRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-  const openFlyout = items.find(
-    (item): item is NavigationFlyoutItem => item.kind === "flyout" && item.id === openFlyoutId,
+  const [openAreaId, setOpenAreaId] = useState<string | null>(() =>
+    items.find((item) => item.kind === "flyout" && isNavigationItemActive(item, location.pathname))?.id ?? null,
   )
-  const mobileArea = items.find(
-    (item): item is NavigationFlyoutItem => item.kind === "flyout" && item.id === mobileAreaId,
-  )
-
-  const selectArea = (item: NavigationFlyoutItem) => {
-    if (isMobile) {
-      setMobileAreaId(item.id)
-      return
-    }
-    setOpenFlyoutId((current) => current === item.id ? null : item.id)
-  }
 
   const closeMobileAfterNavigate = () => {
-    setMobileAreaId(null)
     setOpenMobile(false)
   }
-  const closeFlyout = useCallback(() => setOpenFlyoutId(null), [])
-  const getOpenFlyoutAnchor = useCallback(
-    () => openFlyoutId ? anchorRefs.current[openFlyoutId] : null,
-    [openFlyoutId],
-  )
+
+  const toggleArea = (id: string) => {
+    if (!isMobile && state === "collapsed") setOpen(true)
+    setOpenAreaId((current) => current === id ? null : id)
+  }
 
   return (
-    <>
-      <Sidebar side="right" collapsible="icon" dir="rtl" className="z-40 border-[var(--app-divider)] bg-[var(--app-surface)]">
+    <Sidebar side="right" collapsible="icon" dir="rtl" className="z-40 border-[var(--app-divider)] bg-[var(--app-surface)]">
         <SidebarHeader className="border-b border-[var(--app-divider)] p-3">
           <div className="flex min-h-12 items-center gap-3 overflow-hidden rounded-xl px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary)] text-base font-black text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">ن</span>
@@ -81,40 +65,51 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {isMobile && mobileArea ? (
-            <div className="p-3">
-              <Button type="button" variant="ghost" onClick={() => setMobileAreaId(null)} className="mb-3 w-full justify-start rounded-xl">
-                <ChevronRight className="size-4" aria-hidden="true" />
-                بازگشت به منوی اصلی
-              </Button>
-              <div className="mb-4 rounded-2xl bg-[var(--app-primary-soft)] p-3">
-                <p className="font-black text-[var(--app-heading)]">{mobileArea.label}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">{mobileArea.description}</p>
-              </div>
-              <div className="grid gap-5">
-                {mobileArea.sections.map((section) => (
-                  <NavigationGroup key={section.id} section={section} onNavigate={closeMobileAfterNavigate} compact />
-                ))}
-              </div>
-            </div>
-          ) : (
             <SidebarGroup className="p-3">
               <SidebarGroupContent>
                 <SidebarMenu className="gap-1.5">
-                  {items.map((item) => (
-                    <SidebarNavigationItem
-                      key={item.id}
-                      ref={(node) => { if (item.kind === "flyout") anchorRefs.current[item.id] = node }}
-                      item={item}
-                      active={isNavigationItemActive(item, location.pathname)}
-                      open={openFlyoutId === item.id}
-                      onClick={item.kind === "flyout" ? () => selectArea(item) : isMobile ? closeMobileAfterNavigate : undefined}
-                    />
-                  ))}
+                  {items.map((item) => {
+                    const open = item.kind === "flyout" && openAreaId === item.id
+                    return (
+                      <SidebarNavigationItem
+                        key={item.id}
+                        item={item}
+                        active={isNavigationItemActive(item, location.pathname)}
+                        open={open}
+                        onClick={item.kind === "flyout" ? () => toggleArea(item.id) : isMobile ? closeMobileAfterNavigate : undefined}
+                      >
+                        {item.kind === "flyout" && open ? (
+                          <SidebarMenuSub className="mt-1 gap-1 group-data-[collapsible=icon]:hidden">
+                            {item.sections.flatMap((section) => [
+                              <SidebarMenuSubItem key={`${section.id}-label`} className="px-2 pb-1 pt-3 text-xs font-black text-[var(--app-text-secondary)] first:pt-1">
+                                {section.label}
+                              </SidebarMenuSubItem>,
+                              ...section.routes.map((route) => {
+                                const Icon = route.icon
+                                const active = isMenuRouteActive(route.path, location.pathname)
+                                return (
+                                  <SidebarMenuSubItem key={route.id}>
+                                    <SidebarMenuSubButton
+                                      render={<Link to={route.path} onClick={isMobile ? closeMobileAfterNavigate : undefined} />}
+                                      isActive={active}
+                                      className="h-9 gap-2 rounded-lg px-2.5"
+                                      aria-current={active ? "page" : undefined}
+                                    >
+                                      <Icon className="size-4" aria-hidden="true" />
+                                      <span>{route.label}</span>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                )
+                              }),
+                            ])}
+                          </SidebarMenuSub>
+                        ) : null}
+                      </SidebarNavigationItem>
+                    )
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-          )}
         </SidebarContent>
 
         <SidebarSeparator />
@@ -131,16 +126,5 @@ export function AppSidebar() {
           </Button>
         </SidebarFooter>
       </Sidebar>
-
-      {!isMobile && openFlyout ? (
-        <NavigationFlyout
-          key={openFlyout.id}
-          item={openFlyout}
-          expanded={state === "expanded"}
-          onClose={closeFlyout}
-          getAnchor={getOpenFlyoutAnchor}
-        />
-      ) : null}
-    </>
   )
 }

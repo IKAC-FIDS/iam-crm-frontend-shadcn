@@ -1,5 +1,5 @@
 import { ChevronLeft } from "lucide-react"
-import { forwardRef } from "react"
+import { forwardRef, type ReactNode } from "react"
 import { Link } from "react-router-dom"
 
 import {
@@ -15,10 +15,11 @@ interface SidebarNavigationItemProps {
   active: boolean
   open?: boolean
   onClick?: () => void
+  children?: ReactNode
 }
 
 export const SidebarNavigationItem = forwardRef<HTMLButtonElement, SidebarNavigationItemProps>(
-  function SidebarNavigationItem({ item, active, open, onClick }, ref) {
+  function SidebarNavigationItem({ item, active, open, onClick, children }, ref) {
     const Icon = item.icon
     const commonClass = cn(
       "h-12 rounded-xl px-3 text-sm font-bold",
@@ -56,12 +57,12 @@ export const SidebarNavigationItem = forwardRef<HTMLButtonElement, SidebarNaviga
             tooltip={{ children: item.label, side: "left" }}
             className={commonClass}
             aria-expanded={open}
-            aria-haspopup="dialog"
             onClick={onClick}
           >
             {content}
           </SidebarMenuButton>
         )}
+        {children}
       </SidebarMenuItem>
     )
   },

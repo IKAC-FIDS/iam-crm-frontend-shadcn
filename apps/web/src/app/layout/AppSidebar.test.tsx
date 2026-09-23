@@ -41,7 +41,7 @@ function renderSidebar() {
   )
 }
 
-it("opens the workspace flyout by click and closes it with Escape", async () => {
+it("opens the standard inline workspace submenu and keeps unauthorized routes hidden", async () => {
   const interaction = userEvent.setup()
   renderSidebar()
 
@@ -49,23 +49,20 @@ it("opens the workspace flyout by click and closes it with Escape", async () => 
   expect(trigger).toHaveAttribute("aria-expanded", "false")
   await interaction.click(trigger)
 
-  expect(await screen.findByRole("dialog", { name: "عملیات و مدیریت" })).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: /شرکت‌ها/ })).toBeInTheDocument()
-  expect(screen.queryByRole("link", { name: /نقش‌ها و مجوزها/ })).toBeNull()
-
-  await interaction.keyboard("{Escape}")
-  expect(screen.queryByRole("dialog", { name: "عملیات و مدیریت" })).toBeNull()
-  expect(trigger).toHaveFocus()
+  expect(screen.getByRole("link", { name: "شرکت‌ها" })).toBeInTheDocument()
+  expect(screen.queryByRole("link", { name: "نقش‌ها و مجوزها" })).toBeNull()
+  expect(trigger).toHaveAttribute("aria-expanded", "true")
 })
 
-it("closes the workspace flyout when its trigger is clicked again", async () => {
+it("closes the workspace submenu when its trigger is clicked again", async () => {
   const interaction = userEvent.setup()
   renderSidebar()
   const trigger = screen.getByRole("button", { name: "عملیات و مدیریت" })
 
   await interaction.click(trigger)
   await interaction.click(trigger)
-  expect(screen.queryByRole("dialog", { name: "عملیات و مدیریت" })).toBeNull()
+  expect(screen.queryByRole("link", { name: "شرکت‌ها" })).toBeNull()
+  expect(trigger).toHaveAttribute("aria-expanded", "false")
 })
 
 it("uses the same permission-aware navigation in the mobile drill-down", async () => {
@@ -91,7 +88,6 @@ it("uses the same permission-aware navigation in the mobile drill-down", async (
 
   await interaction.click(screen.getByRole("button", { name: "باز کردن منوی اصلی" }))
   await interaction.click(await screen.findByRole("button", { name: "عملیات و مدیریت" }))
-  expect(screen.getByRole("button", { name: "بازگشت به منوی اصلی" })).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: /جلسات/ })).toBeInTheDocument()
-  expect(screen.queryByRole("link", { name: /نقش‌ها و مجوزها/ })).toBeNull()
+  expect(screen.getByRole("link", { name: "جلسات" })).toBeInTheDocument()
+  expect(screen.queryByRole("link", { name: "نقش‌ها و مجوزها" })).toBeNull()
 })
