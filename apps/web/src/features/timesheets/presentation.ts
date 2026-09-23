@@ -1,3 +1,5 @@
+export const weekDays = [{ id: 6, label: 'شنبه' }, { id: 0, label: 'یکشنبه' }, { id: 1, label: 'دوشنبه' }, { id: 2, label: 'سه‌شنبه' }, { id: 3, label: 'چهارشنبه' }, { id: 4, label: 'پنجشنبه' }, { id: 5, label: 'جمعه' }]
+
 export const labels: Record<string, string> = {
   REGULAR: 'کار عادی', OVERTIME: 'اضافه‌کاری', DRAFT: 'پیش‌نویس', SUBMITTED: 'در انتظار تأیید', PENDING: 'در انتظار تأیید',
   APPROVED: 'تأییدشده', REJECTED: 'ردشده', CANCELLED: 'لغوشده', ANNUAL: 'استحقاقی', SICK: 'استعلاجی', UNPAID: 'بدون حقوق', OTHER: 'سایر',
