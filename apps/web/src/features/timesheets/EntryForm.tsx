@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
 import { FormSection } from '@/components/shared/FormSection'
@@ -59,6 +60,7 @@ export function EntryForm({ domain, entry, onClose, onSaved }: { domain: Domain;
       {!leave && range && <p className="text-xs text-muted-foreground">بازه انتخابی پیش از اعمال تغییر ساعت رسمی و استراحت: {timeMinute(end) + (overnight ? 1440 : 0) - timeMinute(start)} دقیقه. محاسبه نهایی با سرور است.</p>}
       {invalid && <p role="alert">تاریخ پایان یا مدت را اصلاح کنید.</p>}
       {save.isError && <p role="alert" className="text-destructive">{getApiErrorMessage(save.error, 'ذخیره انجام نشد.')}</p>}
+      {leave && permissions.includes('organization:manage') && <Link to="/admin/work-schedules" target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">تنظیم برنامه کاری سازمان (در زبانه جدید)</Link>}
       <FormActions onCancel={onClose} pending={save.isPending} disabled={invalid} submitLabel="ذخیره پیش‌نویس" />
     </form>
   </ResponsiveModal>

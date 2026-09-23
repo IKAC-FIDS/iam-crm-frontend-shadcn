@@ -40,8 +40,8 @@ describe('Timesheet screens', () => {
   it('requires rejection reason and refreshes after concurrent decision', async () => {
     vi.mocked(api.get).mockImplementation(async url => ({ data: String(url).includes('filter-options') ? { data: { teams: [], employees: [] } } : { data: [{ ...row, status: 'SUBMITTED' }], meta } }))
     vi.mocked(api.post).mockRejectedValue(httpError(409)); setup(<ManagerTimesheetsPage />)
-    fireEvent.click((await screen.findAllByRole('button', { name: 'رد', exact: true }))[0]); expect(screen.getByRole('button', { name: 'رد درخواست', exact: true })).toBeDisabled()
-    fireEvent.change(screen.getByLabelText('دلیل رد'), { target: { value: 'نیاز به اصلاح' } }); fireEvent.click(screen.getByRole('button', { name: 'رد درخواست', exact: true }))
+    fireEvent.click((await screen.findAllByRole('button', { name: 'رد' }))[0]); expect(screen.getByRole('button', { name: 'رد درخواست' })).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('دلیل رد'), { target: { value: 'نیاز به اصلاح' } }); fireEvent.click(screen.getByRole('button', { name: 'رد درخواست' }))
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/timesheets/entry/reject', { reason: 'نیاز به اصلاح' }))
     expect((await screen.findAllByText(/وضعیت این درخواست تغییر کرده/)).length).toBeGreaterThan(0)
   })

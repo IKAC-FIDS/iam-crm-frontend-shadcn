@@ -1,6 +1,7 @@
 import { lazyRoute } from "../lazyRoute"
 import { routeGroup } from "./routeGroup"
 export const adminRoutes = [
+  routeGroup('admin-work-schedules', lazyRoute(() => import('@/features/timesheets/WorkSchedulesPage'), 'WorkSchedulesPage')),
   routeGroup('admin-timesheets', lazyRoute(() => import('@/features/timesheets/TimesheetPages'), 'ManagerTimesheetsPage')),
   routeGroup('admin-timesheet-reports', lazyRoute(() => import('@/features/timesheets/TimesheetPages'), 'TimesheetReportsPage')),
   routeGroup(

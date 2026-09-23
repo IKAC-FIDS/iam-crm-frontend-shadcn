@@ -72,6 +72,7 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
+  { id: 'admin-work-schedules', path: '/admin/work-schedules', label: 'برنامه کاری سازمان', group: 'management', order: 330, icon: CalendarDays, access: any(['organization:manage']) },
   { id: 'account-timesheets', path: '/account/timesheets', label: 'کارکرد من', group: 'account', order: 310, icon: ListChecks, access: any(['timesheet:view']) },
   { id: 'account-leave', path: '/account/leave-requests', label: 'مرخصی‌های من', group: 'account', order: 320, icon: CalendarDays, access: any(['leave:view']) },
   { id: 'admin-timesheets', path: '/admin/timesheets', label: 'مدیریت کارکرد تیم', group: 'management', order: 310, icon: Users, access: any(['timesheet:approve', 'timesheet:approve-organization', 'timesheet:view-organization', 'leave:approve', 'leave:approve-organization', 'leave:view-organization']) },
