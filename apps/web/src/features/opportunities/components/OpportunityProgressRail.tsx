@@ -70,7 +70,7 @@ export function OpportunityProgressRail({
                 >
                   {stage.label}
                 </p>
-                <p className="mt-0.5 text-[8px] text-[var(--app-text-secondary)]">
+                <p className="mt-0.5 text-xs text-[var(--app-text-secondary)]">
                   {current
                     ? text.current
                     : wasVisited

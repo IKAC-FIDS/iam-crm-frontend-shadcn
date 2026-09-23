@@ -59,7 +59,7 @@ export function MeetingList({
               hasMedia={Boolean(meeting.company?.logoObjectKey)}
               mediaVersion={meeting.company?.logoObjectKey}
               fallbackIcon={<Building2 className="size-4" />}
-              className="size-8 rounded-xl text-[10px]"
+              className="size-8 rounded-xl text-xs"
             />
             <span className="truncate">{companyName}</span>
           </span>
@@ -103,7 +103,7 @@ export function MeetingList({
                   mediaPath={`/users/${user.id}/avatar`}
                   hasMedia={Boolean(user.avatarObjectKey)}
                   mediaVersion={user.avatarObjectKey}
-                  className="size-8 rounded-xl border-2 border-[var(--app-surface)] text-[10px]"
+                  className="size-8 rounded-xl border-2 border-[var(--app-surface)] text-xs"
                 />
               ))}
             </span>

@@ -90,8 +90,8 @@ export function EntityConversationPanel({ entityType, entityId, enabled = true }
           <article key={message.id} className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3 sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2.5">
-                <IdentityAvatar name={message.author.fullName} mediaPath={`/users/${message.author.id}/avatar`} hasMedia={Boolean(message.author.avatarObjectKey)} mediaVersion={message.author.avatarObjectKey} className="size-9 rounded-xl text-[10px]" />
-                <div className="min-w-0"><p className="truncate text-sm font-bold text-[var(--app-heading)]">{message.author.fullName}</p><p className="text-[11px] text-[var(--app-text-secondary)]">{formatJalaliDateTime(message.createdAt)}{message.editedAt ? " · ویرایش‌شده" : ""}</p></div>
+                <IdentityAvatar name={message.author.fullName} mediaPath={`/users/${message.author.id}/avatar`} hasMedia={Boolean(message.author.avatarObjectKey)} mediaVersion={message.author.avatarObjectKey} className="size-9 rounded-xl text-xs" />
+                <div className="min-w-0"><p className="truncate text-sm font-bold text-[var(--app-heading)]">{message.author.fullName}</p><p className="text-xs text-[var(--app-text-secondary)]">{formatJalaliDateTime(message.createdAt)}{message.editedAt ? " · ویرایش‌شده" : ""}</p></div>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-1">
                 {message.type === "QUESTION" ? <StatusBadge tone={answeredQuestions.has(message.id) ? "success" : "warning"}>{answeredQuestions.has(message.id) ? "پاسخ داده شد" : "نیازمند پاسخ"}</StatusBadge> : message.type === "ANSWER" ? <StatusBadge tone="info">پاسخ</StatusBadge> : null}

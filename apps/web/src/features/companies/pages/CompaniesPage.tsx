@@ -115,7 +115,7 @@ export function CompaniesPage() {
                 mediaPath={`/users/${company.owner.id}/avatar`}
                 hasMedia={Boolean(company.owner.avatarObjectKey)}
                 mediaVersion={company.owner.avatarObjectKey}
-                className="size-7 rounded-lg text-[10px]"
+                className="size-7 rounded-lg text-xs"
               />
               <span className="truncate">{company.owner.fullName}</span>
             </span>

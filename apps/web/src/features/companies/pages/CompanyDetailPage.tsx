@@ -344,7 +344,7 @@ export function CompanyDetailPage() {
                   mediaPath={`/users/${company.owner.id}/avatar`}
                   hasMedia={Boolean(company.owner.avatarObjectKey)}
                   mediaVersion={company.owner.avatarObjectKey}
-                  className="size-5 rounded-md text-[8px]"
+                  className="size-5 rounded-md text-xs"
                 />
               ) : (
                 <UsersRound className="size-3.5" />
@@ -456,7 +456,7 @@ export function CompanyDetailPage() {
                         mediaPath={`/users/${company.owner.id}/avatar`}
                         hasMedia={Boolean(company.owner.avatarObjectKey)}
                         mediaVersion={company.owner.avatarObjectKey}
-                        className="size-7 rounded-lg text-[9px]"
+                        className="size-7 rounded-lg text-xs"
                       />
                       {company.owner.fullName}
                     </span>
@@ -845,7 +845,7 @@ export function CompanyDetailPage() {
                                   task.assignedTo.avatarObjectKey
                                 )}
                                 mediaVersion={task.assignedTo.avatarObjectKey}
-                                className="size-9 rounded-xl text-[10px]"
+                                className="size-9 rounded-xl text-xs"
                               />
                             ) : (
                               <ListTodo className="size-4" />
@@ -917,7 +917,7 @@ export function CompanyDetailPage() {
                                   meeting.organizer.avatarObjectKey
                                 )}
                                 mediaVersion={meeting.organizer.avatarObjectKey}
-                                className="size-9 rounded-xl text-[10px]"
+                                className="size-9 rounded-xl text-xs"
                               />
                             ) : (
                               <CalendarClock className="size-4" />

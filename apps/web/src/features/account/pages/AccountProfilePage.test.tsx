@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { beforeEach, expect, it, vi } from "vitest"
 
 import { useAuthStore } from "@/store/authStore"
+import { FontPreferenceProvider } from "@/components/font-preference-provider"
 import { useAccountWorkspace } from "../hooks/useAccountWorkspace"
 import type { AccountWorkspace } from "../types/accountWorkspace.types"
 import { AccountProfilePage } from "./AccountProfilePage"
@@ -107,7 +108,9 @@ it("shows the personal workspace and preserves the correct activity drill-down f
           path="/account/profile"
           element={
             <>
-              <AccountProfilePage />
+              <FontPreferenceProvider>
+                <AccountProfilePage />
+              </FontPreferenceProvider>
               <LocationProbe />
             </>
           }
@@ -161,7 +164,9 @@ it("does not expose entity navigation when the matching view permission is absen
 
   render(
     <MemoryRouter initialEntries={["/account/profile"]}>
-      <AccountProfilePage />
+      <FontPreferenceProvider>
+        <AccountProfilePage />
+      </FontPreferenceProvider>
     </MemoryRouter>
   )
 

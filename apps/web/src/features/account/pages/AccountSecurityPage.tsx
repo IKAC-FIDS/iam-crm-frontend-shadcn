@@ -148,7 +148,7 @@ export function AccountSecurityPage() {
         <div>
           <b>{r.deviceName || "Passkey بدون نام"}</b>
           <div
-            className="font-mono text-[11px] text-muted-foreground"
+            className="font-mono text-xs text-muted-foreground"
             dir="ltr"
           >
             {r.id}
@@ -225,7 +225,7 @@ export function AccountSecurityPage() {
               </Badge>
             ) : null}
             <div
-              className="max-w-80 truncate text-[11px] text-muted-foreground"
+              className="max-w-80 truncate text-xs text-muted-foreground"
               dir="ltr"
             >
               {r.userAgent || "—"}

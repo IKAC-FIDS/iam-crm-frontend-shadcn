@@ -78,7 +78,7 @@ export function OpportunityListView({
           <span className="flex min-w-0 items-center gap-2">
             <IdentityAvatar
               name={item.owner.fullName}
-              className="size-7 rounded-lg text-[10px]"
+              className="size-7 rounded-lg text-xs"
             />
             <span className="truncate">{item.owner.fullName}</span>
           </span>

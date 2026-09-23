@@ -175,7 +175,7 @@ export function PersonEmploymentSection({
                               {position.title}
                             </p>
                             {position.isCurrent ? (
-                              <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-[8px] font-bold text-[var(--app-primary)]">
+                              <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-0.5 text-xs font-bold text-[var(--app-primary)]">
                                 {text.career.current}
                               </span>
                             ) : null}

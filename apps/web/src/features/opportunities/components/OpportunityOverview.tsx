@@ -344,7 +344,7 @@ export function OpportunityOverview({
                       mediaPath={`/users/${opportunity.owner.id}/avatar`}
                       hasMedia={Boolean(opportunity.owner.avatarObjectKey)}
                       mediaVersion={opportunity.owner.avatarObjectKey}
-                      className="size-7 rounded-lg text-[9px]"
+                      className="size-7 rounded-lg text-xs"
                     />
                     <span className="truncate">
                       {opportunity.owner.fullName}

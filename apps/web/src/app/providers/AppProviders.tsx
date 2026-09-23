@@ -8,6 +8,7 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { queryClient } from "@/lib/queryClient"
 import { SessionBoundary } from "@/features/auth/components/SessionBoundary"
 import { ThemeProvider, useTheme } from "@/components/theme-provider"
+import { FontPreferenceProvider } from "@/components/font-preference-provider"
 
 type AppProvidersProps = {
   children: ReactNode
@@ -23,12 +24,14 @@ export function AppProviders({
 }: AppProvidersProps) {
   return (
     <ThemeProvider defaultTheme="system" storageKey="iam-crm-theme">
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <SessionBoundary>{children}</SessionBoundary>
-          <AppToaster />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <FontPreferenceProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <SessionBoundary>{children}</SessionBoundary>
+            <AppToaster />
+          </TooltipProvider>
+        </QueryClientProvider>
+      </FontPreferenceProvider>
     </ThemeProvider>
   )
 }

@@ -162,7 +162,7 @@ function PipelineLane({
           <span>{text.loadedValue}</span>
           <span className="font-bold text-[var(--app-heading)]">{formatOpportunityValue(loadedValue)} {uiText.opportunities.fields.valueUnit}</span>
         </div> : null}
-        {financialVisible && items.length < total ? <p className="mt-1 text-[8px] text-[var(--app-text-secondary)]">{text.partialValue}</p> : null}
+        {financialVisible && items.length < total ? <p className="mt-1 text-xs text-[var(--app-text-secondary)]">{text.partialValue}</p> : null}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5">

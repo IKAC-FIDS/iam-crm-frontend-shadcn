@@ -310,7 +310,7 @@ export function ActivitiesPage() {
                 hasMedia={Boolean(item.company?.logoObjectKey)}
                 mediaVersion={item.company?.logoObjectKey}
                 fallbackIcon={<Building2 className="size-4" />}
-                className="size-8 rounded-xl text-[10px]"
+                className="size-8 rounded-xl text-xs"
               />
               <span className="truncate">{name}</span>
             </span>
@@ -337,7 +337,7 @@ export function ActivitiesPage() {
                 mediaPath={creator?.id ? `/users/${creator.id}/avatar` : null}
                 hasMedia={Boolean(creator?.avatarObjectKey)}
                 mediaVersion={creator?.avatarObjectKey}
-                className="size-8 rounded-xl text-[10px]"
+                className="size-8 rounded-xl text-xs"
               />
               <span className="truncate">{name}</span>
             </span>

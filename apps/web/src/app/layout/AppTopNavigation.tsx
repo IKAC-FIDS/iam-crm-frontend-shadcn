@@ -264,11 +264,11 @@ export function AppTopNavigation() {
                         <h2 className="text-sm font-black text-[var(--app-heading)]">
                           {label}
                         </h2>
-                        <p className="mt-0.5 text-[10px] leading-4 text-[var(--app-text-secondary)]">
+                        <p className="mt-0.5 text-xs leading-4 text-[var(--app-text-secondary)]">
                           {presentation.description}
                         </p>
                       </div>
-                      <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-black text-[var(--app-primary)]">
+                      <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-black text-[var(--app-primary)]">
                         {routes.length.toLocaleString("fa-IR")} بخش
                       </span>
                     </div>
@@ -276,7 +276,7 @@ export function AppTopNavigation() {
                   {group === "operations" && selectedSection ? (
                     <div className="grid min-h-[330px] grid-cols-[190px_minmax(0,1fr)]">
                       <aside className="border-e border-[var(--app-divider)] bg-[var(--app-background)]/55 p-2.5">
-                        <p className="px-2 pb-2 pt-1 text-[9px] font-black tracking-wide text-[var(--app-text-secondary)]">
+                        <p className="px-2 pb-2 pt-1 text-xs font-black tracking-wide text-[var(--app-text-secondary)]">
                           دسته‌بندی بخش‌ها
                         </p>
                         <div className="space-y-1">
@@ -290,7 +290,7 @@ export function AppTopNavigation() {
                                 onMouseEnter={() => setActiveWorkspaceSectionId(section.id)}
                                 onFocus={() => setActiveWorkspaceSectionId(section.id)}
                                 className={[
-                                  "flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-start text-[11px] font-bold transition-colors",
+                                  "flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-start text-xs font-bold transition-colors",
                                   sectionActive
                                     ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]"
                                     : "text-[var(--app-text-secondary)] hover:bg-[var(--app-surface)] hover:text-[var(--app-heading)]",
@@ -310,7 +310,7 @@ export function AppTopNavigation() {
                                 </span>
                                 <span
                                   className={[
-                                    "rounded-md px-1.5 py-0.5 text-[9px]",
+                                    "rounded-md px-1.5 py-0.5 text-xs",
                                     sectionActive
                                       ? "bg-white/15 text-current"
                                       : "bg-[var(--app-surface)] text-[var(--app-text-secondary)]",
@@ -332,7 +332,7 @@ export function AppTopNavigation() {
                             <h3 className="text-sm font-black text-[var(--app-heading)]">
                               {selectedSection.label}
                             </h3>
-                            <p className="mt-0.5 text-[10px] text-[var(--app-text-secondary)]">
+                            <p className="mt-0.5 text-xs text-[var(--app-text-secondary)]">
                               بخش موردنظر را برای ادامه انتخاب کنید
                             </p>
                           </div>
@@ -367,10 +367,10 @@ export function AppTopNavigation() {
                                   <Icon className="size-4" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-[11px] font-black">
+                                  <span className="block truncate text-xs font-black">
                                     {route.label}
                                   </span>
-                                  <span className="mt-0.5 block truncate text-[9px] font-normal text-[var(--app-text-secondary)]">
+                                  <span className="mt-0.5 block truncate text-xs font-normal text-[var(--app-text-secondary)]">
                                     {routeHints[route.id] || "ورود به این بخش"}
                                   </span>
                                 </span>
@@ -409,10 +409,10 @@ export function AppTopNavigation() {
                               <Icon className="size-4" />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-[11px] font-black">
+                              <span className="block truncate text-xs font-black">
                                 {route.label}
                               </span>
-                              <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">
+                              <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">
                                 {routeHints[route.id] || "ورود به این بخش"}
                               </span>
                             </span>
@@ -480,7 +480,7 @@ export function AppTopNavigation() {
                     {sections.map((section) => (
                       <div key={section.id}>
                         {section.label ? (
-                          <DropdownMenuLabel className="px-2 pb-1 pt-3 text-[10px] font-black text-[var(--app-text-secondary)] first:pt-1">
+                          <DropdownMenuLabel className="px-2 pb-1 pt-3 text-xs font-black text-[var(--app-text-secondary)] first:pt-1">
                             {section.label}
                           </DropdownMenuLabel>
                         ) : null}
@@ -508,7 +508,7 @@ export function AppTopNavigation() {
                             <span className="block truncate text-xs font-bold">
                               {route.label}
                             </span>
-                            <span className="mt-0.5 block truncate text-[10px] text-[var(--app-text-secondary)]">
+                            <span className="mt-0.5 block truncate text-xs text-[var(--app-text-secondary)]">
                               {routeHints[route.id] || "ورود به این بخش"}
                             </span>
                           </span>

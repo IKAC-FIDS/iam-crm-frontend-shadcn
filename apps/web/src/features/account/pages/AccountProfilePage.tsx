@@ -16,6 +16,7 @@ import {
   RotateCcw,
   ShieldCheck,
   TriangleAlert,
+  Type,
   UserRound,
 } from "lucide-react"
 
@@ -45,6 +46,9 @@ import { ProfileMediaEditor } from "@/components/shared/ProfileMediaEditor"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { useFontPreference } from "@/components/font-preference-provider"
+import { appFontOptions, getAppFont } from "@/theme/fontCatalog"
 import { safeNotificationActionUrl } from "@/features/notifications/utils/notificationDisplay"
 import {
   taskStatusLabel,
@@ -124,6 +128,8 @@ export function AccountProfilePage() {
         }
       />
 
+      <TypographyPreferences />
+
       <DashboardToolbar
         title="بازه گزارش عملکرد"
         description="آمار فعالیت‌ها در بازه انتخابی محاسبه می‌شود؛ فهرست‌های جاری مستقل از این بازه‌اند."
@@ -157,6 +163,69 @@ export function AccountProfilePage() {
 
       <AccountDetails user={user} />
     </div>
+  )
+}
+
+function TypographyPreferences() {
+  const { fontId, setFontId } = useFontPreference()
+  const [search, setSearch] = useState("")
+  const normalizedSearch = search.trim().toLocaleLowerCase("fa")
+  const selectedFont = getAppFont(fontId)
+  const options = appFontOptions
+    .filter((font) =>
+      normalizedSearch
+        ? `${font.label} ${font.id}`.toLocaleLowerCase("fa").includes(normalizedSearch)
+        : true
+    )
+    .map((font) => ({
+      id: font.id,
+      label: font.label,
+      secondary:
+        font.category === "recommended"
+          ? "مناسب رابط کاربری"
+          : "مجموعه فونت‌های کلاسیک فارسی",
+    }))
+
+  return (
+    <ContentSection
+      title="نمایش و تایپوگرافی"
+      description="فونت دلخواه شما روی تمام صفحات این دستگاه اعمال می‌شود."
+      icon={Type}
+    >
+      <div className="grid gap-4 lg:grid-cols-[minmax(240px,360px)_minmax(0,1fr)] lg:items-stretch">
+        <div>
+          <p className="mb-2 text-sm font-bold">
+            فونت رابط کاربری
+          </p>
+          <div>
+            <SearchableOptionSelect
+              value={fontId}
+              options={options}
+              onChange={(value) => value && setFontId(value)}
+              search={search}
+              onSearchChange={setSearch}
+              placeholder="انتخاب فونت"
+              searchPlaceholder="جست‌وجوی نام فونت..."
+              emptyText="فونتی مطابق جست‌وجو پیدا نشد."
+              allowEmpty={false}
+              ariaLabel="انتخاب فونت رابط کاربری"
+            />
+          </div>
+          <p className="mt-2 text-xs leading-6 text-[var(--app-text-secondary)]">
+            انتخاب فعلی: {selectedFont?.label ?? "یکان"}. تنظیم انتخاب‌شده در مرورگر ذخیره می‌شود.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)] p-4 sm:p-5">
+          <p className="text-xs font-bold text-[var(--app-primary)]">پیش‌نمایش خوانایی</p>
+          <p className="mt-2 text-lg font-black text-[var(--app-heading)]">
+            مدیریت ارتباط با مشتریان نشانه
+          </p>
+          <p className="mt-1 text-sm leading-7 text-[var(--app-text-secondary)]">
+            متن‌های رابط کاربری با حداقل اندازه استاندارد ۱۲ پیکسل نمایش داده می‌شوند تا خوانایی اطلاعات در دسکتاپ و موبایل حفظ شود.
+          </p>
+        </div>
+      </div>
+    </ContentSection>
   )
 }
 
@@ -561,7 +630,7 @@ function WorkspaceContent({
                               {notification.body}
                             </p>
                           ) : null}
-                          <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
+                          <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                             {formatJalaliDateTime(notification.createdAt)}
                           </p>
                       </div>
@@ -614,7 +683,7 @@ function WorkspaceContent({
                           {conversation.latestMessage?.body ||
                             "پیامی ثبت نشده است."}
                         </p>
-                        <p className="mt-1 text-[11px] text-[var(--app-text-secondary)]">
+                        <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
                           {formatJalaliDateTime(conversation.updatedAt)}
                         </p>
                     </div>

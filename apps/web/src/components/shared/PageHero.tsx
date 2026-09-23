@@ -184,7 +184,7 @@ function FactItem({ fact }: { fact: PageHeroFact }) {
         <Icon className="mt-0.5 size-4 shrink-0 text-[var(--app-primary)]" />
       ) : null}
       <span className="min-w-0">
-        <span className="block text-[11px] leading-5 text-[var(--app-text-secondary)]">
+        <span className="block text-xs leading-5 text-[var(--app-text-secondary)]">
           {fact.label}
         </span>
         <strong className="mt-0.5 block min-w-0 text-xs font-bold break-words text-[var(--app-heading)]">

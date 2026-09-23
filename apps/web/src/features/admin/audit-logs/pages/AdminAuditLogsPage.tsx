@@ -273,7 +273,7 @@ export function AdminAuditLogsPage() {
       cell: (row) => (
         <Badge
           variant="secondary"
-          className="font-mono text-[11px] whitespace-nowrap"
+          className="font-mono text-xs whitespace-nowrap"
         >
           {row.action}
         </Badge>
@@ -304,7 +304,7 @@ export function AdminAuditLogsPage() {
             <span className="truncate text-xs">{row.request?.path || "—"}</span>
           </div>
           <div
-            className="mt-1 truncate font-mono text-[11px] text-muted-foreground"
+            className="mt-1 truncate font-mono text-xs text-muted-foreground"
             dir="ltr"
           >
             {row.request?.requestId || "—"}

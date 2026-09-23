@@ -61,7 +61,7 @@ export function DashboardSection({
                 {title}
               </h2>
               {badge ? (
-                <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-surface)] px-2.5 py-1 text-[11px] font-semibold text-[var(--app-text-secondary)] shadow-sm">
+                <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-surface)] px-2.5 py-1 text-xs font-semibold text-[var(--app-text-secondary)] shadow-sm">
                   {badge}
                 </span>
               ) : null}

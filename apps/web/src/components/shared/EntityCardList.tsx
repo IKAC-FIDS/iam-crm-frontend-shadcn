@@ -143,7 +143,7 @@ export function EntityCardList<T>({
                       )}
                     >
                       {!field.hideLabel ? (
-                        <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-[var(--app-text-secondary)]">
+                        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-[var(--app-text-secondary)]">
                           {Icon ? <Icon className="size-3.5 shrink-0" /> : null}
                           <span>{field.label}</span>
                         </div>
