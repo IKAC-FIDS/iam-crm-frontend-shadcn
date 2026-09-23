@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -28,6 +29,7 @@ import {
   isMenuRouteActive,
 } from "@/app/navigation/routeNavigation"
 import type { NavigationGroupKey } from "@/app/navigation/routeRegistry"
+import type { AppMenuRoute } from "@/app/navigation/routeRegistry"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 
@@ -81,15 +83,100 @@ const routeHints: Record<string, string> = {
   "admin-pipeline": "مراحل و قوانین انتقال",
   "admin-email-settings": "SMTP، فرستنده و ارسال آزمایشی",
   "admin-audit-logs": "ردیابی تغییرات و رویدادها",
+  "admin-timesheets": "بررسی و تأیید کارکرد اعضای تیم",
+  "admin-timesheet-reports": "گزارش تجمیعی عملکرد کارکنان",
+  "admin-work-schedules": "تنظیم ساعات و روزهای کاری سازمان",
+  "admin-notifications": "قالب‌ها، قوانین و کانال‌های اعلان",
   "account-security": "رمز عبور، Passkey و نشست‌ها",
   "account-usage": "مصرف منابع و سهمیه‌ها",
+}
+
+const unifiedWorkspaceLabel = "عملیات و مدیریت"
+
+const workspaceSections = [
+  {
+    id: "sales",
+    label: "فروش و ارتباط با مشتری",
+    routeIds: ["companies", "opportunities", "people", "activities", "reports"],
+  },
+  {
+    id: "planning",
+    label: "برنامه‌ریزی و پیگیری",
+    routeIds: ["tasks", "meetings", "follow-ups", "notifications"],
+  },
+  {
+    id: "technical",
+    label: "مرکز فنی",
+    routeIds: ["technical-library", "technical-knowledge-base", "technical-tenders"],
+  },
+  {
+    id: "workforce",
+    label: "کارکرد و منابع انسانی",
+    routeIds: ["admin-timesheets", "admin-timesheet-reports", "admin-work-schedules"],
+  },
+  {
+    id: "organization",
+    label: "سازمان و دسترسی‌ها",
+    routeIds: ["admin-users", "admin-teams", "admin-permissions", "admin-audit-logs"],
+  },
+  {
+    id: "configuration",
+    label: "تنظیمات و داده‌های پایه",
+    routeIds: ["admin-libraries", "admin-pipeline", "admin-exchange-rates", "admin-notifications"],
+  },
+] as const
+
+function mergeWorkspaceGroups(
+  groups: ReturnType<typeof getVisibleMenuGroups>
+) {
+  const workspaceRoutes = groups
+    .filter(({ group }) => group === "operations" || group === "management")
+    .flatMap(({ routes }) => routes)
+  const remainingGroups = groups.filter(
+    ({ group }) => group !== "operations" && group !== "management"
+  )
+
+  return workspaceRoutes.length > 0
+    ? [
+        {
+          group: "operations" as const,
+          label: unifiedWorkspaceLabel,
+          routes: workspaceRoutes,
+        },
+        ...remainingGroups,
+      ]
+    : remainingGroups
+}
+
+function getRouteSections(group: NavigationGroupKey, routes: AppMenuRoute[]) {
+  if (group !== "operations") {
+    return [{ id: group, label: null, routes }]
+  }
+
+  const assignedIds = new Set<string>(
+    workspaceSections.flatMap(({ routeIds }) => routeIds)
+  )
+  const sections = workspaceSections
+    .map((section) => ({
+      id: section.id,
+      label: section.label,
+      routes: section.routeIds
+        .map((routeId) => routes.find(({ id }) => id === routeId))
+        .filter((route): route is AppMenuRoute => Boolean(route)),
+    }))
+    .filter(({ routes: sectionRoutes }) => sectionRoutes.length > 0)
+  const uncategorizedRoutes = routes.filter(({ id }) => !assignedIds.has(id))
+
+  return uncategorizedRoutes.length > 0
+    ? [...sections, { id: "other", label: "سایر بخش‌ها", routes: uncategorizedRoutes }]
+    : sections
 }
 
 export function AppTopNavigation() {
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
   const navigate = useNavigate()
-  const groups = getVisibleMenuGroups(user)
+  const groups = mergeWorkspaceGroups(getVisibleMenuGroups(user))
   const topLevelRoutes = getVisibleTopLevelRoutes(user)
   const primaryRoutes = topLevelRoutes
   const go = (path: string) => navigate(path)
@@ -132,6 +219,7 @@ export function AppTopNavigation() {
             const active = routes.some((route) =>
               isMenuRouteActive(route.path, location.pathname)
             )
+            const sections = getRouteSections(group, [...routes])
             return (
               <DropdownMenu key={group}>
                 <DropdownMenuTrigger
@@ -171,51 +259,65 @@ export function AppTopNavigation() {
                       </div>
                     </div>
                   </div>
-                  <div className="grid max-h-[58vh] gap-2 overflow-y-auto p-3 sm:grid-cols-3">
-                    {routes.map((route) => {
-                      const Icon = route.icon
-                      const routeActive = isMenuRouteActive(
-                        route.path,
-                        location.pathname
-                      )
-                      return (
-                        <DropdownMenuItem
-                          key={route.id}
-                          onClick={() => go(route.path)}
-                          className={[
-                            "group relative min-h-[4.75rem] cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3 transition-all",
-                            routeActive
-                              ? "border-[var(--app-primary)]/25 bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)] shadow-[0_10px_30px_-22px_var(--app-primary)]"
-                              : "border-[var(--app-divider)] bg-[var(--app-background)]/35 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/20 hover:bg-[var(--app-surface)] hover:shadow-[var(--app-shadow-card)]",
-                          ].join(" ")}
-                        >
-                          <span
-                            className={[
-                              "grid size-10 shrink-0 place-items-center rounded-xl ring-1 transition-colors",
-                              routeActive
-                                ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] ring-[var(--app-primary)]/20"
-                                : "bg-[var(--app-surface)] text-[var(--app-primary)] ring-[var(--app-divider)] group-hover:bg-[var(--app-primary-soft)]",
-                            ].join(" ")}
-                          >
-                            <Icon className="size-[1.125rem]" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-xs font-black">
-                              {route.label}
+                  <div className="max-h-[62vh] space-y-4 overflow-y-auto p-3">
+                    {sections.map((section) => (
+                      <section key={section.id} aria-label={section.label ?? label}>
+                        {section.label ? (
+                          <div className="mb-2 flex items-center gap-2 px-1">
+                            <span className="text-[11px] font-black text-[var(--app-heading)]">
+                              {section.label}
                             </span>
-                            <span className="mt-1 block truncate text-[10px] font-normal text-[var(--app-text-secondary)]">
-                              {routeHints[route.id] || "ورود به این بخش"}
-                            </span>
-                          </span>
-                          <span className="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--app-icon-muted)] transition group-hover:bg-[var(--app-primary-soft)] group-hover:text-[var(--app-primary)]">
-                            <ArrowUpLeft className="size-3.5" />
-                          </span>
-                          {routeActive ? (
-                            <span className="absolute end-0 top-3 h-8 w-1 rounded-s-full bg-[var(--app-primary)]" />
-                          ) : null}
-                        </DropdownMenuItem>
-                      )
-                    })}
+                            <span className="h-px flex-1 bg-[var(--app-divider)]" />
+                          </div>
+                        ) : null}
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {section.routes.map((route) => {
+                            const Icon = route.icon
+                            const routeActive = isMenuRouteActive(
+                              route.path,
+                              location.pathname
+                            )
+                            return (
+                              <DropdownMenuItem
+                                key={route.id}
+                                onClick={() => go(route.path)}
+                                className={[
+                                  "group relative min-h-[4.75rem] cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3 transition-all",
+                                  routeActive
+                                    ? "border-[var(--app-primary)]/25 bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)] shadow-[0_10px_30px_-22px_var(--app-primary)]"
+                                    : "border-[var(--app-divider)] bg-[var(--app-background)]/35 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/20 hover:bg-[var(--app-surface)] hover:shadow-[var(--app-shadow-card)]",
+                                ].join(" ")}
+                              >
+                                <span
+                                  className={[
+                                    "grid size-10 shrink-0 place-items-center rounded-xl ring-1 transition-colors",
+                                    routeActive
+                                      ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] ring-[var(--app-primary)]/20"
+                                      : "bg-[var(--app-surface)] text-[var(--app-primary)] ring-[var(--app-divider)] group-hover:bg-[var(--app-primary-soft)]",
+                                  ].join(" ")}
+                                >
+                                  <Icon className="size-[1.125rem]" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-xs font-black">
+                                    {route.label}
+                                  </span>
+                                  <span className="mt-1 block truncate text-[10px] font-normal text-[var(--app-text-secondary)]">
+                                    {routeHints[route.id] || "ورود به این بخش"}
+                                  </span>
+                                </span>
+                                <span className="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--app-icon-muted)] transition group-hover:bg-[var(--app-primary-soft)] group-hover:text-[var(--app-primary)]">
+                                  <ArrowUpLeft className="size-3.5" />
+                                </span>
+                                {routeActive ? (
+                                  <span className="absolute end-0 top-3 h-8 w-1 rounded-s-full bg-[var(--app-primary)]" />
+                                ) : null}
+                              </DropdownMenuItem>
+                            )
+                          })}
+                        </div>
+                      </section>
+                    ))}
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -259,6 +361,7 @@ export function AppTopNavigation() {
             })}
             {groups.map(({ group, label, routes }) => {
               const GroupIcon = groupPresentation[group].icon
+              const sections = getRouteSections(group, [...routes])
               return (
                 <DropdownMenuSub key={group}>
                   <DropdownMenuSubTrigger className="min-h-12 rounded-xl font-bold hover:bg-[var(--app-primary-soft)]">
@@ -271,7 +374,14 @@ export function AppTopNavigation() {
                     dir="rtl"
                     className="w-72 rounded-[1.35rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-2 shadow-[0_20px_60px_-24px_rgba(15,23,42,.45)] backdrop-blur-xl"
                   >
-                    {routes.map((route) => {
+                    {sections.map((section) => (
+                      <div key={section.id}>
+                        {section.label ? (
+                          <DropdownMenuLabel className="px-2 pb-1 pt-3 text-[10px] font-black text-[var(--app-text-secondary)] first:pt-1">
+                            {section.label}
+                          </DropdownMenuLabel>
+                        ) : null}
+                    {section.routes.map((route) => {
                       const Icon = route.icon
                       const routeActive = isMenuRouteActive(
                         route.path,
@@ -302,6 +412,8 @@ export function AppTopNavigation() {
                         </DropdownMenuItem>
                       )
                     })}
+                      </div>
+                    ))}
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
               )

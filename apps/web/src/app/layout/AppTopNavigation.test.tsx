@@ -27,7 +27,7 @@ beforeEach(() => {
   })
 })
 
-it("renders operations as a permission-aware group without a standalone meetings button", async () => {
+it("combines operations and management and groups related routes", async () => {
   render(
     <MemoryRouter initialEntries={["/dashboard"]}>
       <AppTopNavigation />
@@ -35,8 +35,7 @@ it("renders operations as a permission-aware group without a standalone meetings
   )
 
   const labels = [
-    uiText.navigation.groups.operations,
-    uiText.navigation.groups.management,
+    "عملیات و مدیریت",
     uiText.navigation.groups.account,
   ]
   labels.forEach((label) =>
@@ -49,8 +48,12 @@ it("renders operations as a permission-aware group without a standalone meetings
   ).toBeNull()
 
   await userEvent.click(
-    screen.getByRole("button", { name: uiText.navigation.groups.operations })
+    screen.getByRole("button", { name: "عملیات و مدیریت" })
   )
+  expect(await screen.findByText("فروش و ارتباط با مشتری")).toBeInTheDocument()
+  expect(screen.getByText("برنامه‌ریزی و پیگیری")).toBeInTheDocument()
+  expect(screen.getByText("مرکز فنی")).toBeInTheDocument()
+  expect(screen.getByText("سازمان و دسترسی‌ها")).toBeInTheDocument()
   expect(
     await screen.findByRole("menuitem", {
       name: new RegExp(uiText.navigation.meetings),
@@ -64,4 +67,5 @@ it("renders operations as a permission-aware group without a standalone meetings
   ).toBeInTheDocument()
   expect(screen.queryByRole("button", { name: uiText.navigation.groups.sales })).toBeNull()
   expect(screen.queryByRole("button", { name: uiText.navigation.groups.technical })).toBeNull()
+  expect(screen.queryByRole("button", { name: uiText.navigation.groups.management })).toBeNull()
 })
