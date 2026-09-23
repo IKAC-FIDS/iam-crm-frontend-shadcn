@@ -50,19 +50,24 @@ it("combines operations and management and groups related routes", async () => {
   await userEvent.click(
     screen.getByRole("button", { name: "عملیات و مدیریت" })
   )
-  expect(await screen.findByText("فروش و ارتباط با مشتری")).toBeInTheDocument()
+  expect(
+    (await screen.findAllByText("فروش و ارتباط با مشتری")).length
+  ).toBeGreaterThan(0)
   expect(screen.getByText("برنامه‌ریزی و پیگیری")).toBeInTheDocument()
   expect(screen.getByText("مرکز فنی")).toBeInTheDocument()
   expect(screen.getByText("سازمان و دسترسی‌ها")).toBeInTheDocument()
   expect(
     await screen.findByRole("menuitem", {
-      name: new RegExp(uiText.navigation.meetings),
+      name: new RegExp(uiText.navigation.companies),
     })
   ).toBeInTheDocument()
 
+  await userEvent.click(
+    screen.getByRole("button", { name: /برنامه‌ریزی و پیگیری/ })
+  )
   expect(
     await screen.findByRole("menuitem", {
-      name: new RegExp(uiText.navigation.companies),
+      name: new RegExp(uiText.navigation.meetings),
     })
   ).toBeInTheDocument()
   expect(screen.queryByRole("button", { name: uiText.navigation.groups.sales })).toBeNull()

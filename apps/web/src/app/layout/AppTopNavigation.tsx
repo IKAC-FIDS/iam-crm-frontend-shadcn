@@ -10,6 +10,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react"
+import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 
 import { Button } from "@workspace/ui/components/button"
@@ -176,6 +177,9 @@ export function AppTopNavigation() {
   const user = useAuthStore((state) => state.user)
   const location = useLocation()
   const navigate = useNavigate()
+  const [activeWorkspaceSectionId, setActiveWorkspaceSectionId] = useState<
+    string | null
+  >(null)
   const groups = mergeWorkspaceGroups(getVisibleMenuGroups(user))
   const topLevelRoutes = getVisibleTopLevelRoutes(user)
   const primaryRoutes = topLevelRoutes
@@ -220,6 +224,14 @@ export function AppTopNavigation() {
               isMenuRouteActive(route.path, location.pathname)
             )
             const sections = getRouteSections(group, [...routes])
+            const selectedSection =
+              sections.find(({ id }) => id === activeWorkspaceSectionId) ??
+              sections.find(({ routes: sectionRoutes }) =>
+                sectionRoutes.some((route) =>
+                  isMenuRouteActive(route.path, location.pathname)
+                )
+              ) ??
+              sections[0]
             return (
               <DropdownMenu key={group}>
                 <DropdownMenuTrigger
@@ -235,43 +247,99 @@ export function AppTopNavigation() {
                   align="start"
                   sideOffset={8}
                   dir="rtl"
-                  className="w-[min(94vw,820px)] overflow-hidden rounded-[1.6rem] border-[var(--app-divider)] bg-[var(--app-surface)]/95 p-0 shadow-[0_28px_90px_-32px_rgba(15,23,42,.55)] backdrop-blur-2xl"
+                  className={[
+                    "overflow-hidden rounded-[1.35rem] border-[var(--app-divider)] bg-[var(--app-surface)]/98 p-0 shadow-[0_30px_90px_-30px_rgba(15,23,42,.6)] backdrop-blur-2xl",
+                    group === "operations"
+                      ? "w-[min(94vw,800px)]"
+                      : "w-[min(94vw,380px)]",
+                  ].join(" ")}
                 >
-                  <div className="relative overflow-hidden border-b border-[var(--app-divider)] bg-[linear-gradient(135deg,var(--app-primary-soft),var(--app-surface)_62%,var(--info-light))] px-5 py-4">
-                    <div className="pointer-events-none absolute -end-8 -top-12 size-32 rounded-full bg-[var(--app-primary)]/15 blur-3xl" />
-                    <div className="pointer-events-none absolute start-10 -bottom-16 size-28 rounded-full bg-[var(--info)]/10 blur-3xl" />
+                  <div className="relative overflow-hidden border-b border-[var(--app-divider)] px-4 py-3.5">
+                    <div className="pointer-events-none absolute inset-y-0 end-0 w-48 bg-[radial-gradient(circle_at_right,var(--app-primary-soft),transparent_72%)]" />
                     <div className="relative flex items-center gap-3">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
-                        <GroupIcon className="size-5" />
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]">
+                        <GroupIcon className="size-[1.125rem]" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h2 className="font-black text-[var(--app-heading)]">
-                            {label}
-                          </h2>
-                          <span className="rounded-full bg-[var(--app-surface)]/70 px-2 py-0.5 text-[10px] font-bold text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/10">
-                            {routes.length.toLocaleString("fa-IR")} بخش
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[11px] leading-5 text-[var(--app-text-secondary)]">
+                        <h2 className="text-sm font-black text-[var(--app-heading)]">
+                          {label}
+                        </h2>
+                        <p className="mt-0.5 text-[10px] leading-4 text-[var(--app-text-secondary)]">
                           {presentation.description}
                         </p>
                       </div>
+                      <span className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-[10px] font-black text-[var(--app-primary)]">
+                        {routes.length.toLocaleString("fa-IR")} بخش
+                      </span>
                     </div>
                   </div>
-                  <div className="max-h-[62vh] space-y-4 overflow-y-auto p-3">
-                    {sections.map((section) => (
-                      <section key={section.id} aria-label={section.label ?? label}>
-                        {section.label ? (
-                          <div className="mb-2 flex items-center gap-2 px-1">
-                            <span className="text-[11px] font-black text-[var(--app-heading)]">
-                              {section.label}
-                            </span>
-                            <span className="h-px flex-1 bg-[var(--app-divider)]" />
+                  {group === "operations" && selectedSection ? (
+                    <div className="grid min-h-[330px] grid-cols-[190px_minmax(0,1fr)]">
+                      <aside className="border-e border-[var(--app-divider)] bg-[var(--app-background)]/55 p-2.5">
+                        <p className="px-2 pb-2 pt-1 text-[9px] font-black tracking-wide text-[var(--app-text-secondary)]">
+                          دسته‌بندی بخش‌ها
+                        </p>
+                        <div className="space-y-1">
+                          {sections.map((section) => {
+                            const sectionActive = section.id === selectedSection.id
+                            return (
+                              <button
+                                key={section.id}
+                                type="button"
+                                onClick={() => setActiveWorkspaceSectionId(section.id)}
+                                onMouseEnter={() => setActiveWorkspaceSectionId(section.id)}
+                                onFocus={() => setActiveWorkspaceSectionId(section.id)}
+                                className={[
+                                  "flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 text-start text-[11px] font-bold transition-colors",
+                                  sectionActive
+                                    ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-[var(--app-shadow-brand)]"
+                                    : "text-[var(--app-text-secondary)] hover:bg-[var(--app-surface)] hover:text-[var(--app-heading)]",
+                                ].join(" ")}
+                                aria-pressed={sectionActive}
+                              >
+                                <span
+                                  className={[
+                                    "size-1.5 rounded-full",
+                                    sectionActive
+                                      ? "bg-[var(--app-on-primary)]"
+                                      : "bg-[var(--app-primary)]",
+                                  ].join(" ")}
+                                />
+                                <span className="min-w-0 flex-1 truncate">
+                                  {section.label}
+                                </span>
+                                <span
+                                  className={[
+                                    "rounded-md px-1.5 py-0.5 text-[9px]",
+                                    sectionActive
+                                      ? "bg-white/15 text-current"
+                                      : "bg-[var(--app-surface)] text-[var(--app-text-secondary)]",
+                                  ].join(" ")}
+                                >
+                                  {section.routes.length.toLocaleString("fa-IR")}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </aside>
+                      <section
+                        className="min-w-0 p-4"
+                        aria-label={selectedSection.label ?? label}
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <h3 className="text-sm font-black text-[var(--app-heading)]">
+                              {selectedSection.label}
+                            </h3>
+                            <p className="mt-0.5 text-[10px] text-[var(--app-text-secondary)]">
+                              بخش موردنظر را برای ادامه انتخاب کنید
+                            </p>
                           </div>
-                        ) : null}
-                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                          {section.routes.map((route) => {
+                          <span className="h-px min-w-10 flex-1 bg-[var(--app-divider)]" />
+                        </div>
+                        <div className="grid gap-1.5 sm:grid-cols-2">
+                          {selectedSection.routes.map((route) => {
                             const Icon = route.icon
                             const routeActive = isMenuRouteActive(
                               route.path,
@@ -282,43 +350,78 @@ export function AppTopNavigation() {
                                 key={route.id}
                                 onClick={() => go(route.path)}
                                 className={[
-                                  "group relative min-h-[4.75rem] cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3 transition-all",
+                                  "group relative min-h-16 cursor-pointer items-center gap-3 overflow-hidden rounded-xl border border-transparent px-2.5 py-2 transition-colors",
                                   routeActive
-                                    ? "border-[var(--app-primary)]/25 bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)] shadow-[0_10px_30px_-22px_var(--app-primary)]"
-                                    : "border-[var(--app-divider)] bg-[var(--app-background)]/35 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/20 hover:bg-[var(--app-surface)] hover:shadow-[var(--app-shadow-card)]",
+                                    ? "border-[var(--app-primary)]/15 bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
+                                    : "hover:bg-[var(--app-background)]/70",
                                 ].join(" ")}
                               >
                                 <span
                                   className={[
-                                    "grid size-10 shrink-0 place-items-center rounded-xl ring-1 transition-colors",
+                                    "grid size-9 shrink-0 place-items-center rounded-xl transition-colors",
                                     routeActive
-                                      ? "bg-[var(--app-primary)] text-[var(--app-on-primary)] ring-[var(--app-primary)]/20"
-                                      : "bg-[var(--app-surface)] text-[var(--app-primary)] ring-[var(--app-divider)] group-hover:bg-[var(--app-primary-soft)]",
+                                      ? "bg-[var(--app-primary)] text-[var(--app-on-primary)]"
+                                      : "bg-[var(--app-primary-soft)] text-[var(--app-primary)] group-hover:bg-[var(--app-surface)]",
                                   ].join(" ")}
                                 >
-                                  <Icon className="size-[1.125rem]" />
+                                  <Icon className="size-4" />
                                 </span>
                                 <span className="min-w-0 flex-1">
-                                  <span className="block truncate text-xs font-black">
+                                  <span className="block truncate text-[11px] font-black">
                                     {route.label}
                                   </span>
-                                  <span className="mt-1 block truncate text-[10px] font-normal text-[var(--app-text-secondary)]">
+                                  <span className="mt-0.5 block truncate text-[9px] font-normal text-[var(--app-text-secondary)]">
                                     {routeHints[route.id] || "ورود به این بخش"}
                                   </span>
                                 </span>
-                                <span className="grid size-7 shrink-0 place-items-center rounded-lg text-[var(--app-icon-muted)] transition group-hover:bg-[var(--app-primary-soft)] group-hover:text-[var(--app-primary)]">
-                                  <ArrowUpLeft className="size-3.5" />
+                                <span className="text-[var(--app-icon-muted)] transition group-hover:text-[var(--app-primary)]">
+                                  <ArrowUpLeft className="size-3" />
                                 </span>
                                 {routeActive ? (
-                                  <span className="absolute end-0 top-3 h-8 w-1 rounded-s-full bg-[var(--app-primary)]" />
+                                  <span className="absolute end-0 top-2 h-12 w-0.5 rounded-s-full bg-[var(--app-primary)]" />
                                 ) : null}
                               </DropdownMenuItem>
                             )
                           })}
                         </div>
                       </section>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-1 p-2.5">
+                      {routes.map((route) => {
+                        const Icon = route.icon
+                        const routeActive = isMenuRouteActive(
+                          route.path,
+                          location.pathname
+                        )
+                        return (
+                          <DropdownMenuItem
+                            key={route.id}
+                            onClick={() => go(route.path)}
+                            className={[
+                              "min-h-14 cursor-pointer gap-3 rounded-xl px-3",
+                              routeActive
+                                ? "bg-[var(--app-primary-soft)] text-[var(--app-on-primary-container)]"
+                                : "hover:bg-[var(--app-background)]",
+                            ].join(" ")}
+                          >
+                            <span className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
+                              <Icon className="size-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[11px] font-black">
+                                {route.label}
+                              </span>
+                              <span className="mt-0.5 block truncate text-[9px] text-[var(--app-text-secondary)]">
+                                {routeHints[route.id] || "ورود به این بخش"}
+                              </span>
+                            </span>
+                            <ArrowUpLeft className="size-3 text-[var(--app-icon-muted)]" />
+                          </DropdownMenuItem>
+                        )
+                      })}
+                    </div>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )
