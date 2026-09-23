@@ -178,23 +178,25 @@ export function CompaniesPage() {
       <QueryContent query={query} errorTitle={text.errorTitle}>
         <div className="flex min-h-0 flex-col gap-3 overflow-hidden">
           {(query.data?.data ?? []).length ? (
-            <div
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain pe-1"
-              aria-label={text.title}
-              tabIndex={0}
-            >
-              <div className="grid gap-2.5 pb-1">
-                {(query.data?.data ?? []).map((company) => (
-                  <CompanyEntityCard
-                    key={company.id}
-                    company={company}
-                    permissions={permissions}
-                    onView={() => navigate(`/companies/${company.id}`)}
-                    onEdit={() => setEditCompany(company)}
-                    onChangeOwner={() => setOwnerCompany(company)}
-                    onToggleArchive={() => setArchiveCompany(company)}
-                  />
-                ))}
+            <div className="min-h-0 flex-1 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)]">
+              <div
+                className="ui-contained-scroll h-full overflow-y-auto overscroll-contain ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)]"
+                aria-label={text.title}
+                tabIndex={0}
+              >
+                <div className="grid gap-2.5">
+                  {(query.data?.data ?? []).map((company) => (
+                    <CompanyEntityCard
+                      key={company.id}
+                      company={company}
+                      permissions={permissions}
+                      onView={() => navigate(`/companies/${company.id}`)}
+                      onEdit={() => setEditCompany(company)}
+                      onChangeOwner={() => setOwnerCompany(company)}
+                      onToggleArchive={() => setArchiveCompany(company)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
