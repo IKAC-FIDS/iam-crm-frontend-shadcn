@@ -21,7 +21,8 @@ import { uiText } from "@/config/uiText"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import { NotificationBell } from "@/features/notifications/components/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
-import { AppTopNavigation } from "./AppTopNavigation"
+import { MobileNavigation } from "./MobileNavigation"
+import { NavigationBreadcrumbs } from "./NavigationBreadcrumbs"
 import { ThemeSelector } from "./ThemeSelector"
 
 export function AppHeader() {
@@ -37,7 +38,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--app-divider)]/80 bg-[var(--app-surface)]/85 backdrop-blur-xl">
       <div className="mx-auto flex min-h-[72px] w-full max-w-[var(--app-content-max-width)] items-center gap-3 px-4 sm:px-6 lg:px-8 xl:px-10">
-
+        <MobileNavigation />
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-3">
             <h1 className="truncate text-lg font-bold text-[var(--app-heading)]">
@@ -46,9 +47,7 @@ export function AppHeader() {
 
           </div>
 
-          <p className="mt-1 hidden text-xs text-[var(--app-text-secondary)] lg:block">
-            {uiText.app.workspaceSubtitle}
-          </p>
+          <div className="mt-1"><NavigationBreadcrumbs /></div>
         </div>
         <NotificationBell
           enabled={Boolean(user?.permissions?.includes("notification:view"))}
@@ -134,7 +133,6 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <AppTopNavigation />
     </header>
   )
 }
