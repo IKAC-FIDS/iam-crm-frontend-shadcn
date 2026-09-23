@@ -86,7 +86,7 @@ export function CompaniesPage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage className="h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden">
       <PageHero
         accessBadge={{ label: "مدیریت حساب‌های مشتری", icon: Building2 }}
         title={text.title}
@@ -176,37 +176,47 @@ export function CompaniesPage() {
       />
 
       <QueryContent query={query} errorTitle={text.errorTitle}>
-        {(query.data?.data ?? []).length ? (
-          <div className="grid gap-2.5" aria-label={text.title}>
-            {(query.data?.data ?? []).map((company) => (
-              <CompanyEntityCard
-                key={company.id}
-                company={company}
-                permissions={permissions}
-                onView={() => navigate(`/companies/${company.id}`)}
-                onEdit={() => setEditCompany(company)}
-                onChangeOwner={() => setOwnerCompany(company)}
-                onToggleArchive={() => setArchiveCompany(company)}
-              />
-            ))}
-          </div>
-        ) : (
+        <div className="flex min-h-0 flex-col gap-3 overflow-hidden">
+          {(query.data?.data ?? []).length ? (
+            <div
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain pe-1"
+              aria-label={text.title}
+              tabIndex={0}
+            >
+              <div className="grid gap-2.5 pb-1">
+                {(query.data?.data ?? []).map((company) => (
+                  <CompanyEntityCard
+                    key={company.id}
+                    company={company}
+                    permissions={permissions}
+                    onView={() => navigate(`/companies/${company.id}`)}
+                    onEdit={() => setEditCompany(company)}
+                    onChangeOwner={() => setOwnerCompany(company)}
+                    onToggleArchive={() => setArchiveCompany(company)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
             <EmptyState
               icon={Building2}
               title={text.emptyTitle}
               description={text.emptyDescription}
             />
-        )}
+          )}
 
-        <PaginationControls
-          page={query.data?.meta.page ?? page}
-          pageCount={query.data?.meta.totalPages ?? 1}
-          onPageChange={setPage}
-          pageSize={pageSize}
-          onPageSizeChange={setPageSize}
-          total={query.data?.meta.total}
-          disabled={query.isFetching}
-        />
+          <div className="shrink-0">
+            <PaginationControls
+              page={query.data?.meta.page ?? page}
+              pageCount={query.data?.meta.totalPages ?? 1}
+              onPageChange={setPage}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+              total={query.data?.meta.total}
+              disabled={query.isFetching}
+            />
+          </div>
+        </div>
       </QueryContent>
 
       <CompanyFormDialog
