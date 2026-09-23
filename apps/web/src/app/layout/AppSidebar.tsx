@@ -134,6 +134,7 @@ export function AppSidebar() {
 
       {!isMobile && openFlyout ? (
         <NavigationFlyout
+          key={openFlyout.id}
           item={openFlyout}
           expanded={state === "expanded"}
           onClose={closeFlyout}
