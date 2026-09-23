@@ -14,10 +14,14 @@ import { uiText } from "@/config/uiText"
 export type EntityAction = {
   id: string
   label: string
+  accessibleLabel?: string
   icon: LucideIcon
   onClick: () => void | Promise<unknown>
   enabled?: boolean
+  visible?: boolean
   disabled?: boolean
+  loading?: boolean
+  variant?: "default" | "danger"
   tone?: "default" | "danger"
   confirmation?: { title: string; description: string }
 }
@@ -49,7 +53,7 @@ export function EntityRowActions({
         ]
       : []),
     ...actions,
-  ].filter((action) => action.enabled !== false)
+  ].filter((action) => action.enabled !== false && action.visible !== false)
   const direct = available.filter(
     (action) => action.id === "view" || action.id === "edit"
   )
@@ -91,11 +95,13 @@ export function EntityRowActions({
             variant="ghost"
             size="sm"
             className={
-              action.tone === "danger"
+              (action.variant || action.tone) === "danger"
                 ? "rounded-xl text-destructive hover:text-destructive"
                 : "rounded-xl"
             }
-            disabled={action.disabled || pending}
+            disabled={action.disabled || action.loading || pending}
+            aria-busy={action.loading || undefined}
+            aria-label={action.accessibleLabel}
             onClick={() => activate(action)}
           >
             <action.icon aria-hidden="true" className="size-4" />
@@ -114,7 +120,7 @@ export function EntityRowActions({
           }}
           title={confirm?.confirmation?.title || ""}
           description={error || confirm?.confirmation?.description}
-          tone={confirm?.tone === "danger" ? "danger" : "primary"}
+          tone={(confirm?.variant || confirm?.tone) === "danger" ? "danger" : "primary"}
           isPending={pending}
           onConfirm={() => (confirm ? run(confirm) : undefined)}
         />
@@ -136,13 +142,14 @@ export function EntityRowActions({
           variant="ghost"
           size="icon-sm"
           className={
-            action.tone === "danger"
+            (action.variant || action.tone) === "danger"
               ? "shrink-0 rounded-xl text-destructive"
               : "shrink-0 rounded-xl text-[var(--app-primary)]"
           }
-          aria-label={action.label}
-          title={action.label}
-          disabled={action.disabled || pending}
+          aria-label={action.accessibleLabel || action.label}
+          title={action.accessibleLabel || action.label}
+          disabled={action.disabled || action.loading || pending}
+          aria-busy={action.loading || undefined}
           onClick={() => activate(action)}
         >
           <action.icon aria-hidden="true" className="size-4" />
@@ -172,8 +179,8 @@ export function EntityRowActions({
             {overflow.map((action) => (
               <DropdownMenuItem
                 key={action.id}
-                disabled={action.disabled}
-                variant={action.tone === "danger" ? "destructive" : "default"}
+                disabled={action.disabled || action.loading}
+                variant={(action.variant || action.tone) === "danger" ? "destructive" : "default"}
                 onClick={() => activate(action)}
               >
                 <action.icon className="size-4" />
@@ -198,7 +205,7 @@ export function EntityRowActions({
         }}
         title={confirm?.confirmation?.title || ""}
         description={error || confirm?.confirmation?.description}
-        tone={confirm?.tone === "danger" ? "danger" : "primary"}
+        tone={(confirm?.variant || confirm?.tone) === "danger" ? "danger" : "primary"}
         isPending={pending}
         onConfirm={() => (confirm ? run(confirm) : undefined)}
       />

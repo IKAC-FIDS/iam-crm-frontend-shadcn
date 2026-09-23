@@ -8,7 +8,6 @@ import {
 } from "lucide-react"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
 import type { Opportunity } from "../types/opportunity.types"
 export interface OpportunityActionPermissions {
   update: boolean
@@ -40,7 +39,14 @@ export function OpportunityActionsMenu({
   const text = uiText.opportunities.actions
   const active = !opportunity.archivedAt
   const actions = [
-    { id: "view", label: text.view, icon: Eye, onClick: onView, enabled: true },
+    {
+      id: "view",
+      label: text.view,
+      accessibleLabel: "مشاهده جزئیات فرصت",
+      icon: Eye,
+      onClick: onView,
+      enabled: true,
+    },
     {
       id: "edit",
       label: text.edit,
@@ -79,38 +85,10 @@ export function OpportunityActionsMenu({
     },
   ]
 
-  if (presentation === "buttons") {
-    return (
-      <>
-        {actions
-          .filter((action) => action.enabled && action.id !== "view")
-          .map((action) => {
-            const Icon = action.icon
-            return (
-              <Button
-                key={action.id}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={
-                  action.tone === "danger"
-                    ? "rounded-xl text-[var(--destructive)] hover:text-[var(--destructive)]"
-                    : "rounded-xl"
-                }
-                onClick={action.onClick}
-              >
-                <Icon className="size-4" />
-                {action.label}
-              </Button>
-            )
-          })}
-      </>
-    )
-  }
-
   return (
     <EntityRowActions
       actions={actions}
+      presentation={presentation}
     />
   )
 }

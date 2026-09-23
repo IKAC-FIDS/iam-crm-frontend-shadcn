@@ -1,18 +1,8 @@
-import {
-  EntityCardList,
-  type EntityCardField,
-} from "@/components/shared/EntityCardList"
 import { EntityListPage } from "@/components/shared/EntityListPage"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import {
-  Archive,
   Building2,
-  Eye,
-  Pencil,
   Plus,
-  RefreshCcw,
-  UserRoundCog,
-  UsersRound,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -24,26 +14,20 @@ import { enumParam, useListQueryState } from "@/lib/listQuery"
 import { PageHero } from "@/components/shared/PageHero"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 
-import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
+import { CompanyEntityCard } from "../components/CompanyEntityCard"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
-import { CompanyPriorityBadge } from "../components/CompanyPriorityBadge"
 import { useCompanies } from "../hooks/useCompanies"
 import {
   useCreateCompany,
   useUpdateCompany,
 } from "../hooks/useCompanyMutations"
 import type { Company } from "../types/company.types"
-import {
-  companyDisplayName,
-  formatCompanyDate,
-} from "../utils/companyFormatters"
 
 export function CompaniesPage() {
   const text = uiText.companies.list
@@ -85,63 +69,6 @@ export function CompaniesPage() {
     includeArchived: archiveMode === "ALL",
     archivedOnly: archiveMode === "ARCHIVED",
   })
-
-  const fields = useMemo<EntityCardField<Company>[]>(
-    () => [
-      {
-        id: "industry",
-        label: text.columns.industry,
-        render: (company) =>
-          company.industryRef?.name ||
-          company.industry ||
-          uiText.common.notAvailable,
-      },
-      {
-        id: "priority",
-        label: text.columns.priority,
-        render: (company) => (
-          <CompanyPriorityBadge priority={company.priority} />
-        ),
-      },
-      {
-        id: "owner",
-        label: text.columns.owner,
-        icon: UsersRound,
-        render: (company) =>
-          company.owner ? (
-            <span className="flex items-center gap-2">
-              <IdentityAvatar
-                name={company.owner.fullName}
-                mediaPath={`/users/${company.owner.id}/avatar`}
-                hasMedia={Boolean(company.owner.avatarObjectKey)}
-                mediaVersion={company.owner.avatarObjectKey}
-                className="size-7 rounded-lg text-xs"
-              />
-              <span className="truncate">{company.owner.fullName}</span>
-            </span>
-          ) : (
-            text.unassigned
-          ),
-      },
-      {
-        id: "status",
-        label: text.columns.status,
-        render: (company) =>
-          company.archivedAt ? (
-            <StatusBadge tone="warning">{text.archived}</StatusBadge>
-          ) : (
-            <StatusBadge tone="success">{text.active}</StatusBadge>
-          ),
-      },
-      {
-        id: "updatedAt",
-        label: text.columns.updatedAt,
-        priority: "secondary",
-        render: (company) => formatCompanyDate(company.updatedAt),
-      },
-    ],
-    [text]
-  )
 
   const hasActiveFilters =
     Boolean(search.trim()) ||
@@ -249,106 +176,27 @@ export function CompaniesPage() {
       />
 
       <QueryContent query={query} errorTitle={text.errorTitle}>
-        <EntityCardList
-          rows={query.data?.data ?? []}
-          fields={fields}
-          getRowKey={(company) => company.id}
-          onRowClick={(company) => navigate(`/companies/${company.id}`)}
-          className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          title={(company) =>
-            companyDisplayName(company.legalName, company.brandName)
-          }
-          subtitle={(company) =>
-            company.brandName && company.brandName !== company.legalName
-              ? company.legalName
-              : uiText.common.notAvailable
-          }
-          media={(company) => (
-            <IdentityAvatar
-              name={companyDisplayName(company.legalName, company.brandName)}
-              mediaPath={`/companies/${company.id}/logo`}
-              hasMedia={Boolean(company.logoObjectKey)}
-              mediaVersion={company.logoObjectKey}
-              fallbackIcon={<Building2 className="size-6" />}
-              className="size-16 rounded-[22px] text-xl shadow-sm"
-            />
-          )}
-          actions={(company) => {
-            const canEdit = permissions.includes("company:update")
-            const canChangeOwner = permissions.includes("company:change-owner")
-            const canToggleArchive = company.archivedAt
-              ? permissions.includes("company:restore")
-              : permissions.includes("company:archive")
-
-            return (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label={text.openCompany}
-                  className="rounded-xl"
-                  onClick={() => navigate(`/companies/${company.id}`)}
-                >
-                  <Eye className="size-4" />
-                  {uiText.common.view}
-                </Button>
-
-                {canEdit ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => setEditCompany(company)}
-                  >
-                    <Pencil className="size-4" />
-                    {uiText.companies.detail.edit}
-                  </Button>
-                ) : null}
-
-                {canChangeOwner ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => setOwnerCompany(company)}
-                  >
-                    <UserRoundCog className="size-4" />
-                    تغییر مالک
-                  </Button>
-                ) : null}
-
-                {canToggleArchive ? (
-                  <Button
-                    type="button"
-                    variant={company.archivedAt ? "outline" : "destructive"}
-                    size="sm"
-                    className="rounded-xl"
-                    onClick={() => setArchiveCompany(company)}
-                  >
-                    {company.archivedAt ? (
-                      <RefreshCcw className="size-4" />
-                    ) : (
-                      <Archive className="size-4" />
-                    )}
-                    {company.archivedAt
-                      ? uiText.companies.detail.active
-                      : uiText.companies.detail.archived}
-                  </Button>
-                ) : null}
-              </>
-            )
-          }}
-          emptyState={
+        {(query.data?.data ?? []).length ? (
+          <div className="grid gap-2.5" aria-label={text.title}>
+            {(query.data?.data ?? []).map((company) => (
+              <CompanyEntityCard
+                key={company.id}
+                company={company}
+                permissions={permissions}
+                onView={() => navigate(`/companies/${company.id}`)}
+                onEdit={() => setEditCompany(company)}
+                onChangeOwner={() => setOwnerCompany(company)}
+                onToggleArchive={() => setArchiveCompany(company)}
+              />
+            ))}
+          </div>
+        ) : (
             <EmptyState
               icon={Building2}
               title={text.emptyTitle}
               description={text.emptyDescription}
             />
-          }
-        />
+        )}
 
         <PaginationControls
           page={query.data?.meta.page ?? page}

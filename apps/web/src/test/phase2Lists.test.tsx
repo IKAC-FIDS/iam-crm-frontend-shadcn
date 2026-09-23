@@ -150,10 +150,11 @@ it("Companies exposes permitted frequent actions directly on cards without navig
   expect(
     screen.getByRole("button", { name: "ویرایش شرکت" })
   ).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "تغییر مالک" })).toBeInTheDocument()
-  expect(
-    screen.getByRole("button", { name: "بایگانی‌شده" })
-  ).toBeInTheDocument()
+  await userEvent.click(
+    screen.getByRole("button", { name: uiText.common.moreActions })
+  )
+  expect(await screen.findByRole("menuitem", { name: "تغییر مالک" })).toBeInTheDocument()
+  expect(await screen.findByRole("menuitem", { name: "بایگانی شرکت" })).toBeInTheDocument()
 
   await userEvent.click(screen.getByRole("button", { name: "ویرایش شرکت" }))
 

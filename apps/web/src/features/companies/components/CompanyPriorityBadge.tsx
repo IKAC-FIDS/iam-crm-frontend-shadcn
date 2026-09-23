@@ -1,14 +1,8 @@
-import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 import type { CompanyPriority } from "../types/company.types"
 import { priorityLabel } from "../utils/companyFormatters"
-
-const priorityTone: Record<CompanyPriority, StatusTone> = {
-  LOW: "neutral",
-  MEDIUM: "info",
-  HIGH: "warning",
-  STRATEGIC: "primary",
-}
+import { companyPriorityTone } from "../utils/companyPresentation"
 
 export function CompanyPriorityBadge({
   priority,
@@ -18,7 +12,7 @@ export function CompanyPriorityBadge({
   if (!priority) return null
 
   return (
-    <StatusBadge tone={priorityTone[priority]}>
+    <StatusBadge tone={companyPriorityTone[priority]}>
       {priorityLabel[priority]}
     </StatusBadge>
   )

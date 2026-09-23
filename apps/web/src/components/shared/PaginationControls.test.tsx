@@ -27,6 +27,28 @@ it("disables previous on first page and changes pages and row count", async () =
   expect(changePage).toHaveBeenCalledWith(2)
   await user.selectOptions(screen.getByRole("combobox"), "50")
   expect(changeSize).toHaveBeenCalledWith(50)
+  expect(screen.getByRole("button", { name: "صفحه ۱" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  )
+  expect(screen.getByText("نمایش ۱ تا ۲۰ از ۵۰ نتیجه")).toBeInTheDocument()
+})
+
+it("shows nearby pages and ellipses for a long result set", () => {
+  render(
+    <PaginationControls
+      page={6}
+      pageCount={12}
+      onPageChange={vi.fn()}
+      pageSize={10}
+      total={120}
+    />
+  )
+  expect(screen.getByRole("button", { name: "صفحه ۶" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  )
+  expect(screen.getAllByText("…")).toHaveLength(2)
 })
 
 it("clamps non-finite pages and disables both actions for empty data", () => {
