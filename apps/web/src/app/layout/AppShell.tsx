@@ -8,7 +8,7 @@ import { AppSidebar } from "./AppSidebar"
 export function AppShell() {
   return (
     <SidebarProvider
-      defaultOpen={false}
+      defaultOpen
       className="min-h-svh bg-transparent"
       style={{
         "--sidebar-width": "16rem",
