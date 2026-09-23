@@ -117,81 +117,91 @@ export function OpportunityListView({
 
   return (
     <QueryContent query={query} errorTitle={text.errors.listTitle}>
-      <div className="grid gap-3">
-        <EntityCardList
-          rows={rows}
-          fields={fields}
-          getRowKey={(item) => item.id}
-          layout="row"
-          density="compact"
-          fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
-          title={(item) => item.title}
-          subtitle={opportunityCompanyName}
-          media={(item) => (
-            <IdentityAvatar
-              name={opportunityCompanyName(item)}
-              fallbackIcon={<Building2 className="size-5" />}
-              className="size-12 rounded-2xl text-sm"
+      <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)]">
+          <div
+            className="ui-contained-scroll h-full overflow-y-auto overscroll-contain ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)]"
+            aria-label={text.hero.title}
+            tabIndex={0}
+          >
+            <EntityCardList
+              rows={rows}
+              fields={fields}
+              getRowKey={(item) => item.id}
+              layout="row"
+              density="compact"
+              fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
+              title={(item) => item.title}
+              subtitle={opportunityCompanyName}
+              media={(item) => (
+                <IdentityAvatar
+                  name={opportunityCompanyName(item)}
+                  fallbackIcon={<Building2 className="size-5" />}
+                  className="size-12 rounded-2xl text-sm"
+                />
+              )}
+              badges={(item) => (
+                <StatusBadge tone={item.archivedAt ? "warning" : "success"}>
+                  {item.archivedAt ? text.status.archived : text.status.active}
+                </StatusBadge>
+              )}
+              tags={(item) => (
+                <>
+                  <StatusBadge
+                    tone={
+                      item.priority === "STRATEGIC"
+                        ? "primary"
+                        : item.priority === "HIGH"
+                          ? "warning"
+                          : item.priority === "MEDIUM"
+                            ? "info"
+                            : "neutral"
+                    }
+                    dot={false}
+                  >
+                    {priorityLabel(item.priority)}
+                  </StatusBadge>
+                  <StatusBadge tone="neutral" dot={false}>
+                    {item.stage?.label || uiText.common.notAvailable}
+                  </StatusBadge>
+                </>
+              )}
+              onRowClick={onView}
+              actions={(item) => (
+                <OpportunityActionsMenu
+                  opportunity={item}
+                  permissions={permissions}
+                  presentation="buttons"
+                  onView={() => onView(item)}
+                  onEdit={() => onEdit(item)}
+                  onChangeOwner={() => onChangeOwner(item)}
+                  onChangeStage={() => onChangeStage(item)}
+                  onArchiveToggle={() => onArchiveToggle(item)}
+                />
+              )}
+              emptyState={
+                <EmptyState
+                  icon={BriefcaseBusiness}
+                  title={text.empty.listTitle}
+                  description={text.empty.listDescription}
+                />
+              }
             />
-          )}
-          badges={(item) => (
-            <StatusBadge tone={item.archivedAt ? "warning" : "success"}>
-              {item.archivedAt ? text.status.archived : text.status.active}
-            </StatusBadge>
-          )}
-          tags={(item) => (
-            <>
-              <StatusBadge
-                tone={
-                  item.priority === "STRATEGIC"
-                    ? "primary"
-                    : item.priority === "HIGH"
-                      ? "warning"
-                      : item.priority === "MEDIUM"
-                        ? "info"
-                        : "neutral"
-                }
-                dot={false}
-              >
-                {priorityLabel(item.priority)}
-              </StatusBadge>
-              <StatusBadge tone="neutral" dot={false}>
-                {item.stage?.label || uiText.common.notAvailable}
-              </StatusBadge>
-            </>
-          )}
-          onRowClick={onView}
-          actions={(item) => (
-            <OpportunityActionsMenu
-              opportunity={item}
-              permissions={permissions}
-              presentation="buttons"
-              onView={() => onView(item)}
-              onEdit={() => onEdit(item)}
-              onChangeOwner={() => onChangeOwner(item)}
-              onChangeStage={() => onChangeStage(item)}
-              onArchiveToggle={() => onArchiveToggle(item)}
-            />
-          )}
-          emptyState={
-            <EmptyState
-              icon={BriefcaseBusiness}
-              title={text.empty.listTitle}
-              description={text.empty.listDescription}
-            />
-          }
-        />
+          </div>
+        </div>
 
         {query.data ? (
-          <PaginationControls
-            page={query.data.meta.page}
-            pageCount={query.data.meta.totalPages}
-            pageSize={pageSize}
-            total={query.data.meta.total}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            disabled={query.isFetching || isUpdatingFilters}
-          />
+          <div className="shrink-0">
+            <PaginationControls
+              page={query.data.meta.page}
+              pageCount={query.data.meta.totalPages}
+              pageSize={pageSize}
+              total={query.data.meta.total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              disabled={query.isFetching || isUpdatingFilters}
+            />
+          </div>
         ) : null}
       </div>
     </QueryContent>

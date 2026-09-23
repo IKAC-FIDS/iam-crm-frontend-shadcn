@@ -239,7 +239,13 @@ export function OpportunityWorkspacePage() {
     )
 
   return (
-    <EntityListPage>
+    <EntityListPage
+      className={
+        view === "list"
+          ? "h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden"
+          : undefined
+      }
+    >
       <PageHero
         accessBadge={{ label: text.hero.badge, icon: BriefcaseBusiness }}
         title={text.hero.title}
@@ -280,30 +286,36 @@ export function OpportunityWorkspacePage() {
         }
       />
 
-      {transitionsQuery.isError && actionPermissions.changeStage ? (
-        <p className="rounded-xl border border-[var(--warning)]/20 bg-[var(--warning-light)] p-3 text-xs text-[var(--app-text-secondary)]">
-          {text.errors.transitions}
-        </p>
-      ) : null}
+      <div
+        className={
+          view === "list"
+            ? "flex min-h-0 flex-col gap-3 overflow-hidden"
+            : "grid gap-3"
+        }
+      >
+        {transitionsQuery.isError && actionPermissions.changeStage ? (
+          <p className="shrink-0 rounded-xl border border-[var(--warning)]/20 bg-[var(--warning-light)] p-3 text-xs text-[var(--app-text-secondary)]">
+            {text.errors.transitions}
+          </p>
+        ) : null}
 
-      {view === "pipeline" ? (
-        stagesQuery.isLoading ? (
-          <LoadingState />
-        ) : stagesQuery.isError ? (
-          <ErrorState
-            title={text.errors.stagesTitle}
-            description={text.errors.stagesDescription}
-            retryLabel={uiText.common.retry}
-            onRetry={() => void stagesQuery.refetch()}
-          />
-        ) : !stages.length ? (
-          <EmptyState
-            icon={Rows3}
-            title={text.empty.stagesTitle}
-            description={text.empty.stagesDescription}
-          />
-        ) : (
-          <>
+        {view === "pipeline" ? (
+          stagesQuery.isLoading ? (
+            <LoadingState />
+          ) : stagesQuery.isError ? (
+            <ErrorState
+              title={text.errors.stagesTitle}
+              description={text.errors.stagesDescription}
+              retryLabel={uiText.common.retry}
+              onRetry={() => void stagesQuery.refetch()}
+            />
+          ) : !stages.length ? (
+            <EmptyState
+              icon={Rows3}
+              title={text.empty.stagesTitle}
+              description={text.empty.stagesDescription}
+            />
+          ) : (
             <OpportunityPipelineBoard
               stages={boardStages}
               transitions={
@@ -319,20 +331,20 @@ export function OpportunityWorkspacePage() {
               onArchiveToggle={setArchiveOpportunityState}
               onDropStage={dropStage}
             />
-          </>
-        )
-      ) : (
-        <OpportunityListView
-          filters={queryFilters}
-          isUpdatingFilters={filters !== queryFilters}
-          permissions={effectiveActionPermissions}
-          onView={onView}
-          onEdit={(item) => setFormOpportunity(item)}
-          onChangeOwner={setOwnerOpportunity}
-          onChangeStage={(item) => setStageState({ opportunity: item })}
-          onArchiveToggle={setArchiveOpportunityState}
-        />
-      )}
+          )
+        ) : (
+          <OpportunityListView
+            filters={queryFilters}
+            isUpdatingFilters={filters !== queryFilters}
+            permissions={effectiveActionPermissions}
+            onView={onView}
+            onEdit={(item) => setFormOpportunity(item)}
+            onChangeOwner={setOwnerOpportunity}
+            onChangeStage={(item) => setStageState({ opportunity: item })}
+            onArchiveToggle={setArchiveOpportunityState}
+          />
+        )}
+      </div>
 
       {formOpportunity !== undefined ? (
         <OpportunityFormDialog

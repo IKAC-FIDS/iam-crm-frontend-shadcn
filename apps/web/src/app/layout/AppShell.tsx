@@ -8,7 +8,10 @@ import { AppSidebar } from "./AppSidebar"
 
 export function AppShell() {
   const location = useLocation()
-  const usesContainedPageScroll = location.pathname === "/companies"
+  const opportunityView = new URLSearchParams(location.search).get("view")
+  const usesContainedPageScroll =
+    location.pathname === "/companies" ||
+    (location.pathname === "/opportunities" && opportunityView === "list")
 
   return (
     <SidebarProvider
