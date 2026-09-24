@@ -48,7 +48,6 @@ export interface NavigationFlyoutItem {
 export type NavigationItem = NavigationLinkItem | NavigationFlyoutItem
 
 const routeDescriptions: Record<string, string> = {
-  "crm-assistant": "پرسش و تحلیل امن اطلاعات CRM",
   companies: "مدیریت حساب‌های مشتری",
   opportunities: "پیگیری چرخه و مراحل فروش",
   tasks: "اقدام‌ها و کارهای روزانه",

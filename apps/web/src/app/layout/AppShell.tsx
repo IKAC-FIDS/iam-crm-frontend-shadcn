@@ -5,6 +5,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { AppHeader } from "./AppHeader"
 import { AppSidebar } from "./AppSidebar"
+import { CrmAssistantWidget } from "@/features/assistant/components/CrmAssistantWidget"
 
 export function AppShell() {
   const location = useLocation()
@@ -46,6 +47,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      <CrmAssistantWidget />
     </SidebarProvider>
   )
 }

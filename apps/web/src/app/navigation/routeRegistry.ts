@@ -22,7 +22,6 @@ import {
   FolderOpen,
   Gavel,
   Mail,
-  Bot,
 } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -73,7 +72,6 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
-  { id: 'crm-assistant', path: '/assistant', label: 'دستیار هوشمند', group: null, order: 15, icon: Bot, access: any(['company:view', 'opportunity:view', 'task:view', 'meeting:view']) },
   { id: 'admin-work-schedules', path: '/admin/work-schedules', label: 'برنامه کاری سازمان', group: 'management', order: 330, icon: CalendarDays, access: any(['organization:manage']) },
   { id: 'account-timesheets', path: '/account/timesheets', label: 'کارکرد من', group: 'account', order: 310, icon: ListChecks, access: any(['timesheet:view']) },
   { id: 'account-leave', path: '/account/leave-requests', label: 'مرخصی‌های من', group: 'account', order: 320, icon: CalendarDays, access: any(['leave:view']) },
