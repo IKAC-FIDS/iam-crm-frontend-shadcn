@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import type { KeyboardEvent, ReactNode } from "react"
+import type { CSSProperties, KeyboardEvent, ReactNode } from "react"
 
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
@@ -51,6 +51,7 @@ export type EntityCardProps = {
   disabled?: boolean
   archived?: boolean
   selected?: boolean
+  accentColor?: string
   className?: string
   ariaLabel?: string
 }
@@ -73,6 +74,7 @@ export function EntityCard({
   disabled = false,
   archived = false,
   selected = false,
+  accentColor,
   className,
   ariaLabel,
 }: EntityCardProps) {
@@ -111,6 +113,11 @@ export function EntityCard({
       aria-pressed={interactive ? selected : undefined}
       onClick={interactive ? onClick : undefined}
       onKeyDown={handleKeyDown}
+      style={
+        accentColor
+          ? ({ "--entity-accent": accentColor } as CSSProperties)
+          : undefined
+      }
       className={cn(
         "group relative overflow-hidden transition-[border-color,box-shadow,background-color,opacity] duration-200",
         interactive && "cursor-pointer hover:border-[var(--app-primary)]/35 hover:shadow-[var(--app-shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--app-background)]",
@@ -120,7 +127,18 @@ export function EntityCard({
         className,
       )}
     >
-      <div className="grid min-w-0 gap-4 p-3.5 sm:grid-cols-[minmax(14rem,1.35fr)_minmax(9rem,.7fr)_minmax(10rem,.8fr)_minmax(8rem,.65fr)_auto] sm:items-center sm:p-4" dir="rtl">
+      {accentColor ? (
+        <div
+          aria-hidden="true"
+          data-entity-accent="true"
+          className="pointer-events-none absolute inset-y-0 left-0 w-36 bg-[linear-gradient(to_right,color-mix(in_srgb,var(--entity-accent)_24%,transparent),color-mix(in_srgb,var(--entity-accent)_8%,transparent)_52%,transparent)] sm:w-52"
+        >
+          <span className="absolute inset-y-3 left-0 w-1 rounded-e-full bg-[var(--entity-accent)] shadow-[0_0_18px_color-mix(in_srgb,var(--entity-accent)_55%,transparent)]" />
+          <span className="absolute bottom-2 left-5 size-16 rounded-full bg-[var(--entity-accent)]/10 blur-2xl" />
+        </div>
+      ) : null}
+
+      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:grid-cols-[minmax(14rem,1.35fr)_minmax(9rem,.7fr)_minmax(10rem,.8fr)_minmax(8rem,.65fr)_auto] sm:items-center sm:p-4" dir="rtl">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--app-primary-soft)] text-lg font-black text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/15">
             {logo || initials || fallback || (typeof title === "string" ? title.trim().slice(0, 1) : null)}

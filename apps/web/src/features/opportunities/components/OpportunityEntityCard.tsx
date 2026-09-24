@@ -146,6 +146,7 @@ export function OpportunityEntityCard({
       subtitle={companyName}
       ariaLabel={`${text.table.opportunity}: ${opportunity.title}`}
       archived={Boolean(opportunity.archivedAt)}
+      accentColor={opportunity.stage?.color || "var(--app-primary)"}
       onClick={onView}
       logo={(
         <IdentityAvatar

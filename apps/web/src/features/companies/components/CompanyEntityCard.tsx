@@ -33,6 +33,13 @@ const activityStatusTone: Record<CompanyActivityStatus, StatusTone> = {
   UNKNOWN: "neutral",
 }
 
+const activityStatusAccent: Record<CompanyActivityStatus, string> = {
+  ACTIVE: "var(--success)",
+  INACTIVE: "var(--warning)",
+  MERGED: "var(--app-primary)",
+  UNKNOWN: "var(--app-text-secondary)",
+}
+
 type CompanyEntityCardProps = {
   company: Company
   permissions: readonly string[]
@@ -106,6 +113,13 @@ export function CompanyEntityCard({
       subtitle={subtitle}
       ariaLabel={`${text.columns.company}: ${name}`}
       archived={Boolean(company.archivedAt)}
+      accentColor={
+        company.archivedAt
+          ? "var(--warning)"
+          : company.activityStatus
+            ? activityStatusAccent[company.activityStatus]
+            : "var(--success)"
+      }
       onClick={onView}
       logo={(
         <IdentityAvatar

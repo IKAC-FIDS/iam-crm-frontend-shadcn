@@ -8,7 +8,7 @@ describe("EntityCard", () => {
   it("renders reusable identity, badges, owner, metadata and actions", () => {
     const open = vi.fn()
     const edit = vi.fn()
-    render(
+    const { container } = render(
       <EntityCard
         id="company-1"
         title="شرکت بسیار طولانی نمونه برای کنترل برش ایمن عنوان"
@@ -17,6 +17,7 @@ describe("EntityCard", () => {
         badges={[{ id: "status", label: "فعال", tone: "success" }]}
         owner={{ name: "کاربر نمونه", role: "فروش" }}
         metadata={[{ id: "updated", label: "آخرین بروزرسانی", value: "۱ مهر ۱۴۰۵" }]}
+        accentColor="#2563eb"
         actions={[
           { id: "view", label: "مشاهده", icon: Eye, onClick: open },
           { id: "edit", label: "ویرایش", icon: Pencil, onClick: edit },
@@ -29,6 +30,7 @@ describe("EntityCard", () => {
     expect(screen.getByText("فعال")).toBeInTheDocument()
     expect(screen.getByText("کاربر نمونه")).toBeInTheDocument()
     expect(screen.getByText("۱ مهر ۱۴۰۵")).toBeInTheDocument()
+    expect(container.querySelector('[data-entity-accent="true"]')).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "ویرایش" }))
     expect(edit).toHaveBeenCalledOnce()
     expect(open).not.toHaveBeenCalled()
