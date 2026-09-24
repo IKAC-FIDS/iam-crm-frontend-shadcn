@@ -739,13 +739,9 @@ function NotificationEntityCard({
   ]
   const accentColor = notification.archivedAt
     ? "var(--app-text-secondary)"
-    : notification.priority === "URGENT"
-      ? "var(--destructive)"
-      : notification.priority === "HIGH"
-        ? "var(--warning)"
-        : unread
-          ? "var(--app-primary)"
-          : "var(--info)"
+    : unread
+      ? "var(--app-primary)"
+      : "var(--success)"
 
   return (
     <EntityCard
