@@ -49,19 +49,18 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
           icon: CalendarClock,
           className: isTaskOverdue(task) ? "text-[var(--destructive)]" : undefined,
         },
-        {
-          id: "reminder",
-          label: text.table.reminderAt,
-          value: task.reminderAt ? formatJalaliDateTime(task.reminderAt) : uiText.common.notAvailable,
-          icon: Bell,
-        },
-        {
-          id: "subtasks",
-          label: "زیرکارها",
-          value: task.parentTaskId ? "زیرکار" : `${resolved.toLocaleString("fa-IR")} از ${children.length.toLocaleString("fa-IR")}`,
-          icon: ListTree,
-        },
       ]
+      if (task.reminderAt) {
+        metadata.push({ id: "reminder", label: text.table.reminderAt, value: formatJalaliDateTime(task.reminderAt), icon: Bell })
+      }
+      if (task.parentTaskId || children.length) {
+        metadata.push({
+          id: "subtasks",
+          label: task.parentTaskId ? "ساختار کار" : "زیرکارها",
+          value: task.parentTaskId ? "زیرکار" : `${resolved.toLocaleString("fa-IR")} انجام‌شده از ${children.length.toLocaleString("fa-IR")}`,
+          icon: ListTree,
+        })
+      }
       const actions: EntityAction[] = [
         { id: "view", label: uiText.common.view, accessibleLabel: `مشاهده ${task.title}`, icon: Eye, onClick: () => navigate(`/tasks/${task.id}`) },
         { id: "edit", label: text.actions.edit, icon: Pencil, onClick: () => onEdit(task), visible: canUpdate },
@@ -82,7 +81,7 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
         badges={badges}
         owner={task.assignedTo ? {
           name: assigneeName,
-          role: task.team?.name || assignmentScopeLabel(task.assignmentScope),
+          role: assignmentDescription(task),
           avatar: <IdentityAvatar name={assigneeName} mediaPath={`/users/${task.assignedTo.id}/avatar`} hasMedia={Boolean(task.assignedTo.avatarObjectKey)} mediaVersion={task.assignedTo.avatarObjectKey} className="size-10 rounded-full text-xs" />,
         } : null}
         ownerFallback={text.labels.unassigned}
@@ -94,8 +93,15 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
   </div>
 }
 
-function assignmentScopeLabel(scope: Task["assignmentScope"]) {
-  return { SELF: "شخصی", TEAM: "تیمی", ORGANIZATION: "سازمانی" }[scope]
+function assignmentDescription(task: Task) {
+  const teamName = task.team?.name || task.assignedTo?.team
+  if (task.assignmentScope === "TEAM") {
+    return teamName ? `واگذاری به تیم ${teamName}` : "واگذاری به تیم"
+  }
+  if (task.assignmentScope === "ORGANIZATION") {
+    return teamName ? `${teamName} · واگذاری سازمانی` : "واگذاری در سطح سازمان"
+  }
+  return teamName ? `${teamName} · مسئول مستقیم` : "واگذاری مستقیم به این کاربر"
 }
 
 function taskAccentColor(status: Task["status"]) {
