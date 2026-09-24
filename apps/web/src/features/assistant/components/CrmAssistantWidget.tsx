@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Bot, CheckCircle2, ExternalLink, MessageCircleMore, Send, Sparkles, UserRound, X } from 'lucide-react'
+import { Bot, CheckCircle2, ExternalLink, Send, Sparkles, UserRound, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Card, CardContent } from '@workspace/ui/components/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@workspace/ui/components/dialog'
@@ -75,7 +75,7 @@ export function CrmAssistantWidget() {
           aria-label="باز کردن دستیار هوشمند CRM"
           aria-haspopup="dialog"
         >
-          <MessageCircleMore className="size-6 sm:size-7" aria-hidden="true" />
+          <Bot className="size-7 sm:size-8" strokeWidth={2.2} aria-hidden="true" />
           {history.length > 0 ? <span className="absolute -end-1 -top-1 size-3 rounded-full bg-emerald-400 ring-2 ring-background" aria-hidden="true" /> : null}
         </Button>
       </div>
@@ -84,7 +84,7 @@ export function CrmAssistantWidget() {
         setOpen(next)
         if (next) requestAnimationFrame(() => inputRef.current?.focus())
       }}>
-        <DialogContent dir="rtl" className="grid h-[min(46rem,calc(100dvh-2rem))] w-[calc(100%-1rem)] max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-3xl border-primary/20 p-0 shadow-2xl sm:w-[calc(100%-2rem)]">
+        <DialogContent dir="rtl" className="grid h-[min(48rem,calc(100dvh-2rem))] w-[calc(100%-1rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-3xl border-primary/20 p-0 shadow-2xl sm:w-[calc(100%-3rem)] sm:max-w-[calc(100%-3rem)] lg:max-w-4xl xl:max-w-5xl">
           <DialogHeader className="border-b border-[var(--app-divider)] bg-[var(--app-surface)] px-5 py-4 text-start sm:px-6">
             <div className="flex items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/15 text-primary"><Sparkles className="size-5" aria-hidden="true" /></span>
