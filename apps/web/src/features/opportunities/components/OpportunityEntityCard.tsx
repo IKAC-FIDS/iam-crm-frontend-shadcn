@@ -77,7 +77,7 @@ export function OpportunityEntityCard({
       id: "stage",
       label: opportunity.stage?.label || uiText.common.notAvailable,
       tone: "neutral",
-      dot: false,
+      color: opportunity.stage?.color || "var(--app-primary)",
       tooltip: text.fields.stage,
     },
   ]

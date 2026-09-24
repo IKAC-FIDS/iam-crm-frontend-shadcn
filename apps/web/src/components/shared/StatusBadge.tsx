@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 import { cn } from "@workspace/ui/lib/utils"
 import {
@@ -44,6 +44,7 @@ export function StatusBadge({
   icon: Icon,
   size = "sm",
   tooltip,
+  color,
   className,
 }: {
   children: ReactNode
@@ -52,6 +53,7 @@ export function StatusBadge({
   icon?: LucideIcon
   size?: "xs" | "sm" | "md"
   tooltip?: ReactNode
+  color?: string | null
   className?: string
 }) {
   const badge = (
@@ -61,9 +63,16 @@ export function StatusBadge({
         size === "xs" && "gap-1 px-2 py-0.5 text-[0.6875rem]",
         size === "sm" && "gap-1.5 px-2.5 py-1 text-xs",
         size === "md" && "gap-1.5 px-3 py-1.5 text-sm",
-        toneClasses[tone],
+        color
+          ? "bg-[color-mix(in_srgb,var(--status-badge-color)_14%,transparent)] text-[var(--status-badge-color)] ring-[color-mix(in_srgb,var(--status-badge-color)_28%,transparent)]"
+          : toneClasses[tone],
         className,
       )}
+      style={
+        color
+          ? ({ "--status-badge-color": color } as CSSProperties)
+          : undefined
+      }
     >
       {Icon ? <Icon aria-hidden="true" className="size-3.5 shrink-0" /> : null}
       {!Icon && dot ? (

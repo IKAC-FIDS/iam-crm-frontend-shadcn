@@ -16,6 +16,7 @@ export type EntityBadgeDescriptor = {
   dot?: boolean
   size?: "xs" | "sm" | "md"
   tooltip?: ReactNode
+  color?: string | null
 }
 
 export type EntityOwnerDescriptor = {
@@ -157,7 +158,7 @@ export function EntityCard({
 
         <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:border-s sm:border-[var(--app-divider)] sm:ps-4">
           {badges.map((badge) => (
-            <StatusBadge key={badge.id} tone={badge.tone} icon={badge.icon} dot={badge.dot} size={badge.size} tooltip={badge.tooltip}>
+            <StatusBadge key={badge.id} tone={badge.tone} icon={badge.icon} dot={badge.dot} size={badge.size} tooltip={badge.tooltip} color={badge.color}>
               {badge.label}
             </StatusBadge>
           ))}

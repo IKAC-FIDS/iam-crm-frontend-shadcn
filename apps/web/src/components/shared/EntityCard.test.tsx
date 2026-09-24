@@ -14,7 +14,10 @@ describe("EntityCard", () => {
         title="شرکت بسیار طولانی نمونه برای کنترل برش ایمن عنوان"
         subtitle="صنعت فناوری"
         initials="ش"
-        badges={[{ id: "status", label: "فعال", tone: "success" }]}
+        badges={[
+          { id: "status", label: "فعال", tone: "success" },
+          { id: "stage", label: "مذاکره", color: "#2563eb" },
+        ]}
         owner={{ name: "کاربر نمونه", role: "فروش" }}
         metadata={[{ id: "updated", label: "آخرین بروزرسانی", value: "۱ مهر ۱۴۰۵" }]}
         accentColor="#2563eb"
@@ -28,6 +31,9 @@ describe("EntityCard", () => {
     )
 
     expect(screen.getByText("فعال")).toBeInTheDocument()
+    expect(screen.getByText("مذاکره").closest("span[style]")).toHaveStyle({
+      "--status-badge-color": "#2563eb",
+    })
     expect(screen.getByText("کاربر نمونه")).toBeInTheDocument()
     expect(screen.getByText("۱ مهر ۱۴۰۵")).toBeInTheDocument()
     expect(container.querySelector('[data-entity-accent="true"]')).toBeInTheDocument()
