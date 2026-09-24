@@ -1,10 +1,4 @@
 import { EntityListPage } from "@/components/shared/EntityListPage"
-import {
-  EntityCardList,
-  type EntityCardField,
-} from "@/components/shared/EntityCardList"
-import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { useListQueryState, enumParam } from "@/lib/listQuery"
@@ -12,14 +6,12 @@ import { useDebouncedValue as useDebounced } from "@/lib/useDebouncedValue"
 import { QueryContent } from "@/components/shared/QueryContent"
 import {
   Activity as ActivityIcon,
-  Building2,
-  CalendarClock,
   Filter,
   Plus,
   SlidersHorizontal,
-  UserRound,
 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
@@ -35,7 +27,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 
-import { ActivityActionsMenu } from "../components/ActivityActionsMenu"
+import { ActivityEntityCard } from "../components/ActivityEntityCard"
 import { ActivityDetailDialog } from "../components/ActivityDetailDialog"
 import {
   ActivityPersianDateRangePicker,
@@ -82,10 +74,6 @@ function activityTypeLabel(
   return options.find((item) => item.value === type)?.label || type
 }
 
-function companyName(activity: Activity) {
-  return activity.company?.brandName || activity.company?.legalName || "—"
-}
-
 function activityTitle(
   activity: Activity,
   stageItems: Parameters<typeof localizeStageChangeText>[1],
@@ -115,6 +103,7 @@ function activitySubtitle(
 }
 
 export function ActivitiesPage() {
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const permissions = user?.permissions ?? []
 
@@ -294,74 +283,6 @@ export function ActivitiesPage() {
     setPersonSearch("")
   }
 
-  const fields = useMemo<EntityCardField<Activity>[]>(
-    () => [
-      {
-        id: "company",
-        label: "شرکت",
-        icon: Building2,
-        render: (item) => {
-          const name = companyName(item)
-          return (
-            <span className="inline-flex min-w-0 items-center gap-2">
-              <IdentityAvatar
-                name={name}
-                mediaPath={item.company?.id ? `/companies/${item.company.id}/logo` : null}
-                hasMedia={Boolean(item.company?.logoObjectKey)}
-                mediaVersion={item.company?.logoObjectKey}
-                fallbackIcon={<Building2 className="size-4" />}
-                className="size-8 rounded-xl text-xs"
-              />
-              <span className="truncate">{name}</span>
-            </span>
-          )
-        },
-      },
-      {
-        id: "person",
-        label: "شخص مرتبط",
-        icon: UserRound,
-        render: (item) => item.person?.fullName || "—",
-      },
-      {
-        id: "creator",
-        label: "ایجادکننده",
-        icon: UserRound,
-        render: (item) => {
-          const creator = item.createdBy || item.user
-          const name = creator?.fullName || "—"
-          return (
-            <span className="inline-flex min-w-0 items-center gap-2">
-              <IdentityAvatar
-                name={name}
-                mediaPath={creator?.id ? `/users/${creator.id}/avatar` : null}
-                hasMedia={Boolean(creator?.avatarObjectKey)}
-                mediaVersion={creator?.avatarObjectKey}
-                className="size-8 rounded-xl text-xs"
-              />
-              <span className="truncate">{name}</span>
-            </span>
-          )
-        },
-      },
-      {
-        id: "activityDate",
-        label: "تاریخ فعالیت",
-        icon: CalendarClock,
-        render: (item) => formatDate(item.activityDate || item.occurredAt),
-        valueClassName: "whitespace-nowrap",
-      },
-      {
-        id: "createdAt",
-        label: "تاریخ ایجاد",
-        icon: CalendarClock,
-        render: (item) => formatDate(item.createdAt),
-        valueClassName: "whitespace-nowrap",
-      },
-    ],
-    []
-  )
-
   if (!canView) {
     return (
       <ErrorState
@@ -372,7 +293,7 @@ export function ActivitiesPage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage className="min-h-0 grid-rows-[auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden">
       <PageHero
         eyebrow="مرکز تعاملات مشتری"
         icon={ActivityIcon}
@@ -563,63 +484,56 @@ export function ActivitiesPage() {
 
       <QueryContent query={activities} errorTitle="خطا در دریافت فعالیت‌ها">
         {activities.data ? (
-          <div className="grid gap-3">
-            <EntityCardList
-              rows={
-                Array.isArray(activities.data.data) ? activities.data.data : []
-              }
-              fields={fields}
-              getRowKey={(item) => item.id}
-              layout="row"
-              density="compact"
-              fieldsClassName="sm:grid-cols-2 xl:grid-cols-5"
-              title={(item) => activityTitle(item, stageItems, typeOptions)}
-              subtitle={(item) => activitySubtitle(item, stageItems)}
-              media={() => (
-                <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
-                  <ActivityIcon className="size-5" />
-                </span>
-              )}
-              badges={(item) => (
-                <StatusBadge
-                  tone={item.status === "COMPLETED" ? "success" : "neutral"}
+          <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden" aria-busy={activities.isFetching || undefined}>
+            {activities.data.data.length ? (
+              <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+                <div
+                  className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain"
+                  aria-label="فهرست فعالیت‌ها"
+                  tabIndex={0}
                 >
-                  {item.status === "COMPLETED" ? "تکمیل‌شده" : "ثبت‌شده"}
-                </StatusBadge>
-              )}
-              tags={(item) => (
-                <StatusBadge tone="primary" dot={false}>
-                  {activityTypeLabel(item.type, typeOptions)}
-                </StatusBadge>
-              )}
-              onRowClick={setDetailActivity}
-              actions={(item) => (
-                <ActivityActionsMenu
-                  presentation="buttons"
-                  onView={() => setDetailActivity(item)}
-                  activity={item}
-                  canUpdate={canUpdate}
-                  onEdit={() => setEditActivity(item)}
-                />
-              )}
-              emptyState={
-                <EmptyState
-                  icon={ActivityIcon}
-                  title="فعالیتی پیدا نشد"
-                  description="فعالیتی مطابق فیلترهای انتخاب‌شده وجود ندارد."
-                />
-              }
-            />
+                  <div className="grid gap-2.5">
+                    {activities.data.data.map((item) => {
+                      const companyId = item.companyId || item.company?.id
+                      return (
+                        <ActivityEntityCard
+                          key={item.id}
+                          activity={item}
+                          title={activityTitle(item, stageItems, typeOptions)}
+                          subtitle={activitySubtitle(item, stageItems)}
+                          typeLabel={activityTypeLabel(item.type, typeOptions)}
+                          dateLabel={formatDate(item.activityDate || item.occurredAt)}
+                          canUpdate={canUpdate}
+                          onView={() => setDetailActivity(item)}
+                          onEdit={() => setEditActivity(item)}
+                          onViewCompany={() => {
+                            if (companyId) navigate(`/companies/${companyId}`)
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                icon={ActivityIcon}
+                title="فعالیتی پیدا نشد"
+                description="فعالیتی مطابق فیلترهای انتخاب‌شده وجود ندارد."
+              />
+            )}
 
-            <PaginationControls
-              page={activities.data.meta.page}
-              pageCount={activities.data.meta.totalPages}
-              pageSize={pageSize}
-              total={activities.data.meta.total}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              disabled={activities.isFetching || search !== debouncedSearch}
-            />
+            <div className="shrink-0">
+              <PaginationControls
+                page={activities.data.meta.page}
+                pageCount={activities.data.meta.totalPages}
+                pageSize={pageSize}
+                total={activities.data.meta.total}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                disabled={activities.isFetching || search !== debouncedSearch}
+              />
+            </div>
           </div>
         ) : null}
       </QueryContent>

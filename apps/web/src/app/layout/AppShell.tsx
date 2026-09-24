@@ -13,6 +13,7 @@ export function AppShell() {
   const usesContainedPageScroll =
     location.pathname === "/companies" ||
     location.pathname === "/people" ||
+    location.pathname === "/activities" ||
     (location.pathname === "/opportunities" && opportunityView === "list")
 
   return (
