@@ -36,7 +36,7 @@ export function EntityRowActions({
   onView?: () => void
   children?: ReactNode
   actions?: readonly EntityAction[]
-  presentation?: "menu" | "buttons"
+  presentation?: "menu" | "buttons" | "icons"
 }) {
   const [confirm, setConfirm] = useState<EntityAction>()
   const [pending, setPending] = useState(false)
@@ -54,12 +54,12 @@ export function EntityRowActions({
       : []),
     ...actions,
   ].filter((action) => action.enabled !== false && action.visible !== false)
-  const direct = available.filter(
-    (action) => action.id === "view" || action.id === "edit"
-  )
-  const overflow = available.filter(
-    (action) => action.id !== "view" && action.id !== "edit"
-  )
+  const direct = presentation === "icons"
+    ? available
+    : available.filter((action) => action.id === "view" || action.id === "edit")
+  const overflow = presentation === "icons"
+    ? []
+    : available.filter((action) => action.id !== "view" && action.id !== "edit")
   async function run(action: EntityAction) {
     setPending(true)
     setError(undefined)
@@ -130,7 +130,7 @@ export function EntityRowActions({
 
   return (
     <div
-      className="flex min-w-20 items-center justify-end gap-1"
+      className="flex min-w-20 flex-wrap items-center justify-end gap-1"
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >

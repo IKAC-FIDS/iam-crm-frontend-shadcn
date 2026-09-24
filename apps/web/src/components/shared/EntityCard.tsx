@@ -139,7 +139,7 @@ export function EntityCard({
         </div>
       ) : null}
 
-      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:grid-cols-[minmax(14rem,1.2fr)_minmax(17rem,1.15fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_auto] xl:items-center" dir="rtl">
+      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:grid-cols-[minmax(14rem,1.2fr)_minmax(17rem,1.15fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_minmax(12rem,max-content)] xl:items-center" dir="rtl">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--app-primary-soft)] text-lg font-black text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/15">
             {logo || initials || fallback || (typeof title === "string" ? title.trim().slice(0, 1) : null)}
@@ -196,8 +196,8 @@ export function EntityCard({
         </div>
 
         {actions.length ? (
-          <div className="border-t border-[var(--app-divider)] pt-3 xl:border-s xl:border-t-0 xl:ps-3 xl:pt-0" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-            <EntityRowActions label={actionLabel} actions={actions} />
+          <div className="min-w-0 border-t border-[var(--app-divider)] pt-3 xl:min-w-48 xl:border-s xl:border-t-0 xl:ps-3 xl:pt-0" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+            <EntityRowActions label={actionLabel} actions={actions} presentation="icons" />
           </div>
         ) : null}
       </div>

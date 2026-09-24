@@ -51,10 +51,10 @@ export function OpportunityListView({
 
   return (
     <QueryContent query={query} errorTitle={text.errors.listTitle}>
-      <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-hidden rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)]">
+      <div className="flex flex-col gap-3 lg:h-full lg:min-h-0 lg:overflow-hidden">
+        <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
           <div
-            className="ui-contained-scroll h-full overflow-y-auto overscroll-contain ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)]"
+            className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain"
             aria-label={text.hero.title}
             tabIndex={0}
           >

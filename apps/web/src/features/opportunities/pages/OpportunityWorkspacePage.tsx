@@ -242,7 +242,7 @@ export function OpportunityWorkspacePage() {
     <EntityListPage
       className={
         view === "list"
-          ? "h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] overflow-hidden"
+          ? "min-h-0 grid-rows-[auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden"
           : undefined
       }
     >
@@ -289,7 +289,7 @@ export function OpportunityWorkspacePage() {
       <div
         className={
           view === "list"
-            ? "flex min-h-0 flex-col gap-3 overflow-hidden"
+            ? "flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden"
             : "grid gap-3"
         }
       >
