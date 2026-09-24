@@ -1,37 +1,59 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Bot, Send, Sparkles, UserRound } from 'lucide-react'
+import { Bot, CheckCircle2, ExternalLink, Send, Sparkles, UserRound, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
 import { Card, CardContent } from '@workspace/ui/components/card'
 
 import { EntityListPage } from '@/components/shared/EntityListPage'
 import { PageHero } from '@/components/shared/PageHero'
 import { SurfaceCard } from '@/components/shared/SurfaceCard'
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { getApiErrorMessage } from '@/lib/apiResponse'
-import { askCrmAssistant, type AssistantHistoryItem } from '../api/assistantApi'
+import {
+  askCrmAssistant,
+  confirmCrmAssistantAction,
+  type AssistantActionResult,
+  type AssistantHistoryItem,
+  type PendingAssistantAction,
+} from '../api/assistantApi'
 
 const suggestions = [
   'فرصت‌های فروش مهم و نزدیک به تاریخ بسته‌شدن کدام‌اند؟',
   'کارهای عقب‌افتاده من را خلاصه کن.',
   'آخرین شرکت‌های به‌روزشده را معرفی کن.',
   'جلسات پیش رو را به ترتیب زمان بگو.',
+  'یک شرکت جدید برای من ایجاد کن.',
+  'برای یک شرکت موجود یک فرصت فروش بساز.',
+  'یک کار جدید ثبت کن.',
 ]
+
+type ChatItem = AssistantHistoryItem & { actions?: PendingAssistantAction[] }
+type ActionState = { status: 'confirmed'; result: AssistantActionResult } | { status: 'cancelled' }
 
 export function CrmAssistantPage() {
   const [message, setMessage] = useState('')
-  const [history, setHistory] = useState<AssistantHistoryItem[]>([])
+  const [history, setHistory] = useState<ChatItem[]>([])
+  const [selectedAction, setSelectedAction] = useState<PendingAssistantAction | null>(null)
+  const [actionStates, setActionStates] = useState<Record<string, ActionState>>({})
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const mutation = useMutation({
-    mutationFn: (question: string) => askCrmAssistant(question, history.slice(-8)),
+    mutationFn: (question: string) => askCrmAssistant(question, history.slice(-8).map(({ role, content }) => ({ role, content }))),
     onSuccess: (result, question) => {
       setHistory((current) => [
         ...current,
         { role: 'user', content: question },
-        { role: 'assistant', content: result.answer },
+        { role: 'assistant', content: result.answer, actions: result.pendingActions },
       ])
       setMessage('')
       requestAnimationFrame(() => inputRef.current?.focus())
+    },
+  })
+  const confirmMutation = useMutation({
+    mutationFn: (action: PendingAssistantAction) => confirmCrmAssistantAction(action.token),
+    onSuccess: (result, action) => {
+      setActionStates((current) => ({ ...current, [action.token]: { status: 'confirmed', result } }))
+      setSelectedAction(null)
     },
   })
 
@@ -80,7 +102,46 @@ export function CrmAssistantPage() {
                     <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-primary">
                       {item.role === 'user' ? <UserRound className="size-4" /> : <Bot className="size-4" />}
                     </span>
-                    <p className="whitespace-pre-wrap text-sm leading-7">{item.content}</p>
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <p className="whitespace-pre-wrap text-sm leading-7">{item.content}</p>
+                      {item.actions?.map((action) => {
+                        const state = actionStates[action.token]
+                        return (
+                          <div key={action.token} className="rounded-xl border border-primary/25 bg-primary/[0.06] p-3">
+                            <div className="mb-3 flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-bold text-foreground">{action.title}</p>
+                                <p className="mt-1 text-xs leading-6 text-muted-foreground">{action.description}</p>
+                              </div>
+                              <Sparkles className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                            </div>
+                            <dl className="grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                              {action.fields.map((field) => (
+                                <div key={`${field.label}-${field.value}`} className="flex min-w-0 gap-2">
+                                  <dt className="shrink-0 text-muted-foreground">{field.label}:</dt>
+                                  <dd className="truncate font-medium" title={field.value}>{field.value}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                            {state?.status === 'confirmed' ? (
+                              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="size-4" /> {state.result.message}
+                                <Button type="button" size="sm" variant="outline" className="rounded-lg" onClick={() => window.location.assign(state.result.entity.href)}>
+                                  مشاهده {state.result.entity.label}<ExternalLink className="size-3.5" />
+                                </Button>
+                              </div>
+                            ) : state?.status === 'cancelled' ? (
+                              <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><X className="size-4" /> عملیات لغو شد.</p>
+                            ) : (
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <Button type="button" size="sm" className="rounded-lg" onClick={() => setSelectedAction(action)}>بررسی و اجرا</Button>
+                                <Button type="button" size="sm" variant="ghost" className="rounded-lg" onClick={() => setActionStates((current) => ({ ...current, [action.token]: { status: 'cancelled' } }))}>انصراف</Button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -124,6 +185,24 @@ export function CrmAssistantPage() {
           </div>
         </form>
       </SurfaceCard>
+
+      <ConfirmDialog
+        open={Boolean(selectedAction)}
+        onOpenChange={(open) => { if (!open && !confirmMutation.isPending) setSelectedAction(null) }}
+        title={selectedAction ? `تأیید ${selectedAction.title}` : 'تأیید عملیات'}
+        description="پس از تأیید، این تغییر واقعاً در CRM ثبت می‌شود. جزئیات را یک‌بار دیگر بررسی کنید."
+        confirmLabel="تأیید و اجرا"
+        tone="primary"
+        isPending={confirmMutation.isPending}
+        onConfirm={() => { if (selectedAction) confirmMutation.mutate(selectedAction) }}
+      >
+        {selectedAction ? (
+          <dl className="space-y-2 rounded-xl border border-[var(--app-divider)] bg-background p-3 text-sm">
+            {selectedAction.fields.map((field) => <div key={`${field.label}-${field.value}`} className="flex justify-between gap-4"><dt className="text-muted-foreground">{field.label}</dt><dd className="text-start font-medium">{field.value}</dd></div>)}
+            {confirmMutation.isError ? <div role="alert" className="pt-2 text-destructive">{getApiErrorMessage(confirmMutation.error, 'اجرای عملیات ممکن نشد.')}</div> : null}
+          </dl>
+        ) : null}
+      </ConfirmDialog>
     </EntityListPage>
   )
 }
