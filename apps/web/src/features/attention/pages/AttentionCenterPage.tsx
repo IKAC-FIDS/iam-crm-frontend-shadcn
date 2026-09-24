@@ -1,8 +1,9 @@
-import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import {
-  EntityCardList,
-  type EntityCardField,
-} from "@/components/shared/EntityCardList"
+  EntityCard,
+  type EntityBadgeDescriptor,
+  type EntityMetadataDescriptor,
+} from "@/components/shared/EntityCard"
+import type { EntityAction } from "@/components/shared/EntityRowActions"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { safeNotificationActionUrl, notificationInboxState } from "@/features/notifications/utils/notificationDisplay"
 import { Eye, Archive, Trash2, CalendarClock, Building2, UserRound } from "lucide-react"
@@ -22,7 +23,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
-import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
+import type { StatusTone } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -122,7 +123,7 @@ export function AttentionCenterPage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage className="min-h-0 grid-rows-[auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden">
       <PageHero
         title="مرکز پیگیری و اعلان‌ها"
         eyebrow="مرکز توجه و پیگیری"
@@ -308,74 +309,8 @@ function FollowUpList({
           (item) => dueStatus(item.nextActionDate) === filter.toLowerCase()
         )
 
-  const fields: EntityCardField<FollowUpActivity>[] = [
-    {
-      id: "company",
-      label: "شرکت",
-      icon: Building2,
-      render: (item) => {
-        const name = item.company?.brandName || item.company?.legalName || "—"
-        return (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <IdentityAvatar
-              name={name}
-              mediaPath={item.companyId ? `/companies/${item.companyId}/logo` : null}
-              hasMedia={Boolean(item.company?.logoObjectKey)}
-              mediaVersion={item.company?.logoObjectKey}
-              fallbackIcon={<Building2 className="size-4" />}
-              className="size-8 rounded-xl text-xs"
-            />
-            <span className="truncate">{name}</span>
-          </span>
-        )
-      },
-    },
-    {
-      id: "person",
-      label: "شخص مرتبط",
-      icon: UserRound,
-      render: (item) => item.person?.fullName || "—",
-    },
-    {
-      id: "owner",
-      label: "ثبت‌کننده",
-      icon: UserRound,
-      render: (item) => {
-        const name = item.user?.fullName || item.user?.email || "—"
-        return (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <IdentityAvatar
-              name={name}
-              mediaPath={item.user?.id ? `/users/${item.user.id}/avatar` : null}
-              hasMedia={Boolean(item.user?.avatarObjectKey)}
-              mediaVersion={item.user?.avatarObjectKey}
-              className="size-8 rounded-xl text-xs"
-            />
-            <span className="truncate">{name}</span>
-          </span>
-        )
-      },
-    },
-    {
-      id: "due",
-      label: "موعد پیگیری",
-      icon: CalendarClock,
-      render: (item) => (
-        <span
-          className={
-            dueStatus(item.nextActionDate) === "overdue"
-              ? "font-bold text-[var(--destructive)]"
-              : undefined
-          }
-        >
-          {dt(item.nextActionDate)}
-        </span>
-      ),
-    },
-  ]
-
   return (
-    <div className="grid min-w-0 gap-4">
+    <div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
       <DataTableToolbar
         hasActiveFilters={filter !== "ALL"}
         onClearFilters={() => onFilter("ALL")}
@@ -405,84 +340,36 @@ function FollowUpList({
         query={{ isLoading: loading, isError, error, refetch: onRetry }}
         errorTitle="دریافت پیگیری‌ها ناموفق بود"
       >
-        <EntityCardList
-          rows={shown}
-          fields={fields}
-          getRowKey={(item) => item.id}
-          layout="row"
-          density="compact"
-          fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
-          title={(item) => item.outcome || activityLabel(item.type)}
-          subtitle={(item) => item.notes}
-          media={() => (
-            <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
-              <ClipboardCheck className="size-5" />
-            </span>
-          )}
-          badges={(item) => {
-            const status = dueStatus(item.nextActionDate)
-            return (
-              <StatusBadge tone={followUpTone(status)}>
-                {dueLabel(status)}
-              </StatusBadge>
-            )
-          }}
-          tags={(item) => (
-            <StatusBadge tone="primary" dot={false}>
-              {activityLabel(item.type)}
-            </StatusBadge>
-          )}
-          actions={(item) => (
-            <EntityRowActions
-              presentation="buttons"
-              actions={[
-                {
-                  id: "view",
-                  label: "مشاهده شرکت",
-                  icon: Eye,
-                  onClick: () => onCompany(item.companyId),
-                  enabled: Boolean(item.companyId),
-                },
-                {
-                  id: "reschedule",
-                  label: "زمان‌بندی مجدد",
-                  icon: CalendarClock,
-                  onClick: () => {
-                    setSelected(item)
-                    setMode("reschedule")
-                  },
-                  enabled: canReschedule,
-                },
-                {
-                  id: "complete",
-                  label: "انجام شد",
-                  icon: CheckCircle2,
-                  onClick: () => {
-                    setSelected(item)
-                    setMode("complete")
-                  },
-                  enabled: canComplete,
-                },
-              ]}
-            />
-          )}
-          emptyState={
+        <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+          {shown.length ? (
+            <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+              <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" aria-label="فهرست پیگیری‌ها" tabIndex={0}>
+                <div className="grid gap-2.5">
+                  {shown.map((item) => (
+                    <FollowUpEntityCard
+                      key={item.id}
+                      item={item}
+                      canComplete={canComplete}
+                      canReschedule={canReschedule}
+                      onCompany={() => onCompany(item.companyId)}
+                      onReschedule={() => { setSelected(item); setMode("reschedule") }}
+                      onComplete={() => { setSelected(item); setMode("complete") }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
             <EmptyState
               icon={ClipboardCheck}
               title="پیگیری‌ای وجود ندارد"
               description="در این فیلتر موردی برای نمایش وجود ندارد."
             />
-          }
-        />
-        <PaginationControls
-          page={page}
-          pageCount={pageCount}
-          pageSize={pageSize}
-          total={total}
-          disabled={fetching}
-          onPageChange={onPage}
-          onPageSizeChange={onPageSize}
-        />
+          )}
+          <div className="shrink-0">
+            <PaginationControls page={page} pageCount={pageCount} pageSize={pageSize} total={total} disabled={fetching} onPageChange={onPage} onPageSizeChange={onPageSize} />
+          </div>
+        </div>
       </QueryContent>
       <FollowUpActionDialog
         item={selected}
@@ -586,6 +473,78 @@ function FollowUpActionDialog({
   )
 }
 
+function FollowUpEntityCard({
+  item,
+  canComplete,
+  canReschedule,
+  onCompany,
+  onReschedule,
+  onComplete,
+}: {
+  item: FollowUpActivity
+  canComplete: boolean
+  canReschedule: boolean
+  onCompany: () => void
+  onReschedule: () => void
+  onComplete: () => void
+}) {
+  const companyName = item.company?.brandName || item.company?.legalName || "شرکت ثبت نشده"
+  const ownerName = item.user?.fullName || item.user?.email || "—"
+  const status = dueStatus(item.nextActionDate)
+  const badges: EntityBadgeDescriptor[] = [
+    { id: "due", label: dueLabel(status), tone: followUpTone(status) },
+    { id: "type", label: activityLabel(item.type), tone: "primary", dot: false },
+  ]
+  const metadata: EntityMetadataDescriptor[] = [
+    { id: "person", label: "شخص مرتبط", value: item.person?.fullName || "—", icon: UserRound },
+    { id: "due", label: "موعد پیگیری", value: dt(item.nextActionDate), icon: CalendarClock },
+  ]
+  const actions: EntityAction[] = [
+    { id: "view", label: "مشاهده شرکت", accessibleLabel: `مشاهده شرکت ${companyName}`, icon: Eye, onClick: onCompany, visible: Boolean(item.companyId) },
+    { id: "reschedule", label: "زمان‌بندی مجدد", icon: CalendarClock, onClick: onReschedule, visible: canReschedule },
+    { id: "complete", label: "انجام شد", icon: CheckCircle2, onClick: onComplete, visible: canComplete },
+  ]
+  const accentColor = status === "overdue"
+    ? "var(--destructive)"
+    : status === "today"
+      ? "var(--warning)"
+      : status === "upcoming"
+        ? "var(--info)"
+        : "var(--app-text-secondary)"
+
+  return (
+    <EntityCard
+      id={item.id}
+      title={item.outcome || activityLabel(item.type)}
+      subtitle={item.notes || companyName}
+      ariaLabel={`پیگیری: ${item.outcome || activityLabel(item.type)}`}
+      accentColor={accentColor}
+      onClick={item.companyId ? onCompany : undefined}
+      logo={(
+        <IdentityAvatar
+          name={companyName}
+          mediaPath={item.companyId ? `/companies/${item.companyId}/logo` : null}
+          hasMedia={Boolean(item.company?.logoObjectKey)}
+          mediaVersion={item.company?.logoObjectKey}
+          fallbackIcon={<Building2 className="size-5" />}
+          className="size-14 rounded-2xl text-lg"
+          imageClassName="bg-white object-contain p-1"
+        />
+      )}
+      badges={badges}
+      owner={item.user ? {
+        name: ownerName,
+        role: "ثبت‌کننده",
+        avatar: <IdentityAvatar name={ownerName} mediaPath={`/users/${item.user.id}/avatar`} hasMedia={Boolean(item.user.avatarObjectKey)} mediaVersion={item.user.avatarObjectKey} className="size-10 rounded-full text-xs" />,
+      } : null}
+      ownerFallback="ثبت‌کننده نامشخص"
+      metadata={metadata}
+      actions={actions}
+      actionLabel="عملیات پیگیری"
+    />
+  )
+}
+
 function followUpTone(status: ReturnType<typeof dueStatus>): StatusTone {
   if (status === "overdue") return "error"
   if (status === "today") return "warning"
@@ -646,44 +605,8 @@ function NotificationList({
 
   const [detail, setDetail] = useState<Notification | null>(null)
 
-  const fields: EntityCardField<Notification>[] = [
-    {
-      id: "type",
-      label: "نوع اعلان",
-      icon: Bell,
-      render: (n) => notificationTypeLabel(n.type),
-    },
-    {
-      id: "actor",
-      label: "ایجادکننده",
-      icon: UserRound,
-      render: (n) => {
-        const name = n.actor?.fullName || n.actor?.email || "سیستم"
-        return (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <IdentityAvatar
-              name={name}
-              mediaPath={n.actor?.id ? `/users/${n.actor.id}/avatar` : null}
-              hasMedia={Boolean(n.actor?.avatarObjectKey)}
-              mediaVersion={n.actor?.avatarObjectKey}
-              className="size-8 rounded-xl text-xs"
-            />
-            <span className="truncate">{name}</span>
-          </span>
-        )
-      },
-    },
-    {
-      id: "createdAt",
-      label: "تاریخ اعلان",
-      icon: CalendarClock,
-      render: (n) => dt(n.createdAt),
-      valueClassName: "whitespace-nowrap",
-    },
-  ]
-
   return (
-    <div className="grid min-w-0 gap-4">
+    <div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
       <Dialog open={Boolean(detail)} onOpenChange={(open) => { if (!open) setDetail(null) }}>
         <DialogContent className="max-h-[85dvh] overflow-y-auto" dir="rtl">
           <DialogHeader><DialogTitle>{detail?.title}</DialogTitle></DialogHeader>
@@ -719,98 +642,131 @@ function NotificationList({
       />
 
       <QueryContent query={query} errorTitle="دریافت اعلان‌ها ناموفق بود">
-        <EntityCardList
-          rows={query.data?.data ?? []}
-          fields={fields}
-          getRowKey={(n) => n.id}
-          layout="row"
-          density="compact"
-          fieldsClassName="sm:grid-cols-2 xl:grid-cols-3"
-          title={(n) => n.title}
-          subtitle={(n) => n.body}
-          media={() => (
-            <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
-              <Bell className="size-5" />
-            </span>
-          )}
-          badges={(n) => (
-            <StatusBadge tone={n.readAt || n.archivedAt ? "neutral" : "primary"}>
-              {notificationInboxState(n)}
-            </StatusBadge>
-          )}
-          tags={(n) => (
-            <StatusBadge tone={notificationPriorityTone(n.priority)} dot={false}>
-              {notificationPriorityLabel(n.priority)}
-            </StatusBadge>
-          )}
-          onRowClick={(n) => void openNotification(n)}
-          actions={(n) => (
-            <EntityRowActions
-              presentation="buttons"
-              actions={[
-                {
-                  id: "view",
-                  label: "مشاهده",
-                  icon: Eye,
-                  onClick: () => openNotification(n),
-                  enabled: true,
-                },
-                {
-                  id: "read",
-                  label: n.readAt
-                    ? "علامت‌گذاری به‌عنوان خوانده‌نشده"
-                    : "علامت‌گذاری به‌عنوان خوانده‌شده",
-                  icon: CheckCircle2,
-                  onClick: () =>
-                    n.readAt
-                      ? markUnread.mutateAsync(n.id)
-                      : markRead.mutateAsync(n.id),
-                  enabled: canManage,
-                },
-                {
-                  id: "archive",
-                  label: n.archivedAt ? "خروج از بایگانی" : "بایگانی",
-                  icon: Archive,
-                  onClick: () =>
-                    n.archivedAt
-                      ? unarchive.mutateAsync(n.id)
-                      : archive.mutateAsync(n.id),
-                  enabled: canManage,
-                },
-                {
-                  id: "delete",
-                  label: "حذف",
-                  icon: Trash2,
-                  onClick: () => remove.mutateAsync(n.id),
-                  enabled: canManage,
-                  tone: "danger",
-                  confirmation: {
-                    title: "حذف اعلان",
-                    description: "این اعلان حذف شود؟",
-                  },
-                },
-              ]}
-            />
-          )}
-          emptyState={
+        <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+          {(query.data?.data ?? []).length ? (
+            <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+              <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" aria-label="فهرست اعلان‌ها" tabIndex={0}>
+                <div className="grid gap-2.5">
+                  {(query.data?.data ?? []).map((notification) => (
+                    <NotificationEntityCard
+                      key={notification.id}
+                      notification={notification}
+                      canManage={canManage}
+                      onView={() => void openNotification(notification)}
+                      onToggleRead={() => notification.readAt ? markUnread.mutateAsync(notification.id) : markRead.mutateAsync(notification.id)}
+                      onToggleArchive={() => notification.archivedAt ? unarchive.mutateAsync(notification.id) : archive.mutateAsync(notification.id)}
+                      onDelete={() => remove.mutateAsync(notification.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
             <EmptyState
               icon={Bell}
               title="اعلانی وجود ندارد"
               description="در این فیلتر اعلانی برای نمایش وجود ندارد."
             />
-          }
-        />
-        <PaginationControls
-          page={query.data?.meta.page ?? page}
-          pageCount={query.data?.meta.totalPages ?? 1}
-          pageSize={pageSize}
-          total={query.data?.meta.total}
-          disabled={query.isFetching}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-        />
+          )}
+          <div className="shrink-0">
+            <PaginationControls page={query.data?.meta.page ?? page} pageCount={query.data?.meta.totalPages ?? 1} pageSize={pageSize} total={query.data?.meta.total} disabled={query.isFetching} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          </div>
+        </div>
       </QueryContent>
     </div>
+  )
+}
+
+function NotificationEntityCard({
+  notification,
+  canManage,
+  onView,
+  onToggleRead,
+  onToggleArchive,
+  onDelete,
+}: {
+  notification: Notification
+  canManage: boolean
+  onView: () => void
+  onToggleRead: () => Promise<unknown>
+  onToggleArchive: () => Promise<unknown>
+  onDelete: () => Promise<unknown>
+}) {
+  const actorName = notification.actor?.fullName || notification.actor?.email || "سیستم"
+  const unread = !notification.readAt && !notification.archivedAt
+  const badges: EntityBadgeDescriptor[] = [
+    {
+      id: "inbox-state",
+      label: notificationInboxState(notification),
+      tone: unread ? "primary" : "neutral",
+    },
+    {
+      id: "priority",
+      label: notificationPriorityLabel(notification.priority),
+      tone: notificationPriorityTone(notification.priority),
+      dot: false,
+    },
+  ]
+  const metadata: EntityMetadataDescriptor[] = [
+    { id: "type", label: "نوع اعلان", value: notificationTypeLabel(notification.type), icon: Bell },
+    { id: "created-at", label: "تاریخ اعلان", value: dt(notification.createdAt), icon: CalendarClock },
+  ]
+  const actions: EntityAction[] = [
+    { id: "view", label: "مشاهده", accessibleLabel: "مشاهده", icon: Eye, onClick: onView },
+    {
+      id: "read",
+      label: notification.readAt ? "علامت‌گذاری به‌عنوان خوانده‌نشده" : "علامت‌گذاری به‌عنوان خوانده‌شده",
+      icon: CheckCircle2,
+      onClick: onToggleRead,
+      visible: canManage,
+    },
+    {
+      id: "archive",
+      label: notification.archivedAt ? "خروج از بایگانی" : "بایگانی",
+      icon: Archive,
+      onClick: onToggleArchive,
+      visible: canManage,
+    },
+    {
+      id: "delete",
+      label: "حذف",
+      icon: Trash2,
+      onClick: onDelete,
+      visible: canManage,
+      variant: "danger",
+      confirmation: { title: "حذف اعلان", description: "این اعلان حذف شود؟" },
+    },
+  ]
+  const accentColor = notification.archivedAt
+    ? "var(--app-text-secondary)"
+    : notification.priority === "URGENT"
+      ? "var(--destructive)"
+      : notification.priority === "HIGH"
+        ? "var(--warning)"
+        : unread
+          ? "var(--app-primary)"
+          : "var(--info)"
+
+  return (
+    <EntityCard
+      id={notification.id}
+      title={notification.title}
+      subtitle={notification.body}
+      ariaLabel={`اعلان: ${notification.title}`}
+      accentColor={accentColor}
+      archived={Boolean(notification.archivedAt)}
+      onClick={onView}
+      fallback={<Bell className="size-5" />}
+      badges={badges}
+      owner={notification.actor ? {
+        name: actorName,
+        role: "ایجادکننده اعلان",
+        avatar: <IdentityAvatar name={actorName} mediaPath={`/users/${notification.actor.id}/avatar`} hasMedia={Boolean(notification.actor.avatarObjectKey)} mediaVersion={notification.actor.avatarObjectKey} className="size-10 rounded-full text-xs" />,
+      } : { name: "سیستم", role: "اعلان سیستمی", fallback: <Bell className="size-4" /> }}
+      metadata={metadata}
+      actions={actions}
+      actionLabel="عملیات اعلان"
+    />
   )
 }
 

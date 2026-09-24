@@ -16,6 +16,7 @@ export function AppShell() {
     location.pathname === "/people" ||
     location.pathname === "/activities" ||
     location.pathname === "/tasks" ||
+    location.pathname === "/attention" ||
     (location.pathname === "/opportunities" && opportunityView === "list") ||
     (location.pathname === "/meetings" && meetingView === "list")
 
