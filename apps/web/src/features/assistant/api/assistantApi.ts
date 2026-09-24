@@ -14,7 +14,15 @@ export type AssistantAnswer = {
 
 export type PendingAssistantAction = {
   token: string
-  actionType: 'company.create' | 'opportunity.create' | 'task.create'
+  actionType:
+    | 'company.create'
+    | 'opportunity.create'
+    | 'task.create'
+    | 'person.create'
+    | 'activity.create'
+    | 'meeting.create'
+    | 'timesheet.create'
+    | 'leave.create'
   title: string
   description: string
   fields: Array<{ label: string; value: string }>
