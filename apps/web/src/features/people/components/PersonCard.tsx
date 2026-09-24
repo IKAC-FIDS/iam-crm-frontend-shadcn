@@ -1,165 +1,71 @@
-import {
-  EntityCardList,
-  type EntityCardField,
-} from "@/components/shared/EntityCardList"
+import { EntityCard, type EntityBadgeDescriptor, type EntityMetadataDescriptor } from "@/components/shared/EntityCard"
+import type { EntityAction } from "@/components/shared/EntityRowActions"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
-import { Button } from "@workspace/ui/components/button"
-import {
-  Building2,
-  ContactRound,
-  Eye,
-  Mail,
-  Phone,
-  Star,
-  UsersRound,
-} from "lucide-react"
-import { useMemo } from "react"
+import { Building2, CalendarDays, ContactRound, Eye, Mail, Phone, Star, UsersRound } from "lucide-react"
 
-import type {
-  PeopleLookupSet,
-  PersonDirectoryItem,
-} from "../types/person.types"
-import {
-  personCompanyName,
-  personDisplayValues,
-} from "../utils/personFormatters"
+import type { PeopleLookupSet, PersonDirectoryItem } from "../types/person.types"
+import { formatPersonDate, personCompanyName, personDisplayValues } from "../utils/personFormatters"
 
-export function PersonCardList({
-  people,
-  lookups,
-  canViewPerson,
-  onOpen,
-}: {
+export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
   people: PersonDirectoryItem[]
   lookups: PeopleLookupSet
   canViewPerson: boolean
   onOpen: (person: PersonDirectoryItem) => void
 }) {
   const text = uiText.people
-  const fields = useMemo<EntityCardField<PersonDirectoryItem>[]>(
-    () => [
-      {
-        id: "company",
-        label: text.fields.company,
-        icon: Building2,
-        render: (person) => personCompanyName(person) || text.notSpecified,
-      },
-      {
-        id: "department",
-        label: text.fields.department,
-        icon: UsersRound,
-        render: (person) =>
-          personDisplayValues(person, lookups).department || text.notSpecified,
-      },
-      {
-        id: "phone",
-        label: text.fields.phone,
-        icon: Phone,
-        render: (person) =>
-          person.phoneSummary || person.phone ? (
-            <span dir="ltr" className="block truncate text-end">
-              {person.phoneSummary || person.phone}
-            </span>
-          ) : (
-            text.notSpecified
-          ),
-      },
-      {
-        id: "email",
-        label: text.fields.email,
-        icon: Mail,
-        render: (person) =>
-          person.emailSummary || person.email ? (
-            <span dir="ltr" className="block truncate text-end">
-              {person.emailSummary || person.email}
-            </span>
-          ) : (
-            text.notSpecified
-          ),
-      },
-    ],
-    [lookups, text]
-  )
+
+  if (!people.length) {
+    return <EmptyState icon={UsersRound} title={text.empty.listTitle} description={text.empty.listDescription} />
+  }
 
   return (
-    <EntityCardList
-      rows={people}
-      fields={fields}
-      getRowKey={(person) => person.id}
-      layout="tile"
-      density="compact"
-      className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-      onRowClick={canViewPerson ? onOpen : undefined}
-      title={(person) => person.fullName}
-      subtitle={(person) =>
-        personDisplayValues(person, lookups).jobTitle || text.notSpecified
-      }
-      media={(person) => (
-        <IdentityAvatar
-          name={person.fullName}
-          fallbackIcon={<ContactRound className="size-6" />}
-          className="size-16 rounded-[22px] text-xl shadow-sm"
-        />
-      )}
-      badges={(person) => (
-        <>
-          {person.isPrimaryContact ? (
-            <StatusBadge tone="primary" dot={false}>
-              <Star className="size-3.5 fill-current" />
-              {text.contactRole.primary}
-            </StatusBadge>
-          ) : person.isSecondaryContact ? (
-            <StatusBadge tone="neutral" dot={false}>
-              <Star className="size-3.5" />
-              {text.contactRole.secondary}
-            </StatusBadge>
-          ) : null}
-        </>
-      )}
-      tags={(person) => {
+    <div className="grid gap-2.5">
+      {people.map((person) => {
         const display = personDisplayValues(person, lookups)
+        const companyName = personCompanyName(person)
+        const phone = person.phoneSummary || person.phone
+        const email = person.emailSummary || person.email
+        const badges: EntityBadgeDescriptor[] = []
+
+        if (person.isPrimaryContact) {
+          badges.push({ id: "contact-role", label: text.contactRole.primary, tone: "primary", icon: Star })
+        } else if (person.isSecondaryContact) {
+          badges.push({ id: "contact-role", label: text.contactRole.secondary, tone: "neutral", icon: Star })
+        }
+        if (display.personaRole) badges.push({ id: "persona", label: display.personaRole, tone: "info" })
+        if (display.seniorityLevel) badges.push({ id: "seniority", label: display.seniorityLevel, tone: "secondary" })
+
+        const metadata: EntityMetadataDescriptor[] = [
+          { id: "department", label: text.fields.department, value: display.department || text.notSpecified, icon: UsersRound },
+          { id: "phone", label: text.fields.phone, value: phone ? <span dir="ltr">{phone}</span> : text.notSpecified, icon: Phone },
+          { id: "email", label: text.fields.email, value: email ? <span dir="ltr">{email}</span> : text.notSpecified, icon: Mail },
+        ]
+        if (person.updatedAt) metadata.push({ id: "updated-at", label: "آخرین بروزرسانی", value: formatPersonDate(person.updatedAt), icon: CalendarDays })
+
+        const actions: EntityAction[] = canViewPerson
+          ? [{ id: "view", label: uiText.common.view, accessibleLabel: `${uiText.common.view} ${person.fullName}`, icon: Eye, onClick: () => onOpen(person) }]
+          : []
+
         return (
-          <>
-            {display.personaRole ? (
-              <StatusBadge tone="primary" dot={false}>
-                {display.personaRole}
-              </StatusBadge>
-            ) : null}
-            {display.seniorityLevel ? (
-              <StatusBadge tone="neutral" dot={false}>
-                {display.seniorityLevel}
-              </StatusBadge>
-            ) : null}
-          </>
+          <EntityCard
+            key={person.id}
+            id={person.id}
+            title={person.fullName}
+            subtitle={display.jobTitle || text.notSpecified}
+            ariaLabel={`${text.fields.fullName}: ${person.fullName}`}
+            accentColor={person.isPrimaryContact ? "var(--app-primary)" : person.isSecondaryContact ? "var(--info)" : "var(--app-text-secondary)"}
+            onClick={canViewPerson ? () => onOpen(person) : undefined}
+            logo={<IdentityAvatar name={person.fullName} fallbackIcon={<ContactRound className="size-5" />} className="size-14 rounded-2xl text-lg" />}
+            badges={badges}
+            owner={companyName ? { name: companyName, role: text.fields.company, fallback: <Building2 className="size-4" aria-hidden="true" /> } : null}
+            ownerFallback={`${text.fields.company}: ${text.notSpecified}`}
+            metadata={metadata}
+            actions={actions}
+          />
         )
-      }}
-      actions={
-        canViewPerson
-          ? (person) => (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                aria-label={`${uiText.common.view} ${person.fullName}`}
-                onClick={() => onOpen(person)}
-              >
-                <Eye className="size-4" />
-                {uiText.common.view}
-              </Button>
-            )
-          : undefined
-      }
-      emptyState={
-        <EmptyState
-          icon={UsersRound}
-          title={text.empty.listTitle}
-          description={text.empty.listDescription}
-        />
-      }
-    />
+      })}
+    </div>
   )
 }

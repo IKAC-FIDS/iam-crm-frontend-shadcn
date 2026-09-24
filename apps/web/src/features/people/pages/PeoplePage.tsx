@@ -104,7 +104,7 @@ export function PeoplePage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage className="min-h-0 grid-rows-[auto_auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_auto_minmax(0,1fr)] lg:overflow-hidden">
       <PageHero
         title={text.hero.title}
         description={text.hero.description}
@@ -163,26 +163,32 @@ export function PeoplePage() {
         />
       ) : (
         <QueryContent query={directory} errorTitle={text.errors.listTitle}>
-          <>
-            <PersonCardList
-              people={directory.data?.data ?? []}
-              lookups={lookups.data}
-              canViewPerson={canViewPerson}
-              onOpen={(person) => setSelectedPersonId(person.id)}
-            />
+          <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden" aria-busy={directory.isFetching || undefined}>
+            <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+              <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" aria-label={text.hero.title} tabIndex={0}>
+                <PersonCardList
+                  people={directory.data?.data ?? []}
+                  lookups={lookups.data}
+                  canViewPerson={canViewPerson}
+                  onOpen={(person) => setSelectedPersonId(person.id)}
+                />
+              </div>
+            </div>
 
             {directory.data ? (
-              <PaginationControls
-                page={directory.data.meta.page}
-                pageCount={directory.data.meta.totalPages}
-                pageSize={query.limit}
-                total={directory.data.meta.total}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                disabled={directory.isFetching || query !== debouncedQuery}
-              />
+              <div className="shrink-0">
+                <PaginationControls
+                  page={directory.data.meta.page}
+                  pageCount={directory.data.meta.totalPages}
+                  pageSize={query.limit}
+                  total={directory.data.meta.total}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  disabled={directory.isFetching || query !== debouncedQuery}
+                />
+              </div>
             ) : null}
-          </>
+          </div>
         </QueryContent>
       )}
 

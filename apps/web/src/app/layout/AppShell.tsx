@@ -12,6 +12,7 @@ export function AppShell() {
   const opportunityView = new URLSearchParams(location.search).get("view")
   const usesContainedPageScroll =
     location.pathname === "/companies" ||
+    location.pathname === "/people" ||
     (location.pathname === "/opportunities" && opportunityView === "list")
 
   return (
