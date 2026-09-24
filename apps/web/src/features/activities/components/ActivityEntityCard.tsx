@@ -47,7 +47,7 @@ export function ActivityEntityCard({
   onViewCompany,
 }: ActivityEntityCardProps) {
   const companyName = activityCompanyName(activity)
-  const creator = activity.createdBy || activity.user
+  const owner = activity.owner || activity.createdBy || activity.user
   const completed = activity.status === "COMPLETED"
   const companyId = activity.companyId || activity.company?.id
 
@@ -124,20 +124,20 @@ export function ActivityEntityCard({
         />
       )}
       badges={badges}
-      owner={creator ? {
-        name: creator.fullName,
-        role: creator.team || "ایجادکننده",
+      owner={owner ? {
+        name: owner.fullName,
+        role: owner.team || (activity.owner ? "مالک شرکت" : "ایجادکننده"),
         avatar: (
           <IdentityAvatar
-            name={creator.fullName}
-            mediaPath={`/users/${creator.id}/avatar`}
-            hasMedia={Boolean(creator.avatarObjectKey)}
-            mediaVersion={creator.avatarObjectKey}
+            name={owner.fullName}
+            mediaPath={`/users/${owner.id}/avatar`}
+            hasMedia={Boolean(owner.avatarObjectKey)}
+            mediaVersion={owner.avatarObjectKey}
             className="size-10 rounded-full text-xs"
           />
         ),
       } : null}
-      ownerFallback="ایجادکننده ثبت نشده"
+      ownerFallback="مالک ثبت نشده"
       metadata={metadata}
       actions={actions}
       actionLabel="عملیات فعالیت"

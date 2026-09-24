@@ -12,6 +12,7 @@ const activity: Activity = {
   companyId: "company-1",
   company: { id: "company-1", legalName: "شرکت نمونه" },
   person: { id: "person-1", fullName: "مریم احمدی" },
+  owner: { id: "owner-1", fullName: "فرزانه هاشمی", team: "فروش سازمانی" },
   createdBy: { id: "user-1", fullName: "علی رضایی", team: "فروش" },
 }
 
@@ -43,7 +44,7 @@ describe("ActivityEntityCard", () => {
     expect(screen.getByText("تماس پیگیری")).toBeInTheDocument()
     expect(screen.getByText("تماس تلفنی")).toBeInTheDocument()
     expect(screen.getByText("ثبت‌شده")).toBeInTheDocument()
-    expect(screen.getByText("علی رضایی")).toBeInTheDocument()
+    expect(screen.getByText("فرزانه هاشمی")).toBeInTheDocument()
     expect(screen.getByText("مریم احمدی")).toBeInTheDocument()
 
     await user.click(screen.getByRole("button", { name: "ویرایش فعالیت" }))
