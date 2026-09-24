@@ -54,7 +54,7 @@ describe("PersonCardList", () => {
     )
 
     expect(screen.getByText("مریم احمدی")).toBeInTheDocument()
-    expect(screen.getByTitle("مدیرعامل · شرکت نمونه")).toBeInTheDocument()
+    expect(screen.getByTitle("مدیرعامل · فروش · شرکت نمونه")).toBeInTheDocument()
     expect(screen.getByText("مخاطب اصلی")).toBeInTheDocument()
 
     fireEvent.click(

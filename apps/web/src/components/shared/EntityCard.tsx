@@ -139,7 +139,7 @@ export function EntityCard({
         </div>
       ) : null}
 
-      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:grid-cols-[minmax(14rem,1.2fr)_minmax(17rem,1.15fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_minmax(12rem,max-content)] xl:items-center" dir="rtl">
+      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:grid-cols-[minmax(14rem,1.1fr)_minmax(20rem,1.35fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_minmax(12rem,max-content)] xl:items-center" dir="rtl">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--app-primary-soft)] text-lg font-black text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/15">
             {logo || initials || fallback || (typeof title === "string" ? title.trim().slice(0, 1) : null)}
@@ -156,7 +156,7 @@ export function EntityCard({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:flex-nowrap xl:border-s xl:border-[var(--app-divider)] xl:ps-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5 xl:border-s xl:border-[var(--app-divider)] xl:ps-4">
           {badges.map((badge) => (
             <StatusBadge key={badge.id} tone={badge.tone} icon={badge.icon} dot={badge.dot} size={badge.size} tooltip={badge.tooltip} color={badge.color}>
               {badge.label}

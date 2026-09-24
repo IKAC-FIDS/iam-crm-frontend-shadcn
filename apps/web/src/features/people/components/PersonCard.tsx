@@ -36,8 +36,6 @@ export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
         }
         if (display.personaRole) badges.push({ id: "persona", label: display.personaRole, tone: "info" })
         if (display.seniorityLevel) badges.push({ id: "seniority", label: display.seniorityLevel, tone: "secondary" })
-        if (display.department) badges.push({ id: "department", label: display.department, tone: "neutral", icon: UsersRound })
-
         const metadata: EntityMetadataDescriptor[] = [
           { id: "phone", label: text.fields.phone, value: phone ? <span dir="ltr">{phone}</span> : text.notSpecified, icon: Phone },
           { id: "email", label: text.fields.email, value: email ? <span dir="ltr">{email}</span> : text.notSpecified, icon: Mail },
@@ -55,7 +53,7 @@ export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
             key={person.id}
             id={person.id}
             title={person.fullName}
-            subtitle={[display.jobTitle, companyName].filter(Boolean).join(" · ") || text.notSpecified}
+            subtitle={[display.jobTitle, display.department, companyName].filter(Boolean).join(" · ") || text.notSpecified}
             ariaLabel={`${text.fields.fullName}: ${person.fullName}`}
             accentColor={person.isPrimaryContact ? "var(--app-primary)" : person.isSecondaryContact ? "var(--info)" : "var(--app-text-secondary)"}
             onClick={canViewPerson ? () => onOpen(person) : undefined}
