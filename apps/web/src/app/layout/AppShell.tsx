@@ -10,12 +10,14 @@ import { CrmAssistantWidget } from "@/features/assistant/components/CrmAssistant
 export function AppShell() {
   const location = useLocation()
   const opportunityView = new URLSearchParams(location.search).get("view")
+  const meetingView = new URLSearchParams(location.search).get("view")
   const usesContainedPageScroll =
     location.pathname === "/companies" ||
     location.pathname === "/people" ||
     location.pathname === "/activities" ||
     location.pathname === "/tasks" ||
-    (location.pathname === "/opportunities" && opportunityView === "list")
+    (location.pathname === "/opportunities" && opportunityView === "list") ||
+    (location.pathname === "/meetings" && meetingView === "list")
 
   return (
     <SidebarProvider

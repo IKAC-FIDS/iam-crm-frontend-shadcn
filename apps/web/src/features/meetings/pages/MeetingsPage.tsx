@@ -220,7 +220,13 @@ export function MeetingsPage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage
+      className={
+        view === "list"
+          ? "min-h-0 grid-rows-[auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden"
+          : undefined
+      }
+    >
       <PageHero
         title={text.title}
         description={text.description}
@@ -266,9 +272,9 @@ export function MeetingsPage() {
         ))}
       />
 
-      <div className="min-w-0">
-        <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
-          {view === "agenda" ? (
+      <QueryContent query={meetings} errorTitle={text.errors.listTitle}>
+        {view === "agenda" ? (
+          <>
             <MeetingAgenda
               meetings={rows}
               canCreate={canCreate}
@@ -290,43 +296,60 @@ export function MeetingsPage() {
                 })
               }
             />
-          ) : (
-            <MeetingList
-              meetings={rows}
-              canCreate={canCreate}
-              canUpdate={canUpdate}
-              canComplete={canComplete}
-              canCancel={canCancel}
-              onCreate={() => setFormMeeting(null)}
-              onEdit={setFormMeeting}
-              onComplete={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "complete",
-                })
-              }
-              onCancel={(meeting) =>
-                setStatusState({
-                  meeting,
-                  action: "cancel",
-                })
-              }
-            />
-          )}
-        </QueryContent>
-      </div>
+            {meetings.data ? (
+              <PaginationControls
+                page={page}
+                pageCount={meetings.data.meta.totalPages}
+                disabled={meetings.isFetching}
+                pageSize={limit}
+                total={meetings.data.meta.total}
+                onPageSizeChange={setPageSize}
+                onPageChange={setPage}
+              />
+            ) : null}
+          </>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
+            <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+              <div
+                className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain"
+                aria-label="فهرست جلسات"
+                tabIndex={0}
+              >
+                <MeetingList
+                  meetings={rows}
+                  canCreate={canCreate}
+                  canUpdate={canUpdate}
+                  canComplete={canComplete}
+                  canCancel={canCancel}
+                  onCreate={() => setFormMeeting(null)}
+                  onEdit={setFormMeeting}
+                  onComplete={(meeting) =>
+                    setStatusState({ meeting, action: "complete" })
+                  }
+                  onCancel={(meeting) =>
+                    setStatusState({ meeting, action: "cancel" })
+                  }
+                />
+              </div>
+            </div>
 
-      {meetings.data ? (
-        <PaginationControls
-          page={page}
-          pageCount={meetings.data.meta.totalPages}
-          disabled={meetings.isFetching}
-          pageSize={limit}
-          total={meetings.data.meta.total}
-          onPageSizeChange={setPageSize}
-          onPageChange={setPage}
-        />
-      ) : null}
+            {meetings.data ? (
+              <div className="shrink-0">
+                <PaginationControls
+                  page={page}
+                  pageCount={meetings.data.meta.totalPages}
+                  disabled={meetings.isFetching}
+                  pageSize={limit}
+                  total={meetings.data.meta.total}
+                  onPageSizeChange={setPageSize}
+                  onPageChange={setPage}
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
+      </QueryContent>
 
       {formMeeting !== undefined ? (
         <MeetingFormDialog

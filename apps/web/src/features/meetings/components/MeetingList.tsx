@@ -1,24 +1,12 @@
-import { Building2, CalendarDays, Clock3, MapPin, UserRound } from "lucide-react"
+import { CalendarDays } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import { EntityCardList, type EntityCardField } from "@/components/shared/EntityCardList"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { uiText } from "@/config/uiText"
-import { formatJalaliDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 
 import type { Meeting } from "../types/meeting.types"
-import {
-  meetingCompanyName,
-  meetingModeLabel,
-  meetingStatusLabel,
-  meetingStatusTone,
-  meetingTimeRange,
-  meetingTypeLabel,
-} from "../utils/meetingFormatters"
-import { MeetingActionsMenu } from "./MeetingActionsMenu"
+import { MeetingEntityCard } from "./MeetingEntityCard"
 
 export function MeetingList({
   meetings,
@@ -44,117 +32,22 @@ export function MeetingList({
   const text = uiText.meetings
   const navigate = useNavigate()
 
-  const fields: EntityCardField<Meeting>[] = [
-    {
-      id: "company",
-      label: text.table.company,
-      icon: Building2,
-      render: (meeting) => {
-        const companyName = meetingCompanyName(meeting)
-        return (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <IdentityAvatar
-              name={companyName}
-              mediaPath={meeting.company?.id ? `/companies/${meeting.company.id}/logo` : null}
-              hasMedia={Boolean(meeting.company?.logoObjectKey)}
-              mediaVersion={meeting.company?.logoObjectKey}
-              fallbackIcon={<Building2 className="size-4" />}
-              className="size-8 rounded-xl text-xs"
-            />
-            <span className="truncate">{companyName}</span>
-          </span>
-        )
-      },
-    },
-    {
-      id: "schedule",
-      label: text.table.schedule,
-      icon: Clock3,
-      render: (meeting) => (
-        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span>{formatJalaliDate(meeting.startAt)}</span>
-          <span dir="ltr" className="tabular-nums text-[var(--app-text-secondary)]">
-            {meetingTimeRange(meeting)}
-          </span>
-        </span>
-      ),
-    },
-    {
-      id: "owner",
-      label: text.table.owner,
-      icon: UserRound,
-      render: (meeting) => {
-        const assignedUsers = meeting.assignees?.map((item) => item.user) ?? []
-        const people = assignedUsers.length
-          ? assignedUsers
-          : meeting.organizer
-            ? [meeting.organizer]
-            : []
-
-        if (!people.length) return uiText.common.notAvailable
-
-        return (
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <span className="flex shrink-0 -space-x-2 space-x-reverse">
-              {people.slice(0, 3).map((user) => (
-                <IdentityAvatar
-                  key={user.id}
-                  name={user.fullName || user.email || uiText.common.notAvailable}
-                  mediaPath={`/users/${user.id}/avatar`}
-                  hasMedia={Boolean(user.avatarObjectKey)}
-                  mediaVersion={user.avatarObjectKey}
-                  className="size-8 rounded-xl border-2 border-[var(--app-surface)] text-xs"
-                />
-              ))}
-            </span>
-            <span className="truncate">
-              {people
-                .map((user) => user.fullName || user.email)
-                .filter(Boolean)
-                .join(uiText.common.listSeparator)}
-            </span>
-          </span>
-        )
-      },
-    },
-    {
-      id: "delivery",
-      label: text.table.mode,
-      icon: MapPin,
-      render: (meeting) => meetingModeLabel(meeting.mode),
-    },
-  ]
+  if (!meetings.length) {
+    return (
+      <EmptyState
+        icon={CalendarDays}
+        title={text.empty.title}
+        description={text.empty.description}
+        action={canCreate ? <Button className="rounded-xl" onClick={onCreate}>{text.actions.create}</Button> : undefined}
+      />
+    )
+  }
 
   return (
-    <EntityCardList
-      rows={meetings}
-      fields={fields}
-      getRowKey={(meeting) => meeting.id}
-      layout="row"
-      density="compact"
-      fieldsClassName="sm:grid-cols-2 xl:grid-cols-4"
-      title={(meeting) => meeting.title}
-      subtitle={(meeting) => meeting.opportunity?.title || meeting.agenda || meetingCompanyName(meeting)}
-      media={() => (
-        <span className="grid size-12 place-items-center rounded-2xl bg-[var(--app-primary)] text-[var(--app-on-primary)] shadow-sm">
-          <CalendarDays className="size-5" />
-        </span>
-      )}
-      badges={(meeting) => (
-        <StatusBadge tone={meetingStatusTone(meeting.status)}>
-          {meetingStatusLabel(meeting.status)}
-        </StatusBadge>
-      )}
-      tags={(meeting) => (
-        <>
-          <StatusBadge tone="primary" dot={false}>{meetingTypeLabel(meeting.type)}</StatusBadge>
-          <StatusBadge tone="neutral" dot={false}>{meetingModeLabel(meeting.mode)}</StatusBadge>
-        </>
-      )}
-      onRowClick={(meeting) => navigate(`/meetings/${meeting.id}`)}
-      actions={(meeting) => (
-        <MeetingActionsMenu
-          presentation="buttons"
+    <div className="grid gap-2.5">
+      {meetings.map((meeting) => (
+        <MeetingEntityCard
+          key={meeting.id}
           meeting={meeting}
           canUpdate={canUpdate}
           canComplete={canComplete}
@@ -164,15 +57,7 @@ export function MeetingList({
           onComplete={() => onComplete(meeting)}
           onCancel={() => onCancel(meeting)}
         />
-      )}
-      emptyState={
-        <EmptyState
-          icon={CalendarDays}
-          title={text.empty.title}
-          description={text.empty.description}
-          action={canCreate ? <Button className="rounded-xl" onClick={onCreate}>{text.actions.create}</Button> : undefined}
-        />
-      }
-    />
+      ))}
+    </div>
   )
 }
