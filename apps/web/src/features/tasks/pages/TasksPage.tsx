@@ -276,7 +276,7 @@ export function TasksPage() {
   }
 
   return (
-    <EntityListPage>
+    <EntityListPage className="min-h-0 grid-rows-[auto_auto_auto] overflow-visible lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden">
       <PageHero
         title={text.title}
         description={text.description}
@@ -495,27 +495,33 @@ export function TasksPage() {
       />
 
       <QueryContent query={tasks} errorTitle={text.errors.listTitle}>
-        <div className="grid gap-4">
-          <TaskList
-            tasks={tasks.data?.data ?? []}
-            canCreate={canCreate}
-            canUpdate={canUpdate}
-            canAssign={canAssign}
-            canDelete={canDelete}
-            onCreate={() => setCreateOpen(true)}
-            onEdit={setEditTask}
-            onAction={openAction}
-          />
+        <div className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden" aria-busy={tasks.isFetching || undefined}>
+          <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+            <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" aria-label="فهرست کارها" tabIndex={0}>
+              <TaskList
+                tasks={tasks.data?.data ?? []}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canAssign={canAssign}
+                canDelete={canDelete}
+                onCreate={() => setCreateOpen(true)}
+                onEdit={setEditTask}
+                onAction={openAction}
+              />
+            </div>
+          </div>
           {tasks.data ? (
-            <PaginationControls
-              page={tasks.data.meta.page}
-              pageCount={tasks.data.meta.totalPages}
-              onPageChange={(next) => updateParam("page", String(next))}
-              disabled={tasks.isFetching}
-              pageSize={pageSize}
-              total={tasks.data.meta.total}
-              onPageSizeChange={setPageSize}
-            />
+            <div className="shrink-0">
+              <PaginationControls
+                page={tasks.data.meta.page}
+                pageCount={tasks.data.meta.totalPages}
+                onPageChange={(next) => updateParam("page", String(next))}
+                disabled={tasks.isFetching}
+                pageSize={pageSize}
+                total={tasks.data.meta.total}
+                onPageSizeChange={setPageSize}
+              />
+            </div>
           ) : null}
         </div>
       </QueryContent>
