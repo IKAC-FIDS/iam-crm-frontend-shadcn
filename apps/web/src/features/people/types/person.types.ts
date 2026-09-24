@@ -2,10 +2,12 @@ export interface PersonCompanyRef {
   id: string
   legalName: string
   brandName?: string | null
+  logoObjectKey?: string | null
   owner?: {
     id: string
     fullName: string
     email?: string | null
+    avatarObjectKey?: string | null
     team?: string | null
     teamId?: string | null
     teamRef?: { code?: string; name?: string } | null

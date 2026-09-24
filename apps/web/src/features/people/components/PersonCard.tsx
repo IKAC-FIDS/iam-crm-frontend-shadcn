@@ -3,10 +3,10 @@ import type { EntityAction } from "@/components/shared/EntityRowActions"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
 import { uiText } from "@/config/uiText"
-import { Building2, CalendarDays, ContactRound, Eye, Mail, Phone, Star, UsersRound } from "lucide-react"
+import { Building2, Eye, Mail, Phone, Star, UsersRound } from "lucide-react"
 
 import type { PeopleLookupSet, PersonDirectoryItem } from "../types/person.types"
-import { formatPersonDate, personCompanyName, personDisplayValues } from "../utils/personFormatters"
+import { personCompanyName, personDisplayValues } from "../utils/personFormatters"
 
 export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
   people: PersonDirectoryItem[]
@@ -36,13 +36,15 @@ export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
         }
         if (display.personaRole) badges.push({ id: "persona", label: display.personaRole, tone: "info" })
         if (display.seniorityLevel) badges.push({ id: "seniority", label: display.seniorityLevel, tone: "secondary" })
+        if (display.department) badges.push({ id: "department", label: display.department, tone: "neutral", icon: UsersRound })
 
         const metadata: EntityMetadataDescriptor[] = [
-          { id: "department", label: text.fields.department, value: display.department || text.notSpecified, icon: UsersRound },
           { id: "phone", label: text.fields.phone, value: phone ? <span dir="ltr">{phone}</span> : text.notSpecified, icon: Phone },
           { id: "email", label: text.fields.email, value: email ? <span dir="ltr">{email}</span> : text.notSpecified, icon: Mail },
         ]
-        if (person.updatedAt) metadata.push({ id: "updated-at", label: "آخرین بروزرسانی", value: formatPersonDate(person.updatedAt), icon: CalendarDays })
+
+        const accountOwner = person.company?.owner
+        const accountOwnerRole = accountOwner?.teamRef?.name || accountOwner?.team || "مالک حساب"
 
         const actions: EntityAction[] = canViewPerson
           ? [{ id: "view", label: uiText.common.view, accessibleLabel: `${uiText.common.view} ${person.fullName}`, icon: Eye, onClick: () => onOpen(person) }]
@@ -53,14 +55,36 @@ export function PersonCardList({ people, lookups, canViewPerson, onOpen }: {
             key={person.id}
             id={person.id}
             title={person.fullName}
-            subtitle={display.jobTitle || text.notSpecified}
+            subtitle={[display.jobTitle, companyName].filter(Boolean).join(" · ") || text.notSpecified}
             ariaLabel={`${text.fields.fullName}: ${person.fullName}`}
             accentColor={person.isPrimaryContact ? "var(--app-primary)" : person.isSecondaryContact ? "var(--info)" : "var(--app-text-secondary)"}
             onClick={canViewPerson ? () => onOpen(person) : undefined}
-            logo={<IdentityAvatar name={person.fullName} fallbackIcon={<ContactRound className="size-5" />} className="size-14 rounded-2xl text-lg" />}
+            logo={
+              <IdentityAvatar
+                name={companyName || person.fullName}
+                mediaPath={person.company?.id ? `/companies/${person.company.id}/logo` : null}
+                hasMedia={Boolean(person.company?.logoObjectKey)}
+                mediaVersion={person.company?.logoObjectKey}
+                fallbackIcon={<Building2 className="size-5" />}
+                className="size-14 rounded-2xl text-lg"
+                imageClassName="object-contain bg-white p-1"
+              />
+            }
             badges={badges}
-            owner={companyName ? { name: companyName, role: text.fields.company, fallback: <Building2 className="size-4" aria-hidden="true" /> } : null}
-            ownerFallback={`${text.fields.company}: ${text.notSpecified}`}
+            owner={accountOwner ? {
+              name: accountOwner.fullName,
+              role: accountOwnerRole,
+              avatar: (
+                <IdentityAvatar
+                  name={accountOwner.fullName}
+                  mediaPath={`/users/${accountOwner.id}/avatar`}
+                  hasMedia={Boolean(accountOwner.avatarObjectKey)}
+                  mediaVersion={accountOwner.avatarObjectKey}
+                  className="size-10 rounded-full text-xs"
+                />
+              ),
+            } : null}
+            ownerFallback="مالک حساب ثبت نشده"
             metadata={metadata}
             actions={actions}
           />
