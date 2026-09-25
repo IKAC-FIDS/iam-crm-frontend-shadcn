@@ -1016,14 +1016,7 @@ function ProductEntityCard({
   if (product.category) {
     badges.push({ id: "category", label: product.category, tone: "secondary", icon: Tag })
   }
-  const metadata: EntityMetadataDescriptor[] = [
-    {
-      id: "code",
-      label: "کد محصول",
-      value: <code dir="ltr">{product.code || "—"}</code>,
-      icon: Code2,
-    },
-  ]
+  const metadata: EntityMetadataDescriptor[] = []
   if (product.digikalaCode) {
     metadata.push({
       id: "digikala-code",
@@ -1034,11 +1027,16 @@ function ProductEntityCard({
   }
   if (financialVisible) {
     metadata.push({
-      id: "prices",
-      label: "قیمت حضوری / دیجی‌کالا",
-      value: `${money(product.inPersonPriceIrr)} / ${money(product.digikalaPriceIrr)}`,
+      id: "in-person-price",
+      label: "قیمت حضوری",
+      value: money(product.inPersonPriceIrr),
       icon: Tag,
-      className: "sm:col-span-2 xl:col-span-1",
+    })
+    metadata.push({
+      id: "digikala-price",
+      label: "قیمت دیجی‌کالا",
+      value: money(product.digikalaPriceIrr),
+      icon: ShoppingBag,
     })
   }
   const externalUrl = safeExternalUrl(product.digikalaUrl)
@@ -1086,7 +1084,14 @@ function ProductEntityCard({
       subtitle={product.description || product.code}
       fallback={<Package aria-hidden="true" className="size-6" />}
       badges={badges}
-      ownerFallback="محصول کاتالوگ"
+      ownerFallback={
+        <span className="grid gap-1">
+          <span>کد محصول</span>
+          <code dir="ltr" className="font-semibold text-[var(--app-heading)]">
+            {product.code || "—"}
+          </code>
+        </span>
+      }
       metadata={metadata}
       actions={actions}
       actionLabel={`عملیات ${product.name}`}
