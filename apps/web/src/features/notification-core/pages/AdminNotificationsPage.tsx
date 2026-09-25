@@ -18,10 +18,8 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHero } from "@/components/shared/PageHero"
-import {
-  DataTableShell,
-  type DataTableColumn,
-} from "@/components/shared/DataTableShell"
+import type { DataTableColumn } from "@/components/shared/DataTableShell"
+import { EntityCardList } from "@/components/shared/EntityCardList"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
@@ -363,10 +361,16 @@ function TemplatesTab({ events }: { events: string[] }) {
         }
       />
       <QueryContent query={query} errorTitle="دریافت قالب‌ها ناموفق بود">
-        <DataTableShell
+        <EntityCardList
           rows={query.data ?? []}
-          columns={columns}
+          fields={columns.filter((column) => !["event", "active", "actions"].includes(column.id)).map((column) => ({ id: column.id, label: column.header, render: column.cell }))}
           getRowKey={(r) => r.id}
+          layout="row"
+          density="compact"
+          title={(r) => eventLabel(r.eventName)}
+          subtitle={(r) => r.subject || `${channelLabels[r.channel]} · ${r.locale}`}
+          badges={(r) => <StatusBadge tone={r.isActive ? "success" : "neutral"}>{r.isActive ? "فعال" : "غیرفعال"}</StatusBadge>}
+          actions={(r) => columns.find((column) => column.id === "actions")?.cell(r)}
           emptyState={
             <EmptyState
               icon={FileText}
@@ -981,22 +985,17 @@ function DeliveriesTab({ events }: { events: string[] }) {
         }
       />
       <QueryContent query={query} errorTitle="دریافت تاریخچه ارسال ناموفق بود">
-        <DataTableShell
+        <EntityCardList
           rows={query.data?.data ?? []}
-          columns={columns}
+          fields={columns.filter((column) => !["event", "recipient", "status", "actions"].includes(column.id)).map((column) => ({ id: column.id, label: column.header, render: column.cell }))}
           getRowKey={(r) => r.id}
           onRowClick={(r) => setSelectedId(r.id)}
-          mobile={{
-            title: (r) => eventLabel(r.event.eventName),
-            subtitle: (r) => r.recipientUser?.fullName || r.destination || "—",
-            status: (r) => <StatusBadge tone={r.status === "FAILED" ? "error" : r.status === "SENT" || r.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[r.status]}</StatusBadge>,
-            fields: [
-              { id: "channel", label: "کانال", render: (r) => channelLabels[r.channel] },
-              { id: "trigger", label: "نوع اجرا", render: (r) => triggerLabels[r.triggerType] },
-              { id: "attempts", label: "تعداد تلاش", render: (r) => r.attemptCount.toLocaleString("fa-IR") },
-              { id: "date", label: "زمان", render: (r) => date(r.createdAt) },
-            ],
-          }}
+          layout="row"
+          density="compact"
+          title={(r) => eventLabel(r.event.eventName)}
+          subtitle={(r) => r.recipientUser?.fullName || r.destination || "—"}
+          badges={(r) => <StatusBadge tone={r.status === "FAILED" ? "error" : r.status === "SENT" || r.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[r.status]}</StatusBadge>}
+          actions={(r) => columns.find((column) => column.id === "actions")?.cell(r)}
           emptyState={
             <EmptyState
               icon={History}

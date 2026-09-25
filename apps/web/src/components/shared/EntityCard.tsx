@@ -42,10 +42,14 @@ export type EntityCardProps = {
   initials?: ReactNode
   fallback?: ReactNode
   badges?: readonly EntityBadgeDescriptor[]
+  badgeContent?: ReactNode
   owner?: EntityOwnerDescriptor | null
   ownerFallback?: ReactNode
+  showOwner?: boolean
   metadata?: readonly EntityMetadataDescriptor[]
+  metadataContent?: ReactNode
   actions?: readonly EntityAction[]
+  actionContent?: ReactNode
   actionLabel?: string
   onClick?: () => void
   loading?: boolean
@@ -65,10 +69,14 @@ export function EntityCard({
   initials,
   fallback,
   badges = [],
+  badgeContent,
   owner,
   ownerFallback,
+  showOwner = true,
   metadata = [],
+  metadataContent,
   actions = [],
+  actionContent,
   actionLabel,
   onClick,
   loading = false,
@@ -139,7 +147,12 @@ export function EntityCard({
         </div>
       ) : null}
 
-      <div className="relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:grid-cols-[minmax(14rem,1.1fr)_minmax(20rem,1.35fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_minmax(12rem,max-content)] xl:items-center" dir="rtl">
+      <div className={cn(
+        "relative z-[1] grid min-w-0 gap-4 p-3.5 sm:p-4 xl:items-center",
+        showOwner
+          ? "xl:grid-cols-[minmax(14rem,1.1fr)_minmax(20rem,1.35fr)_minmax(10rem,.75fr)_minmax(9rem,.65fr)_minmax(12rem,max-content)]"
+          : "xl:grid-cols-[minmax(14rem,1.05fr)_minmax(12rem,.8fr)_minmax(20rem,1.45fr)_minmax(12rem,max-content)]",
+      )} dir="rtl">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-2xl bg-[var(--app-primary-soft)] text-lg font-black text-[var(--app-primary)] ring-1 ring-[var(--app-primary)]/15">
             {logo || initials || fallback || (typeof title === "string" ? title.trim().slice(0, 1) : null)}
@@ -162,9 +175,10 @@ export function EntityCard({
               {badge.label}
             </StatusBadge>
           ))}
+          {badgeContent}
         </div>
 
-        <div className="min-w-0 xl:border-s xl:border-[var(--app-divider)] xl:ps-4">
+        {showOwner ? <div className="min-w-0 xl:border-s xl:border-[var(--app-divider)] xl:ps-4">
           {owner ? (
             <div className="flex min-w-0 items-center gap-2.5">
               <div className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
@@ -178,7 +192,7 @@ export function EntityCard({
           ) : (
             <div className="text-xs text-[var(--app-text-secondary)]">{ownerFallback}</div>
           )}
-        </div>
+        </div> : null}
 
         <div className="grid min-w-0 gap-2 xl:border-s xl:border-[var(--app-divider)] xl:ps-4">
           {metadata.map((item) => {
@@ -193,11 +207,13 @@ export function EntityCard({
               </div>
             )
           })}
+          {metadataContent}
         </div>
 
-        {actions.length ? (
+        {actions.length || actionContent ? (
           <div className="min-w-0 border-t border-[var(--app-divider)] pt-3 xl:min-w-48 xl:border-s xl:border-t-0 xl:ps-3 xl:pt-0" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
             <EntityRowActions label={actionLabel} actions={actions} presentation="icons" />
+            {actionContent}
           </div>
         ) : null}
       </div>

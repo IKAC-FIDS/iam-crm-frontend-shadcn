@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { BellRing, Plus, Trash2 } from "lucide-react"
+import { BellRing, Pencil, Plus, Power, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { EntityCard, type EntityBadgeDescriptor } from "@/components/shared/EntityCard"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { getDigestPolicies } from "../api/notificationAdminApi"
@@ -622,49 +623,26 @@ export function AdminNotificationRulesPage({
       ) : null}
 
       <div className="grid gap-3">
-        {visibleRules.map((rule) => (
-          <Card key={rule.id}>
-            <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_auto] lg:items-center">
-              <button
-                type="button"
-                className="grid gap-2 text-right"
-                onClick={() => {
-                  setEditingRule(rule)
-                  setDialogOpen(true)
-                }}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <strong className="text-base">{rule.name}</strong>
-                  <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                    {eventLabels[rule.eventName] ?? rule.eventName}
-                  </span>
-                  {rule.mandatory ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
-                      اجباری
-                    </span>
-                  ) : null}
-                  {rule.schedule ? (
-                    <span className="rounded-full bg-blue-50 px-2 py-1 text-xs text-blue-700">
-                      {rule.schedule.offsetMinutes === 0 ? "در سررسید" : `${Math.abs(rule.schedule.offsetMinutes)} دقیقه قبل`}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {rule.recipientRules
-                    .map(
-                      (recipient) =>
-                        `${recipientLabels[recipient.type]}: ${recipient.channels.map((channel) => channelLabels[channel]).join(" + ")}`
-                    )
-                    .join(" | ")}
-                </div>
-              </button>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant={rule.enabled ? "default" : "outline"}
-                  size="sm"
-                  disabled={mutations.update.isPending}
-                  onClick={async () => {
+        {visibleRules.map((rule) => {
+          const badges: EntityBadgeDescriptor[] = [
+            { id: "status", label: rule.enabled ? "فعال" : "غیرفعال", tone: rule.enabled ? "success" : "neutral", dot: true },
+            { id: "event", label: eventLabels[rule.eventName] ?? rule.eventName, tone: "info" },
+          ]
+          if (rule.mandatory) badges.push({ id: "mandatory", label: "اجباری", tone: "warning" })
+          if (rule.schedule) badges.push({ id: "schedule", label: rule.schedule.offsetMinutes === 0 ? "در سررسید" : `${Math.abs(rule.schedule.offsetMinutes)} دقیقه قبل`, tone: "secondary" })
+          return <EntityCard
+            key={rule.id}
+            id={rule.id}
+            title={rule.name}
+            subtitle={rule.recipientRules.map((recipient) => `${recipientLabels[recipient.type]}: ${recipient.channels.map((channel) => channelLabels[channel]).join(" + ")}`).join(" | ")}
+            fallback={<BellRing className="size-5" />}
+            badges={badges}
+            showOwner={false}
+            metadata={[]}
+            onClick={() => { setEditingRule(rule); setDialogOpen(true) }}
+            accentColor={rule.enabled ? "#22c55e" : "#64748b"}
+            actions={[
+              { id: "toggle", label: rule.enabled ? "غیرفعال‌سازی" : "فعال‌سازی", icon: Power, disabled: mutations.update.isPending, onClick: async () => {
                     const enabled = !rule.enabled
                     try {
                       await mutations.update.mutateAsync({
@@ -679,26 +657,9 @@ export function AdminNotificationRulesPage({
                         getApiErrorMessage(error, "تغییر وضعیت ناموفق بود.")
                       )
                     }
-                  }}
-                >
-                  {rule.enabled ? "فعال" : "غیرفعال"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setEditingRule(rule)
-                    setDialogOpen(true)
-                  }}
-                >
-                  ویرایش
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive"
-                  onClick={async () => {
-                    if (!window.confirm("این قانون اعلان حذف شود؟")) return
+                  } },
+              { id: "edit", label: "ویرایش", icon: Pencil, onClick: () => { setEditingRule(rule); setDialogOpen(true) } },
+              { id: "delete", label: "حذف", icon: Trash2, tone: "danger", confirmation: { title: "حذف قانون اعلان", description: `قانون «${rule.name}» حذف شود؟` }, onClick: async () => {
                     try {
                       await mutations.remove.mutateAsync(rule.id)
                       toast.success("قانون حذف شد.")
@@ -707,14 +668,10 @@ export function AdminNotificationRulesPage({
                         getApiErrorMessage(error, "حذف قانون ناموفق بود.")
                       )
                     }
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                  } },
+            ]}
+          />
+        })}
       </div>
 
       {dialogOpen ? (

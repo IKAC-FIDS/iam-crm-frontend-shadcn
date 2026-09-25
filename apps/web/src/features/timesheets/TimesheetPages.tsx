@@ -13,7 +13,6 @@ import { Button } from '@workspace/ui/components/button'
 import { EntityListPage } from '@/components/shared/EntityListPage'
 import { PageHero } from '@/components/shared/PageHero'
 import { DataTableToolbar } from '@/components/shared/DataTableToolbar'
-import { DataTableShell } from '@/components/shared/DataTableShell'
 import { QueryContent } from '@/components/shared/QueryContent'
 import { EntityRowActions, type EntityAction } from '@/components/shared/EntityRowActions'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
@@ -141,8 +140,10 @@ export function TimesheetReportsPage() {
     <Filters filters={filters} domain="timesheets" manager extra={<Select label="نوع کار" value={type} onChange={setType} options={['REGULAR', 'OVERTIME'].map(value => ({ value, label: labels[value] }))} />} />
     <p className="text-xs leading-6 text-muted-foreground">تیم بر اساس اطلاعات زمان ثبت است، نه تیم فعلی. ساعات موظفی و اختلاف حضور به دلیل نبود تاریخچه کامل عضویت و برنامه کاری محاسبه نمی‌شوند. مرخصی عبوری از مرز بازه، «نامشخص» گزارش می‌شود. فیلتر نوع کار، مرخصی را از گزارش خارج می‌کند. فقط کارکنان دارای رکورد منطبق نمایش داده می‌شوند.</p>
     {download.isError && <p role="alert">{getApiErrorMessage(download.error, 'خروجی دریافت نشد؛ بازه را محدود و دوباره تلاش کنید.')}</p>}
-    <QueryContent query={query}><Summary metrics={query.data?.totals} /><DataTableShell rows={query.data?.data ?? []} columns={columns} getRowKey={row => row.employeeId}
-      mobile={{ title: row => row.employeeName, fields: columns.slice(1).map(column => ({ id: column.id, label: column.header, render: column.cell })) }}
-      pagination={{ page: filters.page, pageCount: query.data?.meta.totalPages ?? 1, total: query.data?.meta.total, onPageChange: filters.setPage, pageSize: filters.pageSize, onPageSizeChange: filters.setPageSize, disabled: query.isFetching }} /></QueryContent>
+    <QueryContent query={query}><Summary metrics={query.data?.totals} /><EntityCardList rows={query.data?.data ?? []} getRowKey={row => row.employeeId} layout="row" density="compact"
+      title={row => row.employeeName} subtitle={row => row.historicalTeams.map(team => team.name ?? '—').join('، ') || 'بدون تیم تاریخی'}
+      fields={columns.slice(2).map(column => ({ id: column.id, label: column.header, render: column.cell }))}
+      emptyState={<EmptyState title="گزارشی پیدا نشد" description="بازه یا فیلترهای گزارش را تغییر دهید." />} />
+      <PaginationControls page={filters.page} pageCount={query.data?.meta.totalPages ?? 1} total={query.data?.meta.total} onPageChange={filters.setPage} pageSize={filters.pageSize} onPageSizeChange={filters.setPageSize} disabled={query.isFetching} /></QueryContent>
   </EntityListPage>
 }
