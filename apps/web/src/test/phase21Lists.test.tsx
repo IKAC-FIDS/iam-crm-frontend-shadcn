@@ -101,6 +101,21 @@ it("Products preserves hardware/software filtering and resets the server page",a
   await userEvent.selectOptions(screen.getByLabelText(uiText.products.type),"SOFTWARE")
   await waitFor(()=>expectParams("/product-catalog",{page:1,type:"SOFTWARE"}))
 })
+it("Products exposes every permitted card action directly without an overflow menu",async()=>{
+  useAuthStore.setState({
+    user:{...user,permissions:["product:view","product:manage","financial:view"]},
+    status:"authenticated",
+  })
+  mount(
+    <AdminLibrariesPage/>,
+    "/admin/libraries/products",
+    "/admin/libraries/:sectionId"
+  )
+  expect(await screen.findByLabelText("محصول: محصول نمونه")).toBeInTheDocument()
+  expect(screen.getByRole("button",{name:"ویرایش محصول نمونه"})).toBeInTheDocument()
+  expect(screen.getByRole("button",{name:"غیرفعال‌کردن محصول نمونه"})).toBeInTheDocument()
+  expect(screen.queryByRole("button",{name:uiText.common.moreActions})).not.toBeInTheDocument()
+})
 it("Libraries opens with section buttons and supports dedicated section routes",async()=>{
   const overview=mount(<AdminLibrariesPage/>,"/admin/libraries")
   const productsButton=await screen.findByRole("button",{name:/محصولات/})

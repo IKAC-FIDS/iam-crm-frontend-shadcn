@@ -1,9 +1,9 @@
-import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import {
-  EntityCardList,
-  type EntityCardField,
-} from "@/components/shared/EntityCardList"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+  EntityCard,
+  type EntityBadgeDescriptor,
+  type EntityMetadataDescriptor,
+} from "@/components/shared/EntityCard"
+import type { EntityAction } from "@/components/shared/EntityRowActions"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useSaveProduct, useToggleProduct } from "../hooks/useLibraries"
@@ -29,6 +29,7 @@ import {
   Building2,
   CircleCheckBig,
   CircleOff,
+  Code2,
   GraduationCap,
   HeartPulse,
   ShoppingBag,
@@ -647,65 +648,6 @@ export function AdminLibrariesPage() {
   })
   const productToggle = useToggleProduct()
 
-  const libraryFields: EntityCardField<LibraryItem>[] = [
-    ...(kind === "leadSources" ||
-    kind === "lookupOptions" ||
-    kind === "universities"
-      ? [
-          {
-            id: "code",
-            label: "کد",
-            render: (r: LibraryItem) => <code dir="ltr">{r.code || "—"}</code>,
-          },
-        ]
-      : []),
-    ...(kind === "painPoints" || kind === "useCases"
-      ? [
-          {
-            id: "category",
-            label: "دسته‌بندی",
-            render: (r: LibraryItem) => r.category || "بدون دسته",
-          },
-        ]
-      : []),
-    {
-      id: "description",
-      label: "توضیحات",
-      render: (r) => r.description || "بدون توضیحات",
-      priority: "primary",
-    },
-  ]
-  const productFields: EntityCardField<Product>[] = [
-    {
-      id: "type",
-      label: uiText.products.type,
-      render: (r) => uiText.products.types[r.type] ?? "—",
-    },
-    { id: "category", label: "دسته‌بندی", render: (r) => r.category || "—" },
-    {
-      id: "digikalaCode",
-      label: "کد دیجی‌کالا",
-      render: (r) => (
-        <code className="whitespace-nowrap" dir="ltr">
-          {r.digikalaCode || "—"}
-        </code>
-      ),
-    },
-    ...(financialVisible ? [{
-      id: "in",
-      label: "قیمت حضوری",
-      render: (r: Product) => (
-        <span className="whitespace-nowrap">{money(r.inPersonPriceIrr)}</span>
-      ),
-    } satisfies EntityCardField<Product>,
-    {
-      id: "digi",
-      label: "قیمت دیجی‌کالا",
-      render: (r: Product) => (
-        <span className="whitespace-nowrap">{money(r.digikalaPriceIrr)}</span>
-      ),
-    } satisfies EntityCardField<Product>] : []),
-  ]
   if (showOverview) {
     return (
       <EntityListPage>
@@ -756,9 +698,8 @@ export function AdminLibrariesPage() {
       </EntityListPage>
     )
   }
-  const SectionIcon = section.icon
   return (
-    <EntityListPage>
+    <EntityListPage className="min-h-0 lg:grid lg:h-full lg:grid-rows-[auto_auto_minmax(0,1fr)] lg:overflow-hidden">
       <PageHero
         title={section.label}
         eyebrow="مرکز کتابخانه‌ها"
@@ -812,8 +753,8 @@ export function AdminLibrariesPage() {
           tone="success"
         />
       </section>
-      <main className="grid min-w-0 content-start gap-4">
-          <section className="grid gap-3">
+      <main className="grid min-w-0 content-start gap-4 lg:min-h-0 lg:grid-rows-[auto_minmax(0,1fr)] lg:overflow-hidden">
+          <section className="grid shrink-0 gap-3">
             <div className="mb-4">
               <h2 className="text-xl font-black">{section.label}</h2>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -872,130 +813,52 @@ export function AdminLibrariesPage() {
           </section>
           {section.kind === "products" ? (
             <QueryContent query={products}>
-              <EntityCardList
-                rows={products.data?.data ?? []}
-                fields={productFields}
-                getRowKey={(r) => r.id}
-                onRowClick={(r) => canManageCurrent && setProductEditing(r)}
-                emptyState={<Empty />}
-                layout="row"
-                density="compact"
-                title={(r) => r.name}
-                subtitle={(r) => <span dir="ltr">{r.code || "—"}</span>}
-                media={() => (
-                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--app-surface)] text-[var(--app-primary)]">
-                    <Package className="size-5" />
-                  </span>
-                )}
-                badges={(r) => (
-                  <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-                    {r.isActive ? uiText.common.active : uiText.common.inactive}
-                  </StatusBadge>
-                )}
-                actions={(r) => (
-                  <EntityRowActions
-                    presentation="buttons"
-                    actions={[
-                      {
-                        id: "edit",
-                        label: "ویرایش محصول",
-                        icon: Pencil,
-                        onClick: () => setProductEditing(r),
-                        enabled: canManageCurrent,
-                      },
-                      {
-                        id: "digikala",
-                        label: "مشاهده در دیجی‌کالا",
-                        icon: ShoppingBag,
-                        onClick: () => {
-                          const url = safeExternalUrl(r.digikalaUrl)
-                          if (url)
-                            window.open(url, "_blank", "noopener,noreferrer")
-                        },
-                        enabled: Boolean(safeExternalUrl(r.digikalaUrl)),
-                      },
-                      {
-                        id: "toggle",
-                        label: r.isActive ? "غیرفعال‌کردن" : "فعال‌کردن",
-                        icon: r.isActive ? CircleOff : CircleCheckBig,
-                        enabled: canManage,
-                        disabled: productToggle.isPending,
-                        tone: r.isActive ? "danger" : "default",
-                        confirmation: r.isActive
-                          ? {
-                              title: "غیرفعال‌کردن محصول",
-                              description: `آیا از غیرفعال‌کردن «${r.name}» مطمئن هستید؟`,
-                            }
-                          : undefined,
-                        onClick: async () => {
-                          await productToggle.mutateAsync(r)
-                          toast.success("وضعیت محصول به‌روزرسانی شد.")
-                        },
-                      },
-                    ]}
-                  />
-                )}
-              />
-              <PaginationControls
-                page={page}
-                pageCount={products.data?.meta.totalPages ?? 1}
-                onPageChange={setPage}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                total={products.data?.meta.total}
-                disabled={products.isFetching}
-              />
+              <div className="flex min-h-0 flex-col gap-3" aria-label={`فهرست ${section.label}`}>
+                <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pe-2 ui-contained-scroll">
+                  {(products.data?.data ?? []).map((product) => (
+                    <ProductEntityCard
+                      key={product.id}
+                      product={product}
+                      canManage={canManage}
+                      canEdit={canManageCurrent}
+                      financialVisible={financialVisible}
+                      pending={productToggle.isPending}
+                      onEdit={() => setProductEditing(product)}
+                      onToggle={async () => {
+                        await productToggle.mutateAsync(product)
+                        toast.success("وضعیت محصول به‌روزرسانی شد.")
+                      }}
+                    />
+                  ))}
+                  {!products.data?.data.length ? <Empty /> : null}
+                </div>
+                <PaginationControls
+                  page={page}
+                  pageCount={products.data?.meta.totalPages ?? 1}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  total={products.data?.meta.total}
+                  disabled={products.isFetching}
+                />
+              </div>
             </QueryContent>
           ) : (
             <QueryContent query={items}>
-              <EntityCardList
-                rows={filtered}
-                fields={libraryFields}
-                getRowKey={(r) => r.id}
-                onRowClick={(r) => canManage && setEditing(r)}
-                emptyState={<Empty />}
-                layout="row"
-                density="compact"
-                title={(r) => r.label}
-                subtitle={(r) => r.code || section.description}
-                media={() => (
-                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--app-surface)] text-[var(--app-primary)]">
-                    <SectionIcon className="size-5" />
-                  </span>
-                )}
-                badges={(r) => (
-                  <StatusBadge tone={r.isActive ? "success" : "neutral"}>
-                    {r.isActive ? uiText.common.active : uiText.common.inactive}
-                  </StatusBadge>
-                )}
-                actions={(r) => (
-                  <EntityRowActions
-                    presentation="buttons"
-                    actions={[
-                      {
-                        id: "edit",
-                        label: "ویرایش آیتم",
-                        icon: Pencil,
-                        onClick: () => setEditing(r),
-                        enabled: canManage,
-                      },
-                      {
-                        id: "delete",
-                        label: "حذف آیتم",
-                        icon: Trash2,
-                        onClick: () => remove.mutateAsync(r),
-                        enabled: canManage,
-                        disabled: remove.isPending,
-                        tone: "danger",
-                        confirmation: {
-                          title: "حذف آیتم",
-                          description: `آیا از حذف «${r.label}» مطمئن هستید؟`,
-                        },
-                      },
-                    ]}
+              <div className="grid gap-3 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pe-2 ui-contained-scroll" aria-label={`فهرست ${section.label}`}>
+                {filtered.map((item) => (
+                  <LibraryItemEntityCard
+                    key={item.id}
+                    item={item}
+                    section={section}
+                    canManage={canManage}
+                    pending={remove.isPending}
+                    onEdit={() => setEditing(item)}
+                    onDelete={() => remove.mutateAsync(item)}
                   />
-                )}
-              />
+                ))}
+                {!filtered.length ? <Empty /> : null}
+              </div>
             </QueryContent>
           )}
       </main>
@@ -1018,6 +881,215 @@ export function AdminLibrariesPage() {
     </EntityListPage>
   )
 }
+
+function LibraryItemEntityCard({
+  item,
+  section,
+  canManage,
+  pending,
+  onEdit,
+  onDelete,
+}: {
+  item: LibraryItem
+  section: Section
+  canManage: boolean
+  pending: boolean
+  onEdit: () => void
+  onDelete: () => Promise<unknown>
+}) {
+  const SectionIcon = section.icon
+  const badges: EntityBadgeDescriptor[] = [
+    {
+      id: "status",
+      label: item.isActive ? uiText.common.active : uiText.common.inactive,
+      tone: item.isActive ? "success" : "neutral",
+      dot: true,
+    },
+  ]
+  if (item.category) {
+    badges.push({ id: "category", label: item.category, tone: "info", icon: Tag })
+  }
+  const metadata: EntityMetadataDescriptor[] = []
+  if (item.code) {
+    metadata.push({
+      id: "code",
+      label: "کد",
+      value: <code dir="ltr">{item.code}</code>,
+      icon: Code2,
+    })
+  }
+  if (item.sortOrder != null) {
+    metadata.push({
+      id: "sort-order",
+      label: "ترتیب نمایش",
+      value: fa(item.sortOrder),
+      icon: Settings2,
+    })
+  }
+  const actions: EntityAction[] = [
+    {
+      id: "edit",
+      label: "ویرایش آیتم",
+      accessibleLabel: `ویرایش ${item.label}`,
+      icon: Pencil,
+      onClick: onEdit,
+      enabled: canManage,
+    },
+    {
+      id: "delete",
+      label: "حذف آیتم",
+      accessibleLabel: `حذف ${item.label}`,
+      icon: Trash2,
+      onClick: onDelete,
+      enabled: canManage,
+      disabled: pending,
+      tone: "danger",
+      confirmation: {
+        title: "حذف آیتم",
+        description: `آیا از حذف «${item.label}» مطمئن هستید؟`,
+      },
+    },
+  ]
+
+  return (
+    <EntityCard
+      id={item.id}
+      title={item.label}
+      subtitle={item.description || section.description}
+      fallback={<SectionIcon aria-hidden="true" className="size-6" />}
+      badges={badges}
+      owner={{
+        name: section.label,
+        role: "داده پایه CRM",
+        fallback: <LibraryBig aria-hidden="true" className="size-4" />,
+      }}
+      metadata={metadata}
+      actions={actions}
+      actionLabel={`عملیات ${item.label}`}
+      onClick={canManage ? onEdit : undefined}
+      archived={!item.isActive}
+      accentColor={item.isActive ? "#22c55e" : "#64748b"}
+      ariaLabel={`${section.label}: ${item.label}`}
+    />
+  )
+}
+
+function ProductEntityCard({
+  product,
+  canManage,
+  canEdit,
+  financialVisible,
+  pending,
+  onEdit,
+  onToggle,
+}: {
+  product: Product
+  canManage: boolean
+  canEdit: boolean
+  financialVisible: boolean
+  pending: boolean
+  onEdit: () => void
+  onToggle: () => Promise<unknown>
+}) {
+  const badges: EntityBadgeDescriptor[] = [
+    {
+      id: "status",
+      label: product.isActive ? uiText.common.active : uiText.common.inactive,
+      tone: product.isActive ? "success" : "neutral",
+      dot: true,
+    },
+    {
+      id: "type",
+      label: uiText.products.types[product.type] ?? product.type,
+      tone: "info",
+      icon: Package,
+    },
+  ]
+  if (product.category) {
+    badges.push({ id: "category", label: product.category, tone: "secondary", icon: Tag })
+  }
+  const metadata: EntityMetadataDescriptor[] = [
+    {
+      id: "code",
+      label: "کد محصول",
+      value: <code dir="ltr">{product.code || "—"}</code>,
+      icon: Code2,
+    },
+  ]
+  if (product.digikalaCode) {
+    metadata.push({
+      id: "digikala-code",
+      label: "کد دیجی‌کالا",
+      value: <code dir="ltr">{product.digikalaCode}</code>,
+      icon: ShoppingBag,
+    })
+  }
+  if (financialVisible) {
+    metadata.push({
+      id: "prices",
+      label: "قیمت حضوری / دیجی‌کالا",
+      value: `${money(product.inPersonPriceIrr)} / ${money(product.digikalaPriceIrr)}`,
+      icon: Tag,
+      className: "sm:col-span-2 xl:col-span-1",
+    })
+  }
+  const externalUrl = safeExternalUrl(product.digikalaUrl)
+  const actions: EntityAction[] = [
+    {
+      id: "edit",
+      label: "ویرایش محصول",
+      accessibleLabel: `ویرایش ${product.name}`,
+      icon: Pencil,
+      onClick: onEdit,
+      enabled: canEdit,
+    },
+    {
+      id: "digikala",
+      label: "مشاهده در دیجی‌کالا",
+      accessibleLabel: `مشاهده ${product.name} در دیجی‌کالا`,
+      icon: ShoppingBag,
+      onClick: () => {
+        if (externalUrl) window.open(externalUrl, "_blank", "noopener,noreferrer")
+      },
+      enabled: Boolean(externalUrl),
+    },
+    {
+      id: "toggle",
+      label: product.isActive ? "غیرفعال‌کردن" : "فعال‌کردن",
+      accessibleLabel: `${product.isActive ? "غیرفعال‌کردن" : "فعال‌کردن"} ${product.name}`,
+      icon: product.isActive ? CircleOff : CircleCheckBig,
+      onClick: onToggle,
+      enabled: canManage,
+      disabled: pending,
+      tone: product.isActive ? "danger" : "default",
+      confirmation: product.isActive
+        ? {
+            title: "غیرفعال‌کردن محصول",
+            description: `آیا از غیرفعال‌کردن «${product.name}» مطمئن هستید؟`,
+          }
+        : undefined,
+    },
+  ]
+
+  return (
+    <EntityCard
+      id={product.id}
+      title={product.name}
+      subtitle={product.description || product.code}
+      fallback={<Package aria-hidden="true" className="size-6" />}
+      badges={badges}
+      ownerFallback="محصول کاتالوگ"
+      metadata={metadata}
+      actions={actions}
+      actionLabel={`عملیات ${product.name}`}
+      onClick={canEdit ? onEdit : undefined}
+      archived={!product.isActive}
+      accentColor={product.isActive ? "#3b82f6" : "#64748b"}
+      ariaLabel={`محصول: ${product.name}`}
+    />
+  )
+}
+
 function Empty() {
   return (
     <EmptyState
