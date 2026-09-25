@@ -814,23 +814,27 @@ export function AdminLibrariesPage() {
           {section.kind === "products" ? (
             <QueryContent query={products}>
               <div className="flex min-h-0 flex-col gap-3" aria-label={`فهرست ${section.label}`}>
-                <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pe-2 ui-contained-scroll">
-                  {(products.data?.data ?? []).map((product) => (
-                    <ProductEntityCard
-                      key={product.id}
-                      product={product}
-                      canManage={canManage}
-                      canEdit={canManageCurrent}
-                      financialVisible={financialVisible}
-                      pending={productToggle.isPending}
-                      onEdit={() => setProductEditing(product)}
-                      onToggle={async () => {
-                        await productToggle.mutateAsync(product)
-                        toast.success("وضعیت محصول به‌روزرسانی شد.")
-                      }}
-                    />
-                  ))}
-                  {!products.data?.data.length ? <Empty /> : null}
+                <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+                  <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" tabIndex={0}>
+                    <div className="grid auto-rows-max content-start gap-2.5">
+                      {(products.data?.data ?? []).map((product) => (
+                        <ProductEntityCard
+                          key={product.id}
+                          product={product}
+                          canManage={canManage}
+                          canEdit={canManageCurrent}
+                          financialVisible={financialVisible}
+                          pending={productToggle.isPending}
+                          onEdit={() => setProductEditing(product)}
+                          onToggle={async () => {
+                            await productToggle.mutateAsync(product)
+                            toast.success("وضعیت محصول به‌روزرسانی شد.")
+                          }}
+                        />
+                      ))}
+                      {!products.data?.data.length ? <Empty /> : null}
+                    </div>
+                  </div>
                 </div>
                 <PaginationControls
                   page={page}
@@ -845,19 +849,23 @@ export function AdminLibrariesPage() {
             </QueryContent>
           ) : (
             <QueryContent query={items}>
-              <div className="grid gap-3 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pe-2 ui-contained-scroll" aria-label={`فهرست ${section.label}`}>
-                {filtered.map((item) => (
-                  <LibraryItemEntityCard
-                    key={item.id}
-                    item={item}
-                    section={section}
-                    canManage={canManage}
-                    pending={remove.isPending}
-                    onEdit={() => setEditing(item)}
-                    onDelete={() => remove.mutateAsync(item)}
-                  />
-                ))}
-                {!filtered.length ? <Empty /> : null}
+              <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:overflow-hidden" aria-label={`فهرست ${section.label}`}>
+                <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" tabIndex={0}>
+                  <div className="grid auto-rows-max content-start gap-2.5">
+                    {filtered.map((item) => (
+                      <LibraryItemEntityCard
+                        key={item.id}
+                        item={item}
+                        section={section}
+                        canManage={canManage}
+                        pending={remove.isPending}
+                        onEdit={() => setEditing(item)}
+                        onDelete={() => remove.mutateAsync(item)}
+                      />
+                    ))}
+                    {!filtered.length ? <Empty /> : null}
+                  </div>
+                </div>
               </div>
             </QueryContent>
           )}

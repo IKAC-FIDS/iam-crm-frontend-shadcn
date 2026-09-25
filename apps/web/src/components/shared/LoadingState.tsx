@@ -5,7 +5,7 @@ export function LoadingState({ rows = 3 }: { rows?: number }) {
     <div
       role="status"
       aria-label={uiText.common.loading}
-      className="grid animate-pulse gap-3"
+      className="grid auto-rows-max content-start animate-pulse gap-3"
     >
       {Array.from({ length: rows }).map((_, index) => (
         <div
