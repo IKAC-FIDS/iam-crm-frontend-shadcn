@@ -6,20 +6,26 @@ import { cn } from "@workspace/ui/lib/utils"
 import { AppHeader } from "./AppHeader"
 import { AppSidebar } from "./AppSidebar"
 import { CrmAssistantWidget } from "@/features/assistant/components/CrmAssistantWidget"
+import { CONTAINED_PAGE_SCROLL_ENABLED } from "@/config/pageLayout"
 
 export function AppShell() {
   const location = useLocation()
   const opportunityView = new URLSearchParams(location.search).get("view")
   const meetingView = new URLSearchParams(location.search).get("view")
-  const usesContainedPageScroll =
+  const routeSupportsContainedPageScroll =
     location.pathname === "/companies" ||
     location.pathname === "/people" ||
     location.pathname === "/activities" ||
     location.pathname === "/tasks" ||
     location.pathname === "/attention" ||
-    location.pathname.startsWith("/admin/libraries/") ||
-    (location.pathname === "/opportunities" && opportunityView === "list") ||
-    (location.pathname === "/meetings" && meetingView === "list")
+    location.pathname.startsWith("/admin/libraries") ||
+    location.pathname === "/technical/library" ||
+    location.pathname === "/technical/knowledge-base" ||
+    location.pathname === "/technical/tenders" ||
+    (location.pathname === "/opportunities" && (opportunityView === "list" || opportunityView === null)) ||
+    (location.pathname === "/meetings" && (meetingView === "list" || meetingView === null))
+  const usesContainedPageScroll =
+    CONTAINED_PAGE_SCROLL_ENABLED && routeSupportsContainedPageScroll
 
   return (
     <SidebarProvider
@@ -34,7 +40,7 @@ export function AppShell() {
       } as React.CSSProperties}
     >
       <AppSidebar />
-      <div className={cn(
+      <div data-page-scroll={usesContainedPageScroll ? "contained" : "natural"} className={cn(
         "flex min-w-0 flex-1 flex-col overflow-hidden",
         usesContainedPageScroll ? "min-h-svh lg:h-svh" : "min-h-svh",
       )}>

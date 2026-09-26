@@ -152,6 +152,23 @@ html {
   background: color-mix(in srgb, var(--app-primary) 78%, var(--app-divider));
   background-clip: padding-box;
 }
+
+/* Natural mode deliberately overrides the desktop-only contained list shell.
+   The original classes remain intact so the feature can be restored by the
+   central page-layout flag without rewriting individual feature pages. */
+[data-page-scroll="natural"] .ui-list-page {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+[data-page-scroll="natural"] .ui-list-page .ui-contained-scroll {
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+  overscroll-behavior: auto !important;
+  scrollbar-gutter: auto;
+}
 .ui-filter-controls
   :is(input:not([type="checkbox"]), select, button[role="combobox"]) {
   height: var(--app-control-height);
