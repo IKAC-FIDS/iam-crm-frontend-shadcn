@@ -183,12 +183,45 @@ export interface CompanyRegistryLookupResult {
   publicEmail?: string
   postalCode?: string
   companyType?: string
+  registrationUnit?: string
+  registrationOrganization?: string
+  province?: string
+  city?: string
+  latitude?: number
+  longitude?: number
   activityDescription?: string
   signatureAuthority?: string
+  communications?: CompanyRegistryCommunication[]
   director?: CompanyRegistryPerson
   people?: CompanyRegistryPerson[]
-  licenses?: unknown[]
+  licenses?: CompanyRegistryLicense[]
   cache?: { hit: boolean; fetchedAt: string; expiresAt: string }
+}
+
+export interface CompanyRegistryCommunication {
+  type: string
+  value: string
+}
+
+export interface CompanyRegistryLicenseMetadata {
+  fieldId?: number
+  fieldName?: string
+  value?: string
+}
+
+export interface CompanyRegistryLicenseDetail {
+  issueDate?: string
+  expireDate?: string
+  certificateStatus?: string
+  metaData?: CompanyRegistryLicenseMetadata[]
+}
+
+export interface CompanyRegistryLicense {
+  sourceID?: number
+  sourceDescription?: string
+  licenseTypeID?: number
+  licenseTypeDescription?: string
+  detail?: CompanyRegistryLicenseDetail[]
 }
 
 export interface CompanyRegistryPerson {

@@ -2,6 +2,7 @@ import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useState } from "react"
 import {
   Building2,
+  Fingerprint,
   Plus,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -22,6 +23,7 @@ import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { CompanyEntityCard } from "../components/CompanyEntityCard"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
+import { CompanyRegistryLookupDialog } from "../components/CompanyRegistryLookupDialog"
 import { useCompanies } from "../hooks/useCompanies"
 import {
   useCreateCompany,
@@ -34,11 +36,13 @@ export function CompaniesPage() {
   const navigate = useNavigate()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
   const canCreate = permissions.includes("company:create")
+  const canView = permissions.includes("company:view")
   const createMutation = useCreateCompany()
 
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
   const [createOpen, setCreateOpen] = useState(false)
+  const [registryLookupOpen, setRegistryLookupOpen] = useState(false)
   const [editCompany, setEditCompany] = useState<Company | null>(null)
   const [ownerCompany, setOwnerCompany] = useState<Company | null>(null)
   const [archiveCompany, setArchiveCompany] = useState<Company | null>(null)
@@ -99,6 +103,19 @@ export function CompaniesPage() {
                 onClick: () => setCreateOpen(true),
               }
             : undefined
+        }
+        secondaryActions={
+          canView
+            ? [
+                {
+                  id: "registry-lookup",
+                  label: "استعلام جامع شرکت",
+                  icon: Fingerprint,
+                  variant: "outline",
+                  onClick: () => setRegistryLookupOpen(true),
+                },
+              ]
+            : []
         }
       />
 
@@ -232,6 +249,11 @@ export function CompaniesPage() {
           setCreateOpen(false)
           navigate(`/companies/${company.id}`)
         }}
+      />
+
+      <CompanyRegistryLookupDialog
+        open={registryLookupOpen}
+        onOpenChange={setRegistryLookupOpen}
       />
 
       {editCompany ? (
