@@ -167,5 +167,20 @@ export interface CompanyMutationPayload {
   employeeCount?: number
 }
 
+export interface CompanyRegistryLookupResult {
+  legalName?: string
+  brandName?: string
+  registrationNumber?: string
+  nationalId: string
+  economicCode?: string
+  establishmentDate?: string
+  registeredCapital?: string
+  headOfficeCity?: string
+  headOfficeAddress?: string
+  centralPhone?: string
+  website?: string
+  activityStatus?: CompanyActivityStatus
+}
+
 export type CreateCompanyPayload = CompanyMutationPayload
 export type UpdateCompanyPayload = Partial<CompanyMutationPayload>

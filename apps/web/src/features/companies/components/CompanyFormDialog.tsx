@@ -3,13 +3,17 @@ import {
   Building2,
   CheckCircle2,
   Landmark,
+  Loader2,
   MapPin,
+  Search,
   Save,
   Sparkles,
 } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useState } from "react"
 import { Controller, useForm, useWatch } from "react-hook-form"
+import { useMutation } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -39,6 +43,8 @@ import {
   type CompanyFormValues,
 } from "../types/companyForm.schema"
 import { companyDisplayName } from "../utils/companyFormatters"
+import { lookupCompanyRegistry } from "../api/companies.api"
+import type { CompanyRegistryLookupResult } from "../types/company.types"
 
 type CompanyFormDialogProps = {
   open: boolean
@@ -129,12 +135,25 @@ export function CompanyFormDialog({
     control,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     setError,
     clearErrors,
     formState: { errors, isDirty },
   } = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
     defaultValues,
+  })
+
+  const registryLookup = useMutation({
+    mutationFn: lookupCompanyRegistry,
+    onSuccess: (result) => {
+      applyRegistryResult(result)
+      toast.success(text.registryLookup.success)
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, text.registryLookup.error))
+    },
   })
 
   useEffect(() => {
@@ -153,6 +172,47 @@ export function CompanyFormDialog({
 
   const legalName = useWatch({ control, name: "legalName" })
   const brandName = useWatch({ control, name: "brandName" })
+  const nationalId = useWatch({ control, name: "nationalId" })
+
+  function applyRegistryResult(result: CompanyRegistryLookupResult) {
+    const fields: (keyof CompanyFormValues)[] = [
+      "legalName",
+      "brandName",
+      "registrationNumber",
+      "nationalId",
+      "economicCode",
+      "establishmentDate",
+      "registeredCapital",
+      "headOfficeCity",
+      "headOfficeAddress",
+      "centralPhone",
+      "website",
+      "activityStatus",
+    ]
+    for (const field of fields) {
+      const value = result[field as keyof CompanyRegistryLookupResult]
+      if (value !== undefined && value !== null && value !== "") {
+        setValue(field, String(value) as never, {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+    }
+  }
+
+  function handleRegistryLookup() {
+    const normalized = normalizeDigits(getValues("nationalId") ?? "")
+    if (!/^\d{11}$/.test(normalized)) {
+      setError("nationalId", {
+        type: "manual",
+        message: text.registryLookup.invalidNationalId,
+      })
+      return
+    }
+    clearErrors("nationalId")
+    setValue("nationalId", normalized, { shouldDirty: true })
+    registryLookup.mutate(normalized)
+  }
 
   async function submit(values: CompanyFormValues) {
     clearErrors()
@@ -546,17 +606,42 @@ export function CompanyFormDialog({
                       label={text.fields.nationalId}
                       error={errors.nationalId?.message}
                     >
-                      <Input
-                        id="company-nationalId"
-                        aria-invalid={Boolean(errors.nationalId)}
-                        aria-describedby={
-                          errors.nationalId
-                            ? "company-nationalId-error"
-                            : undefined
-                        }
-                        {...register("nationalId")}
-                        className="h-11 rounded-xl"
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          id="company-nationalId"
+                          aria-invalid={Boolean(errors.nationalId)}
+                          aria-describedby={
+                            errors.nationalId
+                              ? "company-nationalId-error"
+                              : undefined
+                          }
+                          {...register("nationalId")}
+                          dir="ltr"
+                          inputMode="numeric"
+                          maxLength={11}
+                          className="h-11 min-w-0 rounded-xl text-left"
+                        />
+                        {mode === "create" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-11 shrink-0 rounded-xl px-3 sm:px-4"
+                            disabled={registryLookup.isPending || !nationalId?.trim()}
+                            onClick={handleRegistryLookup}
+                          >
+                            {registryLookup.isPending ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <Search className="size-4" />
+                            )}
+                            <span className="hidden sm:inline">
+                              {registryLookup.isPending
+                                ? text.registryLookup.loading
+                                : text.registryLookup.action}
+                            </span>
+                          </Button>
+                        ) : null}
+                      </div>
                     </Field>
 
                     <Field
@@ -777,4 +862,11 @@ function FormJourneyItem({
 function clean(value?: string) {
   const result = value?.trim()
   return result || undefined
+}
+
+function normalizeDigits(value: string) {
+  return value
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)))
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/\D/g, "")
 }
