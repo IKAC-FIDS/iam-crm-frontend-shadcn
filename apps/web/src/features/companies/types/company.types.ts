@@ -180,6 +180,30 @@ export interface CompanyRegistryLookupResult {
   centralPhone?: string
   website?: string
   activityStatus?: CompanyActivityStatus
+  publicEmail?: string
+  postalCode?: string
+  companyType?: string
+  activityDescription?: string
+  signatureAuthority?: string
+  director?: CompanyRegistryPerson
+  people?: CompanyRegistryPerson[]
+  licenses?: unknown[]
+  cache?: { hit: boolean; fetchedAt: string; expiresAt: string }
+}
+
+export interface CompanyRegistryPerson {
+  fullName: string
+  firstName?: string
+  lastName?: string
+  nationalCode?: string
+  postDescription?: string
+  postCategoryTitle?: string
+  personTypeDescription?: string
+  representedOrganizationName?: string
+  representedOrganizationNationalCode?: string
+  startDate?: string
+  endDate?: string
+  active?: boolean
 }
 
 export type CreateCompanyPayload = CompanyMutationPayload

@@ -149,7 +149,11 @@ export function CompanyFormDialog({
     mutationFn: lookupCompanyRegistry,
     onSuccess: (result) => {
       applyRegistryResult(result)
-      toast.success(text.registryLookup.success)
+      toast.success(
+        result.cache?.hit
+          ? text.registryLookup.cacheSuccess
+          : text.registryLookup.success,
+      )
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, text.registryLookup.error))
@@ -333,7 +337,8 @@ export function CompanyFormDialog({
                     </div>
                   ) : null}
                   <FormSectionBlock
-                    number="01"
+                    number="02"
+                    order={2}
                     title={text.sections.identity}
                     description={text.sections.identityDescription}
                   >
@@ -425,7 +430,8 @@ export function CompanyFormDialog({
                   </FormSectionBlock>
 
                   <FormSectionBlock
-                    number="02"
+                    number="03"
+                    order={3}
                     title={text.sections.market}
                     description={text.sections.marketDescription}
                   >
@@ -579,7 +585,8 @@ export function CompanyFormDialog({
                   </FormSectionBlock>
 
                   <FormSectionBlock
-                    number="03"
+                    number="01"
+                    order={1}
                     title={text.sections.legal}
                     description={text.sections.legalDescription}
                   >
@@ -722,7 +729,7 @@ export function CompanyFormDialog({
                   {errors.root?.server || submitError ? (
                     <div
                       role="alert"
-                      className="rounded-2xl border border-[var(--destructive)]/20 bg-[var(--destructive-soft)] px-4 py-3 text-xs leading-6 text-[var(--destructive)]"
+                      className="order-[99] rounded-2xl border border-[var(--destructive)]/20 bg-[var(--destructive-soft)] px-4 py-3 text-xs leading-6 text-[var(--destructive)]"
                     >
                       {errors.root?.server?.message ??
                         getApiErrorMessage(submitError, text.submitError)}
@@ -771,15 +778,17 @@ function FormSectionBlock({
   number,
   title,
   description,
+  order,
   children,
 }: {
   number: string
   title: string
   description: string
+  order?: number
   children: ReactNode
 }) {
   return (
-    <section className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
+    <section style={{ order }} className="rounded-[22px] border border-[var(--app-divider)] bg-[var(--app-background)]/35 p-4 sm:p-5">
       <div className="mb-5 flex items-start gap-3">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-xs font-bold text-[var(--app-primary)]">
           {number}
