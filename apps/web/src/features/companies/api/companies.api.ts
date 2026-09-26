@@ -10,6 +10,7 @@ import type {
   CreateCompanyPayload,
   UpdateCompanyPayload,
   CompanyRegistryLookupResult,
+  PersonCompanyLookupResult,
 } from "../types/company.types"
 
 // Validate the list's structural boundary, retaining optional domain fields.
@@ -69,6 +70,13 @@ export async function lookupCompanyRegistry(nationalId: string) {
     params: { nationalId },
   })
   return unwrapApiResponse<CompanyRegistryLookupResult>(response.data)
+}
+
+export async function lookupPersonCompanies(nationalCode: string) {
+  const response = await api.get("/companies/person-company-lookup", {
+    params: { nationalCode },
+  })
+  return unwrapApiResponse<PersonCompanyLookupResult>(response.data)
 }
 
 export async function updateCompany(

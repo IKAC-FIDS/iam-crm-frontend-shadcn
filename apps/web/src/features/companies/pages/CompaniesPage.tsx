@@ -4,6 +4,7 @@ import {
   Building2,
   Fingerprint,
   Plus,
+  UserRoundSearch,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
@@ -24,6 +25,7 @@ import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog
 import { CompanyEntityCard } from "../components/CompanyEntityCard"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyRegistryLookupDialog } from "../components/CompanyRegistryLookupDialog"
+import { PersonCompanyLookupDialog } from "../components/PersonCompanyLookupDialog"
 import { useCompanies } from "../hooks/useCompanies"
 import {
   useCreateCompany,
@@ -43,6 +45,7 @@ export function CompaniesPage() {
     useListQueryState()
   const [createOpen, setCreateOpen] = useState(false)
   const [registryLookupOpen, setRegistryLookupOpen] = useState(false)
+  const [personCompanyLookupOpen, setPersonCompanyLookupOpen] = useState(false)
   const [editCompany, setEditCompany] = useState<Company | null>(null)
   const [ownerCompany, setOwnerCompany] = useState<Company | null>(null)
   const [archiveCompany, setArchiveCompany] = useState<Company | null>(null)
@@ -113,6 +116,13 @@ export function CompaniesPage() {
                   icon: Fingerprint,
                   variant: "outline",
                   onClick: () => setRegistryLookupOpen(true),
+                },
+                {
+                  id: "person-company-lookup",
+                  label: "استعلام شرکت‌های یک شخص",
+                  icon: UserRoundSearch,
+                  variant: "outline",
+                  onClick: () => setPersonCompanyLookupOpen(true),
                 },
               ]
             : []
@@ -254,6 +264,11 @@ export function CompaniesPage() {
       <CompanyRegistryLookupDialog
         open={registryLookupOpen}
         onOpenChange={setRegistryLookupOpen}
+      />
+
+      <PersonCompanyLookupDialog
+        open={personCompanyLookupOpen}
+        onOpenChange={setPersonCompanyLookupOpen}
       />
 
       {editCompany ? (

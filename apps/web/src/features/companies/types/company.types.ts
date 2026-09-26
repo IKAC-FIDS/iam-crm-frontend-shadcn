@@ -224,6 +224,27 @@ export interface CompanyRegistryLicense {
   detail?: CompanyRegistryLicenseDetail[]
 }
 
+export interface PersonCompanyRole {
+  companyNationalCode: string
+  companyName: string
+  postDescription?: string
+  startDate?: string
+  endDate?: string
+  durationTypeDescription?: string
+  stockPercentage?: string
+  stockCount?: string
+  stockAmount?: string
+  active: boolean
+}
+
+export interface PersonCompanyLookupResult {
+  nationalCode: string
+  fullName?: string
+  current: PersonCompanyRole[]
+  history: PersonCompanyRole[]
+  cache?: { hit: boolean; fetchedAt: string; expiresAt: string }
+}
+
 export interface CompanyRegistryPerson {
   fullName: string
   firstName?: string
