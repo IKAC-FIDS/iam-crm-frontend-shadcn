@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Bot, CheckCircle2, ExternalLink, Send, Sparkles, UserRound, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
@@ -14,6 +14,7 @@ import {
   confirmCrmAssistantAction,
   type AssistantActionResult,
   type AssistantHistoryItem,
+  type AssistantToolData,
   type PendingAssistantAction,
 } from '../api/assistantApi'
 
@@ -24,8 +25,102 @@ const suggestions = [
   'جلسات پیش رو را به ترتیب زمان بگو.',
 ]
 
-type ChatItem = AssistantHistoryItem & { actions?: PendingAssistantAction[] }
+type ChatItem = AssistantHistoryItem & { actions?: PendingAssistantAction[]; toolData?: AssistantToolData[] }
 type ActionState = { status: 'confirmed'; result: AssistantActionResult } | { status: 'cancelled' }
+
+function renderInlineMarkdown(value: string): ReactNode[] {
+  return value.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((part, index) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={`${part}-${index}`} className="font-bold text-foreground">{part.slice(2, -2)}</strong>
+      : part,
+  )
+}
+
+function AssistantMessageContent({ content }: { content: string }) {
+  const lines = content.split(/\r?\n/)
+  const blocks: ReactNode[] = []
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index].trim()
+    if (!line) { index += 1; continue }
+    if (line.startsWith('|')) {
+      const tableLines: string[] = []
+      while (index < lines.length && lines[index].trim().startsWith('|')) tableLines.push(lines[index++])
+      const rows = tableLines
+        .filter((row) => !/^\|?[\s:|-]+\|?$/.test(row.trim()))
+        .map((row) => row.split('|').slice(1, -1).map((cell) => cell.trim()))
+      if (rows.length) blocks.push(
+        <div key={`table-${index}`} className="my-2 max-w-full overflow-x-auto rounded-xl border border-[var(--app-divider)]">
+          <table className="w-full min-w-[36rem] border-collapse text-xs sm:text-sm">
+            <thead className="bg-muted/70"><tr>{rows[0].map((cell, cellIndex) => <th key={`${cell}-${cellIndex}`} className="whitespace-nowrap border-b border-[var(--app-divider)] px-3 py-2 text-start font-bold">{renderInlineMarkdown(cell)}</th>)}</tr></thead>
+            <tbody>{rows.slice(1).map((row, rowIndex) => <tr key={`row-${rowIndex}`} className="border-b border-[var(--app-divider)] last:border-0">{row.map((cell, cellIndex) => <td key={`${cell}-${cellIndex}`} className="whitespace-nowrap px-3 py-2 text-start">{renderInlineMarkdown(cell)}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      )
+      continue
+    }
+    if (/^#{1,3}\s/.test(line)) {
+      blocks.push(<h3 key={`heading-${index}`} className="mt-2 text-base font-black leading-7">{renderInlineMarkdown(line.replace(/^#{1,3}\s+/, ''))}</h3>)
+    } else if (/^-\s/.test(line)) {
+      blocks.push(<div key={`bullet-${index}`} className="flex gap-2 text-sm leading-7"><span aria-hidden="true" className="mt-3 size-1.5 shrink-0 rounded-full bg-primary" /><span>{renderInlineMarkdown(line.replace(/^-\s+/, ''))}</span></div>)
+    } else {
+      blocks.push(<p key={`paragraph-${index}`} className="text-sm leading-7">{renderInlineMarkdown(line)}</p>)
+    }
+    index += 1
+  }
+  return <div className="space-y-1.5 break-words">{blocks}</div>
+}
+
+const fieldLabels: Record<string, string> = {
+  title: 'عنوان', status: 'وضعیت', startAt: 'زمان شروع', endAt: 'زمان پایان', company: 'شرکت',
+  organizer: 'برگزارکننده', involvement: 'نقش', name: 'نام', email: 'ایمیل', role: 'نقش',
+  opportunities: 'فرصت‌ها', won: 'برنده', conversionRate: 'نرخ تبدیل', fullName: 'نام کامل',
+}
+
+function displayValue(value: unknown) {
+  if (value == null || value === '') return '—'
+  if (typeof value === 'boolean') return value ? 'بله' : 'خیر'
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    return String(record.name ?? record.fullName ?? record.title ?? 'جزئیات')
+  }
+  return String(value)
+}
+
+function AssistantToolDataCards({ items }: { items?: AssistantToolData[] }) {
+  if (!items?.length) return null
+  return <div className="space-y-3">
+    {items.map((item, itemIndex) => {
+      const payload = item.data && typeof item.data === 'object' ? item.data as Record<string, unknown> : { value: item.data }
+      const rows = Array.isArray(payload.data) ? payload.data.filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object') : []
+      const columns = rows.length ? Object.keys(rows[0]).filter((key) => !['id', 'organizationId'].includes(key)).slice(0, 6) : []
+      const scalarEntries = Object.entries(payload).filter(([key, value]) => !Array.isArray(value) && (value == null || typeof value !== 'object') && !['id', 'organizationId'].includes(key)).slice(0, 8)
+      const arrayEntries = Object.entries(payload).filter(([, value]) => Array.isArray(value) && value.length && value.every((entry) => entry && typeof entry === 'object')).slice(0, 4)
+      return <div key={`${item.tool}-${itemIndex}`} className="overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.035]">
+        <div className="flex items-center justify-between border-b border-[var(--app-divider)] px-3 py-2">
+          <span className="text-xs font-bold text-primary">داده‌های CRM</span>
+          <span className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground" dir="ltr">{item.tool}</span>
+        </div>
+        {rows.length ? <div className="overflow-x-auto">
+          <table className="w-full min-w-[38rem] text-xs">
+            <thead className="bg-muted/60"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-3 py-2 text-start">{fieldLabels[column] ?? column}</th>)}</tr></thead>
+            <tbody>{rows.slice(0, 20).map((row, rowIndex) => <tr key={rowIndex} className="border-t border-[var(--app-divider)]">{columns.map((column) => <td key={column} className="max-w-52 truncate whitespace-nowrap px-3 py-2">{displayValue(row[column])}</td>)}</tr>)}</tbody>
+          </table>
+        </div> : null}
+        {!rows.length && scalarEntries.length ? <dl className="grid gap-2 p-3 text-xs sm:grid-cols-2">
+          {scalarEntries.map(([key, value]) => <div key={key} className="flex items-start justify-between gap-3 rounded-lg bg-background/70 px-3 py-2"><dt className="text-muted-foreground">{fieldLabels[key] ?? key}</dt><dd className="text-start font-medium">{displayValue(value)}</dd></div>)}
+        </dl> : null}
+        {arrayEntries.map(([key, value]) => <div key={key} className="border-t border-[var(--app-divider)] p-3">
+          <p className="mb-2 text-xs font-bold">{fieldLabels[key] ?? key}</p>
+          <div className="flex flex-wrap gap-2">{(value as Array<Record<string, unknown>>).map((entry, index) => <span key={index} className="rounded-full border bg-background px-3 py-1.5 text-xs">{displayValue(entry)}</span>)}</div>
+        </div>)}
+        <details className="border-t border-[var(--app-divider)] px-3 py-2 text-xs">
+          <summary className="cursor-pointer select-none font-medium text-muted-foreground">مشاهده خروجی JSON</summary>
+          <pre dir="ltr" className="mt-2 max-h-64 overflow-auto rounded-lg bg-background p-3 text-left font-mono text-[11px] leading-5">{JSON.stringify(item.data, null, 2)}</pre>
+        </details>
+      </div>
+    })}
+  </div>
+}
 
 export function CrmAssistantWidget() {
   const user = useAuthStore((state) => state.user)
@@ -40,7 +135,7 @@ export function CrmAssistantWidget() {
   const mutation = useMutation({
     mutationFn: (question: string) => askCrmAssistant(question, history.slice(-8).map(({ role, content }) => ({ role, content }))),
     onSuccess: (result, question) => {
-      setHistory((current) => [...current, { role: 'user', content: question }, { role: 'assistant', content: result.answer, actions: result.pendingActions }])
+      setHistory((current) => [...current, { role: 'user', content: question }, { role: 'assistant', content: result.answer, actions: result.pendingActions, toolData: result.toolData }])
       setMessage('')
       requestAnimationFrame(() => inputRef.current?.focus())
     },
@@ -111,7 +206,10 @@ export function CrmAssistantWidget() {
                     <CardContent className="flex gap-3 p-4">
                       <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-primary">{item.role === 'user' ? <UserRound className="size-4" /> : <Bot className="size-4" />}</span>
                       <div className="min-w-0 flex-1 space-y-3">
-                        <p className="whitespace-pre-wrap text-sm leading-7">{item.content}</p>
+                        {item.role === 'assistant'
+                          ? <AssistantMessageContent content={item.content} />
+                          : <p className="whitespace-pre-wrap text-sm leading-7">{item.content}</p>}
+                        {item.role === 'assistant' ? <AssistantToolDataCards items={item.toolData} /> : null}
                         {item.actions?.map((action) => {
                           const state = actionStates[action.token]
                           return <div key={action.token} className="rounded-xl border border-primary/25 bg-primary/[0.06] p-3">

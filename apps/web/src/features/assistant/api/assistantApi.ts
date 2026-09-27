@@ -10,6 +10,12 @@ export type AssistantAnswer = {
   answer: string
   toolsUsed: string[]
   pendingActions: PendingAssistantAction[]
+  toolData?: AssistantToolData[]
+}
+
+export type AssistantToolData = {
+  tool: string
+  data: unknown
 }
 
 export type PendingAssistantAction = {
