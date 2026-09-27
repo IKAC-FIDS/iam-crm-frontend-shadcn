@@ -74,6 +74,41 @@ const fieldLabels: Record<string, string> = {
   title: 'عنوان', status: 'وضعیت', startAt: 'زمان شروع', endAt: 'زمان پایان', company: 'شرکت',
   organizer: 'برگزارکننده', involvement: 'نقش', name: 'نام', email: 'ایمیل', role: 'نقش',
   opportunities: 'فرصت‌ها', won: 'برنده', conversionRate: 'نرخ تبدیل', fullName: 'نام کامل',
+  stage: 'مرحله', priority: 'اولویت', estimatedValue: 'ارزش تخمینی', expectedCloseDate: 'تاریخ بستن',
+  updatedAt: 'آخرین به‌روزرسانی', owner: 'مالک', assignee: 'مسئول', industry: 'صنعت',
+  dueAt: 'سررسید', opportunity: 'فرصت مرتبط', type: 'نوع', occurredAt: 'زمان فعالیت',
+  nextActionDate: 'اقدام بعدی', mode: 'شیوه برگزاری', legalName: 'نام حقوقی',
+}
+
+const toolLabels: Record<string, string> = {
+  search_companies: 'فهرست شرکت‌ها', search_opportunities: 'فهرست فرصت‌های فروش', search_tasks: 'فهرست کارها',
+  search_meetings: 'فهرست جلسات', search_people: 'فهرست مخاطبان', search_activities: 'فهرست فعالیت‌ها',
+  get_user_meetings: 'جلسات کاربر', get_meeting_details: 'جزئیات جلسه',
+  get_sales_rep_performance: 'عملکرد کارشناس', compare_sales_rep_performance: 'مقایسه عملکرد کارشناسان',
+}
+
+const enumLabels: Record<string, string> = {
+  LOW: 'کم', MEDIUM: 'متوسط', HIGH: 'زیاد', STRATEGIC: 'راهبردی',
+  ACTIVE: 'فعال', INACTIVE: 'غیرفعال', ARCHIVED: 'بایگانی‌شده', UNDER_REVIEW: 'در حال بررسی',
+  SCHEDULED: 'برنامه‌ریزی‌شده', COMPLETED: 'انجام‌شده', CANCELLED: 'لغوشده',
+  ORGANIZER: 'برگزارکننده', ASSIGNEE: 'مسئول', WON: 'برنده', LOST: 'ازدست‌رفته', OPEN: 'باز',
+}
+
+const dateFields = new Set(['startAt', 'endAt', 'expectedCloseDate', 'updatedAt', 'dueAt', 'occurredAt', 'nextActionDate'])
+const moneyFields = new Set(['estimatedValue', 'amount', 'value'])
+
+function formatStructuredValue(key: string, value: unknown) {
+  if (value == null || value === '') return '—'
+  if (dateFields.has(key) && typeof value === 'string') {
+    const date = new Date(value)
+    if (!Number.isNaN(date.getTime())) return new Intl.DateTimeFormat('fa-IR-u-ca-persian', { dateStyle: 'medium', ...(value.includes('T') ? { timeStyle: 'short' as const } : {}) }).format(date)
+  }
+  if (moneyFields.has(key) && (typeof value === 'number' || /^\d+(?:\.\d+)?$/.test(String(value)))) {
+    return `${new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 0 }).format(Number(value))} ریال`
+  }
+  if (typeof value === 'string' && enumLabels[value]) return enumLabels[value]
+  if (typeof value === 'number') return new Intl.NumberFormat('fa-IR').format(value)
+  return displayValue(value)
 }
 
 function displayValue(value: unknown) {
@@ -98,16 +133,16 @@ function AssistantToolDataCards({ items }: { items?: AssistantToolData[] }) {
       return <div key={`${item.tool}-${itemIndex}`} className="overflow-hidden rounded-xl border border-primary/20 bg-primary/[0.035]">
         <div className="flex items-center justify-between border-b border-[var(--app-divider)] px-3 py-2">
           <span className="text-xs font-bold text-primary">داده‌های CRM</span>
-          <span className="rounded-md bg-muted px-2 py-1 font-mono text-[10px] text-muted-foreground" dir="ltr">{item.tool}</span>
+          <span className="rounded-md bg-muted px-2 py-1 text-[11px] text-muted-foreground">{toolLabels[item.tool] ?? item.tool}</span>
         </div>
         {rows.length ? <div className="overflow-x-auto">
           <table className="w-full min-w-[38rem] text-xs">
             <thead className="bg-muted/60"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-3 py-2 text-start">{fieldLabels[column] ?? column}</th>)}</tr></thead>
-            <tbody>{rows.slice(0, 20).map((row, rowIndex) => <tr key={rowIndex} className="border-t border-[var(--app-divider)]">{columns.map((column) => <td key={column} className="max-w-52 truncate whitespace-nowrap px-3 py-2">{displayValue(row[column])}</td>)}</tr>)}</tbody>
+            <tbody>{rows.slice(0, 20).map((row, rowIndex) => <tr key={rowIndex} className="border-t border-[var(--app-divider)] transition-colors hover:bg-muted/30">{columns.map((column) => <td key={column} className="max-w-64 truncate whitespace-nowrap px-3 py-2.5" title={displayValue(row[column])}>{formatStructuredValue(column, row[column])}</td>)}</tr>)}</tbody>
           </table>
         </div> : null}
         {!rows.length && scalarEntries.length ? <dl className="grid gap-2 p-3 text-xs sm:grid-cols-2">
-          {scalarEntries.map(([key, value]) => <div key={key} className="flex items-start justify-between gap-3 rounded-lg bg-background/70 px-3 py-2"><dt className="text-muted-foreground">{fieldLabels[key] ?? key}</dt><dd className="text-start font-medium">{displayValue(value)}</dd></div>)}
+          {scalarEntries.map(([key, value]) => <div key={key} className="flex items-start justify-between gap-3 rounded-lg bg-background/70 px-3 py-2"><dt className="text-muted-foreground">{fieldLabels[key] ?? key}</dt><dd className="text-start font-medium">{formatStructuredValue(key, value)}</dd></div>)}
         </dl> : null}
         {arrayEntries.map(([key, value]) => <div key={key} className="border-t border-[var(--app-divider)] p-3">
           <p className="mb-2 text-xs font-bold">{fieldLabels[key] ?? key}</p>
