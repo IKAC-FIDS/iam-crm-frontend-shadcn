@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import {
   Activity,
   ArrowLeft,
@@ -22,10 +23,7 @@ import {
 
 import { Button } from "@workspace/ui/components/button"
 import { uiText } from "@/config/uiText"
-import {
-  formatJalaliDateTime,
-  type DateRangeValue,
-} from "@/lib/date/jalali"
+import { formatJalaliDateTime, type DateRangeValue } from "@/lib/date/jalali"
 import { useAuthStore, type AuthUser } from "@/store/authStore"
 import {
   ContentList,
@@ -55,6 +53,8 @@ import {
   taskStatusTone,
 } from "@/features/tasks/utils/taskFormatters"
 import { useAccountWorkspace } from "../hooks/useAccountWorkspace"
+import { getUser } from "@/features/admin/users/api/adminUsersApi"
+import { useAdminUsers } from "@/features/admin/users/hooks/useAdminUsers"
 import type {
   AccountWorkspace,
   WorkspaceCompanyIdentity,
@@ -88,39 +88,149 @@ function companyName(company?: WorkspaceCompanyIdentity | null) {
 export function AccountProfilePage() {
   const user = useAuthStore((state) => state.user)
   const patchUser = useAuthStore((state) => state.patchUser)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const canInspectUsers = user?.role === "ADMIN"
+  const requestedUserId = searchParams.get("userId") || undefined
+  const selectedUserId = canInspectUsers ? requestedUserId : undefined
+  const isOwnProfile = !selectedUserId || selectedUserId === user?.id
+  const [userSearch, setUserSearch] = useState("")
+  const usersQuery = useAdminUsers(
+    { page: 1, limit: 50, search: userSearch || undefined, isActive: true },
+    Boolean(canInspectUsers)
+  )
+  const selectedUserQuery = useQuery({
+    queryKey: ["account", "profile-subject", selectedUserId],
+    queryFn: () => getUser(selectedUserId as string),
+    enabled: Boolean(canInspectUsers && selectedUserId && !isOwnProfile),
+  })
+  const selectedAdminUser = isOwnProfile ? null : selectedUserQuery.data
+  const profileUser = useMemo<AuthUser | null>(() => {
+    if (!user) return null
+    if (isOwnProfile) return user
+    if (!selectedAdminUser) return null
+    return {
+      ...user,
+      id: selectedAdminUser.id,
+      fullName: selectedAdminUser.fullName,
+      email: selectedAdminUser.email,
+      role: selectedAdminUser.role,
+      roleId: selectedAdminUser.roleId ?? null,
+      roleCode: selectedAdminUser.assignedRole?.code ?? selectedAdminUser.role,
+      roleName: selectedAdminUser.assignedRole?.name ?? selectedAdminUser.role,
+      team: selectedAdminUser.team ?? null,
+      teamId: selectedAdminUser.teamId ?? null,
+      teamCode: selectedAdminUser.teamRef?.code ?? null,
+      teamName:
+        selectedAdminUser.teamRef?.name ?? selectedAdminUser.team ?? null,
+      avatarObjectKey: selectedAdminUser.avatarObjectKey ?? null,
+      permissions: [],
+    }
+  }, [isOwnProfile, selectedAdminUser, user])
   const [period, setPeriod] = useState<DateRangeValue>(defaultPeriod)
   const filters = useMemo(
     () => ({
+      userId: isOwnProfile ? undefined : selectedUserId,
       startDate: period.from ? dateInput(period.from) : undefined,
       endDate: period.to ? dateInput(period.to) : undefined,
       recentLimit: 5,
     }),
-    [period]
+    [isOwnProfile, period, selectedUserId]
   )
   const workspaceQuery = useAccountWorkspace(filters)
 
   return (
     <div className="grid gap-6">
       <PageHero
-        title="مرکز کار شخصی"
-        description="کارها، فرصت‌ها، جلسات، اعلان‌ها و شاخص‌های کاری خودتان را در یک نمای یکپارچه دنبال کنید."
+        title={
+          isOwnProfile
+            ? "مرکز کار شخصی"
+            : `پروفایل ${profileUser?.fullName || "کاربر"}`
+        }
+        description={
+          isOwnProfile
+            ? "کارها، فرصت‌ها، جلسات، اعلان‌ها و شاخص‌های کاری خودتان را در یک نمای یکپارچه دنبال کنید."
+            : "اطلاعات هویتی و داده‌های کاری مرتبط با کاربر انتخاب‌شده را در یک نمای یکپارچه بررسی کنید."
+        }
         accessBadge={{ label: "حساب کاربری", icon: UserRound }}
         backFallback="/dashboard"
         onRefresh={() => workspaceQuery.refetch()}
         refreshing={workspaceQuery.isFetching}
-        secondaryActions={[
-          {
-            id: "security",
-            label: "امنیت حساب",
-            icon: KeyRound,
-            href: "/account/security",
-            variant: "outline",
-          },
-        ]}
+        secondaryActions={
+          isOwnProfile
+            ? [
+                {
+                  id: "security",
+                  label: "امنیت حساب",
+                  icon: KeyRound,
+                  href: "/account/security",
+                  variant: "outline",
+                },
+              ]
+            : []
+        }
       />
 
+      {canInspectUsers ? (
+        <ContentSection
+          title="مشاهده پروفایل کاربران"
+          description="یک کاربر فعال را انتخاب کنید؛ این قابلیت فقط برای مدیران سیستم در دسترس است."
+          icon={ShieldCheck}
+        >
+          <div className="max-w-xl">
+            <SearchableOptionSelect
+              value={isOwnProfile ? user?.id : selectedUserId}
+              options={[
+                ...(user
+                  ? [
+                      {
+                        id: user.id,
+                        label: `${user.fullName} (پروفایل من)`,
+                        secondary: user.email,
+                      },
+                    ]
+                  : []),
+                ...(selectedAdminUser &&
+                !(usersQuery.data?.data ?? []).some(
+                  (item) => item.id === selectedAdminUser.id
+                )
+                  ? [
+                      {
+                        id: selectedAdminUser.id,
+                        label: selectedAdminUser.fullName,
+                        secondary: `${selectedAdminUser.email} · ${selectedAdminUser.assignedRole?.name ?? selectedAdminUser.role}`,
+                      },
+                    ]
+                  : []),
+                ...(usersQuery.data?.data ?? [])
+                  .filter((item) => item.id !== user?.id)
+                  .map((item) => ({
+                    id: item.id,
+                    label: item.fullName,
+                    secondary: `${item.email} · ${item.assignedRole?.name ?? item.role}`,
+                  })),
+              ]}
+              onChange={(value) => {
+                const next = new URLSearchParams(searchParams)
+                if (!value || value === user?.id) next.delete("userId")
+                else next.set("userId", value)
+                setSearchParams(next, { replace: true })
+              }}
+              search={userSearch}
+              onSearchChange={setUserSearch}
+              loading={usersQuery.isFetching}
+              allowEmpty={false}
+              placeholder="انتخاب کاربر"
+              searchPlaceholder="جست‌وجوی نام یا ایمیل کاربر..."
+              emptyText="کاربری مطابق جست‌وجو پیدا نشد."
+              ariaLabel="انتخاب کاربر برای مشاهده پروفایل"
+            />
+          </div>
+        </ContentSection>
+      ) : null}
+
       <ProfileIdentity
-        user={user}
+        user={profileUser}
+        canEdit={isOwnProfile}
         onAvatarChanged={(hasMedia) =>
           patchUser({
             avatarObjectKey: hasMedia ? `updated-${Date.now()}` : null,
@@ -128,7 +238,7 @@ export function AccountProfilePage() {
         }
       />
 
-      <TypographyPreferences />
+      {isOwnProfile ? <TypographyPreferences /> : null}
 
       <DashboardToolbar
         title="بازه گزارش عملکرد"
@@ -136,10 +246,7 @@ export function AccountProfilePage() {
         icon={CalendarDays}
       >
         <div className="min-w-64 flex-1">
-          <PersianDateRangePicker
-            value={period}
-            onChange={setPeriod}
-          />
+          <PersianDateRangePicker value={period} onChange={setPeriod} />
         </div>
         <Button variant="outline" onClick={() => setPeriod(defaultPeriod())}>
           <RotateCcw className="size-4" />
@@ -155,13 +262,15 @@ export function AccountProfilePage() {
           <WorkspaceContent
             data={workspaceQuery.data}
             user={user}
+            subjectUserId={profileUser?.id}
+            isOwnProfile={isOwnProfile}
             reportStart={filters.startDate}
             reportEnd={filters.endDate}
           />
         ) : null}
       </QueryContent>
 
-      <AccountDetails user={user} />
+      <AccountDetails user={profileUser} isOwnProfile={isOwnProfile} />
     </div>
   )
 }
@@ -174,7 +283,9 @@ function TypographyPreferences() {
   const options = appFontOptions
     .filter((font) =>
       normalizedSearch
-        ? `${font.label} ${font.id}`.toLocaleLowerCase("fa").includes(normalizedSearch)
+        ? `${font.label} ${font.id}`
+            .toLocaleLowerCase("fa")
+            .includes(normalizedSearch)
         : true
     )
     .map((font) => ({
@@ -194,9 +305,7 @@ function TypographyPreferences() {
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(240px,360px)_minmax(0,1fr)] lg:items-stretch">
         <div>
-          <p className="mb-2 text-sm font-bold">
-            فونت رابط کاربری
-          </p>
+          <p className="mb-2 text-sm font-bold">فونت رابط کاربری</p>
           <div>
             <SearchableOptionSelect
               value={fontId}
@@ -212,16 +321,20 @@ function TypographyPreferences() {
             />
           </div>
           <p className="mt-2 text-xs leading-6 text-[var(--app-text-secondary)]">
-            انتخاب فعلی: {selectedFont?.label ?? "یکان"}. تنظیم انتخاب‌شده در مرورگر ذخیره می‌شود.
+            انتخاب فعلی: {selectedFont?.label ?? "یکان"}. تنظیم انتخاب‌شده در
+            مرورگر ذخیره می‌شود.
           </p>
         </div>
         <div className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)] p-4 sm:p-5">
-          <p className="text-xs font-bold text-[var(--app-primary)]">پیش‌نمایش خوانایی</p>
+          <p className="text-xs font-bold text-[var(--app-primary)]">
+            پیش‌نمایش خوانایی
+          </p>
           <p className="mt-2 text-lg font-black text-[var(--app-heading)]">
             مدیریت ارتباط با مشتریان نشانه
           </p>
           <p className="mt-1 text-sm leading-7 text-[var(--app-text-secondary)]">
-            متن‌های رابط کاربری با حداقل اندازه استاندارد ۱۲ پیکسل نمایش داده می‌شوند تا خوانایی اطلاعات در دسکتاپ و موبایل حفظ شود.
+            متن‌های رابط کاربری با حداقل اندازه استاندارد ۱۲ پیکسل نمایش داده
+            می‌شوند تا خوانایی اطلاعات در دسکتاپ و موبایل حفظ شود.
           </p>
         </div>
       </div>
@@ -231,9 +344,11 @@ function TypographyPreferences() {
 
 function ProfileIdentity({
   user,
+  canEdit,
   onAvatarChanged,
 }: {
   user: AuthUser | null
+  canEdit: boolean
   onAvatarChanged: (hasMedia: boolean) => void
 }) {
   return (
@@ -246,7 +361,7 @@ function ProfileIdentity({
             mediaPath={`/users/${user.id}/avatar`}
             hasMedia={Boolean(user.avatarObjectKey)}
             mediaVersion={user.avatarObjectKey}
-            canEdit
+            canEdit={canEdit}
             label="تصویر پروفایل"
             onChanged={onAvatarChanged}
           />
@@ -272,11 +387,15 @@ function ProfileIdentity({
 function WorkspaceContent({
   data,
   user,
+  subjectUserId,
+  isOwnProfile,
   reportStart,
   reportEnd,
 }: {
   data: AccountWorkspace
   user: AuthUser | null
+  subjectUserId?: string
+  isOwnProfile: boolean
   reportStart?: string
   reportEnd?: string
 }) {
@@ -285,14 +404,20 @@ function WorkspaceContent({
     Boolean(user?.permissions.includes(permission))
   const go = (path: string, permission?: string) =>
     permission && !can(permission) ? undefined : () => navigate(path)
-  const activityBase = `/activities?scope=mine&ownerId=${user?.id || ""}${reportStart ? `&dateFrom=${encodeURIComponent(reportStart)}` : ""}${reportEnd ? `&dateTo=${encodeURIComponent(reportEnd)}` : ""}`
+  const activityBase = `/activities?scope=mine&ownerId=${subjectUserId || ""}${reportStart ? `&dateFrom=${encodeURIComponent(reportStart)}` : ""}${reportEnd ? `&dateTo=${encodeURIComponent(reportEnd)}` : ""}`
+  const profileGo = (path: string, permission?: string) =>
+    isOwnProfile ? go(path, permission) : undefined
 
   return (
     <div className="grid gap-6">
       <DashboardSection
         id="attention"
-        title="نیازمند توجه شما"
-        description="موارد فوری را پیش از ادامه روز کاری بررسی کنید."
+        title={isOwnProfile ? "نیازمند توجه شما" : "موارد نیازمند توجه کاربر"}
+        description={
+          isOwnProfile
+            ? "موارد فوری را پیش از ادامه روز کاری بررسی کنید."
+            : "موارد فوری مرتبط با کاربر انتخاب‌شده"
+        }
         icon={TriangleAlert}
         tone="warning"
         badge={`${(
@@ -308,42 +433,55 @@ function WorkspaceContent({
             value={data.attention.overdueTasks}
             icon={TriangleAlert}
             tone="warning"
-            onClick={go("/tasks?page=1&quick=overdue", "task:view")}
+            onClick={profileGo("/tasks?page=1&quick=overdue", "task:view")}
           />
           <MetricCard
             label="سررسید امروز"
             value={data.attention.dueTodayTasks}
             icon={Clock3}
             tone="info"
-            onClick={go("/tasks?page=1&dueState=today&quick=mine", "task:view")}
+            onClick={profileGo(
+              "/tasks?page=1&dueState=today&quick=mine",
+              "task:view"
+            )}
           />
           <MetricCard
             label="جلسات پیش‌رو"
             value={data.attention.upcomingMeetings}
             icon={CalendarDays}
-            onClick={go("/meetings?page=1&quick=upcoming", "meeting:view")}
+            onClick={profileGo(
+              "/meetings?page=1&quick=upcoming",
+              "meeting:view"
+            )}
           />
           <MetricCard
             label="اعلان خوانده‌نشده"
             value={data.attention.unreadNotifications}
             icon={Bell}
             tone="info"
-            onClick={go("/attention?tab=notifications", "notification:view")}
+            onClick={profileGo(
+              "/attention?tab=notifications",
+              "notification:view"
+            )}
           />
           <MetricCard
             label="پیام خوانده‌نشده"
             value={data.attention.unreadConversationMessages}
             icon={MessageSquareText}
             tone="primary"
-            onClick={go("/attention?tab=conversations", "activity:view")}
+            onClick={profileGo("/attention?tab=conversations", "activity:view")}
           />
         </DashboardMetricGrid>
       </DashboardSection>
 
       <DashboardSection
         id="overview"
-        title="نمای کلی من"
-        description="خلاصه عملکرد و موجودی کاری شما در یک نگاه"
+        title={isOwnProfile ? "نمای کلی من" : "نمای کلی کاربر"}
+        description={
+          isOwnProfile
+            ? "خلاصه عملکرد و موجودی کاری شما در یک نگاه"
+            : "خلاصه عملکرد و موجودی کاری کاربر انتخاب‌شده"
+        }
         icon={Activity}
       >
         <DashboardMetricGrid columns={6}>
@@ -352,15 +490,15 @@ function WorkspaceContent({
             value={data.summary.tasks.open}
             helper={`${data.summary.tasks.completed.toLocaleString("fa-IR")} تکمیل‌شده`}
             icon={ListChecks}
-            onClick={go("/tasks?page=1&quick=mine", "task:view")}
+            onClick={profileGo("/tasks?page=1&quick=mine", "task:view")}
           />
           <MetricCard
             label="فرصت‌های فعال"
             value={data.summary.opportunities.active}
             helper={money(data.summary.opportunities.activeValue)}
             icon={BriefcaseBusiness}
-            onClick={go(
-              `/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`,
+            onClick={profileGo(
+              `/opportunities?page=1&ownershipScope=mine&ownerId=${subjectUserId || ""}`,
               "opportunity:view"
             )}
           />
@@ -368,7 +506,7 @@ function WorkspaceContent({
             label="شرکت‌های تحت مالکیت"
             value={data.summary.companiesOwned}
             icon={Building2}
-            onClick={go(
+            onClick={profileGo(
               "/companies?page=1&ownershipScope=MINE",
               "company:view"
             )}
@@ -378,13 +516,16 @@ function WorkspaceContent({
             value={data.summary.activities}
             icon={Activity}
             tone="info"
-            onClick={go(activityBase, "activity:view")}
+            onClick={profileGo(activityBase, "activity:view")}
           />
           <MetricCard
             label="جلسات پیش‌رو"
             value={data.summary.upcomingMeetings}
             icon={CalendarDays}
-            onClick={go("/meetings?page=1&quick=upcoming", "meeting:view")}
+            onClick={profileGo(
+              "/meetings?page=1&quick=upcoming",
+              "meeting:view"
+            )}
           />
           <MetricCard
             label="کل فرصت‌ها"
@@ -392,8 +533,8 @@ function WorkspaceContent({
             helper={money(data.summary.opportunities.totalValue)}
             icon={BriefcaseBusiness}
             tone="neutral"
-            onClick={go(
-              `/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`,
+            onClick={profileGo(
+              `/opportunities?page=1&ownershipScope=mine&ownerId=${subjectUserId || ""}`,
               "opportunity:view"
             )}
           />
@@ -403,9 +544,13 @@ function WorkspaceContent({
       <div className="grid gap-6 xl:grid-cols-2">
         <EntitySection
           title="کارهای جاری"
-          description="نزدیک‌ترین کارهای باز شما"
+          description={
+            isOwnProfile
+              ? "نزدیک‌ترین کارهای باز شما"
+              : "نزدیک‌ترین کارهای باز کاربر"
+          }
           icon={ListChecks}
-          href="/tasks?page=1&quick=mine"
+          href={isOwnProfile ? "/tasks?page=1&quick=mine" : undefined}
           canView={can("task:view")}
           empty="کار بازی برای شما وجود ندارد."
         >
@@ -435,7 +580,7 @@ function WorkspaceContent({
           title="جلسات پیش‌رو"
           description="جلساتی که برگزارکننده یا عضو آن هستید"
           icon={CalendarDays}
-          href="/meetings?page=1&quick=upcoming"
+          href={isOwnProfile ? "/meetings?page=1&quick=upcoming" : undefined}
           canView={can("meeting:view")}
           empty="جلسه برنامه‌ریزی‌شده‌ای ندارید."
         >
@@ -462,7 +607,7 @@ function WorkspaceContent({
           title="فرصت‌های اخیر"
           description="فرصت‌هایی که مالک آن‌ها هستید"
           icon={BriefcaseBusiness}
-          href={`/opportunities?page=1&ownershipScope=mine&ownerId=${user?.id || ""}`}
+          href={`/opportunities?page=1&ownershipScope=mine&ownerId=${subjectUserId || ""}`}
           canView={can("opportunity:view")}
           empty="فرصتی تحت مالکیت شما نیست."
         >
@@ -503,10 +648,16 @@ function WorkspaceContent({
         </EntitySection>
 
         <EntitySection
-          title="شرکت‌های من"
-          description="آخرین شرکت‌های تحت مالکیت شما"
+          title={isOwnProfile ? "شرکت‌های من" : "شرکت‌های کاربر"}
+          description={
+            isOwnProfile
+              ? "آخرین شرکت‌های تحت مالکیت شما"
+              : "آخرین شرکت‌های تحت مالکیت کاربر انتخاب‌شده"
+          }
           icon={Building2}
-          href="/companies?page=1&ownershipScope=MINE"
+          href={
+            isOwnProfile ? "/companies?page=1&ownershipScope=MINE" : undefined
+          }
           canView={can("company:view")}
           empty="شرکتی تحت مالکیت شما نیست."
         >
@@ -531,11 +682,13 @@ function WorkspaceContent({
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <ContentSection
-          title="ترکیب فعالیت‌های من"
+          title={
+            isOwnProfile ? "ترکیب فعالیت‌های من" : "ترکیب فعالیت‌های کاربر"
+          }
           description="رویدادهای سیستمی محاسبه نمی‌شوند و فقط انواع فعال کتابخانه نمایش داده شده‌اند."
           icon={Activity}
           action={
-            can("activity:view") ? (
+            isOwnProfile && can("activity:view") ? (
               <SectionLink to={activityBase}>همه فعالیت‌ها</SectionLink>
             ) : undefined
           }
@@ -546,8 +699,8 @@ function WorkspaceContent({
                 <button
                   type="button"
                   key={item.code}
-                  disabled={!can("activity:view")}
-                  onClick={go(
+                  disabled={!isOwnProfile || !can("activity:view")}
+                  onClick={profileGo(
                     `${activityBase}&activityType=${encodeURIComponent(item.code)}`,
                     "activity:view"
                   )}
@@ -568,7 +721,7 @@ function WorkspaceContent({
           )}
         </ContentSection>
         <ContentSection
-          title="نتیجه فرصت‌های من"
+          title={isOwnProfile ? "نتیجه فرصت‌های من" : "نتیجه فرصت‌های کاربر"}
           description="وضعیت و ارزش فرصت‌ها بر اساس مرحله فعلی"
           icon={BriefcaseBusiness}
         >
@@ -601,7 +754,7 @@ function WorkspaceContent({
           description="آخرین اعلان‌های صادرشده برای شما"
           icon={Bell}
           action={
-            can("notification:view") ? (
+            isOwnProfile && can("notification:view") ? (
               <SectionLink to="/attention?tab=notifications">
                 همه اعلان‌ها
               </SectionLink>
@@ -622,17 +775,17 @@ function WorkspaceContent({
                   >
                     <div className="flex w-full items-start justify-between gap-3">
                       <div className="min-w-0">
-                          <strong className="block truncate text-sm">
-                            {notification.title}
-                          </strong>
-                          {notification.body ? (
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
-                              {notification.body}
-                            </p>
-                          ) : null}
-                          <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                            {formatJalaliDateTime(notification.createdAt)}
+                        <strong className="block truncate text-sm">
+                          {notification.title}
+                        </strong>
+                        {notification.body ? (
+                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
+                            {notification.body}
                           </p>
+                        ) : null}
+                        <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                          {formatJalaliDateTime(notification.createdAt)}
+                        </p>
                       </div>
                       <StatusBadge
                         tone={notification.readAt ? "neutral" : "primary"}
@@ -654,7 +807,7 @@ function WorkspaceContent({
           description="پیام‌ها و پرسش‌های مرتبط با رکوردهای شما"
           icon={MessageSquareText}
           action={
-            can("activity:view") ? (
+            isOwnProfile && can("activity:view") ? (
               <SectionLink to="/attention?tab=conversations">
                 مرکز توجه
               </SectionLink>
@@ -666,31 +819,26 @@ function WorkspaceContent({
               {data.recent.conversations.map((conversation) => (
                 <EntityLink
                   key={conversation.id}
-                  to={
-                    can("activity:view")
-                      ? conversation.actionUrl
-                      : undefined
-                  }
+                  to={can("activity:view") ? conversation.actionUrl : undefined}
                   showArrow={false}
                 >
                   <div className="flex w-full items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <strong className="block truncate text-sm">
-                          {conversation.latestMessage?.author.fullName ||
-                            "گفتگوی مرتبط"}
-                        </strong>
-                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
-                          {conversation.latestMessage?.body ||
-                            "پیامی ثبت نشده است."}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-                          {formatJalaliDateTime(conversation.updatedAt)}
-                        </p>
+                      <strong className="block truncate text-sm">
+                        {conversation.latestMessage?.author.fullName ||
+                          "گفتگوی مرتبط"}
+                      </strong>
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
+                        {conversation.latestMessage?.body ||
+                          "پیامی ثبت نشده است."}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                        {formatJalaliDateTime(conversation.updatedAt)}
+                      </p>
                     </div>
                     {conversation.unreadCount ? (
                       <StatusBadge tone="primary">
-                        {conversation.unreadCount.toLocaleString("fa-IR")}{" "}
-                        جدید
+                        {conversation.unreadCount.toLocaleString("fa-IR")} جدید
                       </StatusBadge>
                     ) : (
                       <StatusBadge tone="neutral">
@@ -727,7 +875,7 @@ function EntitySection({
   title: string
   description: string
   icon: typeof ListChecks
-  href: string
+  href?: string
   canView: boolean
   empty: string
   children: ReactNode
@@ -741,7 +889,9 @@ function EntitySection({
       description={description}
       icon={icon}
       action={
-        canView ? <SectionLink to={href}>مشاهده همه</SectionLink> : undefined
+        canView && href ? (
+          <SectionLink to={href}>مشاهده همه</SectionLink>
+        ) : undefined
       }
     >
       {hasChildren ? (
@@ -827,7 +977,13 @@ function Outcome({
   )
 }
 
-function AccountDetails({ user }: { user: AuthUser | null }) {
+function AccountDetails({
+  user,
+  isOwnProfile,
+}: {
+  user: AuthUser | null
+  isOwnProfile: boolean
+}) {
   const items = [
     {
       label: profileText.account.fields.email,
@@ -841,19 +997,27 @@ function AccountDetails({ user }: { user: AuthUser | null }) {
     },
     {
       label: profileText.cards.permissionCount,
-      value: String(user?.permissions.length ?? 0),
+      value: isOwnProfile
+        ? String(user?.permissions.length ?? 0)
+        : "فقط خواندنی",
       icon: KeyRound,
     },
     {
       label: profileText.cards.sessionStatus,
-      value: profileText.cards.sessionActive,
+      value: isOwnProfile
+        ? profileText.cards.sessionActive
+        : "کاربر انتخاب‌شده",
       icon: CheckCircle2,
     },
   ]
   return (
     <ContentSection
       title={profileText.account.title}
-      description="اطلاعات هویتی و سطح دسترسی فعال شما"
+      description={
+        isOwnProfile
+          ? "اطلاعات هویتی و سطح دسترسی فعال شما"
+          : "اطلاعات هویتی کاربر انتخاب‌شده در سازمان فعلی"
+      }
       icon={UserRound}
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

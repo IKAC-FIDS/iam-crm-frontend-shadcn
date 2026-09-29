@@ -1,16 +1,26 @@
 import { render, screen } from "@testing-library/react"
+import type { ReactNode } from "react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
 import { beforeEach, expect, it, vi } from "vitest"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import { useAuthStore } from "@/store/authStore"
 import { FontPreferenceProvider } from "@/components/font-preference-provider"
 import { useAccountWorkspace } from "../hooks/useAccountWorkspace"
+import { getUser } from "@/features/admin/users/api/adminUsersApi"
+import { useAdminUsers } from "@/features/admin/users/hooks/useAdminUsers"
 import type { AccountWorkspace } from "../types/accountWorkspace.types"
 import { AccountProfilePage } from "./AccountProfilePage"
 
 vi.mock("../hooks/useAccountWorkspace", () => ({
   useAccountWorkspace: vi.fn(),
+}))
+vi.mock("@/features/admin/users/hooks/useAdminUsers", () => ({
+  useAdminUsers: vi.fn(),
+}))
+vi.mock("@/features/admin/users/api/adminUsersApi", () => ({
+  getUser: vi.fn(),
 }))
 vi.mock("@/components/shared/ProfileMediaEditor", () => ({
   ProfileMediaEditor: () => <div>تصویر پروفایل</div>,
@@ -62,6 +72,14 @@ function LocationProbe() {
   )
 }
 
+function TestQueryProvider({ children }: { children: ReactNode }) {
+  return (
+    <QueryClientProvider client={new QueryClient()}>
+      {children}
+    </QueryClientProvider>
+  )
+}
+
 beforeEach(() => {
   useAuthStore.setState({
     user: {
@@ -98,26 +116,32 @@ beforeEach(() => {
     isFetching: false,
     refetch: vi.fn(),
   } as unknown as ReturnType<typeof useAccountWorkspace>)
+  vi.mocked(useAdminUsers).mockReturnValue({
+    data: { data: [] },
+    isFetching: false,
+  } as unknown as ReturnType<typeof useAdminUsers>)
 })
 
 it("shows the personal workspace and preserves the correct activity drill-down filters", async () => {
   render(
-    <MemoryRouter initialEntries={["/account/profile"]}>
-      <Routes>
-        <Route
-          path="/account/profile"
-          element={
-            <>
-              <FontPreferenceProvider>
-                <AccountProfilePage />
-              </FontPreferenceProvider>
-              <LocationProbe />
-            </>
-          }
-        />
-        <Route path="*" element={<LocationProbe />} />
-      </Routes>
-    </MemoryRouter>
+    <TestQueryProvider>
+      <MemoryRouter initialEntries={["/account/profile"]}>
+        <Routes>
+          <Route
+            path="/account/profile"
+            element={
+              <>
+                <FontPreferenceProvider>
+                  <AccountProfilePage />
+                </FontPreferenceProvider>
+                <LocationProbe />
+              </>
+            }
+          />
+          <Route path="*" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>
+    </TestQueryProvider>
   )
 
   expect(
@@ -135,9 +159,7 @@ it("shows the personal workspace and preserves the correct activity drill-down f
 
 it("does not expose entity navigation when the matching view permission is absent", () => {
   useAuthStore.setState((state) => ({
-    user: state.user
-      ? { ...state.user, permissions: ["activity:view"] }
-      : null,
+    user: state.user ? { ...state.user, permissions: ["activity:view"] } : null,
   }))
   vi.mocked(useAccountWorkspace).mockReturnValue({
     data: {
@@ -163,11 +185,13 @@ it("does not expose entity navigation when the matching view permission is absen
   } as unknown as ReturnType<typeof useAccountWorkspace>)
 
   render(
-    <MemoryRouter initialEntries={["/account/profile"]}>
-      <FontPreferenceProvider>
-        <AccountProfilePage />
-      </FontPreferenceProvider>
-    </MemoryRouter>
+    <TestQueryProvider>
+      <MemoryRouter initialEntries={["/account/profile"]}>
+        <FontPreferenceProvider>
+          <AccountProfilePage />
+        </FontPreferenceProvider>
+      </MemoryRouter>
+    </TestQueryProvider>
   )
 
   expect(screen.getByText("پیگیری قرارداد")).toBeInTheDocument()
@@ -175,4 +199,55 @@ it("does not expose entity navigation when the matching view permission is absen
   expect(
     screen.queryByRole("link", { name: /پیگیری قرارداد/ })
   ).not.toBeInTheDocument()
+})
+
+it("lets an admin select another user and requests that user's workspace", async () => {
+  useAuthStore.setState((state) => ({
+    user: state.user ? { ...state.user, role: "ADMIN" } : null,
+  }))
+  vi.mocked(useAdminUsers).mockReturnValue({
+    data: {
+      data: [
+        {
+          id: "00000000-0000-4000-8000-000000000099",
+          fullName: "کاربر انتخابی",
+          email: "selected@example.com",
+          role: "REP",
+          isActive: true,
+        },
+      ],
+    },
+    isFetching: false,
+  } as unknown as ReturnType<typeof useAdminUsers>)
+  vi.mocked(getUser).mockResolvedValue({
+    id: "00000000-0000-4000-8000-000000000099",
+    fullName: "کاربر انتخابی",
+    email: "selected@example.com",
+    role: "REP",
+    isActive: true,
+  })
+
+  render(
+    <TestQueryProvider>
+      <MemoryRouter initialEntries={["/account/profile"]}>
+        <FontPreferenceProvider>
+          <AccountProfilePage />
+        </FontPreferenceProvider>
+      </MemoryRouter>
+    </TestQueryProvider>
+  )
+
+  await userEvent.click(
+    screen.getByRole("button", { name: "انتخاب کاربر برای مشاهده پروفایل" })
+  )
+  await userEvent.click(screen.getByText("کاربر انتخابی"))
+
+  expect(useAccountWorkspace).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      userId: "00000000-0000-4000-8000-000000000099",
+    })
+  )
+  expect(
+    (await screen.findAllByText("selected@example.com")).length
+  ).toBeGreaterThan(0)
 })

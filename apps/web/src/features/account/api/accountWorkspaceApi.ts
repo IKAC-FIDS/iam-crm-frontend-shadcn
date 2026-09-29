@@ -3,6 +3,7 @@ import { unwrapApiResponse } from "@/lib/apiResponse"
 import type { AccountWorkspace } from "../types/accountWorkspace.types"
 
 export type AccountWorkspaceFilters = {
+  userId?: string
   startDate?: string
   endDate?: string
   recentLimit?: number
