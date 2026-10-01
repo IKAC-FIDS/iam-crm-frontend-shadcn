@@ -35,6 +35,7 @@ import {
   useOperationsWorkspace,
 } from "../hooks/useOperationsWorkspace"
 import type { OperationsCompanyRow } from "../types/operations.types"
+import { PersonalTodoPanel } from "@/features/personalTodos/components/PersonalTodoPanel"
 
 export function OperationsPage() {
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
@@ -193,6 +194,7 @@ export function OperationsPage() {
         permissions={permissions}
         onAction={(kind) => openDialog(kind)}
       />
+      <PersonalTodoPanel data={workspace.data?.personalTodos} />
       <OperationsFilters
         filters={filters}
         onPatch={patchFilters}

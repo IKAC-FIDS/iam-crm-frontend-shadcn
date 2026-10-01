@@ -1,4 +1,5 @@
 import type { PaginatedResult } from "@/lib/pagination"
+import type { PersonalTodo } from "@/features/personalTodos/types/personalTodo.types"
 
 export type OperationsPriority = "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
 export type OperationsAttentionState =
@@ -24,6 +25,12 @@ export type OperationsWorkspace = {
     meetings: Array<Record<string, unknown>>
   }
   recentConversations: Array<Record<string, unknown>>
+  personalTodos: {
+    today: PersonalTodo[]
+    upcoming: PersonalTodo[]
+    completed: PersonalTodo[]
+    counts: { today: number; overdue: number; upcoming: number }
+  }
 }
 
 export type OperationsCompanyRow = {
