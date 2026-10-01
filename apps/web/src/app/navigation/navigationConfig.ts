@@ -48,6 +48,7 @@ export interface NavigationFlyoutItem {
 export type NavigationItem = NavigationLinkItem | NavigationFlyoutItem
 
 const routeDescriptions: Record<string, string> = {
+  "operations-workspace": "مرکز کارهای روزانه فروش",
   companies: "مدیریت حساب‌های مشتری",
   opportunities: "پیگیری چرخه و مراحل فروش",
   tasks: "اقدام‌ها و کارهای روزانه",
@@ -78,12 +79,54 @@ const routeDescriptions: Record<string, string> = {
 }
 
 const workspaceSections = [
-  { id: "sales", label: "فروش و ارتباط با مشتری", routeIds: ["companies", "opportunities", "people", "activities", "reports"] },
-  { id: "planning", label: "برنامه‌ریزی و پیگیری", routeIds: ["tasks", "meetings", "follow-ups", "notifications"] },
-  { id: "technical", label: "مرکز فنی", routeIds: ["technical-library", "technical-knowledge-base", "technical-tenders"] },
-  { id: "workforce", label: "کارکرد و منابع انسانی", routeIds: ["admin-timesheets", "admin-timesheet-reports", "admin-work-schedules"] },
-  { id: "organization", label: "سازمان و دسترسی‌ها", routeIds: ["admin-users", "admin-teams", "admin-permissions", "admin-audit-logs"] },
-  { id: "configuration", label: "تنظیمات و داده‌های پایه", routeIds: ["admin-libraries", "admin-pipeline", "admin-exchange-rates", "admin-notifications"] },
+  {
+    id: "sales",
+    label: "فروش و ارتباط با مشتری",
+    routeIds: ["companies", "opportunities", "people", "activities", "reports"],
+  },
+  {
+    id: "planning",
+    label: "برنامه‌ریزی و پیگیری",
+    routeIds: ["tasks", "meetings", "follow-ups", "notifications"],
+  },
+  {
+    id: "technical",
+    label: "مرکز فنی",
+    routeIds: [
+      "technical-library",
+      "technical-knowledge-base",
+      "technical-tenders",
+    ],
+  },
+  {
+    id: "workforce",
+    label: "کارکرد و منابع انسانی",
+    routeIds: [
+      "admin-timesheets",
+      "admin-timesheet-reports",
+      "admin-work-schedules",
+    ],
+  },
+  {
+    id: "organization",
+    label: "سازمان و دسترسی‌ها",
+    routeIds: [
+      "admin-users",
+      "admin-teams",
+      "admin-permissions",
+      "admin-audit-logs",
+    ],
+  },
+  {
+    id: "configuration",
+    label: "تنظیمات و داده‌های پایه",
+    routeIds: [
+      "admin-libraries",
+      "admin-pipeline",
+      "admin-exchange-rates",
+      "admin-notifications",
+    ],
+  },
 ] as const
 
 export function getNavigationRouteDescription(routeId: string) {
@@ -95,7 +138,9 @@ function withPresentation(route: AppMenuRoute): NavigationDestination {
 }
 
 function createSections(routes: AppMenuRoute[]) {
-  const assignedIds = new Set(workspaceSections.flatMap((section) => section.routeIds))
+  const assignedIds = new Set(
+    workspaceSections.flatMap((section) => section.routeIds)
+  )
   const sections = workspaceSections
     .map((section) => ({
       id: section.id,
@@ -105,19 +150,31 @@ function createSections(routes: AppMenuRoute[]) {
         .filter((route): route is AppMenuRoute => Boolean(route)),
     }))
     .filter((section) => section.routes.length > 0)
-  const otherRoutes = routes.filter((route) => !assignedIds.has(route.id as never))
+  const otherRoutes = routes.filter(
+    (route) => !assignedIds.has(route.id as never)
+  )
 
   return otherRoutes.length
-    ? [...sections, { id: "other", label: "سایر بخش‌ها", routes: otherRoutes }]
-        .map((section) => ({ ...section, routes: section.routes.map(withPresentation) }))
-    : sections.map((section) => ({ ...section, routes: section.routes.map(withPresentation) }))
+    ? [
+        ...sections,
+        { id: "other", label: "سایر بخش‌ها", routes: otherRoutes },
+      ].map((section) => ({
+        ...section,
+        routes: section.routes.map(withPresentation),
+      }))
+    : sections.map((section) => ({
+        ...section,
+        routes: section.routes.map(withPresentation),
+      }))
 }
 
-export function getNavigationItems(user: AuthUser | null | undefined): NavigationItem[] {
+export function getNavigationItems(
+  user: AuthUser | null | undefined
+): NavigationItem[] {
   const routes = getVisibleMenuRoutes(user)
   const topLevelRoutes = routes.filter((route) => route.group === null)
   const workspaceRoutes = routes.filter(
-    (route) => route.group === "operations" || route.group === "management",
+    (route) => route.group === "operations" || route.group === "management"
   )
   const accountRoutes = routes.filter((route) => route.group === "account")
   const items: NavigationItem[] = topLevelRoutes.map((route) => ({
@@ -147,7 +204,13 @@ export function getNavigationItems(user: AuthUser | null | undefined): Navigatio
       label: "حساب کاربری",
       description: "کارکرد، مرخصی، امنیت و تنظیمات شخصی",
       icon: CircleUserRound,
-      sections: [{ id: "account", label: "حساب کاربری", routes: accountRoutes.map(withPresentation) }],
+      sections: [
+        {
+          id: "account",
+          label: "حساب کاربری",
+          routes: accountRoutes.map(withPresentation),
+        },
+      ],
     })
   }
 

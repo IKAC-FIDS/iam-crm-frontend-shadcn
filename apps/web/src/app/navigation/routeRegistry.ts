@@ -55,28 +55,152 @@ const technicalAny = (permissions: readonly string[]) =>
   ({ type: "permissions", mode: "any", permissions }) as const
 
 export const technicalCenterAccess: RouteAccessPolicy = technicalAny([
-  "technical-release:view", "technical-knowledge:view", "technical-document:view",
-  "technical-resource:view", "technical-tender:view",
+  "technical-release:view",
+  "technical-knowledge:view",
+  "technical-document:view",
+  "technical-resource:view",
+  "technical-tender:view",
 ])
 
 const any = (permissions: readonly string[]) =>
   ({ type: "permissions", mode: "any", permissions }) as const
 
 export const technicalCenterRoutes: readonly AppMenuRoute[] = [
-  { id: "technical-library", path: "/technical/library", label: uiText.technicalCenter.library.title, group: "operations", order: 150, icon: FolderOpen, access: technicalAny(["technical-release:view", "technical-document:view", "technical-resource:view"]) },
-  { id: "technical-releases", path: "/technical/releases", label: uiText.technicalCenter.releases.title, group: "operations", order: 151, icon: Rocket, access: technicalAny(["technical-release:view"]), showInNavigation: false },
-  { id: "technical-knowledge-base", path: "/technical/knowledge-base", label: uiText.technicalCenter.knowledgeBase.title, group: "operations", order: 160, icon: BookOpen, access: technicalAny(["technical-knowledge:view"]) },
-  { id: "technical-tenders", path: "/technical/tenders", label: uiText.technicalCenter.tenders.title, group: "operations", order: 170, icon: Gavel, access: technicalAny(["technical-tender:view"]) },
-  { id: "technical-documents", path: "/technical/documents", label: uiText.technicalCenter.documents.title, group: "operations", order: 180, icon: FileText, access: technicalAny(["technical-document:view"]), showInNavigation: false },
-  { id: "technical-resources", path: "/technical/resources", label: uiText.technicalCenter.resources.title, group: "operations", order: 190, icon: FolderOpen, access: technicalAny(["technical-resource:view"]), showInNavigation: false },
+  {
+    id: "technical-library",
+    path: "/technical/library",
+    label: uiText.technicalCenter.library.title,
+    group: "operations",
+    order: 150,
+    icon: FolderOpen,
+    access: technicalAny([
+      "technical-release:view",
+      "technical-document:view",
+      "technical-resource:view",
+    ]),
+  },
+  {
+    id: "technical-releases",
+    path: "/technical/releases",
+    label: uiText.technicalCenter.releases.title,
+    group: "operations",
+    order: 151,
+    icon: Rocket,
+    access: technicalAny(["technical-release:view"]),
+    showInNavigation: false,
+  },
+  {
+    id: "technical-knowledge-base",
+    path: "/technical/knowledge-base",
+    label: uiText.technicalCenter.knowledgeBase.title,
+    group: "operations",
+    order: 160,
+    icon: BookOpen,
+    access: technicalAny(["technical-knowledge:view"]),
+  },
+  {
+    id: "technical-tenders",
+    path: "/technical/tenders",
+    label: uiText.technicalCenter.tenders.title,
+    group: "operations",
+    order: 170,
+    icon: Gavel,
+    access: technicalAny(["technical-tender:view"]),
+  },
+  {
+    id: "technical-documents",
+    path: "/technical/documents",
+    label: uiText.technicalCenter.documents.title,
+    group: "operations",
+    order: 180,
+    icon: FileText,
+    access: technicalAny(["technical-document:view"]),
+    showInNavigation: false,
+  },
+  {
+    id: "technical-resources",
+    path: "/technical/resources",
+    label: uiText.technicalCenter.resources.title,
+    group: "operations",
+    order: 190,
+    icon: FolderOpen,
+    access: technicalAny(["technical-resource:view"]),
+    showInNavigation: false,
+  },
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
-  { id: 'admin-work-schedules', path: '/admin/work-schedules', label: 'برنامه کاری سازمان', group: 'management', order: 330, icon: CalendarDays, access: any(['organization:manage']) },
-  { id: 'account-timesheets', path: '/account/timesheets', label: 'کارکرد من', group: 'account', order: 310, icon: ListChecks, access: any(['timesheet:view']) },
-  { id: 'account-leave', path: '/account/leave-requests', label: 'مرخصی‌های من', group: 'account', order: 320, icon: CalendarDays, access: any(['leave:view']) },
-  { id: 'admin-timesheets', path: '/admin/timesheets', label: 'مدیریت کارکرد تیم', group: 'management', order: 310, icon: Users, access: any(['timesheet:approve', 'timesheet:approve-organization', 'timesheet:view-organization', 'leave:approve', 'leave:approve-organization', 'leave:view-organization']) },
-  { id: 'admin-timesheet-reports', path: '/admin/timesheets/reports', label: 'گزارش عملکرد کارکنان', group: 'management', order: 320, icon: ChartNoAxesCombined, access: any(['timesheet:report']) },
+  {
+    id: "operations-workspace",
+    path: "/operations",
+    label: "عملیات من",
+    group: null,
+    order: 5,
+    icon: ListChecks,
+    access: {
+      type: "permissions",
+      mode: "all",
+      permissions: [
+        "company:view",
+        "task:view",
+        "opportunity:view",
+        "activity:view",
+        "meeting:view",
+      ],
+    },
+  },
+  {
+    id: "admin-work-schedules",
+    path: "/admin/work-schedules",
+    label: "برنامه کاری سازمان",
+    group: "management",
+    order: 330,
+    icon: CalendarDays,
+    access: any(["organization:manage"]),
+  },
+  {
+    id: "account-timesheets",
+    path: "/account/timesheets",
+    label: "کارکرد من",
+    group: "account",
+    order: 310,
+    icon: ListChecks,
+    access: any(["timesheet:view"]),
+  },
+  {
+    id: "account-leave",
+    path: "/account/leave-requests",
+    label: "مرخصی‌های من",
+    group: "account",
+    order: 320,
+    icon: CalendarDays,
+    access: any(["leave:view"]),
+  },
+  {
+    id: "admin-timesheets",
+    path: "/admin/timesheets",
+    label: "مدیریت کارکرد تیم",
+    group: "management",
+    order: 310,
+    icon: Users,
+    access: any([
+      "timesheet:approve",
+      "timesheet:approve-organization",
+      "timesheet:view-organization",
+      "leave:approve",
+      "leave:approve-organization",
+      "leave:view-organization",
+    ]),
+  },
+  {
+    id: "admin-timesheet-reports",
+    path: "/admin/timesheets/reports",
+    label: "گزارش عملکرد کارکنان",
+    group: "management",
+    order: 320,
+    icon: ChartNoAxesCombined,
+    access: any(["timesheet:report"]),
+  },
   ...technicalCenterRoutes,
   {
     id: "dashboard",
@@ -218,7 +342,12 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: "management",
     order: 260,
     icon: ShieldCheck,
-    access: any(["permission:view", "permission:manage", "role:view", "role:manage"]),
+    access: any([
+      "permission:view",
+      "permission:manage",
+      "role:view",
+      "role:manage",
+    ]),
   },
   {
     id: "admin-libraries",
@@ -325,7 +454,6 @@ export function getRouteByPath(pathname: string) {
     .find(
       (route) =>
         pathname === route.path ||
-        (route.path !== "/dashboard" &&
-          pathname.startsWith(`${route.path}/`)),
+        (route.path !== "/dashboard" && pathname.startsWith(`${route.path}/`))
     )
 }
