@@ -1,4 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { useQueryScope } from "@/lib/queryScope"
 import {
   createConversationMessage,
@@ -25,9 +29,12 @@ export function useConversation(
   id: string,
   enabled = true
 ) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [...conversationKeys.detail(type, id), useQueryScope()],
-    queryFn: () => getConversation(type, id),
+    queryFn: ({ pageParam }) => getConversation(type, id, pageParam, 50),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.meta.hasNext ? lastPage.meta.page + 1 : undefined,
     enabled: enabled && Boolean(id),
   })
 }
@@ -40,6 +47,9 @@ export function useConversationMutations(
   const invalidate = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: conversationKeys.detail(type, id) }),
+      client.invalidateQueries({
+        queryKey: [...conversationKeys.all, "company-hub"],
+      }),
       client.invalidateQueries({ queryKey: ["operations"] }),
     ])
   return {

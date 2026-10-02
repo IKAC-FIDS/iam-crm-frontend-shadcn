@@ -10,10 +10,20 @@ import { Button } from "@workspace/ui/components/button"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 
 export type OperationsDialogKind =
-  "task" | "opportunity" | "activity" | "meeting" | "products" | "conversation"
+  | "task"
+  | "opportunity"
+  | "activity"
+  | "meeting"
+  | "products"
+  | "conversation"
+  | "opportunities"
+  | "activity-detail"
 
 const actions: Array<{
-  id: Exclude<OperationsDialogKind, "conversation">
+  id: Exclude<
+    OperationsDialogKind,
+    "conversation" | "opportunities" | "activity-detail"
+  >
   label: string
   icon: LucideIcon
   permission: string

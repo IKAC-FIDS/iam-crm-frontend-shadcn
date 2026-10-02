@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { ListChecks } from "lucide-react"
 import { toast } from "sonner"
@@ -29,6 +29,9 @@ import {
   type OperationsDialogKind,
 } from "../components/OperationsQuickActions"
 import { ProductPriceDrawer } from "../components/ProductPriceDrawer"
+import { CompanyOpportunitiesDialog } from "../components/CompanyOpportunitiesDialog"
+import { OperationsTodaySection } from "../components/OperationsTodaySection"
+import { OperationsActivityDetailDialog } from "../components/OperationsActivityDetailDialog"
 import { useOperationsCompanies } from "../hooks/useOperationsCompanies"
 import {
   operationsKeys,
@@ -38,6 +41,10 @@ import type { OperationsCompanyRow } from "../types/operations.types"
 import { PersonalTodoPanel } from "@/features/personalTodos/components/PersonalTodoPanel"
 
 export function OperationsPage() {
+  const todayRef = useRef<HTMLElement>(null)
+  const [todayFocus, setTodayFocus] = useState<
+    "tasks" | "meetings" | "conversations"
+  >()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
   const queryClient = useQueryClient()
   const { params, page, pageSize, patch, setPage, setPageSize } =
@@ -152,20 +159,24 @@ export function OperationsPage() {
         hasUnreadMessages: false,
         hasActiveOpportunity: false,
       })
-    else if (id === "unread")
+    else if (id === "unread") {
+      setTodayFocus("conversations")
       patchFilters({
         attentionState: undefined,
         hasUnreadMessages: true,
         hasActiveOpportunity: false,
       })
-    else if (id === "active")
+      todayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    } else if (id === "active")
       patchFilters({
         attentionState: undefined,
         hasUnreadMessages: false,
         hasActiveOpportunity: true,
       })
-    else if (id === "meetings" && permissions.includes("meeting:create"))
-      openDialog("meeting")
+    else if (id === "meetings") {
+      setTodayFocus("meetings")
+      todayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
   }
 
   return (
@@ -186,10 +197,25 @@ export function OperationsPage() {
         {workspace.data ? (
           <OperationsAttentionCards
             attention={workspace.data.attention}
+            capabilities={workspace.data.capabilities}
+            active={
+              todayFocus === "meetings"
+                ? "meetings"
+                : todayFocus === "conversations"
+                  ? "unread"
+                  : undefined
+            }
             onSelect={selectAttention}
           />
         ) : null}
       </QueryContent>
+      {workspace.data ? (
+        <OperationsTodaySection
+          ref={todayRef}
+          workspace={workspace.data}
+          focus={todayFocus}
+        />
+      ) : null}
       <OperationsQuickActions
         permissions={permissions}
         onAction={(kind) => openDialog(kind)}
@@ -291,6 +317,16 @@ export function OperationsPage() {
           closeDialog()
           void invalidateOperations()
         }}
+      />
+      <CompanyOpportunitiesDialog
+        row={dialog === "opportunities" ? selected : null}
+        onClose={closeDialog}
+      />
+      <OperationsActivityDetailDialog
+        activityId={selected?.lastActivity?.id}
+        companyId={selected?.company.id}
+        open={dialog === "activity-detail"}
+        onClose={closeDialog}
       />
       <ProductPriceDrawer
         open={dialog === "products"}

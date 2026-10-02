@@ -1,11 +1,45 @@
-import { Building2 } from "lucide-react"
+import { useMemo } from "react"
+import { useNavigate } from "react-router-dom"
+import {
+  Activity,
+  BriefcaseBusiness,
+  Building2,
+  Eye,
+  ListPlus,
+  MessageSquareText,
+} from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import {
+  DataTableShell,
+  type DataTableColumn,
+} from "@/components/shared/DataTableShell"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { PaginationControls } from "@/components/shared/PaginationControls"
+import {
+  EntityRowActions,
+  type EntityAction,
+} from "@/components/shared/EntityRowActions"
+import { EntityTableCell } from "@/components/shared/EntityTableCell"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { CompanyAvatar } from "@/features/companies/components/CompanyAvatar"
+import { companyPriorityTone } from "@/features/companies/utils/companyPresentation"
+import { getActivityTypeLabel } from "@/features/activities/utils/activityDisplay"
 import type {
-  OperationsCompanyRow as OperationsCompanyRowType,
+  OperationsCompanyRow,
   OperationsCompaniesPage,
 } from "../types/operations.types"
-import { OperationsCompanyRow, type RowAction } from "./OperationsCompanyRow"
+import {
+  attentionPresentation,
+  formatRelativeOperationTime,
+  priorityLabels,
+} from "../utils/operationsFormatters"
+
+export type OperationsRowAction =
+  | "task"
+  | "opportunity"
+  | "activity"
+  | "conversation"
+  | "opportunities"
+  | "activity-detail"
 
 export function OperationsCompanyList({
   page,
@@ -26,55 +60,271 @@ export function OperationsCompanyList({
   filtered: boolean
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
-  onAction: (action: RowAction, row: OperationsCompanyRowType) => void
+  onAction: (action: OperationsRowAction, row: OperationsCompanyRow) => void
 }) {
+  const navigate = useNavigate()
   const rows = result?.data ?? []
-  if (!rows.length)
-    return (
-      <EmptyState
-        icon={Building2}
-        title={
-          filtered
-            ? "شرکتی با این فیلتر پیدا نشد"
-            : "شرکتی برای عملیات روزانه ندارید"
+  const nextAction = (row: OperationsCompanyRow) =>
+    row.nextAction ??
+    (row.tasks.next?.dueAt
+      ? {
+          type: "TASK" as const,
+          id: row.tasks.next.id,
+          title: row.tasks.next.title,
+          at: row.tasks.next.dueAt,
         }
-        description={
-          filtered
-            ? "فیلترها را تغییر دهید یا پاک کنید."
-            : "پس از تخصیص شرکت‌ها، موارد عملیاتی اینجا نمایش داده می‌شوند."
-        }
-      />
-    )
-  return (
-    <div className="grid min-w-0 gap-3">
-      <div className="hidden grid-cols-[minmax(220px,1.5fr)_110px_120px_minmax(190px,1.2fr)_125px_minmax(150px,1fr)_auto] gap-4 px-4 text-xs font-semibold text-[var(--app-text-secondary)] lg:grid">
-        <span>شرکت</span>
-        <span>اولویت</span>
-        <span>فرصت</span>
-        <span>اقدام بعدی</span>
-        <span>وضعیت</span>
-        <span>آخرین تعامل</span>
-        <span>عملیات</span>
-      </div>
-      <div className="grid gap-2.5">
-        {rows.map((row) => (
-          <OperationsCompanyRow
-            key={row.company.id}
-            row={row}
-            permissions={permissions}
-            onAction={onAction}
+      : null)
+  const actionsFor = (row: OperationsCompanyRow): EntityAction[] => [
+    {
+      id: "view",
+      label: "مشاهده شرکت",
+      icon: Eye,
+      onClick: () => navigate(`/companies/${row.company.id}`),
+    },
+    {
+      id: "task",
+      label: "ایجاد کار",
+      icon: ListPlus,
+      visible: permissions.includes("task:create"),
+      onClick: () => onAction("task", row),
+    },
+    {
+      id: "activity",
+      label: "ثبت فعالیت",
+      icon: Activity,
+      visible: permissions.includes("activity:create"),
+      onClick: () => onAction("activity", row),
+    },
+    {
+      id: "conversation",
+      label: "گفتگوها",
+      icon: MessageSquareText,
+      onClick: () => onAction("conversation", row),
+    },
+    {
+      id: "opportunity",
+      label: "ایجاد فرصت",
+      icon: BriefcaseBusiness,
+      visible: permissions.includes("opportunity:create"),
+      onClick: () => onAction("opportunity", row),
+    },
+  ]
+  const columns = useMemo<DataTableColumn<OperationsCompanyRow>[]>(
+    () => [
+      {
+        id: "company",
+        header: "شرکت",
+        cell: (row) => (
+          <EntityTableCell
+            title={row.company.legalName}
+            subtitle={
+              row.company.brandName !== row.company.legalName
+                ? row.company.brandName
+                : undefined
+            }
+            avatar={
+              <CompanyAvatar
+                name={row.company.brandName || row.company.legalName}
+                companyId={row.company.id}
+                hasLogo={Boolean(row.company.logoObjectKey)}
+              />
+            }
           />
-        ))}
-      </div>
-      <PaginationControls
-        page={result?.meta.page ?? page}
-        pageCount={result?.meta.totalPages ?? 1}
-        pageSize={pageSize}
-        total={result?.meta.total}
-        disabled={fetching}
-        onPageChange={onPageChange}
-        onPageSizeChange={onPageSizeChange}
-      />
-    </div>
+        ),
+      },
+      {
+        id: "priority",
+        header: "اولویت",
+        cell: (row) => (
+          <StatusBadge tone={companyPriorityTone[row.company.priority]}>
+            {priorityLabels[row.company.priority]}
+          </StatusBadge>
+        ),
+      },
+      {
+        id: "opportunities",
+        header: "فرصت‌های فعال",
+        cell: (row) => (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={
+              !row.activeOpportunities.count ||
+              !permissions.includes("opportunity:view")
+            }
+            onClick={(event) => {
+              event.stopPropagation()
+              onAction("opportunities", row)
+            }}
+          >
+            <BriefcaseBusiness className="size-4" />
+            {row.activeOpportunities.count.toLocaleString("fa-IR")}
+          </Button>
+        ),
+      },
+      {
+        id: "next",
+        header: "اقدام بعدی",
+        className: "min-w-52",
+        cell: (row) => {
+          const next = nextAction(row)
+          return next ? (
+            <button
+              type="button"
+              className="max-w-52 text-start hover:text-[var(--app-primary)] hover:underline"
+              onClick={(event) => {
+                event.stopPropagation()
+                navigate(
+                  `/${next.type === "TASK" ? "tasks" : "meetings"}/${next.id}`
+                )
+              }}
+            >
+              <span className="block truncate font-semibold">{next.title}</span>
+              <span className="text-xs text-muted-foreground">
+                {formatRelativeOperationTime(next.at)}
+              </span>
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground">ثبت نشده</span>
+          )
+        },
+      },
+      {
+        id: "attention",
+        header: "وضعیت",
+        cell: (row) => (
+          <StatusBadge tone={attentionPresentation[row.attention.state].tone}>
+            {attentionPresentation[row.attention.state].label}
+          </StatusBadge>
+        ),
+      },
+      {
+        id: "activity",
+        header: "آخرین تعامل",
+        className: "min-w-44",
+        cell: (row) =>
+          row.lastActivity ? (
+            <button
+              type="button"
+              className="text-start hover:text-[var(--app-primary)] hover:underline"
+              onClick={(event) => {
+                event.stopPropagation()
+                onAction("activity-detail", row)
+              }}
+            >
+              <span className="font-semibold">
+                {getActivityTypeLabel(row.lastActivity.type)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {" "}
+                · {formatRelativeOperationTime(row.lastActivity.occurredAt)}
+              </span>
+            </button>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              تعامل ثبت نشده
+            </span>
+          ),
+      },
+      {
+        id: "messages",
+        header: "پیام",
+        cell: (row) => (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="relative"
+            aria-label={`گفتگوهای ${row.company.legalName}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              onAction("conversation", row)
+            }}
+          >
+            <MessageSquareText className="size-4" />
+            {row.conversation.unreadCount ? (
+              <span className="absolute -end-1 -top-1 min-w-4 rounded-full bg-destructive px-1 text-[10px] text-white">
+                {row.conversation.unreadCount.toLocaleString("fa-IR")}
+              </span>
+            ) : null}
+          </Button>
+        ),
+      },
+    ],
+    [navigate, onAction, permissions]
+  )
+
+  return (
+    <DataTableShell
+      rows={rows}
+      columns={columns}
+      getRowKey={(row) => row.company.id}
+      caption="شرکت‌های عملیاتی"
+      loading={fetching && !result}
+      onRowClick={(row) => navigate(`/companies/${row.company.id}`)}
+      renderRowActions={(row) => <EntityRowActions actions={actionsFor(row)} />}
+      emptyState={
+        <EmptyState
+          icon={Building2}
+          title={
+            filtered
+              ? "شرکتی با این فیلتر پیدا نشد"
+              : "شرکتی برای عملیات روزانه ندارید"
+          }
+          description={
+            filtered
+              ? "فیلترها را تغییر دهید یا پاک کنید."
+              : "پس از تخصیص شرکت‌ها، موارد عملیاتی اینجا نمایش داده می‌شوند."
+          }
+        />
+      }
+      mobile={{
+        title: (row) => row.company.brandName || row.company.legalName,
+        subtitle: (row) => row.company.legalName,
+        avatar: (row) => (
+          <CompanyAvatar
+            name={row.company.brandName || row.company.legalName}
+            companyId={row.company.id}
+            hasLogo={Boolean(row.company.logoObjectKey)}
+          />
+        ),
+        status: (row) => (
+          <StatusBadge tone={attentionPresentation[row.attention.state].tone}>
+            {attentionPresentation[row.attention.state].label}
+          </StatusBadge>
+        ),
+        fields: [
+          {
+            id: "opportunities",
+            label: "فرصت فعال",
+            render: (row) =>
+              row.activeOpportunities.count.toLocaleString("fa-IR"),
+          },
+          {
+            id: "next",
+            label: "اقدام بعدی",
+            render: (row) => nextAction(row)?.title ?? "ثبت نشده",
+          },
+          {
+            id: "activity",
+            label: "آخرین تعامل",
+            render: (row) =>
+              row.lastActivity
+                ? `${getActivityTypeLabel(row.lastActivity.type)} · ${formatRelativeOperationTime(row.lastActivity.occurredAt)}`
+                : "ثبت نشده",
+          },
+        ],
+      }}
+      pagination={{
+        page: result?.meta.page ?? page,
+        pageCount: result?.meta.totalPages ?? 1,
+        pageSize,
+        total: result?.meta.total,
+        disabled: fetching,
+        onPageChange,
+        onPageSizeChange,
+      }}
+    />
   )
 }
