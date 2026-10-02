@@ -13,6 +13,7 @@ export type OperationsUser = {
 }
 
 export type OperationsWorkspace = {
+  subject?: { userId: string; isCurrentUser: boolean }
   capabilities?: {
     tasks: boolean
     meetings: boolean
@@ -139,6 +140,7 @@ export type OperationsCompanyRow = {
 }
 
 export type OperationsCompaniesQuery = {
+  userId?: string
   page: number
   limit: number
   search?: string

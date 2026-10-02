@@ -8,9 +8,9 @@ export const operationsKeys = {
   companies: () => [...operationsKeys.all, "companies"] as const,
 }
 
-export function useOperationsWorkspace() {
+export function useOperationsWorkspace(userId?: string) {
   return useQuery({
-    queryKey: [...operationsKeys.workspace(), useQueryScope()],
-    queryFn: getOperationsWorkspace,
+    queryKey: [...operationsKeys.workspace(), useQueryScope(), userId],
+    queryFn: () => getOperationsWorkspace(userId),
   })
 }

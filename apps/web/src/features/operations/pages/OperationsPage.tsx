@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
-import { ListChecks } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { ListChecks, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { PageHero } from "@/components/shared/PageHero"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { TaskFormDialog } from "@/features/tasks/components/TaskFormDialog"
 import { OpportunityFormDialog } from "@/features/opportunities/components/OpportunityFormDialog"
@@ -39,6 +40,8 @@ import {
 } from "../hooks/useOperationsWorkspace"
 import type { OperationsCompanyRow } from "../types/operations.types"
 import { PersonalTodoPanel } from "@/features/personalTodos/components/PersonalTodoPanel"
+import { useAdminUsers } from "@/features/admin/users/hooks/useAdminUsers"
+import { getUser } from "@/features/admin/users/api/adminUsersApi"
 
 export function OperationsPage() {
   const todayRef = useRef<HTMLElement>(null)
@@ -46,12 +49,36 @@ export function OperationsPage() {
     "tasks" | "meetings" | "conversations"
   >()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const currentUser = useAuthStore((state) => state.user)
   const queryClient = useQueryClient()
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
   const [dialog, setDialog] = useState<OperationsDialogKind | null>(null)
   const [selected, setSelected] = useState<OperationsCompanyRow | null>(null)
-  const workspace = useOperationsWorkspace()
+  const [userSearch, setUserSearch] = useState("")
+  const canInspectUsers = currentUser?.role === "ADMIN"
+  const requestedUserId = canInspectUsers
+    ? params.get("userId") || undefined
+    : undefined
+  const targetUserId =
+    requestedUserId && requestedUserId !== currentUser?.id
+      ? requestedUserId
+      : undefined
+  const isOwnView = !targetUserId
+  const effectivePermissions = isOwnView
+    ? permissions
+    : permissions.filter((permission) => !permission.endsWith(":create"))
+  const users = useAdminUsers(
+    { page: 1, limit: 50, search: userSearch || undefined, isActive: true },
+    Boolean(canInspectUsers)
+  )
+  const selectedUserQuery = useQuery({
+    queryKey: ["operations", "subject-user", targetUserId],
+    queryFn: () => getUser(targetUserId as string),
+    enabled: Boolean(targetUserId),
+  })
+  const selectedUser = targetUserId ? selectedUserQuery.data : currentUser
+  const workspace = useOperationsWorkspace(targetUserId)
   const stages = usePipelineStages(dialog === "opportunity")
   const createOpportunity = useCreateOpportunity()
   const filters = useMemo<OperationsFilterState>(
@@ -86,6 +113,7 @@ export function OperationsPage() {
     [params]
   )
   const companies = useOperationsCompanies({
+    userId: targetUserId,
     page,
     limit: pageSize,
     search: filters.search.trim() || undefined,
@@ -183,12 +211,89 @@ export function OperationsPage() {
     <EntityListPage className="min-h-0 overflow-visible">
       <PageHero
         accessBadge={{ label: "مرکز عملیات فروش", icon: ListChecks }}
-        title="عملیات من"
-        description="همه چیز برای انجام کارهای روزانه فروش در یک صفحه"
+        title={
+          isOwnView
+            ? "عملیات من"
+            : `عملیات ${selectedUser?.fullName || "کاربر"}`
+        }
+        description={
+          isOwnView
+            ? "همه چیز برای انجام کارهای روزانه فروش در یک صفحه"
+            : "نمای مدیریتی و فقط‌خواندنی عملیات روزانه کاربر انتخاب‌شده"
+        }
         onRefresh={async () => {
           await invalidateOperations()
         }}
         refreshing={workspace.isFetching || companies.isFetching}
+        extraActions={
+          canInspectUsers ? (
+            <div className="min-w-64">
+              <SearchableOptionSelect
+                value={targetUserId ?? currentUser?.id}
+                search={userSearch}
+                onSearchChange={setUserSearch}
+                options={[
+                  ...(currentUser
+                    ? [
+                        {
+                          id: currentUser.id,
+                          label: `${currentUser.fullName} (خودم)`,
+                          secondary: currentUser.email,
+                        },
+                      ]
+                    : []),
+                  ...(targetUserId && selectedUser
+                    ? [
+                        {
+                          id: selectedUser.id,
+                          label: selectedUser.fullName,
+                          secondary: selectedUser.email,
+                        },
+                      ]
+                    : []),
+                  ...(users.data?.data ?? [])
+                    .filter(
+                      (item) =>
+                        item.id !== currentUser?.id && item.id !== targetUserId
+                    )
+                    .map((item) => ({
+                      id: item.id,
+                      label: item.fullName,
+                      secondary: item.email,
+                    })),
+                ]}
+                loading={users.isLoading || users.isFetching}
+                allowEmpty={false}
+                placeholder="مشاهده عملیات کاربر"
+                ariaLabel="انتخاب کاربر برای مشاهده عملیات"
+                onChange={(userId) =>
+                  patch(
+                    {
+                      userId:
+                        !userId || userId === currentUser?.id
+                          ? undefined
+                          : userId,
+                    },
+                    { replace: true }
+                  )
+                }
+              />
+            </div>
+          ) : undefined
+        }
+        actions={
+          isOwnView ? (
+            <OperationsQuickActions
+              permissions={permissions}
+              onAction={(kind) => openDialog(kind)}
+            />
+          ) : (
+            <div className="inline-flex items-center gap-2 text-xs text-[var(--app-text-secondary)]">
+              <ShieldCheck className="size-4" />
+              نمای مدیریتی فقط‌خواندنی
+            </div>
+          )
+        }
       />
       <QueryContent
         query={workspace}
@@ -216,11 +321,11 @@ export function OperationsPage() {
           focus={todayFocus}
         />
       ) : null}
-      <OperationsQuickActions
-        permissions={permissions}
-        onAction={(kind) => openDialog(kind)}
+      <PersonalTodoPanel
+        data={workspace.data?.personalTodos}
+        readOnly={!isOwnView}
+        subjectName={!isOwnView ? selectedUser?.fullName : undefined}
       />
-      <PersonalTodoPanel data={workspace.data?.personalTodos} />
       <OperationsFilters
         filters={filters}
         onPatch={patchFilters}
@@ -246,7 +351,7 @@ export function OperationsPage() {
             page={page}
             pageSize={pageSize}
             result={companies.data}
-            permissions={permissions}
+            permissions={effectivePermissions}
             fetching={companies.isFetching}
             filtered={filtered}
             onPageChange={setPage}

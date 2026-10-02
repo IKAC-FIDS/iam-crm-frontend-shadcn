@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 import {
   Check,
-  ChevronDown,
   ClipboardCheck,
   Pencil,
   Plus,
@@ -17,6 +16,7 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useTaskOpportunityOptions } from "@/features/tasks/hooks/useTasks"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -39,6 +39,8 @@ const recurrenceLabels: Record<PersonalTodoRecurrence, string> = {
 
 export function PersonalTodoPanel({
   data,
+  readOnly = false,
+  subjectName,
 }: {
   data?: {
     today: PersonalTodo[]
@@ -46,6 +48,8 @@ export function PersonalTodoPanel({
     completed: PersonalTodo[]
     counts: { today: number; overdue: number; upcoming: number }
   }
+  readOnly?: boolean
+  subjectName?: string
 }) {
   const canCreateTask = useAuthStore(
     (state) => state.user?.permissions.includes("task:create") ?? false
@@ -53,13 +57,19 @@ export function PersonalTodoPanel({
   const [tab, setTab] = useState<Tab>("today")
   const [title, setTitle] = useState("")
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [expanded, setExpanded] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PersonalTodo | null>(null)
   const [details, setDetails] = useState<Omit<PersonalTodoInput, "title">>({
     recurrenceType: "NONE",
   })
   const mutations = usePersonalTodoMutations()
   const items = useMemo(() => data?.[tab] ?? [], [data, tab])
+  const resetEditor = () => {
+    setTitle("")
+    setEditingId(null)
+    setDetails({ recurrenceType: "NONE" })
+    setEditorOpen(false)
+  }
   const submit = async () => {
     if (!title.trim()) return
     try {
@@ -70,10 +80,19 @@ export function PersonalTodoPanel({
         })
       else
         await mutations.create.mutateAsync({ title: title.trim(), ...details })
+      resetEditor()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "ثبت کار شخصی انجام نشد."))
+    }
+  }
+  const quickCreate = async () => {
+    if (!title.trim()) return
+    try {
+      await mutations.create.mutateAsync({
+        title: title.trim(),
+        recurrenceType: "NONE",
+      })
       setTitle("")
-      setEditingId(null)
-      setDetails({ recurrenceType: "NONE" })
-      setExpanded(false)
     } catch (error) {
       toast.error(getApiErrorMessage(error, "ثبت کار شخصی انجام نشد."))
     }
@@ -91,10 +110,12 @@ export function PersonalTodoPanel({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="personal-todos-title" className="ui-section-title">
-            کارهای شخصی من
+            {subjectName ? `کارهای شخصی ${subjectName}` : "کارهای شخصی من"}
           </h2>
           <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-            یادآورهای خصوصی و سریع روزانه
+            {readOnly
+              ? "نمای فقط‌خواندنی یادآورهای شخصی کاربر"
+              : "یادآورهای خصوصی و سریع روزانه"}
           </p>
         </div>
         {data?.counts.overdue ? (
@@ -120,49 +141,63 @@ export function PersonalTodoPanel({
           </Button>
         ))}
       </div>
-      <div className="mt-3 flex gap-2">
-        <Input
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") void submit()
-          }}
-          placeholder={editingId ? "ویرایش عنوان..." : "افزودن کار شخصی..."}
-          aria-label="عنوان کار شخصی"
-        />
-        <Button
-          type="button"
-          onClick={() => void submit()}
-          disabled={
-            !title.trim() ||
-            mutations.create.isPending ||
-            mutations.update.isPending
-          }
-        >
-          <Plus className="size-4" />
-          <span className="sr-only">
-            {editingId ? "ذخیره ویرایش" : "افزودن"}
-          </span>
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setExpanded((value) => !value)}
-          aria-expanded={expanded}
-        >
-          <ChevronDown className="size-4" />
-          <span className="sr-only">جزئیات</span>
-        </Button>
-      </div>
-      {expanded ? (
-        <div className="mt-3 grid gap-3 rounded-xl border border-[var(--app-border)] p-3 md:grid-cols-2">
+      {!readOnly ? (
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void quickCreate()
+            }}
+            placeholder="افزودن سریع کار شخصی..."
+            aria-label="عنوان کار شخصی"
+          />
+          <Button
+            type="button"
+            onClick={() => void quickCreate()}
+            disabled={!title.trim() || mutations.create.isPending}
+          >
+            <Plus className="size-4" />
+            <span className="sr-only">افزودن</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setEditingId(null)
+              setDetails({ recurrenceType: "NONE" })
+              setEditorOpen(true)
+            }}
+            aria-haspopup="dialog"
+          >
+            <Pencil className="size-4" />
+            <span className="sr-only">جزئیات</span>
+          </Button>
+        </div>
+      ) : null}
+      <ResponsiveModal
+        open={editorOpen}
+        onClose={resetEditor}
+        title={editingId ? "ویرایش کار شخصی" : "کار شخصی جدید"}
+        description="زمان، یادآوری و ارتباط اختیاری با اطلاعات CRM را تنظیم کنید."
+        icon={ClipboardCheck}
+        width="max-w-3xl"
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <Input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="عنوان کار شخصی"
+            aria-label="عنوان کار شخصی در فرم"
+            className="md:col-span-2"
+          />
           <textarea
             value={details.note ?? ""}
             onChange={(event) =>
               setDetails((value) => ({ ...value, note: event.target.value }))
             }
             placeholder="یادداشت"
-            className="min-h-20 rounded-xl border border-input bg-transparent px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:col-span-2"
+            className="min-h-24 rounded-xl border border-input bg-transparent px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:col-span-2"
           />
           <PersianDateTimePicker
             value={details.dueAt ? new Date(details.dueAt) : undefined}
@@ -231,8 +266,24 @@ export function PersonalTodoPanel({
               placeholder="فاصله تکرار به روز"
             />
           ) : null}
+          <div className="flex justify-end gap-2 md:col-span-2">
+            <Button type="button" variant="outline" onClick={resetEditor}>
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submit()}
+              disabled={
+                !title.trim() ||
+                mutations.create.isPending ||
+                mutations.update.isPending
+              }
+            >
+              {editingId ? "ذخیره تغییرات" : "ایجاد کار شخصی"}
+            </Button>
+          </div>
         </div>
-      ) : null}
+      </ResponsiveModal>
       <div className="mt-4 grid gap-2">
         {items.length === 0 ? (
           <EmptyState
@@ -245,26 +296,30 @@ export function PersonalTodoPanel({
               key={todo.id}
               className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] p-3"
             >
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={() =>
-                  void act(
-                    () =>
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() =>
+                    void act(
+                      () =>
+                        todo.status === "DONE"
+                          ? mutations.reopen.mutateAsync(todo.id)
+                          : mutations.complete.mutateAsync(todo.id),
                       todo.status === "DONE"
-                        ? mutations.reopen.mutateAsync(todo.id)
-                        : mutations.complete.mutateAsync(todo.id),
-                    todo.status === "DONE" ? "کار دوباره باز شد." : "انجام شد."
-                  )
-                }
-              >
-                {todo.status === "DONE" ? (
-                  <RefreshCcw className="size-4" />
-                ) : (
-                  <Check className="size-4" />
-                )}
-              </Button>
+                        ? "کار دوباره باز شد."
+                        : "انجام شد."
+                    )
+                  }
+                >
+                  {todo.status === "DONE" ? (
+                    <RefreshCcw className="size-4" />
+                  ) : (
+                    <Check className="size-4" />
+                  )}
+                </Button>
+              ) : null}
               <div className="min-w-0 flex-1">
                 <p
                   className={
@@ -285,7 +340,10 @@ export function PersonalTodoPanel({
                     : ""}
                 </p>
               </div>
-              {canCreateTask && !todo.task && todo.status !== "DONE" ? (
+              {!readOnly &&
+              canCreateTask &&
+              !todo.task &&
+              todo.status !== "DONE" ? (
                 <Button
                   type="button"
                   size="sm"
@@ -301,38 +359,42 @@ export function PersonalTodoPanel({
                   تبدیل به کار
                 </Button>
               ) : null}
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => {
-                  setEditingId(todo.id)
-                  setTitle(todo.title)
-                  setDetails({
-                    note: todo.note ?? undefined,
-                    dueAt: todo.dueAt ?? undefined,
-                    reminderAt: todo.reminderAt ?? undefined,
-                    recurrenceType: todo.recurrenceType,
-                    recurrenceInterval: todo.recurrenceInterval,
-                    companyId: todo.company?.id,
-                    opportunityId: todo.opportunity?.id,
-                  })
-                  setExpanded(true)
-                }}
-              >
-                <Pencil className="size-4" />
-                <span className="sr-only">ویرایش</span>
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="text-red-500"
-                onClick={() => setDeleteTarget(todo)}
-              >
-                <Trash2 className="size-4" />
-                <span className="sr-only">حذف</span>
-              </Button>
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditingId(todo.id)
+                    setTitle(todo.title)
+                    setDetails({
+                      note: todo.note ?? undefined,
+                      dueAt: todo.dueAt ?? undefined,
+                      reminderAt: todo.reminderAt ?? undefined,
+                      recurrenceType: todo.recurrenceType,
+                      recurrenceInterval: todo.recurrenceInterval,
+                      companyId: todo.company?.id,
+                      opportunityId: todo.opportunity?.id,
+                    })
+                    setEditorOpen(true)
+                  }}
+                >
+                  <Pencil className="size-4" />
+                  <span className="sr-only">ویرایش</span>
+                </Button>
+              ) : null}
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="text-red-500"
+                  onClick={() => setDeleteTarget(todo)}
+                >
+                  <Trash2 className="size-4" />
+                  <span className="sr-only">حذف</span>
+                </Button>
+              ) : null}
             </article>
           ))
         )}

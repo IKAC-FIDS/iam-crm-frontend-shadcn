@@ -89,4 +89,24 @@ describe("PersonalTodoPanel", () => {
       screen.getByRole("button", { name: "فرصت مرتبط با کار شخصی" })
     ).toBeDisabled()
   })
+
+  it("opens todo editing in a modal instead of expanding the panel", async () => {
+    const user = userEvent.setup()
+    render(<PersonalTodoPanel data={data} />)
+    await user.click(screen.getByRole("button", { name: "ویرایش" }))
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByText("ویرایش کار شخصی")).toBeInTheDocument()
+    expect(screen.getByLabelText("عنوان کار شخصی در فرم")).toHaveValue(
+      "تماس با مدیر IT"
+    )
+  })
+
+  it("renders another user's todos as read-only", () => {
+    render(<PersonalTodoPanel data={data} readOnly subjectName="مهتاب امیری" />)
+    expect(screen.getByText("کارهای شخصی مهتاب امیری")).toBeInTheDocument()
+    expect(screen.queryByLabelText("عنوان کار شخصی")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "ویرایش" })
+    ).not.toBeInTheDocument()
+  })
 })

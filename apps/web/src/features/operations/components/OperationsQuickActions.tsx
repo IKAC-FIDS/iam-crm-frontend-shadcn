@@ -7,7 +7,6 @@ import {
   PackageSearch,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
-import { SurfaceCard } from "@/components/shared/SurfaceCard"
 
 export type OperationsDialogKind =
   | "task"
@@ -67,24 +66,22 @@ export function OperationsQuickActions({
   )
   if (!visible.length) return null
   return (
-    <SurfaceCard className="p-3">
-      <div
-        className="flex min-w-0 gap-2 overflow-x-auto"
-        aria-label="عملیات سریع"
-      >
-        {visible.map(({ id, label, icon: Icon }) => (
-          <Button
-            key={id}
-            type="button"
-            variant="outline"
-            className="shrink-0 rounded-xl"
-            onClick={() => onAction(id)}
-          >
-            <Icon className="size-4" />
-            {label}
-          </Button>
-        ))}
-      </div>
-    </SurfaceCard>
+    <div
+      className="flex min-w-0 gap-2 overflow-x-auto"
+      aria-label="عملیات سریع"
+    >
+      {visible.map(({ id, label, icon: Icon }) => (
+        <Button
+          key={id}
+          type="button"
+          variant="outline"
+          className="shrink-0 rounded-xl"
+          onClick={() => onAction(id)}
+        >
+          <Icon className="size-4" />
+          {label}
+        </Button>
+      ))}
+    </div>
   )
 }
