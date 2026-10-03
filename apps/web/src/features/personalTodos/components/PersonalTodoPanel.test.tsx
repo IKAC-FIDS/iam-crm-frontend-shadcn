@@ -64,7 +64,7 @@ describe("PersonalTodoPanel", () => {
     const user = userEvent.setup()
     render(<PersonalTodoPanel data={data} />)
     await user.type(screen.getByLabelText("عنوان کار شخصی"), "مرور گزارش فروش")
-    await user.click(screen.getByRole("button", { name: "افزودن" }))
+    await user.click(screen.getByRole("button", { name: "افزودن سریع" }))
     expect(mutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "مرور گزارش فروش",
@@ -84,10 +84,26 @@ describe("PersonalTodoPanel", () => {
   it("exposes the optional company-scoped opportunity relation", async () => {
     const user = userEvent.setup()
     render(<PersonalTodoPanel data={data} />)
-    await user.click(screen.getByRole("button", { name: "جزئیات" }))
+    await user.click(
+      screen.getByRole("button", { name: "ایجاد کار شخصی با جزئیات" })
+    )
     expect(
       screen.getByRole("button", { name: "فرصت مرتبط با کار شخصی" })
     ).toBeDisabled()
+    expect(screen.getByText("زمان انجام")).toBeInTheDocument()
+    expect(screen.getByText("زمان یادآوری")).toBeInTheDocument()
+  })
+
+  it("presents custom recurrence as a readable day interval", async () => {
+    const user = userEvent.setup()
+    render(<PersonalTodoPanel data={data} />)
+    await user.click(
+      screen.getByRole("button", { name: "ایجاد کار شخصی با جزئیات" })
+    )
+    await user.click(screen.getByRole("button", { name: "تکرار کار شخصی" }))
+    await user.click(screen.getByText("سفارشی"))
+    expect(screen.getByLabelText("تعداد روزهای فاصله تکرار")).toHaveValue(2)
+    expect(screen.getByText("روز یک‌بار")).toBeInTheDocument()
   })
 
   it("opens todo editing in a modal instead of expanding the panel", async () => {
