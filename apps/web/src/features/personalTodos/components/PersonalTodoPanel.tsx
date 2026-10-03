@@ -10,14 +10,21 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
+import { FormActions } from "@/components/shared/FormActions"
+import {
+  FormDialogBody,
+  FormDialogFooter,
+} from "@/components/shared/FormDialogLayout"
+import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
-import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
 import { useTaskOpportunityOptions } from "@/features/tasks/hooks/useTasks"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -178,159 +185,204 @@ export function PersonalTodoPanel({
           </Button>
         </div>
       ) : null}
-      <ResponsiveModal
+      <Dialog
         open={editorOpen}
-        onClose={resetEditor}
-        title={editingId ? "ویرایش کار شخصی" : "کار شخصی جدید"}
-        description="زمان، یادآوری و ارتباط اختیاری با اطلاعات CRM را تنظیم کنید."
-        icon={ClipboardCheck}
-        width="max-w-3xl"
+        onOpenChange={(open) => {
+          if (!open) resetEditor()
+        }}
       >
-        <div className="grid gap-4 md:grid-cols-2">
-          <TodoFormField label="عنوان کار شخصی" className="md:col-span-2">
-            <Input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="مثلاً پیگیری پیشنهاد قیمت"
-              aria-label="عنوان کار شخصی در فرم"
-            />
-          </TodoFormField>
-          <TodoFormField label="یادداشت" className="md:col-span-2">
-            <textarea
-              value={details.note ?? ""}
-              onChange={(event) =>
-                setDetails((value) => ({ ...value, note: event.target.value }))
-              }
-              aria-label="یادداشت کار شخصی"
-              placeholder="توضیحات تکمیلی (اختیاری)"
-              className="min-h-24 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            />
-          </TodoFormField>
-          <TodoFormField
-            label="زمان انجام"
-            description="تاریخ و ساعتی که می‌خواهید این کار انجام شود."
+        <DialogContent
+          showCloseButton={false}
+          dir="rtl"
+          className="max-h-[94dvh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[var(--app-radius-hero)] p-0 sm:max-w-[840px]"
+        >
+          <DialogHeroHeader
+            title={editingId ? "ویرایش کار شخصی" : "کار شخصی جدید"}
+            description="زمان، تکرار و ارتباط اختیاری با اطلاعات CRM"
+            icon={ClipboardCheck}
+            onClose={resetEditor}
+          />
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void submit()
+            }}
           >
-            <PersianDateTimePicker
-              value={details.dueAt ? new Date(details.dueAt) : undefined}
-              placeholder="انتخاب تاریخ انجام"
-              onChange={(date) =>
-                setDetails((value) => ({
-                  ...value,
-                  dueAt: date?.toISOString(),
-                }))
-              }
-            />
-          </TodoFormField>
-          <TodoFormField
-            label="زمان یادآوری"
-            description="زمانی که می‌خواهید پیش از انجام کار به شما یادآوری شود."
-          >
-            <PersianDateTimePicker
-              value={
-                details.reminderAt ? new Date(details.reminderAt) : undefined
-              }
-              placeholder="انتخاب تاریخ یادآوری"
-              onChange={(date) =>
-                setDetails((value) => ({
-                  ...value,
-                  reminderAt: date?.toISOString(),
-                }))
-              }
-            />
-          </TodoFormField>
-          <TodoFormField label="نحوه تکرار">
-            <SearchableOptionSelect
-              value={details.recurrenceType}
-              search=""
-              onSearchChange={() => undefined}
-              searchable={false}
-              allowEmpty={false}
-              ariaLabel="تکرار کار شخصی"
-              options={Object.entries(recurrenceLabels).map(([id, label]) => ({
-                id,
-                label,
-              }))}
-              onChange={(recurrenceType) =>
-                setDetails((value) => ({
-                  ...value,
-                  recurrenceType: recurrenceType as PersonalTodoRecurrence,
-                  recurrenceInterval:
-                    recurrenceType === "CUSTOM"
-                      ? (value.recurrenceInterval ?? 2)
-                      : undefined,
-                }))
-              }
-            />
-          </TodoFormField>
-          <TodoFormField label="شرکت مرتبط" description="اختیاری">
-            <SearchableCompanySelect
-              value={details.companyId}
-              onChange={(companyId) =>
-                setDetails((value) => ({
-                  ...value,
-                  companyId,
-                  opportunityId: undefined,
-                }))
-              }
-              placeholder="انتخاب شرکت"
-            />
-          </TodoFormField>
-          <TodoFormField label="فرصت مرتبط" description="اختیاری">
-            <TodoOpportunitySelect
-              companyId={details.companyId}
-              value={details.opportunityId}
-              onChange={(opportunityId) =>
-                setDetails((current) => ({ ...current, opportunityId }))
-              }
-            />
-          </TodoFormField>
-          {details.recurrenceType === "CUSTOM" ? (
-            <TodoFormField
-              label="فاصله تکرار"
-              description="بعد از تکمیل، نمونه بعدی با این فاصله ساخته می‌شود."
-              className="md:col-span-2"
-            >
-              <div className="flex items-center gap-3 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] p-3">
-                <span className="shrink-0 text-sm font-medium">هر</span>
-                <Input
-                  type="number"
-                  min={2}
-                  max={365}
-                  value={details.recurrenceInterval ?? 2}
-                  onChange={(event) =>
-                    setDetails((value) => ({
-                      ...value,
-                      recurrenceInterval: Math.min(
-                        365,
-                        Math.max(2, Number(event.target.value) || 2)
-                      ),
-                    }))
-                  }
-                  aria-label="تعداد روزهای فاصله تکرار"
-                  className="w-24 text-center"
-                />
-                <span className="text-sm font-medium">روز یک‌بار</span>
-              </div>
-            </TodoFormField>
-          ) : null}
-          <div className="flex justify-end gap-2 md:col-span-2">
-            <Button type="button" variant="outline" onClick={resetEditor}>
-              انصراف
-            </Button>
-            <Button
-              type="button"
-              onClick={() => void submit()}
-              disabled={
-                !title.trim() ||
-                mutations.create.isPending ||
-                mutations.update.isPending
-              }
-            >
-              {editingId ? "ذخیره تغییرات" : "ایجاد کار شخصی"}
-            </Button>
-          </div>
-        </div>
-      </ResponsiveModal>
+            <FormDialogBody>
+              <FormSection
+                title="اطلاعات کار شخصی"
+                description="عنوان و توضیحات کوتاه این یادآور را وارد کنید."
+              >
+                <div className="grid gap-4">
+                  <Field label="عنوان کار شخصی">
+                    <Input
+                      value={title}
+                      onChange={(event) => setTitle(event.target.value)}
+                      placeholder="مثلاً پیگیری پیشنهاد قیمت"
+                      aria-label="عنوان کار شخصی در فرم"
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
+                  <Field label="یادداشت">
+                    <textarea
+                      value={details.note ?? ""}
+                      onChange={(event) =>
+                        setDetails((value) => ({
+                          ...value,
+                          note: event.target.value,
+                        }))
+                      }
+                      aria-label="یادداشت کار شخصی"
+                      placeholder="توضیحات تکمیلی (اختیاری)"
+                      rows={3}
+                      className={textareaClass}
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="زمان‌بندی"
+                description="زمان انجام و یادآوری این کار را مشخص کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="زمان انجام">
+                    <PersianDateTimePicker
+                      value={
+                        details.dueAt ? new Date(details.dueAt) : undefined
+                      }
+                      placeholder="انتخاب تاریخ انجام"
+                      onChange={(date) =>
+                        setDetails((value) => ({
+                          ...value,
+                          dueAt: date?.toISOString(),
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="زمان یادآوری">
+                    <PersianDateTimePicker
+                      value={
+                        details.reminderAt
+                          ? new Date(details.reminderAt)
+                          : undefined
+                      }
+                      placeholder="انتخاب تاریخ یادآوری"
+                      onChange={(date) =>
+                        setDetails((value) => ({
+                          ...value,
+                          reminderAt: date?.toISOString(),
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="تکرار"
+                description="در صورت تکرارشونده بودن، الگوی ساخت نمونه بعدی را انتخاب کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="نحوه تکرار">
+                    <SearchableOptionSelect
+                      value={details.recurrenceType}
+                      search=""
+                      onSearchChange={() => undefined}
+                      searchable={false}
+                      allowEmpty={false}
+                      ariaLabel="تکرار کار شخصی"
+                      options={Object.entries(recurrenceLabels).map(
+                        ([id, label]) => ({ id, label })
+                      )}
+                      onChange={(recurrenceType) =>
+                        setDetails((value) => ({
+                          ...value,
+                          recurrenceType:
+                            recurrenceType as PersonalTodoRecurrence,
+                          recurrenceInterval:
+                            recurrenceType === "CUSTOM"
+                              ? (value.recurrenceInterval ?? 2)
+                              : undefined,
+                        }))
+                      }
+                    />
+                  </Field>
+                  {details.recurrenceType === "CUSTOM" ? (
+                    <Field label="فاصله تکرار">
+                      <div className="flex h-11 items-center gap-3 rounded-xl border border-input px-3">
+                        <span className="shrink-0 text-sm">هر</span>
+                        <Input
+                          type="number"
+                          min={2}
+                          max={365}
+                          value={details.recurrenceInterval ?? 2}
+                          onChange={(event) =>
+                            setDetails((value) => ({
+                              ...value,
+                              recurrenceInterval: Math.min(
+                                365,
+                                Math.max(2, Number(event.target.value) || 2)
+                              ),
+                            }))
+                          }
+                          aria-label="تعداد روزهای فاصله تکرار"
+                          className="h-8 w-20 text-center"
+                        />
+                        <span className="shrink-0 text-sm">روز یک‌بار</span>
+                      </div>
+                    </Field>
+                  ) : null}
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="ارتباط با CRM"
+                description="در صورت نیاز، این یادآور را به شرکت یا فرصت مرتبط کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="شرکت مرتبط (اختیاری)">
+                    <SearchableCompanySelect
+                      value={details.companyId}
+                      onChange={(companyId) =>
+                        setDetails((value) => ({
+                          ...value,
+                          companyId,
+                          opportunityId: undefined,
+                        }))
+                      }
+                      placeholder="انتخاب شرکت"
+                    />
+                  </Field>
+                  <Field label="فرصت مرتبط (اختیاری)">
+                    <TodoOpportunitySelect
+                      companyId={details.companyId}
+                      value={details.opportunityId}
+                      onChange={(opportunityId) =>
+                        setDetails((current) => ({
+                          ...current,
+                          opportunityId,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+            </FormDialogBody>
+            <FormDialogFooter>
+              <FormActions
+                onCancel={resetEditor}
+                pending={
+                  mutations.create.isPending || mutations.update.isPending
+                }
+                disabled={!title.trim()}
+                submitLabel={editingId ? "ذخیره تغییرات" : "ایجاد کار شخصی"}
+              />
+            </FormDialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <div className="mt-4 grid gap-2">
         {items.length === 0 ? (
           <EmptyState
@@ -514,30 +566,16 @@ function TodoOpportunitySelect({
   )
 }
 
-function TodoFormField({
-  label,
-  description,
-  className,
-  children,
-}: {
-  label: string
-  description?: string
-  className?: string
-  children: ReactNode
-}) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className={`grid content-start gap-2 ${className ?? ""}`}>
-      <div>
-        <p className="text-sm font-semibold text-[var(--app-text-primary)]">
-          {label}
-        </p>
-        {description ? (
-          <p className="mt-0.5 text-xs text-[var(--app-text-secondary)]">
-            {description}
-          </p>
-        ) : null}
-      </div>
+    <label className="grid min-w-0 gap-2">
+      <span className="text-xs font-bold text-[var(--app-heading)]">
+        {label}
+      </span>
       {children}
-    </div>
+    </label>
   )
 }
+
+const textareaClass =
+  "w-full resize-none rounded-xl border border-input bg-transparent p-3 text-sm outline-none focus:border-[var(--app-primary)]"
