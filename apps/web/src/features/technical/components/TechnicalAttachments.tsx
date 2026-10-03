@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Download, FileArchive, Plus, Trash2 } from "lucide-react"
+import { Download, Eye, FileArchive, Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { api } from "@/lib/api"
@@ -10,12 +11,20 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { getApiErrorMessage } from "@/lib/apiResponse"
+import {
+  ATTACHMENT_ACCEPT,
+  canPreviewAttachment,
+  downloadAttachment,
+  previewAttachment,
+} from "@/lib/attachmentFiles"
 type Attachment = {
   id: string
   originalFileName: string
   sizeBytes: number
   createdAt: string
   description?: string | null
+  mimeType?: string | null
 }
 function attachmentRows(value: unknown): Attachment[] {
   const x = unwrapApiResponse<unknown>(value)
@@ -77,18 +86,19 @@ export function TechnicalAttachments({
       mutationFn: (id: string) => api.delete(`/attachments/${id}`),
       onSuccess: () => client.invalidateQueries({ queryKey: key }),
     })
+  async function openPreview(a: Attachment) {
+    try {
+      await previewAttachment(a.id)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "نمایش فایل ناموفق بود"))
+    }
+  }
   async function download(a: Attachment) {
-    const r = await api.get<Blob>(`/attachments/${a.id}/download`, {
-        responseType: "blob",
-      }),
-      url = URL.createObjectURL(r.data),
-      link = document.createElement("a")
-    link.href = url
-    link.download = a.originalFileName
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
+    try {
+      await downloadAttachment(a.id, a.originalFileName)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "دانلود فایل ناموفق بود"))
+    }
   }
   if (!canView)
     return (
@@ -129,6 +139,13 @@ export function TechnicalAttachments({
                 </div>
                 <EntityRowActions
                   actions={[
+                    {
+                      id: "preview",
+                      label: "مشاهده",
+                      icon: Eye,
+                      visible: canPreviewAttachment(a.mimeType),
+                      onClick: () => openPreview(a),
+                    },
                     {
                       id: "download",
                       label: "دانلود",
@@ -174,6 +191,7 @@ export function TechnicalAttachments({
         >
           <Input
             type="file"
+            accept={ATTACHMENT_ACCEPT}
             required
             onChange={(e) => setFile(e.target.files?.[0])}
           />

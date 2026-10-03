@@ -1,5 +1,6 @@
 import {
   Download,
+  Eye,
   FileArchive,
   Plus,
   Trash2,
@@ -15,6 +16,12 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import {
+  ATTACHMENT_ACCEPT,
+  canPreviewAttachment,
+  downloadAttachment,
+  previewAttachment,
+} from "@/lib/attachmentFiles"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -27,7 +34,6 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
-import { downloadMeetingAttachment } from "../api/meetings.api"
 import {
   useDeleteMeetingAttachment,
   useMeetingAttachments,
@@ -85,8 +91,16 @@ export function MeetingAttachmentsSection({
 
   async function downloadFile(item: MeetingAttachment) {
     try {
-      await downloadMeetingAttachment(item.id, item.originalFileName)
+      await downloadAttachment(item.id, item.originalFileName)
       toast.success(text.feedback.downloaded)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, text.errors.attachmentLoad))
+    }
+  }
+
+  async function previewFile(item: MeetingAttachment) {
+    try {
+      await previewAttachment(item.id)
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.attachmentLoad))
     }
@@ -173,6 +187,17 @@ export function MeetingAttachmentsSection({
                       </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-1.5">
+                      {canPreviewAttachment(item.mimeType) ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 rounded-lg text-xs"
+                          onClick={() => void previewFile(item)}
+                        >
+                          <Eye className="size-3.5" />
+                          مشاهده
+                        </Button>
+                      ) : null}
                       <Button
                         size="sm"
                         variant="outline"
@@ -311,6 +336,7 @@ function AttachmentUploadDialog({
             <Input
               id="meeting-attachment-file"
               type="file"
+              accept={ATTACHMENT_ACCEPT}
               disabled={pending}
               onChange={(event) => setFile(event.target.files?.[0])}
             />

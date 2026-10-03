@@ -6,6 +6,7 @@ import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { CurrencyInput } from "@/components/shared/inputs"
 import { uiText } from "@/config/uiText"
+import { ATTACHMENT_ACCEPT } from "@/lib/attachmentFiles"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -742,6 +743,7 @@ export function AttachmentUploadDialog({
             {file?.name || text.fields.fileHint}
             <input
               type="file"
+              accept={ATTACHMENT_ACCEPT}
               className="hidden"
               onChange={(event) => setFile(event.target.files?.[0])}
             />

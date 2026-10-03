@@ -1,6 +1,7 @@
 import {
   Activity,
   Download,
+  Eye,
   FileArchive,
   History,
   Plus,
@@ -18,10 +19,14 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
+import {
+  canPreviewAttachment,
+  downloadAttachment,
+  previewAttachment,
+} from "@/lib/attachmentFiles"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { Button } from "@workspace/ui/components/button"
 
-import { downloadOpportunityAttachment } from "../api/opportunities.api"
 import {
   useDeleteOpportunityAttachment,
   useOpportunityAttachments,
@@ -82,8 +87,15 @@ export function OpportunityFilesHistorySection({
   }
   async function downloadFile(item: OpportunityAttachment) {
     try {
-      await downloadOpportunityAttachment(item.id, item.originalFileName)
+      await downloadAttachment(item.id, item.originalFileName)
       toast.success(text.feedback.downloaded)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, text.errors.section))
+    }
+  }
+  async function previewFile(item: OpportunityAttachment) {
+    try {
+      await previewAttachment(item.id)
     } catch (error) {
       toast.error(getApiErrorMessage(error, text.errors.section))
     }
@@ -136,6 +148,17 @@ export function OpportunityFilesHistorySection({
                     </p>
                   ) : null}
                   <div className="mt-3 flex gap-1">
+                    {canPreviewAttachment(item.mimeType) ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs"
+                        onClick={() => void previewFile(item)}
+                      >
+                        <Eye className="size-3" />
+                        مشاهده
+                      </Button>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"

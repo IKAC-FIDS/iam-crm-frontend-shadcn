@@ -16,6 +16,7 @@ import {
   Link2,
   ListChecks,
   Download,
+  Eye,
   UploadCloud,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -32,7 +33,12 @@ import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { getApiErrorMessage } from "@/lib/apiResponse"
-import { api } from "@/lib/api"
+import {
+  ATTACHMENT_ACCEPT,
+  canPreviewAttachment,
+  downloadAttachment,
+  previewAttachment,
+} from "@/lib/attachmentFiles"
 import { useAuthStore } from "@/store/authStore"
 import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
@@ -578,17 +584,16 @@ function DocumentVersions({
     queryClient = useQueryClient()
   async function download(attachment: NonNullable<DocumentVersion["attachment"]>) {
     try {
-      const response = await api.get<Blob>(`/attachments/${attachment.id}/download`, { responseType: "blob" })
-      const url = URL.createObjectURL(response.data)
-      const anchor = document.createElement("a")
-      anchor.href = url
-      anchor.download = attachment.originalFileName
-      document.body.appendChild(anchor)
-      anchor.click()
-      anchor.remove()
-      URL.revokeObjectURL(url)
+      await downloadAttachment(attachment.id, attachment.originalFileName)
     } catch {
       toast.error("دانلود فایل انجام نشد.")
+    }
+  }
+  async function preview(attachment: NonNullable<DocumentVersion["attachment"]>) {
+    try {
+      await previewAttachment(attachment.id)
+    } catch {
+      toast.error("نمایش فایل انجام نشد.")
     }
   }
   return (
@@ -643,12 +648,21 @@ function DocumentVersions({
                 </p>
               </div>
               {v.attachment && !v.attachment.deletedAt && canDownload ? (
-                <EntityRowActions actions={[{
-                  id: "download",
-                  label: "دانلود فایل نسخه",
-                  icon: Download,
-                  onClick: () => download(v.attachment!),
-                }]} />
+                <EntityRowActions actions={[
+                  {
+                    id: "preview",
+                    label: "مشاهده فایل نسخه",
+                    icon: Eye,
+                    visible: canPreviewAttachment(v.attachment.mimeType),
+                    onClick: () => preview(v.attachment!),
+                  },
+                  {
+                    id: "download",
+                    label: "دانلود فایل نسخه",
+                    icon: Download,
+                    onClick: () => download(v.attachment!),
+                  },
+                ]} />
               ) : null}
             </article>
           ))}
@@ -711,7 +725,7 @@ function DocumentVersions({
             فایل نسخه
             <Input
               type="file"
-              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.json,.xml,.txt,.csv,.md,.png,.jpg,.jpeg,.webp"
+              accept={ATTACHMENT_ACCEPT}
               required
               onChange={(e) => setFile(e.target.files?.[0])}
             />
