@@ -61,7 +61,8 @@ describe("Operations UI", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("renders creator, related users and CRM context for my conversations", () => {
+  it("renders compact conversation badges and opens the complete list dialog", async () => {
+    const user = userEvent.setup()
     render(
       <MemoryRouter>
         <OperationsTodaySection
@@ -109,14 +110,16 @@ describe("Operations UI", () => {
       </MemoryRouter>
     )
 
-    expect(screen.getByText("ایجادکننده: فرزاد نوروزی فرد")).toBeInTheDocument()
+    expect(screen.getByText("فرزاد نوروزی فرد")).toBeInTheDocument()
+    expect(screen.getByText("۱ نفر مرتبط")).toBeInTheDocument()
+    expect(screen.getAllByText("بررسی پیشنهاد")).toHaveLength(2)
+    await user.click(screen.getByRole("button", { name: "مشاهده همه" }))
     expect(
-      screen.getByText("افراد مرتبط / تگ‌شده: مهتاب امیری")
+      screen.getByRole("heading", { name: "گفتگوهای اخیر من" })
     ).toBeInTheDocument()
+    expect(screen.getByText("افراد مرتبط: مهتاب امیری")).toBeInTheDocument()
     expect(
-      screen.getByText(
-        "شرکت: پرتو داچک · فرصت: فروش توکن · کار: بررسی پیشنهاد"
-      )
+      screen.getByText(/شرکت: پرتو داچک · فرصت: فروش توکن · کار: بررسی پیشنهاد/)
     ).toBeInTheDocument()
   })
 })
