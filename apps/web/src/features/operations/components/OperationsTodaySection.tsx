@@ -23,6 +23,7 @@ export const OperationsTodaySection = forwardRef<
         id: item.id,
         title: item.title,
         meta: `${item.company?.brandName || item.company?.legalName || "بدون شرکت"} · ${item.dueAt ? formatRelativeOperationTime(item.dueAt) : "بدون زمان"}`,
+        details: [] as string[],
         onClick: () => navigate(`/tasks/${item.id}`),
       })),
     },
@@ -34,6 +35,7 @@ export const OperationsTodaySection = forwardRef<
         id: item.id,
         title: item.title,
         meta: `${item.company?.brandName || item.company?.legalName || "بدون شرکت"} · ${formatRelativeOperationTime(item.startAt)}`,
+        details: [] as string[],
         onClick: () => navigate(`/meetings/${item.id}`),
       })),
     },
@@ -43,8 +45,18 @@ export const OperationsTodaySection = forwardRef<
       icon: MessageSquareText,
       rows: workspace.recentConversations.map((item) => ({
         id: item.threadId,
-        title: item.latestMessage?.body || "گفتگوی بدون پیام",
+        title:
+          item.context.task?.title ||
+          item.context.opportunity?.title ||
+          item.context.company?.name ||
+          "گفتگوی مرتبط",
         meta: `${item.unreadCount.toLocaleString("fa-IR")} خوانده‌نشده · ${formatRelativeOperationTime(item.updatedAt)}`,
+        details: [
+          item.latestMessage?.body || "گفتگوی بدون پیام",
+          `ایجادکننده: ${item.createdBy.fullName}`,
+          `افراد مرتبط / تگ‌شده: ${item.relatedUsers.length ? item.relatedUsers.map((person) => person.fullName).join("، ") : "—"}`,
+          conversationContextLabel(item.context),
+        ].filter(Boolean),
         onClick: () =>
           navigate(
             item.entityType === "COMPANY"
@@ -100,6 +112,15 @@ export const OperationsTodaySection = forwardRef<
                   <span className="mt-1 block truncate text-xs text-muted-foreground">
                     {row.meta}
                   </span>
+                  {row.details.length ? (
+                    <span className="mt-2 grid gap-1 text-xs leading-5 text-muted-foreground">
+                      {row.details.map((detail) => (
+                        <span key={detail} className="line-clamp-2">
+                          {detail}
+                        </span>
+                      ))}
+                    </span>
+                  ) : null}
                 </button>
               ))}
               {!rows.length ? (
@@ -115,3 +136,15 @@ export const OperationsTodaySection = forwardRef<
   )
 })
 OperationsTodaySection.displayName = "OperationsTodaySection"
+
+function conversationContextLabel(
+  context: OperationsWorkspace["recentConversations"][number]["context"]
+) {
+  return [
+    context.company ? `شرکت: ${context.company.name}` : null,
+    context.opportunity ? `فرصت: ${context.opportunity.title}` : null,
+    context.task ? `کار: ${context.task.title}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+}

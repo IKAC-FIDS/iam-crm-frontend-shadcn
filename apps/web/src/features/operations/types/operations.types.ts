@@ -69,6 +69,13 @@ export type OperationsRecentConversation = {
   status: "OPEN" | "RESOLVED"
   updatedAt: string
   unreadCount: number
+  createdBy: OperationsUser
+  relatedUsers: OperationsUser[]
+  context: {
+    company?: { id: string; name: string } | null
+    opportunity?: { id: string; title: string } | null
+    task?: { id: string; title: string } | null
+  }
   latestMessage?: {
     id: string
     body: string
