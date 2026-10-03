@@ -92,6 +92,21 @@ export type AccountWorkspace = {
       updatedAt: string
       unreadCount: number
       actionUrl: string
+      createdBy: {
+        id: string
+        fullName: string
+        avatarObjectKey?: string | null
+      }
+      relatedUsers: Array<{
+        id: string
+        fullName: string
+        avatarObjectKey?: string | null
+      }>
+      context: {
+        company?: { id: string; name: string } | null
+        opportunity?: { id: string; title: string } | null
+        task?: { id: string; title: string } | null
+      }
       latestMessage?: {
         id: string
         body: string

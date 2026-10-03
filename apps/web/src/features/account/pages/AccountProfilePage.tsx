@@ -803,8 +803,8 @@ function WorkspaceContent({
         </ContentSection>
 
         <ContentSection
-          title="گفتگوهای اخیر"
-          description="پیام‌ها و پرسش‌های مرتبط با رکوردهای شما"
+          title="گفتگوهای من"
+          description="گفتگوهایی که ایجاد کرده‌اید، در آن‌ها مسئول هستید یا تگ شده‌اید"
           icon={MessageSquareText}
           action={
             isOwnProfile && can("activity:view") ? (
@@ -825,9 +825,32 @@ function WorkspaceContent({
                   <div className="flex w-full items-start justify-between gap-3">
                     <div className="min-w-0">
                       <strong className="block truncate text-sm">
-                        {conversation.latestMessage?.author.fullName ||
+                        {conversation.context.task?.title ||
+                          conversation.context.opportunity?.title ||
+                          conversation.context.company?.name ||
                           "گفتگوی مرتبط"}
                       </strong>
+                      <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                        ایجادکننده: {conversation.createdBy.fullName}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-[var(--app-text-secondary)]">
+                        افراد مرتبط / تگ‌شده: {conversation.relatedUsers.length
+                          ? conversation.relatedUsers
+                              .map((person) => person.fullName)
+                              .join("، ")
+                          : "—"}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-[var(--app-text-secondary)]">
+                        {conversation.context.company
+                          ? `شرکت: ${conversation.context.company.name}`
+                          : null}
+                        {conversation.context.opportunity
+                          ? `${conversation.context.company ? " · " : ""}فرصت: ${conversation.context.opportunity.title}`
+                          : null}
+                        {conversation.context.task
+                          ? `${conversation.context.company || conversation.context.opportunity ? " · " : ""}کار: ${conversation.context.task.title}`
+                          : null}
+                      </p>
                       <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--app-text-secondary)]">
                         {conversation.latestMessage?.body ||
                           "پیامی ثبت نشده است."}

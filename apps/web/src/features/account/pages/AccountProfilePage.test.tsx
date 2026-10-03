@@ -157,6 +157,66 @@ it("shows the personal workspace and preserves the correct activity drill-down f
   expect(screen.getByTestId("location")).toHaveTextContent("&dateTo=")
 })
 
+it("shows only the user's related conversation context and participants", () => {
+  vi.mocked(useAccountWorkspace).mockReturnValue({
+    data: {
+      ...workspace,
+      recent: {
+        ...workspace.recent,
+        conversations: [
+          {
+            id: "thread-1",
+            entityType: "TASK",
+            entityId: "task-1",
+            status: "OPEN",
+            updatedAt: "2026-10-03T08:00:00.000Z",
+            unreadCount: 1,
+            actionUrl: "/tasks/task-1#conversation",
+            createdBy: { id: "creator-1", fullName: "مریم احمدی" },
+            relatedUsers: [{ id: "user-2", fullName: "علی رضایی" }],
+            context: {
+              company: { id: "company-1", name: "شرکت نمونه" },
+              opportunity: { id: "opportunity-1", title: "فروش SSO" },
+              task: { id: "task-1", title: "پیگیری پیشنهاد" },
+            },
+            latestMessage: {
+              id: "message-1",
+              body: "لطفاً نتیجه را اعلام کنید",
+              type: "COMMENT",
+              createdAt: "2026-10-03T08:00:00.000Z",
+              author: { id: "creator-1", fullName: "مریم احمدی" },
+            },
+          },
+        ],
+      },
+    },
+    isLoading: false,
+    isError: false,
+    error: null,
+    isFetching: false,
+    refetch: vi.fn(),
+  } as unknown as ReturnType<typeof useAccountWorkspace>)
+
+  render(
+    <TestQueryProvider>
+      <MemoryRouter initialEntries={["/account/profile"]}>
+        <FontPreferenceProvider>
+          <AccountProfilePage />
+        </FontPreferenceProvider>
+      </MemoryRouter>
+    </TestQueryProvider>
+  )
+
+  expect(screen.getByText("گفتگوهای من")).toBeInTheDocument()
+  expect(screen.getByText("ایجادکننده: مریم احمدی")).toBeInTheDocument()
+  expect(screen.getByText("افراد مرتبط / تگ‌شده: علی رضایی")).toBeInTheDocument()
+  expect(
+    screen.getByText(
+      "شرکت: شرکت نمونه · فرصت: فروش SSO · کار: پیگیری پیشنهاد"
+    )
+  ).toBeInTheDocument()
+})
+
 it("does not expose entity navigation when the matching view permission is absent", () => {
   useAuthStore.setState((state) => ({
     user: state.user ? { ...state.user, permissions: ["activity:view"] } : null,
