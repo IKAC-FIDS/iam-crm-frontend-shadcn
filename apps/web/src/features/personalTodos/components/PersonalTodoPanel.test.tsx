@@ -26,6 +26,9 @@ vi.mock("@/features/tasks/hooks/useTasks", () => ({
     isFetching: false,
   }),
 }))
+vi.mock("@/features/operations/hooks/useOperationsWorkspace", () => ({
+  useOperationsWorkspace: () => ({ data: undefined, isLoading: false }),
+}))
 vi.mock("@/features/people/components/SearchableCompanySelect", () => ({
   SearchableCompanySelect: () => (
     <button type="button" aria-label="شرکت مرتبط">

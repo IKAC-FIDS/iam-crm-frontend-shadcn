@@ -16,6 +16,7 @@ import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { OperationsWorkspace } from "../types/operations.types"
 import { formatRelativeOperationTime } from "../utils/operationsFormatters"
+import { useOperationsWorkspace } from "../hooks/useOperationsWorkspace"
 
 type Conversation = OperationsWorkspace["recentConversations"][number]
 type SectionRow = {
@@ -33,10 +34,18 @@ export const OperationsTodaySection = forwardRef<
   {
     workspace: OperationsWorkspace
     focus?: "tasks" | "meetings" | "conversations"
+    userId?: string
   }
->(({ workspace, focus }, ref) => {
+>(({ workspace, focus, userId }, ref) => {
   const navigate = useNavigate()
-  const [showAllConversations, setShowAllConversations] = useState(false)
+  const [showAll, setShowAll] = useState<
+    "tasks" | "meetings" | "conversations" | null
+  >(null)
+  const expandedWorkspace = useOperationsWorkspace(
+    userId,
+    100,
+    showAll !== null
+  )
   const sections: Array<{
     id: "tasks" | "meetings" | "conversations"
     title: string
@@ -120,13 +129,13 @@ export const OperationsTodaySection = forwardRef<
                 {title}
               </span>
               <span className="flex items-center gap-2">
-                {id === "conversations" && rows.length ? (
+                {rows.length ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2 text-xs"
-                    onClick={() => setShowAllConversations(true)}
+                    onClick={() => setShowAll(id)}
                   >
                     مشاهده همه
                   </Button>
@@ -181,12 +190,13 @@ export const OperationsTodaySection = forwardRef<
           </SurfaceCard>
         ))}
       </div>
-      <ConversationsDialog
-        open={showAllConversations}
-        conversations={workspace.recentConversations}
-        onClose={() => setShowAllConversations(false)}
+      <WorkspaceItemsDialog
+        type={showAll}
+        workspace={expandedWorkspace.data ?? workspace}
+        loading={expandedWorkspace.isLoading}
+        onClose={() => setShowAll(null)}
         onOpen={(entityType, entityId) => {
-          setShowAllConversations(false)
+          setShowAll(null)
           navigate(
             entityType === "COMPANY"
               ? `/companies/${entityId}`
@@ -277,73 +287,140 @@ function ConversationBadges({
   )
 }
 
-function ConversationsDialog({
-  open,
-  conversations,
+function WorkspaceItemsDialog({
+  type,
+  workspace,
+  loading,
   onClose,
   onOpen,
 }: {
-  open: boolean
-  conversations: Conversation[]
+  type: "tasks" | "meetings" | "conversations" | null
+  workspace: OperationsWorkspace
+  loading: boolean
   onClose: () => void
   onOpen: (entityType: Conversation["entityType"], entityId: string) => void
 }) {
+  const navigate = useNavigate()
+  const config =
+    type === "tasks"
+      ? {
+          title: "همه کارهای امروز",
+          description: "فهرست کامل کارهایی که امروز باید انجام شوند",
+          icon: ListChecks,
+        }
+      : type === "meetings"
+        ? {
+            title: "همه جلسات امروز",
+            description: "فهرست کامل جلسات برنامه‌ریزی‌شده امروز",
+            icon: CalendarDays,
+          }
+        : {
+            title: "گفتگوهای اخیر من",
+            description: "گفتگوهای مرتبط با شما همراه با اشخاص و زمینه CRM",
+            icon: MessageSquareText,
+          }
   return (
     <ResponsiveModal
-      open={open}
+      open={type !== null}
       onClose={onClose}
-      title="گفتگوهای اخیر من"
-      description="گفتگوهای مرتبط با شما همراه با اشخاص و زمینه CRM"
-      icon={MessageSquareText}
+      title={config.title}
+      description={config.description}
+      icon={config.icon}
       width="max-w-3xl"
     >
-      <div className="grid gap-2">
-        {conversations.map((conversation) => (
-          <button
-            key={conversation.threadId}
-            type="button"
-            className="min-w-0 rounded-xl border border-[var(--app-divider)] p-3 text-start transition-colors hover:border-[var(--app-primary)]/40 hover:bg-[var(--app-background)]"
-            onClick={() =>
-              onOpen(conversation.entityType, conversation.entityId)
-            }
-          >
-            <span className="flex min-w-0 items-start justify-between gap-3">
-              <span className="min-w-0">
-                <strong className="block truncate text-sm">
-                  {conversation.context.task?.title ||
-                    conversation.context.opportunity?.title ||
-                    conversation.context.company?.name ||
-                    "گفتگوی مرتبط"}
-                </strong>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {conversation.latestMessage?.body || "گفتگوی بدون پیام"}
+      {loading ? (
+        <p className="py-10 text-center text-sm text-muted-foreground">
+          در حال دریافت همه موارد...
+        </p>
+      ) : type === "tasks" ? (
+        <div className="grid divide-y divide-[var(--app-divider)]">
+          {workspace.today.tasks.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="min-w-0 px-3 py-4 text-start hover:bg-[var(--app-background)]"
+              onClick={() => navigate(`/tasks/${item.id}`)}
+            >
+              <strong className="block truncate text-sm">{item.title}</strong>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {item.company?.brandName ||
+                  item.company?.legalName ||
+                  "بدون شرکت"}
+                {item.dueAt
+                  ? ` · ${formatRelativeOperationTime(item.dueAt)}`
+                  : " · بدون زمان"}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : type === "meetings" ? (
+        <div className="grid divide-y divide-[var(--app-divider)]">
+          {workspace.today.meetings.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="min-w-0 px-3 py-4 text-start hover:bg-[var(--app-background)]"
+              onClick={() => navigate(`/meetings/${item.id}`)}
+            >
+              <strong className="block truncate text-sm">{item.title}</strong>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {item.company?.brandName ||
+                  item.company?.legalName ||
+                  "بدون شرکت"}{" "}
+                · {formatRelativeOperationTime(item.startAt)}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {workspace.recentConversations.map((conversation) => (
+            <button
+              key={conversation.threadId}
+              type="button"
+              className="min-w-0 rounded-xl border border-[var(--app-divider)] p-3 text-start transition-colors hover:border-[var(--app-primary)]/40 hover:bg-[var(--app-background)]"
+              onClick={() =>
+                onOpen(conversation.entityType, conversation.entityId)
+              }
+            >
+              <span className="flex min-w-0 items-start justify-between gap-3">
+                <span className="min-w-0">
+                  <strong className="block truncate text-sm">
+                    {conversation.context.task?.title ||
+                      conversation.context.opportunity?.title ||
+                      conversation.context.company?.name ||
+                      "گفتگوی مرتبط"}
+                  </strong>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {conversation.latestMessage?.body || "گفتگوی بدون پیام"}
+                  </span>
                 </span>
+                <StatusBadge
+                  size="xs"
+                  tone={conversation.unreadCount ? "info" : "neutral"}
+                >
+                  {conversation.unreadCount
+                    ? `${conversation.unreadCount.toLocaleString("fa-IR")} خوانده‌نشده`
+                    : "خوانده‌شده"}
+                </StatusBadge>
               </span>
-              <StatusBadge
-                size="xs"
-                tone={conversation.unreadCount ? "info" : "neutral"}
-              >
-                {conversation.unreadCount
-                  ? `${conversation.unreadCount.toLocaleString("fa-IR")} خوانده‌نشده`
-                  : "خوانده‌شده"}
-              </StatusBadge>
-            </span>
-            <ConversationBadges conversation={conversation} />
-            {conversation.relatedUsers.length ? (
-              <span className="mt-2 block truncate text-xs text-muted-foreground">
-                افراد مرتبط:{" "}
-                {conversation.relatedUsers
-                  .map((item) => item.fullName)
-                  .join("، ")}
+              <ConversationBadges conversation={conversation} />
+              {conversation.relatedUsers.length ? (
+                <span className="mt-2 block truncate text-xs text-muted-foreground">
+                  افراد مرتبط:{" "}
+                  {conversation.relatedUsers
+                    .map((item) => item.fullName)
+                    .join("، ")}
+                </span>
+              ) : null}
+              <span className="mt-2 block text-[11px] text-muted-foreground">
+                {conversationContextLabel(conversation.context)} ·{" "}
+                {formatRelativeOperationTime(conversation.updatedAt)}
               </span>
-            ) : null}
-            <span className="mt-2 block text-[11px] text-muted-foreground">
-              {conversationContextLabel(conversation.context)} ·{" "}
-              {formatRelativeOperationTime(conversation.updatedAt)}
-            </span>
-          </button>
-        ))}
-      </div>
+            </button>
+          ))}
+        </div>
+      )}
     </ResponsiveModal>
   )
 }

@@ -319,12 +319,14 @@ export function OperationsPage() {
           ref={todayRef}
           workspace={workspace.data}
           focus={todayFocus}
+          userId={targetUserId}
         />
       ) : null}
       <PersonalTodoPanel
         data={workspace.data?.personalTodos}
         readOnly={!isOwnView}
         subjectName={!isOwnView ? selectedUser?.fullName : undefined}
+        userId={targetUserId}
       />
       <OperationsFilters
         filters={filters}

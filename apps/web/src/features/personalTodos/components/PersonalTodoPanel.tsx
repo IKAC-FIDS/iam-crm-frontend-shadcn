@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from "react"
 import {
   Check,
   ClipboardCheck,
+  ListTodo,
   ListPlus,
   Pencil,
   RefreshCcw,
@@ -19,6 +20,7 @@ import {
   FormDialogFooter,
 } from "@/components/shared/FormDialogLayout"
 import { FormSection } from "@/components/shared/FormSection"
+import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
@@ -35,6 +37,7 @@ import type {
   PersonalTodoRecurrence,
 } from "../types/personalTodo.types"
 import { usePersonalTodoMutations } from "../hooks/usePersonalTodos"
+import { useOperationsWorkspace } from "@/features/operations/hooks/useOperationsWorkspace"
 
 type Tab = "today" | "upcoming" | "completed"
 const recurrenceLabels: Record<PersonalTodoRecurrence, string> = {
@@ -49,6 +52,7 @@ export function PersonalTodoPanel({
   data,
   readOnly = false,
   subjectName,
+  userId,
 }: {
   data?: {
     today: PersonalTodo[]
@@ -58,6 +62,7 @@ export function PersonalTodoPanel({
   }
   readOnly?: boolean
   subjectName?: string
+  userId?: string
 }) {
   const canCreateTask = useAuthStore(
     (state) => state.user?.permissions.includes("task:create") ?? false
@@ -67,11 +72,14 @@ export function PersonalTodoPanel({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PersonalTodo | null>(null)
+  const [showAllTodos, setShowAllTodos] = useState(false)
   const [details, setDetails] = useState<Omit<PersonalTodoInput, "title">>({
     recurrenceType: "NONE",
   })
   const mutations = usePersonalTodoMutations()
   const items = useMemo(() => data?.[tab] ?? [], [data, tab])
+  const expandedWorkspace = useOperationsWorkspace(userId, 100, showAllTodos)
+  const allItems = expandedWorkspace.data?.personalTodos[tab] ?? items
   const resetEditor = () => {
     setTitle("")
     setEditingId(null)
@@ -126,11 +134,23 @@ export function PersonalTodoPanel({
               : "یادآورهای خصوصی و سریع روزانه"}
           </p>
         </div>
-        {data?.counts.overdue ? (
-          <StatusBadge tone="danger">
-            {data.counts.overdue.toLocaleString("fa-IR")} عقب‌افتاده
-          </StatusBadge>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {items.length ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowAllTodos(true)}
+            >
+              مشاهده همه
+            </Button>
+          ) : null}
+          {data?.counts.overdue ? (
+            <StatusBadge tone="danger">
+              {data.counts.overdue.toLocaleString("fa-IR")} عقب‌افتاده
+            </StatusBadge>
+          ) : null}
+        </div>
       </div>
       <div className="mt-4 flex gap-2" role="tablist">
         {(["today", "upcoming", "completed"] as Tab[]).map((value) => (
@@ -390,7 +410,7 @@ export function PersonalTodoPanel({
             description="یک یادآور شخصی سریع اضافه کنید."
           />
         ) : (
-          items.map((todo) => (
+          items.slice(0, 5).map((todo) => (
             <article
               key={todo.id}
               className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] p-3"
@@ -518,6 +538,61 @@ export function PersonalTodoPanel({
             : undefined
         }
       />
+      <ResponsiveModal
+        open={showAllTodos}
+        onClose={() => setShowAllTodos(false)}
+        title={
+          subjectName ? `همه کارهای شخصی ${subjectName}` : "همه کارهای شخصی من"
+        }
+        description={
+          tab === "today"
+            ? "کارهای شخصی امروز"
+            : tab === "upcoming"
+              ? "کارهای شخصی آینده"
+              : "کارهای شخصی تکمیل‌شده"
+        }
+        icon={ListTodo}
+        width="max-w-3xl"
+      >
+        {expandedWorkspace.isLoading ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            در حال دریافت همه موارد...
+          </p>
+        ) : (
+          <div className="grid divide-y divide-[var(--app-divider)]">
+            {allItems.map((todo) => (
+              <div key={todo.id} className="flex items-start gap-3 px-3 py-4">
+                <StatusBadge
+                  size="xs"
+                  tone={todo.status === "DONE" ? "success" : "info"}
+                >
+                  {todo.status === "DONE" ? "تکمیل‌شده" : "در انتظار"}
+                </StatusBadge>
+                <div className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm">
+                    {todo.title}
+                  </strong>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {todo.company
+                      ? todo.company.brandName || todo.company.legalName
+                      : "بدون ارتباط CRM"}
+                    {todo.opportunity ? ` · ${todo.opportunity.title}` : ""}
+                    {todo.dueAt
+                      ? ` · ${new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(todo.dueAt))}`
+                      : ""}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {!allItems.length ? (
+              <EmptyState
+                title="موردی در این بخش نیست"
+                description="برای این دسته کار شخصی ثبت نشده است."
+              />
+            ) : null}
+          </div>
+        )}
+      </ResponsiveModal>
     </SurfaceCard>
   )
 }

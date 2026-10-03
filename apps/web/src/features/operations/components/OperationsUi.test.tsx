@@ -7,6 +7,10 @@ import { OperationsAttentionCards } from "./OperationsAttentionCards"
 import { OperationsQuickActions } from "./OperationsQuickActions"
 import { OperationsTodaySection } from "./OperationsTodaySection"
 
+vi.mock("../hooks/useOperationsWorkspace", () => ({
+  useOperationsWorkspace: () => ({ data: undefined, isLoading: false }),
+}))
+
 describe("Operations UI", () => {
   it("renders the workspace attention summary and makes cards actionable", async () => {
     const user = userEvent.setup()

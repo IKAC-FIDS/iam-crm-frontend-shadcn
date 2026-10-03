@@ -18,9 +18,9 @@ const operationsCompanySchema = z.custom<OperationsCompanyRow>(
     "attention" in (value as object)
 )
 
-export async function getOperationsWorkspace(userId?: string) {
+export async function getOperationsWorkspace(userId?: string, recentLimit = 5) {
   const response = await api.get("/operations/workspace", {
-    params: { recentLimit: 5, userId },
+    params: { recentLimit, userId },
   })
   return unwrapApiResponse<OperationsWorkspace>(response.data)
 }
