@@ -4,6 +4,9 @@ import {
   CalendarDays,
   Eye,
   Pencil,
+  Layers3,
+  Pin,
+  PinOff,
   RefreshCcw,
   UserRoundCog,
 } from "lucide-react"
@@ -24,7 +27,11 @@ import {
   formatCompanyDate,
   priorityLabel,
 } from "../utils/companyFormatters"
-import { companyPriorityTone } from "../utils/companyPresentation"
+import {
+  companyEngagementLabels,
+  companyEngagementTones,
+  companyPriorityTone,
+} from "../utils/companyPresentation"
 
 const activityStatusTone: Record<CompanyActivityStatus, StatusTone> = {
   ACTIVE: "success",
@@ -47,6 +54,8 @@ type CompanyEntityCardProps = {
   onEdit: () => void
   onChangeOwner: () => void
   onToggleArchive: () => void
+  onEditEngagement: () => void
+  onTogglePin: () => void
 }
 
 export function CompanyEntityCard({
@@ -56,13 +65,16 @@ export function CompanyEntityCard({
   onEdit,
   onChangeOwner,
   onToggleArchive,
+  onEditEngagement,
+  onTogglePin,
 }: CompanyEntityCardProps) {
   const text = uiText.companies.list
   const name = companyDisplayName(company.legalName, company.brandName)
   const industry = company.industryRef?.name || company.industry
-  const subtitle = company.brandName && company.brandName !== company.legalName
-    ? company.legalName
-    : industry || uiText.common.notAvailable
+  const subtitle =
+    company.brandName && company.brandName !== company.legalName
+      ? company.legalName
+      : industry || uiText.common.notAvailable
   const canEdit = permissions.includes("company:update")
   const canChangeOwner = permissions.includes("company:change-owner")
   const canToggleArchive = company.archivedAt
@@ -83,6 +95,17 @@ export function CompanyEntityCard({
         },
   ]
 
+  badges.push({
+    id: "engagement-status",
+    label: companyEngagementLabels[company.engagementStatus],
+    tone: companyEngagementTones[company.engagementStatus],
+    tooltip: `وضعیت سبد فروش: ${companyEngagementLabels[company.engagementStatus]}`,
+  })
+
+  if (company.isPinned) {
+    badges.push({ id: "pinned", label: "مهم برای من", tone: "primary" })
+  }
+
   if (company.priority) {
     badges.push({
       id: "priority",
@@ -94,8 +117,33 @@ export function CompanyEntityCard({
 
   const actions: EntityAction[] = [
     { id: "view", label: text.openCompany, icon: Eye, onClick: onView },
-    { id: "edit", label: uiText.companies.detail.edit, icon: Pencil, onClick: onEdit, visible: canEdit },
-    { id: "change-owner", label: "تغییر مالک", icon: UserRoundCog, onClick: onChangeOwner, visible: canChangeOwner },
+    {
+      id: "pin",
+      label: company.isPinned ? "برداشتن از مهم‌ها" : "افزودن به مهم‌ها",
+      icon: company.isPinned ? PinOff : Pin,
+      onClick: onTogglePin,
+    },
+    {
+      id: "engagement",
+      label: "تغییر وضعیت سبد فروش",
+      icon: Layers3,
+      onClick: onEditEngagement,
+      visible: canEdit,
+    },
+    {
+      id: "edit",
+      label: uiText.companies.detail.edit,
+      icon: Pencil,
+      onClick: onEdit,
+      visible: canEdit,
+    },
+    {
+      id: "change-owner",
+      label: "تغییر مالک",
+      icon: UserRoundCog,
+      onClick: onChangeOwner,
+      visible: canChangeOwner,
+    },
     {
       id: "archive",
       label: company.archivedAt ? "بازگردانی شرکت" : "بایگانی شرکت",
@@ -121,7 +169,7 @@ export function CompanyEntityCard({
             : "var(--success)"
       }
       onClick={onView}
-      logo={(
+      logo={
         <IdentityAvatar
           name={name}
           mediaPath={`/companies/${company.id}/logo`}
@@ -130,28 +178,34 @@ export function CompanyEntityCard({
           fallbackIcon={<Building2 className="size-5" />}
           className="size-14 rounded-2xl text-lg"
         />
-      )}
+      }
       badges={badges}
-      owner={company.owner ? {
-        name: company.owner.fullName,
-        role: company.owner.team || "مالک شرکت",
-        avatar: (
-          <IdentityAvatar
-            name={company.owner.fullName}
-            mediaPath={`/users/${company.owner.id}/avatar`}
-            hasMedia={Boolean(company.owner.avatarObjectKey)}
-            mediaVersion={company.owner.avatarObjectKey}
-            className="size-10 rounded-full text-xs"
-          />
-        ),
-      } : null}
+      owner={
+        company.owner
+          ? {
+              name: company.owner.fullName,
+              role: company.owner.team || "مالک شرکت",
+              avatar: (
+                <IdentityAvatar
+                  name={company.owner.fullName}
+                  mediaPath={`/users/${company.owner.id}/avatar`}
+                  hasMedia={Boolean(company.owner.avatarObjectKey)}
+                  mediaVersion={company.owner.avatarObjectKey}
+                  className="size-10 rounded-full text-xs"
+                />
+              ),
+            }
+          : null
+      }
       ownerFallback={text.unassigned}
-      metadata={[{
-        id: "updated-at",
-        label: text.columns.updatedAt,
-        value: formatCompanyDate(company.updatedAt),
-        icon: CalendarDays,
-      }]}
+      metadata={[
+        {
+          id: "updated-at",
+          label: text.columns.updatedAt,
+          value: formatCompanyDate(company.updatedAt),
+          icon: CalendarDays,
+        },
+      ]}
       actions={actions}
     />
   )

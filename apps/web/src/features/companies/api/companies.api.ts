@@ -46,6 +46,8 @@ export async function getCompanies(query: CompaniesQuery) {
           : undefined,
       includeArchived: query.includeArchived ? "true" : undefined,
       archivedOnly: query.archivedOnly ? "true" : undefined,
+      engagementStatus: query.engagementStatus || undefined,
+      pinnedOnly: query.pinnedOnly ? "true" : undefined,
     },
   })
 
@@ -112,4 +114,26 @@ export async function archiveCompany(companyId: string, reason?: string) {
 export async function restoreCompany(companyId: string) {
   const response = await api.patch(`/companies/${companyId}/restore`)
   return unwrapApiResponse<Company>(response.data)
+}
+
+export async function updateCompanyEngagement(
+  companyId: string,
+  payload: {
+    status: import("../types/company.types").CompanyEngagementStatus
+    reason?: string
+    nextReviewAt?: string
+  }
+) {
+  const response = await api.patch(
+    `/companies/${companyId}/engagement`,
+    payload
+  )
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function updateCompanyPin(companyId: string, isPinned: boolean) {
+  const response = await api.patch(`/companies/${companyId}/pin`, { isPinned })
+  return unwrapApiResponse<{ companyId: string; isPinned: boolean }>(
+    response.data
+  )
 }

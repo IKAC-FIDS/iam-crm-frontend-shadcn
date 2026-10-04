@@ -22,11 +22,21 @@ export const COMPANY_OWNERSHIPS = [
   "HOLDING",
 ] as const
 export const OWNERSHIP_SCOPES = ["ALL", "MINE", "TEAM", "UNASSIGNED"] as const
+export const COMPANY_ENGAGEMENT_STATUSES = [
+  "ACTIVE",
+  "NEEDS_ACTION",
+  "NURTURE",
+  "SNOOZED",
+  "DORMANT",
+  "DISQUALIFIED",
+] as const
 
 export type CompanyPriority = (typeof COMPANY_PRIORITIES)[number]
 export type CompanyActivityStatus = (typeof COMPANY_ACTIVITY_STATUSES)[number]
 export type CompanyOwnership = (typeof COMPANY_OWNERSHIPS)[number]
 export type OwnershipScope = (typeof OWNERSHIP_SCOPES)[number]
+export type CompanyEngagementStatus =
+  (typeof COMPANY_ENGAGEMENT_STATUSES)[number]
 
 export interface CompanyOwner {
   id: string
@@ -124,6 +134,11 @@ export interface Company {
   employeeCount?: number | null
   archivedAt?: string | null
   archiveReason?: string | null
+  engagementStatus: CompanyEngagementStatus
+  engagementReason?: string | null
+  nextReviewAt?: string | null
+  engagementUpdatedAt?: string | null
+  isPinned: boolean
   createdAt?: string | null
   updatedAt?: string | null
   people?: CompanyPerson[]
@@ -144,6 +159,8 @@ export interface CompaniesQuery extends PageParams, SearchParams {
   ownershipScope?: OwnershipScope
   includeArchived?: boolean
   archivedOnly?: boolean
+  engagementStatus?: CompanyEngagementStatus
+  pinnedOnly?: boolean
 }
 
 export interface CompanyMutationPayload {

@@ -42,7 +42,7 @@ import type { OperationsCompanyRow } from "../types/operations.types"
 import { PersonalTodoPanel } from "@/features/personalTodos/components/PersonalTodoPanel"
 import { useAdminUsers } from "@/features/admin/users/hooks/useAdminUsers"
 import { getUser } from "@/features/admin/users/api/adminUsersApi"
-import { CompanyEngagementDialog } from "../components/CompanyEngagementDialog"
+import { CompanyEngagementDialog } from "@/features/companies/components/CompanyEngagementDialog"
 import {
   updateCompanyEngagement,
   updateCompanyPin,
@@ -521,7 +521,7 @@ export function OperationsPage() {
         }}
       />
       <CompanyEngagementDialog
-        row={selected}
+        company={selected?.company ?? null}
         open={dialog === "engagement"}
         pending={engagementMutation.isPending}
         onClose={closeDialog}

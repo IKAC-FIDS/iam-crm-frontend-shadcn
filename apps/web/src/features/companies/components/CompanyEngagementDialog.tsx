@@ -10,28 +10,24 @@ import {
 import { FormSection } from "@/components/shared/FormSection"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
-import type {
-  CompanyEngagementStatus,
-  OperationsCompanyRow,
-} from "../types/operations.types"
-
-const engagementLabels: Record<CompanyEngagementStatus, string> = {
-  ACTIVE: "فعال",
-  NEEDS_ACTION: "نیازمند اقدام",
-  NURTURE: "پرورش",
-  SNOOZED: "پیگیری در آینده",
-  DORMANT: "راکد",
-  DISQUALIFIED: "نامناسب",
-}
+import type { CompanyEngagementStatus } from "../types/company.types"
+import { companyEngagementLabels } from "../utils/companyPresentation"
 
 export function CompanyEngagementDialog({
-  row,
+  company,
   open,
   pending,
   onClose,
   onSubmit,
 }: {
-  row: OperationsCompanyRow | null
+  company: {
+    id: string
+    legalName: string
+    brandName?: string | null
+    engagementStatus: CompanyEngagementStatus
+    engagementReason?: string | null
+    nextReviewAt?: string | null
+  } | null
   open: boolean
   pending: boolean
   onClose: () => void
@@ -48,14 +44,14 @@ export function CompanyEngagementDialog({
     nextReviewAt?: Date
   }>()
   const current =
-    draft && draft.companyId === row?.company.id
+    draft && draft.companyId === company?.id
       ? draft
       : {
-          companyId: row?.company.id ?? "",
-          status: row?.company.engagementStatus ?? ("NEEDS_ACTION" as const),
-          reason: row?.company.engagementReason ?? "",
-          nextReviewAt: row?.company.nextReviewAt
-            ? new Date(row.company.nextReviewAt)
+          companyId: company?.id ?? "",
+          status: company?.engagementStatus ?? ("NEEDS_ACTION" as const),
+          reason: company?.engagementReason ?? "",
+          nextReviewAt: company?.nextReviewAt
+            ? new Date(company.nextReviewAt)
             : undefined,
         }
   const { status, reason, nextReviewAt } = current
@@ -72,7 +68,7 @@ export function CompanyEngagementDialog({
       >
         <DialogHeroHeader
           title="وضعیت شرکت در سبد فروش"
-          description={row?.company.brandName || row?.company.legalName}
+          description={company?.brandName || company?.legalName}
           icon={Layers3}
           onClose={onClose}
         />
@@ -97,7 +93,7 @@ export function CompanyEngagementDialog({
                   وضعیت سبد فروش
                   <SearchableOptionSelect
                     value={status}
-                    options={Object.entries(engagementLabels).map(
+                    options={Object.entries(companyEngagementLabels).map(
                       ([id, label]) => ({ id, label })
                     )}
                     search=""
@@ -129,7 +125,7 @@ export function CompanyEngagementDialog({
                     }
                     rows={3}
                     maxLength={500}
-                    className="min-h-24 resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="min-h-24 resize-y rounded-xl border border-input bg-background px-3 py-2 font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     placeholder="مثلاً بودجه مشتری در فصل بعدی تأمین می‌شود"
                   />
                 </label>

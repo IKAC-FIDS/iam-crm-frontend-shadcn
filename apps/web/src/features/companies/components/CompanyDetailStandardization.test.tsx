@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { Company360ActionSection } from "./Company360ActionSection"
 import { CompanyMetricCard } from "./CompanyMetricCard"
+import { CompanyEntityCard } from "./CompanyEntityCard"
 import {
   CreateCompanySocialDialog,
   UploadCompanyLegalDocumentDialog,
@@ -71,6 +72,35 @@ describe("company detail standardization", () => {
     expect(container.querySelector('input[type="date"]')).toBeNull()
     expect(
       screen.getByRole("button", { name: "انتخاب تاریخ سند" })
+    ).toBeInTheDocument()
+  })
+
+  it("shows portfolio status and the current user's pin state on company cards", () => {
+    render(
+      <CompanyEntityCard
+        company={{
+          id: "company-1",
+          legalName: "شرکت نمونه",
+          engagementStatus: "NEEDS_ACTION",
+          isPinned: true,
+        }}
+        permissions={["company:view", "company:update"]}
+        onView={vi.fn()}
+        onEdit={vi.fn()}
+        onChangeOwner={vi.fn()}
+        onToggleArchive={vi.fn()}
+        onEditEngagement={vi.fn()}
+        onTogglePin={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText("نیازمند اقدام")).toBeInTheDocument()
+    expect(screen.getByText("مهم برای من")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "برداشتن از مهم‌ها" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "تغییر وضعیت سبد فروش" })
     ).toBeInTheDocument()
   })
 })

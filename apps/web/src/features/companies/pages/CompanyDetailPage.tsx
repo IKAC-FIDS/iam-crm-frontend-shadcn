@@ -7,11 +7,14 @@ import {
   ExternalLink,
   FileText,
   ListTodo,
+  Layers3,
   MapPin,
   Pencil,
   Phone,
   Share2,
   Star,
+  Pin,
+  PinOff,
   UserRoundCog,
   UsersRound,
 } from "lucide-react"
@@ -64,6 +67,7 @@ import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { Company360ActionSection } from "../components/Company360ActionSection"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
+import { CompanyEngagementDialog } from "../components/CompanyEngagementDialog"
 import {
   CreateCompanyBranchDialog,
   CreateCompanySocialDialog,
@@ -98,7 +102,11 @@ import {
   useCompanyTasks,
   company360SectionQueryKeys,
 } from "../hooks/useCompany360Sections"
-import { useUpdateCompany } from "../hooks/useCompanyMutations"
+import {
+  useUpdateCompany,
+  useUpdateCompanyEngagement,
+  useUpdateCompanyPin,
+} from "../hooks/useCompanyMutations"
 import { getActivityTypeLabel } from "../utils/activityTypeLabels"
 import {
   activityStatusLabel,
@@ -107,6 +115,10 @@ import {
   formatCompanyDateTime,
   formatCompanyNumber,
 } from "../utils/companyFormatters"
+import {
+  companyEngagementLabels,
+  companyEngagementTones,
+} from "../utils/companyPresentation"
 
 type QuickViewState =
   | { kind: "task"; item: CompanyTask }
@@ -130,6 +142,7 @@ export function CompanyDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [ownerOpen, setOwnerOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [engagementOpen, setEngagementOpen] = useState(false)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [createPersonOpen, setCreatePersonOpen] = useState(false)
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false)
@@ -178,6 +191,8 @@ export function CompanyDetailPage() {
   const query = useCompany(companyId)
   const overviewQuery = useCompany360Overview(companyId)
   const updateMutation = useUpdateCompany(companyId)
+  const engagementMutation = useUpdateCompanyEngagement(companyId)
+  const pinMutation = useUpdateCompanyPin(companyId)
   const createOpportunity = useCreateOpportunity()
   const stagesQuery = usePipelineStages(canCreateOpportunity)
   const opportunityStages = (
@@ -268,7 +283,21 @@ export function CompanyDetailPage() {
     : null
 
   const heroActions: PageAction[] = []
+  heroActions.push({
+    id: "pin",
+    label: company.isPinned ? "برداشتن از مهم‌ها" : "افزودن به مهم‌ها",
+    icon: company.isPinned ? PinOff : Pin,
+    variant: "outline",
+    onClick: () => pinMutation.mutate(!company.isPinned),
+  })
   if (permissions.includes("company:update")) {
+    heroActions.push({
+      id: "engagement",
+      label: "وضعیت سبد فروش",
+      icon: Layers3,
+      variant: "outline",
+      onClick: () => setEngagementOpen(true),
+    })
     heroActions.push({
       id: "edit",
       label: text.edit,
@@ -331,6 +360,17 @@ export function CompanyDetailPage() {
               {company.archivedAt ? text.archived : text.active}
             </StatusBadge>
             <CompanyPriorityBadge priority={company.priority} />
+            <StatusBadge
+              tone={companyEngagementTones[company.engagementStatus]}
+            >
+              {companyEngagementLabels[company.engagementStatus]}
+            </StatusBadge>
+            {company.isPinned ? (
+              <StatusBadge tone="primary">
+                <Pin className="size-3" />
+                مهم برای من
+              </StatusBadge>
+            ) : null}
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--app-background)] px-2.5 py-1 text-xs text-[var(--app-text-secondary)]">
               <Building2 className="size-3.5" />
               {company.industryRef?.name ||
@@ -1175,6 +1215,16 @@ export function CompanyDetailPage() {
         company={company}
         open={archiveOpen}
         onOpenChange={setArchiveOpen}
+      />
+      <CompanyEngagementDialog
+        company={company}
+        open={engagementOpen}
+        pending={engagementMutation.isPending}
+        onClose={() => setEngagementOpen(false)}
+        onSubmit={async (payload) => {
+          await engagementMutation.mutateAsync(payload)
+          setEngagementOpen(false)
+        }}
       />
     </div>
   )

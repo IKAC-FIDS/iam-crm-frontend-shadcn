@@ -1,11 +1,6 @@
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { useState } from "react"
-import {
-  Building2,
-  Fingerprint,
-  Plus,
-  UserRoundSearch,
-} from "lucide-react"
+import { Building2, Fingerprint, Plus, UserRoundSearch } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
@@ -23,15 +18,19 @@ import { Button } from "@workspace/ui/components/button"
 import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
 import { CompanyEntityCard } from "../components/CompanyEntityCard"
+import { CompanyEngagementDialog } from "../components/CompanyEngagementDialog"
 import { CompanyFormDialog } from "../components/CompanyFormDialog"
 import { CompanyRegistryLookupDialog } from "../components/CompanyRegistryLookupDialog"
 import { PersonCompanyLookupDialog } from "../components/PersonCompanyLookupDialog"
 import { useCompanies } from "../hooks/useCompanies"
 import {
   useCreateCompany,
+  useSetCompanyEngagement,
+  useSetCompanyPin,
   useUpdateCompany,
 } from "../hooks/useCompanyMutations"
-import type { Company } from "../types/company.types"
+import type { Company, CompanyEngagementStatus } from "../types/company.types"
+import { companyEngagementLabels } from "../utils/companyPresentation"
 
 export function CompaniesPage() {
   const text = uiText.companies.list
@@ -49,6 +48,11 @@ export function CompaniesPage() {
   const [editCompany, setEditCompany] = useState<Company | null>(null)
   const [ownerCompany, setOwnerCompany] = useState<Company | null>(null)
   const [archiveCompany, setArchiveCompany] = useState<Company | null>(null)
+  const [engagementCompany, setEngagementCompany] = useState<Company | null>(
+    null
+  )
+  const engagementMutation = useSetCompanyEngagement()
+  const pinMutation = useSetCompanyPin()
   const updateMutation = useUpdateCompany(editCompany?.id ?? "")
   const search = params.get("search") ?? ""
   const priority = enumParam(
@@ -66,6 +70,20 @@ export function CompaniesPage() {
     ["ACTIVE", "ARCHIVED", "ALL"],
     "ACTIVE"
   )
+  const engagementStatus = enumParam(
+    params.get("engagementStatus"),
+    [
+      "",
+      "ACTIVE",
+      "NEEDS_ACTION",
+      "NURTURE",
+      "SNOOZED",
+      "DORMANT",
+      "DISQUALIFIED",
+    ],
+    ""
+  ) as CompanyEngagementStatus | ""
+  const pinnedOnly = params.get("pinnedOnly") === "true"
 
   const query = useCompanies({
     page,
@@ -75,13 +93,17 @@ export function CompaniesPage() {
     ownershipScope,
     includeArchived: archiveMode === "ALL",
     archivedOnly: archiveMode === "ARCHIVED",
+    engagementStatus: engagementStatus || undefined,
+    pinnedOnly,
   })
 
   const hasActiveFilters =
     Boolean(search.trim()) ||
     Boolean(priority) ||
     ownershipScope !== "ALL" ||
-    archiveMode !== "ACTIVE"
+    archiveMode !== "ACTIVE" ||
+    Boolean(engagementStatus) ||
+    pinnedOnly
 
   function clearFilters() {
     patch({
@@ -89,6 +111,8 @@ export function CompaniesPage() {
       priority: undefined,
       ownershipScope: undefined,
       archiveMode: undefined,
+      engagementStatus: undefined,
+      pinnedOnly: undefined,
     })
   }
 
@@ -145,19 +169,35 @@ export function CompaniesPage() {
             ["TEAM", text.filters.team],
             ["UNASSIGNED", text.filters.unassigned],
           ] as const
-        ).map(([value, label]) => (
-          <Button
-            key={value}
-            type="button"
-            size="sm"
-            variant={ownershipScope === value ? "default" : "outline"}
-            aria-pressed={ownershipScope === value}
-            className="shrink-0 rounded-xl"
-            onClick={() => patch({ ownershipScope: value })}
-          >
-            {label}
-          </Button>
-        ))}
+        )
+          .map(([value, label]) => (
+            <Button
+              key={value}
+              type="button"
+              size="sm"
+              variant={ownershipScope === value ? "default" : "outline"}
+              aria-pressed={ownershipScope === value}
+              className="shrink-0 rounded-xl"
+              onClick={() => patch({ ownershipScope: value })}
+            >
+              {label}
+            </Button>
+          ))
+          .concat(
+            <Button
+              key="pinned"
+              type="button"
+              size="sm"
+              variant={pinnedOnly ? "default" : "outline"}
+              aria-pressed={pinnedOnly}
+              className="shrink-0 rounded-xl"
+              onClick={() =>
+                patch({ pinnedOnly: pinnedOnly ? undefined : "true" })
+              }
+            >
+              مهم‌های من
+            </Button>
+          )}
         filters={
           <>
             <SearchableOptionSelect
@@ -173,6 +213,21 @@ export function CompaniesPage() {
               onSearchChange={() => undefined}
               onChange={(value) => patch({ priority: value })}
               placeholder={text.filters.allPriorities}
+              searchable={false}
+            />
+
+            <SearchableOptionSelect
+              ariaLabel="همه وضعیت‌های سبد فروش"
+              value={engagementStatus}
+              options={Object.entries(companyEngagementLabels).map(
+                ([id, label]) => ({ id, label })
+              )}
+              search=""
+              onSearchChange={() => undefined}
+              onChange={(value) =>
+                patch({ engagementStatus: value || undefined })
+              }
+              placeholder="همه وضعیت‌های سبد فروش"
               searchable={false}
             />
 
@@ -207,7 +262,7 @@ export function CompaniesPage() {
           {(query.data?.data ?? []).length ? (
             <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
               <div
-                className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain"
+                className="ui-contained-scroll overflow-visible py-1 ps-2 pe-1 outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)] focus-visible:ring-inset lg:h-full lg:overflow-y-auto lg:overscroll-contain"
                 aria-label={text.title}
                 tabIndex={0}
               >
@@ -221,6 +276,13 @@ export function CompaniesPage() {
                       onEdit={() => setEditCompany(company)}
                       onChangeOwner={() => setOwnerCompany(company)}
                       onToggleArchive={() => setArchiveCompany(company)}
+                      onEditEngagement={() => setEngagementCompany(company)}
+                      onTogglePin={() =>
+                        pinMutation.mutate({
+                          companyId: company.id,
+                          isPinned: !company.isPinned,
+                        })
+                      }
                     />
                   ))}
                 </div>
@@ -307,6 +369,21 @@ export function CompaniesPage() {
           }}
         />
       ) : null}
+
+      <CompanyEngagementDialog
+        company={engagementCompany}
+        open={Boolean(engagementCompany)}
+        pending={engagementMutation.isPending}
+        onClose={() => setEngagementCompany(null)}
+        onSubmit={async (payload) => {
+          if (!engagementCompany) return
+          await engagementMutation.mutateAsync({
+            companyId: engagementCompany.id,
+            payload,
+          })
+          setEngagementCompany(null)
+        }}
+      />
     </EntityListPage>
   )
 }
