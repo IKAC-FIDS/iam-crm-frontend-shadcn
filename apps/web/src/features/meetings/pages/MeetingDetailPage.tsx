@@ -28,6 +28,7 @@ import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
+import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
 import {
   formatJalaliDate,
   formatJalaliDateTime,
@@ -255,6 +256,12 @@ export function MeetingDetailPage() {
           />
           <OutcomeCard meeting={meeting} />
           <ArtifactPanel entityType="MEETING" entityId={meeting.id} title="مستندات جلسه" readOnly={meeting.status !== "COMPLETED"} />
+          <div id="conversation">
+            <EntityConversationPanel
+              entityType="MEETING"
+              entityId={meeting.id}
+            />
+          </div>
         </main>
 
         <aside className="grid min-w-0 gap-4 xl:sticky xl:top-4">

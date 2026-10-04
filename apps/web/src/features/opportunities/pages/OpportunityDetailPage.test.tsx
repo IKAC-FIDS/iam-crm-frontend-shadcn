@@ -6,6 +6,12 @@ import { describe, expect, it, vi } from "vitest"
 import type { Opportunity } from "../types/opportunity.types"
 import { OpportunityDetailPage } from "./OpportunityDetailPage"
 
+vi.mock("@/features/conversations/components/EntityConversationPanel", () => ({
+  EntityConversationPanel: ({ entityType, entityId }: { entityType: string; entityId: string }) => (
+    <div data-testid="conversation-panel">{entityType}:{entityId}</div>
+  ),
+}))
+
 const { permissions } = vi.hoisted(() => ({
   permissions: [
     "opportunity:view",
@@ -167,6 +173,9 @@ describe("OpportunityDetailPage", () => {
       "true"
     )
     expect(screen.getByRole("tabpanel")).toHaveAccessibleName("نمای کلی")
+    expect(screen.getByTestId("conversation-panel")).toHaveTextContent(
+      "OPPORTUNITY:opportunity-1"
+    )
 
     const avatars = screen.getAllByTestId("identity-avatar")
     expect(avatars.map((item) => item.getAttribute("data-media-path"))).toEqual(

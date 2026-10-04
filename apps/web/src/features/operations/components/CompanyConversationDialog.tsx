@@ -14,11 +14,12 @@ import { EntityConversationPanel } from "@/features/conversations/components/Ent
 import { getCompanyConversationHub } from "@/features/conversations/api/conversations.api"
 import type {
   CompanyConversationHubThread,
+  CompanyConversationEntityType,
   ConversationEntityType,
 } from "@/features/conversations/types/conversation.types"
 import { formatRelativeOperationTime } from "../utils/operationsFormatters"
 
-type Tab = "ALL" | ConversationEntityType
+type Tab = "ALL" | CompanyConversationEntityType
 
 export function CompanyConversationDialog({
   company,
@@ -44,7 +45,7 @@ export function CompanyConversationDialog({
       ),
     [query.data?.threads, tab]
   )
-  const labels: Record<ConversationEntityType, string> = {
+  const labels: Record<CompanyConversationEntityType, string> = {
     COMPANY: "گفتگوی مستقیم شرکت",
     TASK: "کار",
     ACTIVITY: "فعالیت",

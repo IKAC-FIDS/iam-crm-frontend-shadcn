@@ -21,6 +21,7 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { PageHero, type PageAction } from "@/components/shared/PageHero"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
+import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
 import { Person360WorkspaceDialog } from "@/features/people/components/Person360WorkspaceDialog"
 import { uiText } from "@/config/uiText"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -411,6 +412,13 @@ export function OpportunityDetailPage() {
           </div>
         ) : null}
       </section>
+
+      <div id="conversation">
+        <EntityConversationPanel
+          entityType="OPPORTUNITY"
+          entityId={opportunity.id}
+        />
+      </div>
 
       {editOpen ? (
         <OpportunityFormDialog

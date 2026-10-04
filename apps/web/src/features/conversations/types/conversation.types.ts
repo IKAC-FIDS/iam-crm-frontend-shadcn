@@ -1,4 +1,10 @@
-export type ConversationEntityType = "COMPANY" | "TASK" | "ACTIVITY"
+export type ConversationEntityType =
+  | "COMPANY"
+  | "TASK"
+  | "ACTIVITY"
+  | "OPPORTUNITY"
+  | "MEETING"
+export type CompanyConversationEntityType = "COMPANY" | "TASK" | "ACTIVITY"
 export type ConversationMessageType = "COMMENT" | "QUESTION" | "ANSWER"
 export type ConversationThreadStatus = "OPEN" | "RESOLVED"
 
@@ -49,7 +55,7 @@ export type ConversationResponse = {
 
 export type CompanyConversationHubThread = {
   threadId: string
-  entityType: ConversationEntityType
+  entityType: CompanyConversationEntityType
   entityId: string
   entityLabel: string
   status: ConversationThreadStatus

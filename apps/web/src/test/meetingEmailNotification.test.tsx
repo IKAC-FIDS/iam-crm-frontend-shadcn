@@ -46,6 +46,11 @@ vi.mock("sonner", () => ({ toast: { success: mocks.success, warning: mocks.warni
 vi.mock("@/lib/api", () => ({ api: { post: mocks.post } }))
 vi.mock("@/components/shared/PageHeader", () => ({ PageHeader: ({ title, actions }: { title: string; actions?: ReactNode }) => <div><h1>{title}</h1>{actions}</div> }))
 vi.mock("@/features/artifacts/components/ArtifactPanel", () => ({ ArtifactPanel: () => null }))
+vi.mock("@/features/conversations/components/EntityConversationPanel", () => ({
+  EntityConversationPanel: ({ entityType, entityId }: { entityType: string; entityId: string }) => (
+    <div data-testid="conversation-panel">{entityType}:{entityId}</div>
+  ),
+}))
 vi.mock("@/features/people/components/Person360WorkspaceDialog", () => ({ Person360WorkspaceDialog: () => null }))
 vi.mock("@/features/meetings/components/MeetingFormDialog", () => ({ MeetingFormDialog: () => null }))
 vi.mock("@/features/meetings/components/MeetingStatusActionDialog", () => ({ MeetingStatusActionDialog: () => null }))
@@ -95,6 +100,9 @@ describe("meeting email notification action", () => {
   })
   it("shows the authorized action and opens a confirmation with assignee count", async () => {
     renderPage()
+    expect(screen.getByTestId("conversation-panel")).toHaveTextContent(
+      "MEETING:meeting-1"
+    )
     await userEvent.click(screen.getByRole("button", { name: uiText.meetings.actions.notifyAssignees }))
     expect(screen.getByText(uiText.meetings.detail.dialogs.notifyTitle)).toBeInTheDocument()
     expect(screen.getByText(/۲ مسئول/)).toBeInTheDocument()
