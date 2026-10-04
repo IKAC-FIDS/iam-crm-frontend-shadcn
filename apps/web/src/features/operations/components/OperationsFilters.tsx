@@ -5,11 +5,15 @@ import type {
   OperationsAttentionState,
   OperationsOwnershipScope,
   OperationsPriority,
+  CompanyEngagementStatus,
 } from "../types/operations.types"
 
 export type OperationsFilterState = {
   search: string
   priority?: OperationsPriority
+  engagementStatus?: CompanyEngagementStatus
+  pinnedOnly?: boolean
+  includeInactivePortfolio?: boolean
   attentionState?: OperationsAttentionState
   hasUnreadMessages?: boolean
   hasActiveOpportunity?: boolean
@@ -18,7 +22,9 @@ export type OperationsFilterState = {
 }
 
 const quickFilters = [
-  { id: "all", label: "همه شرکت‌ها" },
+  { id: "operational", label: "عملیاتی" },
+  { id: "all", label: "کل سبد", includeInactivePortfolio: true },
+  { id: "pinned", label: "مهم‌های من", pinnedOnly: true },
   { id: "today", label: "اقدام امروز", attentionState: "TODAY" },
   { id: "overdue", label: "عقب‌افتاده", attentionState: "OVERDUE" },
   { id: "unread", label: "پیام جدید", hasUnreadMessages: true },
@@ -27,12 +33,15 @@ const quickFilters = [
 ] as const
 
 function activeQuickFilter(filters: OperationsFilterState) {
+  if (filters.pinnedOnly) return "pinned"
+  if (filters.includeInactivePortfolio && !filters.engagementStatus)
+    return "all"
   if (filters.attentionState === "TODAY") return "today"
   if (filters.attentionState === "OVERDUE") return "overdue"
   if (filters.attentionState === "NO_NEXT_ACTION") return "no-next"
   if (filters.hasUnreadMessages) return "unread"
   if (filters.hasActiveOpportunity) return "active"
-  return "all"
+  return "operational"
 }
 
 export function OperationsFilters({
@@ -48,6 +57,9 @@ export function OperationsFilters({
   const filtered = Boolean(
     filters.search ||
     filters.priority ||
+    filters.engagementStatus ||
+    filters.pinnedOnly ||
+    filters.includeInactivePortfolio ||
     filters.attentionState ||
     filters.hasUnreadMessages ||
     filters.hasActiveOpportunity ||
@@ -71,6 +83,7 @@ export function OperationsFilters({
           className="shrink-0 rounded-xl"
           onClick={() =>
             onPatch({
+              engagementStatus: undefined,
               attentionState:
                 "attentionState" in item ? item.attentionState : undefined,
               hasUnreadMessages:
@@ -82,13 +95,18 @@ export function OperationsFilters({
                   ? item.hasActiveOpportunity
                   : undefined,
               hasNoNextAction: undefined,
+              pinnedOnly: "pinnedOnly" in item ? item.pinnedOnly : undefined,
+              includeInactivePortfolio:
+                "includeInactivePortfolio" in item
+                  ? item.includeInactivePortfolio
+                  : undefined,
             })
           }
         >
           {item.label}
         </Button>
       ))}
-      filtersClassName="grid grid-cols-1 sm:grid-cols-2"
+      filtersClassName="grid grid-cols-1 sm:grid-cols-3"
       filters={
         <>
           <SearchableOptionSelect
@@ -109,6 +127,29 @@ export function OperationsFilters({
               })
             }
             placeholder="همه اولویت‌ها"
+            searchable={false}
+          />
+          <SearchableOptionSelect
+            ariaLabel="وضعیت سبد فروش"
+            value={filters.engagementStatus ?? ""}
+            options={[
+              { id: "ACTIVE", label: "فعال" },
+              { id: "NEEDS_ACTION", label: "نیازمند اقدام" },
+              { id: "NURTURE", label: "پرورش" },
+              { id: "SNOOZED", label: "پیگیری در آینده" },
+              { id: "DORMANT", label: "راکد" },
+              { id: "DISQUALIFIED", label: "نامناسب" },
+            ]}
+            search=""
+            onSearchChange={() => undefined}
+            onChange={(value) =>
+              onPatch({
+                engagementStatus: (value || undefined) as
+                  CompanyEngagementStatus | undefined,
+                includeInactivePortfolio: Boolean(value) || undefined,
+              })
+            }
+            placeholder="همه وضعیت‌های سبد فروش"
             searchable={false}
           />
           <SearchableOptionSelect

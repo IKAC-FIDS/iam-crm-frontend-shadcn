@@ -50,7 +50,35 @@ export async function getOperationsCompanies(query: OperationsCompaniesQuery) {
         query.hasNoNextAction == null
           ? undefined
           : String(query.hasNoNextAction),
+      pinnedOnly:
+        query.pinnedOnly == null ? undefined : String(query.pinnedOnly),
+      includeInactivePortfolio:
+        query.includeInactivePortfolio == null
+          ? undefined
+          : String(query.includeInactivePortfolio),
     },
   })
   return parsePaginatedResponse(response.data, operationsCompanySchema)
+}
+
+export async function updateCompanyEngagement(
+  companyId: string,
+  payload: {
+    status: import("../types/operations.types").CompanyEngagementStatus
+    reason?: string
+    nextReviewAt?: string
+  }
+) {
+  const response = await api.patch(
+    `/companies/${companyId}/engagement`,
+    payload
+  )
+  return unwrapApiResponse<OperationsCompanyRow["company"]>(response.data)
+}
+
+export async function updateCompanyPin(companyId: string, isPinned: boolean) {
+  const response = await api.patch(`/companies/${companyId}/pin`, { isPinned })
+  return unwrapApiResponse<{ companyId: string; isPinned: boolean }>(
+    response.data
+  )
 }

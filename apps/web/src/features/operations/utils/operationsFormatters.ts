@@ -1,4 +1,14 @@
 import { formatJalaliDateTime } from "@/lib/date/jalali"
+import type { CompanyEngagementStatus } from "../types/operations.types"
+
+export const engagementLabels: Record<CompanyEngagementStatus, string> = {
+  ACTIVE: "فعال",
+  NEEDS_ACTION: "نیازمند اقدام",
+  NURTURE: "پرورش",
+  SNOOZED: "پیگیری در آینده",
+  DORMANT: "راکد",
+  DISQUALIFIED: "نامناسب",
+}
 
 export function formatRelativeOperationTime(value?: string | null) {
   if (!value) return "بدون زمان"

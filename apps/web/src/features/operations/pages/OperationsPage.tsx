@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { ListChecks, ShieldCheck } from "lucide-react"
 import { toast } from "sonner"
 import { EntityListPage } from "@/components/shared/EntityListPage"
@@ -42,6 +42,11 @@ import type { OperationsCompanyRow } from "../types/operations.types"
 import { PersonalTodoPanel } from "@/features/personalTodos/components/PersonalTodoPanel"
 import { useAdminUsers } from "@/features/admin/users/hooks/useAdminUsers"
 import { getUser } from "@/features/admin/users/api/adminUsersApi"
+import { CompanyEngagementDialog } from "../components/CompanyEngagementDialog"
+import {
+  updateCompanyEngagement,
+  updateCompanyPin,
+} from "../api/operations.api"
 
 export function OperationsPage() {
   const todayRef = useRef<HTMLElement>(null)
@@ -67,7 +72,10 @@ export function OperationsPage() {
   const isOwnView = !targetUserId
   const effectivePermissions = isOwnView
     ? permissions
-    : permissions.filter((permission) => !permission.endsWith(":create"))
+    : permissions.filter(
+        (permission) =>
+          !permission.endsWith(":create") && permission !== "company:update"
+      )
   const users = useAdminUsers(
     { page: 1, limit: 50, search: userSearch || undefined, isActive: true },
     Boolean(canInspectUsers)
@@ -81,6 +89,24 @@ export function OperationsPage() {
   const workspace = useOperationsWorkspace(targetUserId)
   const stages = usePipelineStages(dialog === "opportunity")
   const createOpportunity = useCreateOpportunity()
+  const engagementMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      value,
+    }: {
+      companyId: string
+      value: Parameters<typeof updateCompanyEngagement>[1]
+    }) => updateCompanyEngagement(companyId, value),
+  })
+  const pinMutation = useMutation({
+    mutationFn: ({
+      companyId,
+      isPinned,
+    }: {
+      companyId: string
+      isPinned: boolean
+    }) => updateCompanyPin(companyId, isPinned),
+  })
   const filters = useMemo<OperationsFilterState>(
     () => ({
       search: params.get("search") ?? "",
@@ -90,6 +116,17 @@ export function OperationsPage() {
         "HIGH",
         "STRATEGIC",
       ] as const),
+      engagementStatus: parseEnum(params.get("engagementStatus"), [
+        "ACTIVE",
+        "NEEDS_ACTION",
+        "NURTURE",
+        "SNOOZED",
+        "DORMANT",
+        "DISQUALIFIED",
+      ] as const),
+      pinnedOnly: params.get("pinnedOnly") === "true" || undefined,
+      includeInactivePortfolio:
+        params.get("includeInactivePortfolio") === "true" || undefined,
       attentionState: parseEnum(params.get("attentionState"), [
         "OVERDUE",
         "TODAY",
@@ -118,6 +155,9 @@ export function OperationsPage() {
     limit: pageSize,
     search: filters.search.trim() || undefined,
     priority: filters.priority,
+    engagementStatus: filters.engagementStatus,
+    pinnedOnly: filters.pinnedOnly,
+    includeInactivePortfolio: filters.includeInactivePortfolio,
     attentionState: filters.attentionState,
     hasUnreadMessages: filters.hasUnreadMessages,
     hasActiveOpportunity: filters.hasActiveOpportunity,
@@ -127,6 +167,9 @@ export function OperationsPage() {
   const filtered = Boolean(
     filters.search ||
     filters.priority ||
+    filters.engagementStatus ||
+    filters.pinnedOnly ||
+    filters.includeInactivePortfolio ||
     filters.attentionState ||
     filters.hasUnreadMessages ||
     filters.hasActiveOpportunity ||
@@ -151,6 +194,14 @@ export function OperationsPage() {
     const next: Record<string, string | undefined> = {}
     if ("search" in values) next.search = values.search
     if ("priority" in values) next.priority = values.priority
+    if ("engagementStatus" in values)
+      next.engagementStatus = values.engagementStatus
+    if ("pinnedOnly" in values)
+      next.pinnedOnly = values.pinnedOnly ? "true" : undefined
+    if ("includeInactivePortfolio" in values)
+      next.includeInactivePortfolio = values.includeInactivePortfolio
+        ? "true"
+        : undefined
     if ("attentionState" in values) next.attentionState = values.attentionState
     if ("hasUnreadMessages" in values)
       next.hasUnreadMessages = values.hasUnreadMessages ? "true" : undefined
@@ -167,6 +218,9 @@ export function OperationsPage() {
     patch({
       search: undefined,
       priority: undefined,
+      engagementStatus: undefined,
+      pinnedOnly: undefined,
+      includeInactivePortfolio: undefined,
       attentionState: undefined,
       hasUnreadMessages: undefined,
       hasActiveOpportunity: undefined,
@@ -339,10 +393,11 @@ export function OperationsPage() {
       >
         <div>
           <h2 id="operations-companies-title" className="ui-section-title">
-            شرکت‌های فعال من
+            سبد عملیاتی شرکت‌ها
           </h2>
           <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-            حساب‌هایی که برای اقدام، پیگیری یا گفتگو به توجه شما نیاز دارند.
+            شرکت‌های پین‌شده، فعال، نیازمند اقدام یا موعدرسیده؛ سایر شرکت‌ها از
+            طریق فیلتر «کل سبد» در دسترس‌اند.
           </p>
         </div>
         <QueryContent
@@ -356,9 +411,33 @@ export function OperationsPage() {
             permissions={effectivePermissions}
             fetching={companies.isFetching}
             filtered={filtered}
+            allowPersonalization={isOwnView}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-            onAction={(action, row) => openDialog(action, row)}
+            onAction={(action, row) => {
+              if (action === "pin") {
+                void pinMutation
+                  .mutateAsync({
+                    companyId: row.company.id,
+                    isPinned: !row.company.isPinned,
+                  })
+                  .then(async () => {
+                    await invalidateOperations()
+                    toast.success(
+                      row.company.isPinned
+                        ? "شرکت از مهم‌ها برداشته شد."
+                        : "شرکت به مهم‌ها اضافه شد."
+                    )
+                  })
+                  .catch((error) =>
+                    toast.error(
+                      getApiErrorMessage(error, "تغییر پین انجام نشد.")
+                    )
+                  )
+                return
+              }
+              openDialog(action, row)
+            }}
           />
         </QueryContent>
       </section>
@@ -439,6 +518,28 @@ export function OperationsPage() {
         open={dialog === "products"}
         onOpenChange={(open) => {
           if (!open) closeDialog()
+        }}
+      />
+      <CompanyEngagementDialog
+        row={selected}
+        open={dialog === "engagement"}
+        pending={engagementMutation.isPending}
+        onClose={closeDialog}
+        onSubmit={async (value) => {
+          if (!selected) return
+          try {
+            await engagementMutation.mutateAsync({
+              companyId: selected.company.id,
+              value,
+            })
+            closeDialog()
+            await invalidateOperations()
+            toast.success("وضعیت سبد فروش شرکت ذخیره شد.")
+          } catch (error) {
+            toast.error(
+              getApiErrorMessage(error, "ذخیره وضعیت شرکت انجام نشد.")
+            )
+          }
         }}
       />
     </EntityListPage>

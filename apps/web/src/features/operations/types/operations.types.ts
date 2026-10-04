@@ -5,6 +5,8 @@ export type OperationsPriority = "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
 export type OperationsAttentionState =
   "OVERDUE" | "TODAY" | "UPCOMING" | "NO_NEXT_ACTION" | "NORMAL"
 export type OperationsOwnershipScope = "all" | "mine" | "team" | "unassigned"
+export type CompanyEngagementStatus =
+  "ACTIVE" | "NEEDS_ACTION" | "NURTURE" | "SNOOZED" | "DORMANT" | "DISQUALIFIED"
 
 export type OperationsUser = {
   id: string
@@ -101,6 +103,10 @@ export type OperationsCompanyRow = {
     logoObjectKey?: string | null
     priority: OperationsPriority
     activityStatus?: string | null
+    engagementStatus: CompanyEngagementStatus
+    engagementReason?: string | null
+    nextReviewAt?: string | null
+    isPinned: boolean
     owner?: OperationsUser | null
   }
   activeOpportunities: {
@@ -152,6 +158,9 @@ export type OperationsCompaniesQuery = {
   limit: number
   search?: string
   priority?: OperationsPriority
+  engagementStatus?: CompanyEngagementStatus
+  pinnedOnly?: boolean
+  includeInactivePortfolio?: boolean
   attentionState?: OperationsAttentionState
   hasUnreadMessages?: boolean
   hasActiveOpportunity?: boolean

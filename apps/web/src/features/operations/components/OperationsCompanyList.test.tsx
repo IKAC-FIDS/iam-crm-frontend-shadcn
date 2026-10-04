@@ -12,6 +12,8 @@ const result: OperationsCompaniesPage = {
         legalName: "شرکت نمونه",
         brandName: "نمونه",
         priority: "HIGH",
+        engagementStatus: "NEEDS_ACTION",
+        isPinned: false,
       },
       activeOpportunities: { count: 2, preview: [], hasMore: true },
       tasks: {

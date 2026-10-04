@@ -7,6 +7,9 @@ import {
   Eye,
   ListPlus,
   MessageSquareText,
+  Layers3,
+  Pin,
+  PinOff,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -29,6 +32,7 @@ import type {
 } from "../types/operations.types"
 import {
   attentionPresentation,
+  engagementLabels,
   formatRelativeOperationTime,
   priorityLabels,
 } from "../utils/operationsFormatters"
@@ -40,6 +44,8 @@ export type OperationsRowAction =
   | "conversation"
   | "opportunities"
   | "activity-detail"
+  | "engagement"
+  | "pin"
 
 export function OperationsCompanyList({
   page,
@@ -48,6 +54,7 @@ export function OperationsCompanyList({
   permissions,
   fetching,
   filtered,
+  allowPersonalization = true,
   onPageChange,
   onPageSizeChange,
   onAction,
@@ -58,6 +65,7 @@ export function OperationsCompanyList({
   permissions: readonly string[]
   fetching: boolean
   filtered: boolean
+  allowPersonalization?: boolean
   onPageChange: (page: number) => void
   onPageSizeChange: (size: number) => void
   onAction: (action: OperationsRowAction, row: OperationsCompanyRow) => void
@@ -80,6 +88,20 @@ export function OperationsCompanyList({
       label: "مشاهده شرکت",
       icon: Eye,
       onClick: () => navigate(`/companies/${row.company.id}`),
+    },
+    {
+      id: "engagement",
+      label: "تغییر وضعیت سبد فروش",
+      icon: Layers3,
+      visible: permissions.includes("company:update"),
+      onClick: () => onAction("engagement", row),
+    },
+    {
+      id: "pin",
+      label: row.company.isPinned ? "برداشتن از مهم‌ها" : "افزودن به مهم‌ها",
+      icon: row.company.isPinned ? PinOff : Pin,
+      visible: allowPersonalization,
+      onClick: () => onAction("pin", row),
     },
     {
       id: "task",
@@ -130,6 +152,30 @@ export function OperationsCompanyList({
               />
             }
           />
+        ),
+      },
+      {
+        id: "portfolio",
+        header: "سبد فروش",
+        cell: (row) => (
+          <div className="flex items-center gap-1.5">
+            {row.company.isPinned ? (
+              <Pin className="size-3.5 fill-current text-[var(--app-primary)]" />
+            ) : null}
+            <StatusBadge
+              tone={
+                row.company.engagementStatus === "ACTIVE"
+                  ? "success"
+                  : row.company.engagementStatus === "NEEDS_ACTION"
+                    ? "warning"
+                    : row.company.engagementStatus === "DISQUALIFIED"
+                      ? "danger"
+                      : "neutral"
+              }
+            >
+              {engagementLabels[row.company.engagementStatus]}
+            </StatusBadge>
+          </div>
         ),
       },
       {
@@ -295,6 +341,11 @@ export function OperationsCompanyList({
           </StatusBadge>
         ),
         fields: [
+          {
+            id: "portfolio",
+            label: "سبد فروش",
+            render: (row) => engagementLabels[row.company.engagementStatus],
+          },
           {
             id: "opportunities",
             label: "فرصت فعال",

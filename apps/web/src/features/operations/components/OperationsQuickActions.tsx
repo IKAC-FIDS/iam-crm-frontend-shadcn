@@ -17,6 +17,7 @@ export type OperationsDialogKind =
   | "conversation"
   | "opportunities"
   | "activity-detail"
+  | "engagement"
 
 const actions: Array<{
   id: Exclude<
