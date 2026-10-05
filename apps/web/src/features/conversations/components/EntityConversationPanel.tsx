@@ -463,7 +463,28 @@ export function EntityConversationPanel({
         {references.length ? <div className="mb-3 flex flex-wrap gap-2">{references.map((reference) => <button key={`${reference.type}:${reference.id}`} type="button" onClick={() => setReferences((items) => items.filter((item) => item !== reference))} className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">{reference.label} ×</button>)}</div> : null}
         {attachments.length ? <div className="mb-3 flex flex-wrap gap-2">{attachments.map((attachment) => <button key={attachment.id} type="button" onClick={() => setAttachments((items) => items.filter((item) => item.id !== attachment.id))} className="rounded-full border border-[var(--app-divider)] px-2.5 py-1 text-xs">{attachment.originalFileName || attachment.name} ×</button>)}</div> : null}
         <div className="relative">
-          <MessageReferencePicker body={body} onSelect={(reference, token) => { setReferences((items) => items.some((item) => item.type === reference.type && item.id === reference.id) ? items : [...items, reference]); setBody((value) => value.slice(0, Math.max(0, value.length - token.length))) }} />
+          <MessageReferencePicker
+            body={body}
+            onCommand={(command, token) => {
+              setBody((value) =>
+                `${value.slice(0, Math.max(0, value.length - token.length))}/${command} `
+              )
+            }}
+            onSelect={(reference, token) => {
+              setReferences((items) =>
+                items.some(
+                  (item) =>
+                    item.type === reference.type && item.id === reference.id
+                )
+                  ? items
+                  : [...items, reference]
+              )
+              setBody((value) =>
+                value.slice(0, Math.max(0, value.length - token.length))
+              )
+              composer.current?.focus()
+            }}
+          />
         <label
           className="sr-only"
           htmlFor={`conversation-${entityType}-${entityId}`}
