@@ -39,10 +39,16 @@ export function EntityConversationPanel({
   entityType,
   entityId,
   enabled = true,
+  title = "گفتگو",
+  description = "پرسش‌ها و هماهنگی‌های داخلی این مورد",
+  showStatus = true,
 }: {
   entityType: ConversationEntityType
   entityId: string
   enabled?: boolean
+  title?: string
+  description?: string
+  showStatus?: boolean
 }) {
   const user = useAuthStore((state) => state.user)
   const query = useConversation(entityType, entityId, enabled)
@@ -157,9 +163,9 @@ export function EntityConversationPanel({
             <MessageSquareText className="size-5" />
           </span>
           <div>
-            <h2 className="ui-section-title">گفتگو</h2>
+            <h2 className="ui-section-title">{title}</h2>
             <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
-              پرسش‌ها و هماهنگی‌های داخلی این مورد
+              {description}
             </p>
           </div>
           {latestPage?.unreadCount ? (
@@ -168,7 +174,7 @@ export function EntityConversationPanel({
             </StatusBadge>
           ) : null}
         </div>
-        {latestPage?.thread ? (
+        {showStatus && latestPage?.thread ? (
           <div className="flex items-center gap-2">
             <StatusBadge
               tone={latestPage.thread.status === "OPEN" ? "warning" : "success"}

@@ -36,6 +36,7 @@ export function useConversation(
     getNextPageParam: (lastPage) =>
       lastPage.meta.hasNext ? lastPage.meta.page + 1 : undefined,
     enabled: enabled && Boolean(id),
+    refetchInterval: () => (document.visibilityState === "visible" ? 12_000 : false),
   })
 }
 
@@ -51,6 +52,7 @@ export function useConversationMutations(
         queryKey: [...conversationKeys.all, "company-hub"],
       }),
       client.invalidateQueries({ queryKey: ["operations"] }),
+      client.invalidateQueries({ queryKey: ["collaboration"] }),
     ])
   return {
     send: useMutation({

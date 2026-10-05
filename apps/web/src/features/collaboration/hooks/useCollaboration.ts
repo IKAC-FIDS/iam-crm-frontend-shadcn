@@ -1,0 +1,13 @@
+import { useEffect } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryScope } from "@/lib/queryScope"
+import { addCollaborationMember, createCollaborationChannel, createCollaborationTopic, getCollaborationChannel, getCollaborationMembers, removeCollaborationMember, sendPresenceHeartbeat } from "../api/collaboration.api"
+import { getCollaborationTopics } from "../api/collaboration.api"
+import type { CollaborationVisibility } from "../types/collaboration.types"
+
+export const collaborationKeys = { all: ["collaboration"] as const, topics: ["collaboration", "topics"] as const, channel: (id: string) => ["collaboration", "channels", id] as const, members: (id: string) => ["collaboration", "channels", id, "members"] as const }
+export function useCollaborationTopics() { return useQuery({ queryKey: [...collaborationKeys.topics, useQueryScope()], queryFn: getCollaborationTopics, refetchInterval: () => document.visibilityState === "visible" ? 25_000 : false }) }
+export function useCollaborationChannel(id: string) { return useQuery({ queryKey: [...collaborationKeys.channel(id), useQueryScope()], queryFn: () => getCollaborationChannel(id), enabled: Boolean(id) }) }
+export function useCollaborationMembers(id: string) { return useQuery({ queryKey: [...collaborationKeys.members(id), useQueryScope()], queryFn: () => getCollaborationMembers(id), enabled: Boolean(id), refetchInterval: () => document.visibilityState === "visible" ? 45_000 : false }) }
+export function useCollaborationMutations() { const client = useQueryClient(); const refresh = () => client.invalidateQueries({ queryKey: collaborationKeys.all }); return { createTopic: useMutation({ mutationFn: createCollaborationTopic, onSuccess: refresh }), createChannel: useMutation({ mutationFn: ({ topicId, name, visibility }: { topicId: string; name: string; visibility: CollaborationVisibility }) => createCollaborationChannel(topicId, { name, visibility }), onSuccess: refresh }), addMember: useMutation({ mutationFn: ({ channelId, userId }: { channelId: string; userId: string }) => addCollaborationMember(channelId, userId), onSuccess: refresh }), removeMember: useMutation({ mutationFn: ({ channelId, userId }: { channelId: string; userId: string }) => removeCollaborationMember(channelId, userId), onSuccess: refresh }) } }
+export function usePresenceHeartbeat() { useEffect(() => { const beat = () => { if (document.visibilityState === "visible") void sendPresenceHeartbeat() }; beat(); const timer = window.setInterval(beat, 60_000); document.addEventListener("visibilitychange", beat); return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", beat) } }, []) }

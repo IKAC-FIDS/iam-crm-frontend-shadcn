@@ -4,6 +4,7 @@ export type ConversationEntityType =
   | "ACTIVITY"
   | "OPPORTUNITY"
   | "MEETING"
+  | "COLLABORATION_CHANNEL"
 export type CompanyConversationEntityType = "COMPANY" | "TASK" | "ACTIVITY"
 export type ConversationMessageType = "COMMENT" | "QUESTION" | "ANSWER"
 export type ConversationThreadStatus = "OPEN" | "RESOLVED"

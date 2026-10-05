@@ -22,6 +22,7 @@ import {
   FolderOpen,
   Gavel,
   Mail,
+  MessagesSquare,
 } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -130,6 +131,15 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
+  {
+    id: "collaboration",
+    path: "/collaboration",
+    label: "مرکز همکاری",
+    group: null,
+    order: 7,
+    icon: MessagesSquare,
+    access: authenticated,
+  },
   {
     id: "operations-workspace",
     path: "/operations",
