@@ -61,6 +61,8 @@ export function useConversationMutations(
         type: ConversationMessageType
         parentMessageId?: string
         mentionedUserIds?: string[]
+        references?: Array<{ type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING"; id: string }>
+        attachmentIds?: string[]
       }) => createConversationMessage(type, id, payload),
       onSuccess: invalidate,
     }),

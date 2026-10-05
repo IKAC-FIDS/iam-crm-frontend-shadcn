@@ -8,6 +8,8 @@ import {
   Send,
   Trash2,
   X,
+  Paperclip,
+  Download,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -24,7 +26,8 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { formatJalaliDateTime } from "@/lib/date/jalali"
 import { useAuthStore } from "@/store/authStore"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
-import { getConversationMentionOptions } from "../api/conversations.api"
+import { downloadConversationAttachment, getConversationMentionOptions, uploadConversationAttachment } from "../api/conversations.api"
+import { MessageReferencePicker, type DraftReference } from "./MessageReferencePicker"
 import {
   useConversation,
   useConversationMutations,
@@ -34,6 +37,8 @@ import type {
   ConversationMentionOption,
   ConversationMessage,
 } from "../types/conversation.types"
+
+const referencePath = (type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING", id: string) => ({ COMPANY: `/companies/${id}`, OPPORTUNITY: `/opportunities/${id}`, TASK: `/tasks/${id}`, MEETING: `/meetings/${id}` })[type]
 
 export function EntityConversationPanel({
   entityType,
@@ -64,6 +69,9 @@ export function EntityConversationPanel({
   const [mentionedUsers, setMentionedUsers] = useState<
     ConversationMentionOption[]
   >([])
+  const [references, setReferences] = useState<DraftReference[]>([])
+  const [attachments, setAttachments] = useState<Array<{ id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null }>>([])
+  const [uploading, setUploading] = useState(false)
   const debouncedMentionSearch = useDebouncedValue(mentionSearch, 250)
   const mentionOptions = useQuery({
     queryKey: ["conversation-mention-options", debouncedMentionSearch],
@@ -124,6 +132,8 @@ export function EntityConversationPanel({
           type: replyTo ? "ANSWER" : type,
           parentMessageId: replyTo?.id,
           mentionedUserIds: mentionedUsers.map((item) => item.id),
+          ...(references.length ? { references: references.map(({ type, id }) => ({ type, id })) } : {}),
+          ...(attachments.length ? { attachmentIds: attachments.map((item) => item.id) } : {}),
         })
       setBody("")
       setReplyTo(null)
@@ -131,6 +141,8 @@ export function EntityConversationPanel({
       setType("COMMENT")
       setMentionedUsers([])
       setMentionSearch("")
+      setReferences([])
+      setAttachments([])
       composer.current?.focus()
     } catch (error) {
       toast.error(getApiErrorMessage(error, "ثبت پیام انجام نشد."))
@@ -328,6 +340,8 @@ export function EntityConversationPanel({
               <p className="mt-3 text-sm leading-7 break-words whitespace-pre-wrap text-[var(--app-text-primary)]">
                 {message.deletedAt ? "این پیام حذف شده است." : message.body}
               </p>
+              {message.references?.length ? <div className="mt-3 flex flex-wrap gap-2">{message.references.map((reference) => <a key={reference.id} href={referencePath(reference.referenceType, reference.referenceId)} className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">{reference.labelSnapshot}</a>)}</div> : null}
+              {message.attachments?.length ? <div className="mt-3 grid gap-2">{message.attachments.map((attachment) => <button key={attachment.id} type="button" onClick={() => void downloadConversationAttachment(attachment.id, attachment.originalFileName || attachment.name)} className="flex items-center gap-2 rounded-xl border border-[var(--app-divider)] p-2 text-right text-xs"><Paperclip className="size-4" /><span className="min-w-0 flex-1 truncate">{attachment.originalFileName || attachment.name}</span><Download className="size-4" /></button>)}</div> : null}
             </article>
           ))
         ) : (
@@ -446,6 +460,10 @@ export function EntityConversationPanel({
             </p>
           </div>
         ) : null}
+        {references.length ? <div className="mb-3 flex flex-wrap gap-2">{references.map((reference) => <button key={`${reference.type}:${reference.id}`} type="button" onClick={() => setReferences((items) => items.filter((item) => item !== reference))} className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">{reference.label} ×</button>)}</div> : null}
+        {attachments.length ? <div className="mb-3 flex flex-wrap gap-2">{attachments.map((attachment) => <button key={attachment.id} type="button" onClick={() => setAttachments((items) => items.filter((item) => item.id !== attachment.id))} className="rounded-full border border-[var(--app-divider)] px-2.5 py-1 text-xs">{attachment.originalFileName || attachment.name} ×</button>)}</div> : null}
+        <div className="relative">
+          <MessageReferencePicker body={body} onSelect={(reference, token) => { setReferences((items) => items.some((item) => item.type === reference.type && item.id === reference.id) ? items : [...items, reference]); setBody((value) => value.slice(0, Math.max(0, value.length - token.length))) }} />
         <label
           className="sr-only"
           htmlFor={`conversation-${entityType}-${entityId}`}
@@ -466,13 +484,15 @@ export function EntityConversationPanel({
           }
           className="w-full resize-y rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-7 outline-none focus:border-[var(--app-primary)]"
         />
+        </div>
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-xs text-[var(--app-text-secondary)]">
             {body.length.toLocaleString("fa-IR")} از ۴۰۰۰
           </span>
+          {entityType === "COLLABORATION_CHANNEL" ? <label className="cursor-pointer rounded-lg p-2 hover:bg-[var(--app-background)]" aria-label="افزودن فایل"><Paperclip className="size-4" /><input type="file" className="sr-only" disabled={uploading} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setUploading(true); try { const uploaded = await uploadConversationAttachment(entityId, file); setAttachments((items) => [...items, uploaded]) } catch (error) { toast.error(getApiErrorMessage(error, "بارگذاری فایل انجام نشد.")) } finally { setUploading(false); event.target.value = "" } }} /></label> : null}
           <Button
             type="button"
-            disabled={!body.trim() || pending}
+            disabled={(!body.trim() && !attachments.length) || pending || uploading}
             onClick={() => void submit()}
           >
             <Send className="size-4" />

@@ -36,10 +36,23 @@ export async function createConversationMessage(
     type: ConversationMessageType
     parentMessageId?: string
     mentionedUserIds?: string[]
+    references?: Array<{ type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING"; id: string }>
+    attachmentIds?: string[]
   }
 ) {
   const response = await api.post(`${path(type, id)}/messages`, payload)
   return unwrapApiResponse<ConversationMessage>(response.data)
+}
+
+export async function uploadConversationAttachment(channelId: string, file: File) {
+  const form = new FormData(); form.append("file", file)
+  const response = await api.post(`/conversations/COLLABORATION_CHANNEL/${channelId}/attachments`, form)
+  return unwrapApiResponse<{ id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null }>(response.data)
+}
+
+export async function downloadConversationAttachment(id: string, name: string) {
+  const response = await api.get(`/attachments/${id}/download`, { responseType: "blob" })
+  const url = URL.createObjectURL(response.data); const anchor = document.createElement("a"); anchor.href = url; anchor.download = name; anchor.click(); URL.revokeObjectURL(url)
 }
 
 export async function getConversationMentionOptions(search: string) {

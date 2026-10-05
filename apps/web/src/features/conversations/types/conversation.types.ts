@@ -32,6 +32,8 @@ export type ConversationMessage = {
   editedAt?: string | null
   deletedAt?: string | null
   createdAt: string
+  references: Array<{ id: string; referenceType: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING"; referenceId: string; labelSnapshot: string }>
+  attachments: Array<{ id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null }>
 }
 
 export type ConversationResponse = {
