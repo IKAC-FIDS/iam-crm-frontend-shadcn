@@ -6,6 +6,7 @@ import {
 import { useQueryScope } from "@/lib/queryScope"
 import {
   createConversationMessage,
+  askConversationBot,
   deleteConversationMessage,
   getConversation,
   markConversationRead,
@@ -64,6 +65,16 @@ export function useConversationMutations(
         references?: Array<{ type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING"; id: string }>
         attachmentIds?: string[]
       }) => createConversationMessage(type, id, payload),
+      onSuccess: invalidate,
+    }),
+    bot: useMutation({
+      mutationFn: (payload: {
+        body: string
+        requestId: string
+        mentionedUserIds?: string[]
+        references?: Array<{ type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING"; id: string }>
+        attachmentIds?: string[]
+      }) => askConversationBot(id, { ...payload, type: "COMMENT" }),
       onSuccess: invalidate,
     }),
     read: useMutation({

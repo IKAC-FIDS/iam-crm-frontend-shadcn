@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { EntityConversationPanel } from "./EntityConversationPanel"
 
-const mocks = vi.hoisted(() => ({ send: vi.fn(), read: vi.fn(), edit: vi.fn(), remove: vi.fn(), status: vi.fn(), refetch: vi.fn(), data: undefined as unknown }))
+const mocks = vi.hoisted(() => ({ send: vi.fn(), bot: vi.fn(), read: vi.fn(), edit: vi.fn(), remove: vi.fn(), status: vi.fn(), refetch: vi.fn(), data: undefined as unknown }))
 
 vi.mock("@/store/authStore", () => ({ useAuthStore: (selector: (state: unknown) => unknown) => selector({ user: { id: "user-1", role: "REP" } }) }))
 vi.mock("@tanstack/react-query", async (importOriginal) => {
@@ -17,6 +17,7 @@ vi.mock("../hooks/useConversation", () => ({
   useConversation: () => ({ data: mocks.data, isLoading: false, isError: false, refetch: mocks.refetch }),
   useConversationMutations: () => ({
     send: { mutateAsync: mocks.send, isPending: false }, read: { mutate: mocks.read, isPending: false },
+    bot: { mutateAsync: mocks.bot, isPending: false },
     edit: { mutateAsync: mocks.edit, isPending: false }, remove: { mutateAsync: mocks.remove, isPending: false },
     status: { mutate: mocks.status, isPending: false },
   }),
@@ -62,5 +63,28 @@ describe("EntityConversationPanel", () => {
     await user.type(screen.getByLabelText("متن پیام"), "لطفاً بررسی کنید")
     await user.click(screen.getByRole("button", { name: "ارسال" }))
     expect(mocks.send).toHaveBeenCalledWith({ body: "لطفاً بررسی کنید", type: "COMMENT", parentMessageId: undefined, mentionedUserIds: ["user-2"] })
+  })
+
+  it("enters bot mode and submits through the collaboration bot endpoint", async () => {
+    mocks.bot.mockResolvedValue({})
+    const user = userEvent.setup()
+    render(<EntityConversationPanel entityType="COLLABORATION_CHANNEL" entityId="channel-1" />)
+    await user.type(screen.getByLabelText("متن پیام"), "/")
+    await user.click(screen.getByRole("option", { name: /دستیار CRM/ }))
+    expect(screen.getByText("دستیار CRM فعال است")).toBeInTheDocument()
+    await user.type(screen.getByLabelText("متن پیام"), "گفتگو را خلاصه کن")
+    await user.click(screen.getByRole("button", { name: "ارسال" }))
+    expect(mocks.bot).toHaveBeenCalledWith(expect.objectContaining({
+      body: "گفتگو را خلاصه کن",
+      requestId: expect.any(String),
+    }))
+  })
+
+  it("renders persisted assistant messages with the CRM identity", () => {
+    mocks.data = { ...mocks.data as object, messages: [{ id: "ai-1", threadId: "t1", authorId: null, author: null, senderType: "ASSISTANT", type: "COMMENT", body: "جمع‌بندی گفتگو", createdAt: "2026-10-05T08:00:00.000Z", references: [], attachments: [] }] }
+    render(<EntityConversationPanel entityType="COLLABORATION_CHANNEL" entityId="channel-1" />)
+    expect(screen.getByText("دستیار CRM")).toBeInTheDocument()
+    expect(screen.getByText("جمع‌بندی گفتگو")).toBeInTheDocument()
+    expect(screen.getByText("AI")).toBeInTheDocument()
   })
 })

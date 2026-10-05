@@ -44,6 +44,17 @@ export async function createConversationMessage(
   return unwrapApiResponse<ConversationMessage>(response.data)
 }
 
+export async function askConversationBot(
+  channelId: string,
+  payload: Parameters<typeof createConversationMessage>[2] & { requestId: string }
+) {
+  const response = await api.post(
+    `/conversations/COLLABORATION_CHANNEL/${channelId}/bot`,
+    payload
+  )
+  return unwrapApiResponse<{ request: ConversationMessage; response: ConversationMessage }>(response.data)
+}
+
 export async function uploadConversationAttachment(channelId: string, file: File) {
   const form = new FormData(); form.append("file", file)
   const response = await api.post(`/conversations/COLLABORATION_CHANNEL/${channelId}/attachments`, form)

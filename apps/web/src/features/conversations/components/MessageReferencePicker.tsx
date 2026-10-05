@@ -6,6 +6,7 @@ import {
   CircleDollarSign,
   ListTodo,
   Loader2,
+  Bot,
   Search,
 } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
@@ -30,6 +31,7 @@ const commands = [
   },
   { command: "task", type: "TASK", label: "کار", icon: ListTodo },
   { command: "meeting", type: "MEETING", label: "جلسه", icon: CalendarDays },
+  { command: "bot", type: null, label: "دستیار CRM", icon: Bot },
 ] as const
 
 type ReferenceType = DraftReference["type"]
@@ -38,10 +40,14 @@ export function MessageReferencePicker({
   body,
   onCommand,
   onSelect,
+  onBot = () => undefined,
+  botEnabled = true,
 }: {
   body: string
   onCommand: (command: string, token: string) => void
   onSelect: (reference: DraftReference, token: string) => void
+  onBot?: (token: string) => void
+  botEnabled?: boolean
 }) {
   const match = body.match(/\/([a-z]*)(?:\s+([^\n]*))?$/i)
   const commandText = match?.[1]?.toLowerCase() ?? ""
@@ -60,9 +66,9 @@ export function MessageReferencePicker({
   const visibleCommands = useMemo(
     () =>
       commands.filter(
-        (item) => !commandText || item.command.startsWith(commandText)
+        (item) => (botEnabled || item.command !== "bot") && (!commandText || item.command.startsWith(commandText))
       ),
-    [commandText]
+    [botEnabled, commandText]
   )
 
   const query = useQuery({
@@ -105,7 +111,9 @@ export function MessageReferencePicker({
           event.preventDefault()
           setSearch("")
           setActive(0)
-          onCommand(visibleCommands[selectedIndex].command, token)
+          const command = visibleCommands[selectedIndex]
+          if (command.command === "bot") onBot(token)
+          else onCommand(command.command, token)
         }
       }
     }
@@ -117,6 +125,7 @@ export function MessageReferencePicker({
     match,
     onCommand,
     onSelect,
+    onBot,
     options,
     selectedIndex,
     token,
@@ -194,7 +203,8 @@ export function MessageReferencePicker({
                 event.preventDefault()
                 setSearch("")
                 setActive(0)
-                onCommand(item.command, token)
+                if (item.command === "bot") onBot(token)
+                else onCommand(item.command, token)
               }}
               className={`flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-right ${index === selectedIndex ? "bg-[var(--app-primary-soft)]" : "hover:bg-[var(--app-background)]"}`}
             >

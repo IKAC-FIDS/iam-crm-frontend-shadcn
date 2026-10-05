@@ -35,6 +35,15 @@ describe("MessageReferencePicker", () => {
     expect(screen.getByText("/opportunity")).toBeInTheDocument()
     expect(screen.getByText("/task")).toBeInTheDocument()
     expect(screen.getByText("/meeting")).toBeInTheDocument()
+    expect(screen.getByText("/bot")).toBeInTheDocument()
+  })
+
+  it("selects bot as a command without opening a CRM reference search", async () => {
+    const onBot = vi.fn()
+    const user = userEvent.setup()
+    render(<MessageReferencePicker body="/" onCommand={vi.fn()} onSelect={vi.fn()} onBot={onBot} />)
+    await user.click(screen.getByRole("option", { name: /دستیار CRM/ }))
+    expect(onBot).toHaveBeenCalledWith("/")
   })
 
   it("opens a searchable entity list after a command is selected", async () => {

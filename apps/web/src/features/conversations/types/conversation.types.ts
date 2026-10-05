@@ -18,8 +18,10 @@ export type ConversationMentionOption = {
 export type ConversationMessage = {
   id: string
   threadId: string
-  authorId: string
-  author: { id: string; fullName: string; avatarObjectKey?: string | null }
+  authorId: string | null
+  author: { id: string; fullName: string; avatarObjectKey?: string | null } | null
+  senderType: "USER" | "ASSISTANT"
+  botStatus?: "PENDING" | "FAILED" | "COMPLETE" | null
   parentMessageId?: string | null
   parentMessage?: {
     id: string

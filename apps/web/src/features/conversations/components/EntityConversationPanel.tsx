@@ -10,6 +10,8 @@ import {
   X,
   Paperclip,
   Download,
+  Bot,
+  Loader2,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -39,6 +41,7 @@ import type {
 } from "../types/conversation.types"
 
 const referencePath = (type: "COMPANY" | "OPPORTUNITY" | "TASK" | "MEETING", id: string) => ({ COMPANY: `/companies/${id}`, OPPORTUNITY: `/opportunities/${id}`, TASK: `/tasks/${id}`, MEETING: `/meetings/${id}` })[type]
+const fileSize = (value?: number | null) => value ? `${new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 }).format(value / 1024)} کیلوبایت` : null
 
 export function EntityConversationPanel({
   entityType,
@@ -72,6 +75,7 @@ export function EntityConversationPanel({
   const [references, setReferences] = useState<DraftReference[]>([])
   const [attachments, setAttachments] = useState<Array<{ id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null }>>([])
   const [uploading, setUploading] = useState(false)
+  const [botMode, setBotMode] = useState(false)
   const debouncedMentionSearch = useDebouncedValue(mentionSearch, 250)
   const mentionOptions = useQuery({
     queryKey: ["conversation-mention-options", debouncedMentionSearch],
@@ -121,10 +125,21 @@ export function EntityConversationPanel({
   const canModerate = user?.role === "ADMIN" || user?.role === "MANAGER"
 
   async function submit() {
-    const value = body.trim()
+    const rawValue = body.trim()
+    const inlineBot = entityType === "COLLABORATION_CHANNEL" && /^\/bot(?:\s+|$)/i.test(rawValue)
+    const useBot = botMode || inlineBot
+    const value = (inlineBot ? rawValue.replace(/^\/bot(?:\s+|$)/i, "") : rawValue).trim()
     if (!value) return
     try {
-      if (editing)
+      if (useBot && entityType === "COLLABORATION_CHANNEL")
+        await mutations.bot.mutateAsync({
+          body: value,
+          requestId: crypto.randomUUID(),
+          mentionedUserIds: mentionedUsers.map((item) => item.id),
+          ...(references.length ? { references: references.map(({ type, id }) => ({ type, id })) } : {}),
+          ...(attachments.length ? { attachmentIds: attachments.map((item) => item.id) } : {}),
+        })
+      else if (editing)
         await mutations.edit.mutateAsync({ messageId: editing.id, body: value })
       else
         await mutations.send.mutateAsync({
@@ -143,9 +158,10 @@ export function EntityConversationPanel({
       setMentionSearch("")
       setReferences([])
       setAttachments([])
+      setBotMode(false)
       composer.current?.focus()
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "ثبت پیام انجام نشد."))
+      toast.error(getApiErrorMessage(error, useBot ? "دستیار CRM موقتاً پاسخ‌گو نیست." : "ثبت پیام انجام نشد."))
     }
   }
 
@@ -166,7 +182,9 @@ export function EntityConversationPanel({
       </SurfaceCard>
     )
 
-  const pending = mutations.send.isPending || mutations.edit.isPending
+  const pending = mutations.send.isPending || mutations.edit.isPending || mutations.bot.isPending
+  const composerBotRequested = botMode || (entityType === "COLLABORATION_CHANNEL" && /^\/bot(?:\s+|$)/i.test(body.trim()))
+  const composerText = body.trim().replace(/^\/bot(?:\s+|$)/i, "").trim()
   return (
     <SurfaceCard id="conversation" className="scroll-mt-24 overflow-hidden">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--app-divider)] p-4 sm:p-5">
@@ -236,23 +254,25 @@ export function EntityConversationPanel({
           </Button>
         ) : null}
         {messages.length ? (
-          messages.map((message) => (
+          messages.map((message) => {
+            const assistantMessage = message.senderType === "ASSISTANT"
+            return (
             <article
               key={message.id}
-              className="rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)]/45 p-3 sm:p-4"
+              className={`rounded-2xl border p-3 sm:p-4 ${assistantMessage ? "border-[var(--app-primary)]/25 bg-[var(--app-primary-soft)]/35" : "border-[var(--app-divider)] bg-[var(--app-background)]/45"}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <IdentityAvatar
-                    name={message.author.fullName}
-                    mediaPath={`/users/${message.author.id}/avatar`}
-                    hasMedia={Boolean(message.author.avatarObjectKey)}
-                    mediaVersion={message.author.avatarObjectKey}
+                  {assistantMessage ? <span className="grid size-9 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]"><Bot className="size-4" /></span> : <IdentityAvatar
+                    name={message.author?.fullName || "کاربر"}
+                    mediaPath={`/users/${message.author?.id}/avatar`}
+                    hasMedia={Boolean(message.author?.avatarObjectKey)}
+                    mediaVersion={message.author?.avatarObjectKey}
                     className="size-9 rounded-xl text-xs"
-                  />
+                  />}
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-[var(--app-heading)]">
-                      {message.author.fullName}
+                      {assistantMessage ? "دستیار CRM" : message.author?.fullName}
                     </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       {formatJalaliDateTime(message.createdAt)}
@@ -276,7 +296,9 @@ export function EntityConversationPanel({
                   ) : message.type === "ANSWER" ? (
                     <StatusBadge tone="info">پاسخ</StatusBadge>
                   ) : null}
-                  {!message.deletedAt ? (
+                  {message.botStatus === "FAILED" ? <StatusBadge tone="danger">پاسخ دستیار ناموفق بود</StatusBadge> : null}
+                  {assistantMessage ? <StatusBadge tone="info">AI</StatusBadge> : null}
+                  {!message.deletedAt && !assistantMessage ? (
                     <Button
                       type="button"
                       size="icon"
@@ -295,7 +317,7 @@ export function EntityConversationPanel({
                       <Reply className="size-3.5" />
                     </Button>
                   ) : null}
-                  {!message.deletedAt &&
+                  {!message.deletedAt && !assistantMessage &&
                   (message.authorId === user?.id || canModerate) ? (
                     <>
                       <Button
@@ -341,9 +363,9 @@ export function EntityConversationPanel({
                 {message.deletedAt ? "این پیام حذف شده است." : message.body}
               </p>
               {message.references?.length ? <div className="mt-3 flex flex-wrap gap-2">{message.references.map((reference) => <a key={reference.id} href={referencePath(reference.referenceType, reference.referenceId)} className="rounded-full bg-[var(--app-primary-soft)] px-2.5 py-1 text-xs font-bold text-[var(--app-primary)]">{reference.labelSnapshot}</a>)}</div> : null}
-              {message.attachments?.length ? <div className="mt-3 grid gap-2">{message.attachments.map((attachment) => <button key={attachment.id} type="button" onClick={() => void downloadConversationAttachment(attachment.id, attachment.originalFileName || attachment.name)} className="flex items-center gap-2 rounded-xl border border-[var(--app-divider)] p-2 text-right text-xs"><Paperclip className="size-4" /><span className="min-w-0 flex-1 truncate">{attachment.originalFileName || attachment.name}</span><Download className="size-4" /></button>)}</div> : null}
+              {message.attachments?.length ? <div className="mt-3 grid gap-2">{message.attachments.map((attachment) => <button key={attachment.id} type="button" onClick={() => void downloadConversationAttachment(attachment.id, attachment.originalFileName || attachment.name)} className="flex items-center gap-2 rounded-xl border border-[var(--app-divider)] p-2 text-right text-xs"><Paperclip className="size-4" /><span className="min-w-0 flex-1 truncate"><span className="block truncate">{attachment.originalFileName || attachment.name}</span>{fileSize(attachment.sizeBytes) ? <span className="text-[var(--app-text-secondary)]">{fileSize(attachment.sizeBytes)}</span> : null}</span><Download className="size-4" /></button>)}</div> : null}
             </article>
-          ))
+          )})
         ) : (
           <div className="rounded-2xl border border-dashed border-[var(--app-divider)] p-8 text-center">
             <MessageSquareText className="mx-auto size-8 text-[var(--app-text-secondary)]" />
@@ -356,10 +378,16 @@ export function EntityConversationPanel({
       </div>
 
       <div className="border-t border-[var(--app-divider)] bg-[var(--app-background)]/45 p-4 sm:p-5">
+        {botMode ? (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--app-primary-soft)] px-3 py-2 text-xs font-bold text-[var(--app-primary)]">
+            <span className="flex items-center gap-2"><Bot className="size-4" />دستیار CRM فعال است</span>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setBotMode(false)}>انصراف</Button>
+          </div>
+        ) : null}
         {replyTo || editing ? (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--app-primary-soft)] px-3 py-2 text-xs">
             <span className="line-clamp-1">
-              {editing ? "ویرایش پیام" : `پاسخ به ${replyTo?.author.fullName}`}
+              {editing ? "ویرایش پیام" : `پاسخ به ${replyTo?.author?.fullName || "پیام"}`}
             </span>
             <Button
               type="button"
@@ -465,6 +493,16 @@ export function EntityConversationPanel({
         <div className="relative">
           <MessageReferencePicker
             body={body}
+            botEnabled={entityType === "COLLABORATION_CHANNEL"}
+            onBot={(token) => {
+              if (entityType !== "COLLABORATION_CHANNEL") return
+              setBotMode(true)
+              setReplyTo(null)
+              setEditing(null)
+              const inlineQuestion = /^\/bot/i.test(token) ? token.replace(/^\/bot\s*/i, "") : ""
+              setBody((value) => `${value.slice(0, Math.max(0, value.length - token.length))}${inlineQuestion}`)
+              composer.current?.focus()
+            }}
             onCommand={(command, token) => {
               setBody((value) =>
                 `${value.slice(0, Math.max(0, value.length - token.length))}/${command} `
@@ -498,6 +536,10 @@ export function EntityConversationPanel({
           maxLength={4000}
           value={body}
           onChange={(event) => setBody(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && botMode) { event.preventDefault(); setBotMode(false) }
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && !body.match(/\/([a-z]*)(?:\s+([^\n]*))?$/i)) { event.preventDefault(); if (!pending) void submit() }
+          }}
           placeholder={
             replyTo
               ? "پاسخ خود را بنویسید..."
@@ -510,14 +552,14 @@ export function EntityConversationPanel({
           <span className="text-xs text-[var(--app-text-secondary)]">
             {body.length.toLocaleString("fa-IR")} از ۴۰۰۰
           </span>
-          {entityType === "COLLABORATION_CHANNEL" ? <label className="cursor-pointer rounded-lg p-2 hover:bg-[var(--app-background)]" aria-label="افزودن فایل"><Paperclip className="size-4" /><input type="file" className="sr-only" disabled={uploading} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setUploading(true); try { const uploaded = await uploadConversationAttachment(entityId, file); setAttachments((items) => [...items, uploaded]) } catch (error) { toast.error(getApiErrorMessage(error, "بارگذاری فایل انجام نشد.")) } finally { setUploading(false); event.target.value = "" } }} /></label> : null}
+          {entityType === "COLLABORATION_CHANNEL" ? <label className="cursor-pointer rounded-lg p-2 hover:bg-[var(--app-background)]" aria-label="افزودن فایل">{uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}<input type="file" className="sr-only" disabled={uploading} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setUploading(true); try { const uploaded = await uploadConversationAttachment(entityId, file); setAttachments((items) => [...items, uploaded]) } catch (error) { toast.error(getApiErrorMessage(error, "بارگذاری فایل انجام نشد.")) } finally { setUploading(false); event.target.value = "" } }} /></label> : null}
           <Button
             type="button"
-            disabled={(!body.trim() && !attachments.length) || pending || uploading}
+            disabled={(!composerText && !(attachments.length && !composerBotRequested)) || pending || uploading}
             onClick={() => void submit()}
           >
             <Send className="size-4" />
-            {pending ? "در حال ثبت..." : editing ? "ذخیره" : "ارسال"}
+            {mutations.bot.isPending ? <><Loader2 className="size-4 animate-spin" />دستیار CRM در حال بررسی...</> : pending ? "در حال ثبت..." : editing ? "ذخیره" : "ارسال"}
           </Button>
         </div>
       </div>
