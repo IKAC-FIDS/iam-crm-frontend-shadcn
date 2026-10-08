@@ -138,7 +138,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: null,
     order: 7,
     icon: MessagesSquare,
-    access: authenticated,
+    access: { type: "permissions", mode: "all", permissions: ["collaboration:view"] },
   },
   {
     id: "operations-workspace",
