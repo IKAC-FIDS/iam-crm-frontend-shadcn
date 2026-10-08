@@ -12,13 +12,13 @@ import {
   getPushSubscriptions,
   removePushSubscription,
   savePushSubscription,
-  urlBase64ToUint8Array,
 } from "../api/pushNotificationApi"
 import {
   isNotificationSoundEnabled,
   previewNotificationSound,
   setNotificationSoundEnabled,
 } from "../utils/notificationSound"
+import { getOrCreatePushSubscription } from "../utils/pushServiceWorker"
 
 export function PushNotificationSettingsCard() {
   const client = useQueryClient()
@@ -54,14 +54,7 @@ export function PushNotificationSettingsCard() {
             ? "اجازه اعلان در مرورگر رد شده است"
             : "اجازه اعلان صادر نشد"
         )
-      const registration = await navigator.serviceWorker.register("/push-sw.js")
-      const existing = await registration.pushManager.getSubscription()
-      const subscription =
-        existing ??
-        (await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(config.data.publicKey),
-        }))
+      const subscription = await getOrCreatePushSubscription(config.data.publicKey)
       return savePushSubscription(subscription.toJSON())
     },
     onSuccess: async (endpoint) => {
