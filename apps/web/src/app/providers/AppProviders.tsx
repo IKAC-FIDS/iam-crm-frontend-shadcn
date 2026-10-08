@@ -9,6 +9,7 @@ import { queryClient } from "@/lib/queryClient"
 import { SessionBoundary } from "@/features/auth/components/SessionBoundary"
 import { ThemeProvider, useTheme } from "@/components/theme-provider"
 import { FontPreferenceProvider } from "@/components/font-preference-provider"
+import { PushNotificationSoundListener } from "@/features/notification-push/components/PushNotificationSoundListener"
 
 type AppProvidersProps = {
   children: ReactNode
@@ -28,6 +29,7 @@ export function AppProviders({
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <SessionBoundary>{children}</SessionBoundary>
+            <PushNotificationSoundListener />
             <AppToaster />
           </TooltipProvider>
         </QueryClientProvider>
