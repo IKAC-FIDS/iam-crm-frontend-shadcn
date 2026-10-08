@@ -48,6 +48,12 @@ const recurrenceLabels: Record<PersonalTodoRecurrence, string> = {
   CUSTOM: "سفارشی",
 }
 
+function itemsForTab(items: PersonalTodo[], tab: Tab) {
+  return items.filter((todo) =>
+    tab === "completed" ? todo.status === "DONE" : todo.status === "TODO"
+  )
+}
+
 export function PersonalTodoPanel({
   data,
   readOnly = false,
@@ -77,9 +83,15 @@ export function PersonalTodoPanel({
     recurrenceType: "NONE",
   })
   const mutations = usePersonalTodoMutations()
-  const items = useMemo(() => data?.[tab] ?? [], [data, tab])
+  const items = useMemo(
+    () => itemsForTab(data?.[tab] ?? [], tab),
+    [data, tab]
+  )
   const expandedWorkspace = useOperationsWorkspace(userId, 100, showAllTodos)
-  const allItems = expandedWorkspace.data?.personalTodos[tab] ?? items
+  const allItems = itemsForTab(
+    expandedWorkspace.data?.personalTodos[tab] ?? items,
+    tab
+  )
   const resetEditor = () => {
     setTitle("")
     setEditingId(null)
@@ -428,7 +440,9 @@ export function PersonalTodoPanel({
                           : mutations.complete.mutateAsync(todo.id),
                       todo.status === "DONE"
                         ? "کار دوباره باز شد."
-                        : "انجام شد."
+                        : todo.recurrenceType === "NONE"
+                          ? "انجام شد."
+                          : "انجام شد؛ نوبت بعدی کار تکرارشونده ایجاد می‌شود."
                     )
                   }
                 >
@@ -458,6 +472,11 @@ export function PersonalTodoPanel({
                     ? ` · ${new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(todo.dueAt))}`
                     : ""}
                 </p>
+                {todo.recurrenceType !== "NONE" ? (
+                  <StatusBadge className="mt-2" size="xs" tone="info">
+                    تکرار: {recurrenceLabels[todo.recurrenceType]}
+                  </StatusBadge>
+                ) : null}
               </div>
               {!readOnly &&
               canCreateTask &&

@@ -128,4 +128,38 @@ describe("PersonalTodoPanel", () => {
       screen.queryByRole("button", { name: "ویرایش" })
     ).not.toBeInTheDocument()
   })
+
+  it("never keeps a completed todo in an open tab when payloads overlap", async () => {
+    const user = userEvent.setup()
+    const completedTodo = {
+      ...todo,
+      status: "DONE" as const,
+    }
+    render(
+      <PersonalTodoPanel
+        data={{
+          ...data,
+          today: [completedTodo],
+          completed: [completedTodo],
+        }}
+      />
+    )
+
+    expect(screen.queryByText(completedTodo.title)).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "تکمیل‌شده" }))
+    expect(screen.getByText(completedTodo.title)).toBeInTheDocument()
+  })
+
+  it("labels an open recurring occurrence so it is not confused with the completed one", () => {
+    render(
+      <PersonalTodoPanel
+        data={{
+          ...data,
+          today: [{ ...todo, recurrenceType: "DAILY" as const }],
+        }}
+      />
+    )
+
+    expect(screen.getByText("تکرار: هر روز")).toBeInTheDocument()
+  })
 })
