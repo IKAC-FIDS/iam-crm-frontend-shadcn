@@ -111,7 +111,7 @@ export function OpportunityFilterBar({
             onChange({ stageOverdueOnly: filters.stageOverdueOnly ? undefined : true })
           }
         >
-          عبور از مهلت مرحله
+          فرصت‌های دارای تأخیر
         </Button>,
       ])}
       filters={
