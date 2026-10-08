@@ -58,7 +58,7 @@ export function OpportunityPipelineBoard({
   }, [dragged, role, stages, transitions])
 
   return (
-    <div className="overflow-x-auto pb-3" dir="rtl">
+    <div className="w-full max-w-full overflow-x-auto overflow-y-hidden pb-3" dir="rtl">
       <div className="flex min-w-max items-start gap-3">
         {stages.map((stage) => (
           <PipelineLane
@@ -136,7 +136,7 @@ function PipelineLane({
   return (
     <section
       className={[
-        "flex h-[clamp(520px,calc(100vh-300px),680px)] w-[300px] shrink-0 flex-col overflow-hidden rounded-[22px] border bg-[var(--app-background)]/75 transition sm:w-[320px]",
+        "flex h-[clamp(520px,calc(100vh-300px),680px)] w-[calc(100vw-2rem)] max-w-[380px] min-w-0 shrink-0 flex-col overflow-hidden rounded-[22px] border bg-[var(--app-background)]/75 transition sm:w-[340px] lg:w-[380px]",
         validDrop ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]/45 ring-2 ring-[var(--app-primary)]/15" : "border-[var(--app-divider)]",
         invalidDrop ? "opacity-55 saturate-50" : "",
       ].join(" ")}
@@ -158,18 +158,18 @@ function PipelineLane({
           </div>
           <span className="rounded-full border border-[var(--app-divider)] bg-[var(--app-background)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{total.toLocaleString("fa-IR")} {text.count}</span>
         </div>
-        {financialVisible ? <div className="mt-2 flex items-center justify-between text-xs text-[var(--app-text-secondary)]">
-          <span>{text.loadedValue}</span>
-          <span className="font-bold text-[var(--app-heading)]">{formatOpportunityValue(loadedValue)} {uiText.opportunities.fields.valueUnit}</span>
+        {financialVisible ? <div className="mt-2 flex min-w-0 items-center justify-between gap-2 text-xs text-[var(--app-text-secondary)]">
+          <span className="shrink-0">{text.loadedValue}</span>
+          <span className="min-w-0 truncate text-end font-bold text-[var(--app-heading)]" title={`${formatOpportunityValue(loadedValue)} ${uiText.opportunities.fields.valueUnit}`}>{formatOpportunityValue(loadedValue)} {uiText.opportunities.fields.valueUnit}</span>
         </div> : null}
         {financialVisible && items.length < total ? <p className="mt-1 text-xs text-[var(--app-text-secondary)]">{text.partialValue}</p> : null}
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
+      <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-2.5">
         {query.isLoading ? <div className="grid h-32 place-items-center"><Loader2 className="size-5 animate-spin text-[var(--app-primary)]" /></div> : query.isError ? (
           <ErrorState title={uiText.opportunities.errors.listTitle} description={uiText.opportunities.errors.listDescription} retryLabel={uiText.common.retry} onRetry={() => void query.refetch()} />
         ) : items.length ? (
-          <div className="grid gap-2.5">
+          <div className="grid min-w-0 gap-2.5">
             {items.map((opportunity) => (
               <OpportunityCard
                 key={opportunity.id}

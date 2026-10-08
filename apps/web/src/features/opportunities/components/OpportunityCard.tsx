@@ -43,30 +43,30 @@ export function OpportunityCard({
       onDragEnd={onDragEnd}
       onClick={onView}
       className={[
-        "group rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/25 hover:shadow-md",
+        "group w-full max-w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3 shadow-sm transition duration-150 hover:-translate-y-0.5 hover:border-[var(--app-primary)]/25 hover:shadow-md",
         canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
         dragging ? "scale-[1.02] opacity-45 shadow-xl" : "",
         opportunity.archivedAt ? "border-dashed opacity-70" : "",
       ].join(" ")}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex min-w-0 items-start gap-2">
         {canDrag ? <GripVertical className="mt-1 size-4 shrink-0 text-[var(--app-icon-muted)]" aria-label={uiText.opportunities.pipeline.dragHint} /> : null}
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-xs font-bold leading-6 text-[var(--app-heading)]">{opportunity.title}</h3>
+          <h3 className="line-clamp-2 break-words text-xs font-bold leading-6 [overflow-wrap:anywhere] text-[var(--app-heading)]">{opportunity.title}</h3>
           <p className="mt-0.5 truncate text-xs text-[var(--app-text-secondary)]">{opportunityCompanyName(opportunity)}</p>
         </div>
         <OpportunityActionsMenu opportunity={opportunity} permissions={permissions} onView={onView} onEdit={onEdit} onChangeOwner={onChangeOwner} onChangeStage={onChangeStage} onArchiveToggle={onArchiveToggle} />
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{priorityLabel(opportunity.priority)}</span>
-        {opportunity.probability !== null && opportunity.probability !== undefined ? <span className="text-xs font-bold text-[var(--app-heading)]">{opportunity.probability.toLocaleString("fa-IR")}%</span> : null}
+      <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <span className="max-w-full truncate rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{priorityLabel(opportunity.priority)}</span>
+        {opportunity.probability !== null && opportunity.probability !== undefined ? <span className="shrink-0 text-xs font-bold text-[var(--app-heading)]">{opportunity.probability.toLocaleString("fa-IR")}%</span> : null}
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
-        <span>عمر فرصت: {(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز</span>
+      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
+        <span className="max-w-full break-words">عمر فرصت: {(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز</span>
         <span aria-hidden="true">·</span>
-        <span>
+        <span className="max-w-full break-words">
           مرحله فعلی: {(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")}
           {opportunity.maxDurationDays == null
             ? " روز"
@@ -79,10 +79,10 @@ export function OpportunityCard({
         ) : null}
       </div>
 
-      {financialVisible ? <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
-        <CircleDollarSign className="size-3.5 text-[var(--app-primary)]" />
-        {formatOpportunityValue(opportunity.estimatedValue)}
-        <span className="text-xs font-normal text-[var(--app-text-secondary)]">{uiText.opportunities.fields.valueUnit}</span>
+      {financialVisible ? <div className="mt-3 flex min-w-0 items-center gap-2 text-xs font-bold text-[var(--app-heading)]">
+        <CircleDollarSign className="size-3.5 shrink-0 text-[var(--app-primary)]" />
+        <span className="min-w-0 truncate" title={formatOpportunityValue(opportunity.estimatedValue)}>{formatOpportunityValue(opportunity.estimatedValue)}</span>
+        <span className="shrink-0 text-xs font-normal text-[var(--app-text-secondary)]">{uiText.opportunities.fields.valueUnit}</span>
       </div> : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--app-divider)] pt-2.5 text-xs text-[var(--app-text-secondary)]">
