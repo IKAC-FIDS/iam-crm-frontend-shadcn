@@ -73,6 +73,17 @@ export function OpportunityExecutiveSummary({
       ) : null}
       <MetricCard
         icon={CalendarClock}
+        label="عمر فرصت"
+        value={`${(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز`}
+        helper={
+          opportunity.maxDurationDays == null
+            ? `مدت حضور در مرحله فعلی: ${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} روز`
+            : `${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} از ${opportunity.maxDurationDays.toLocaleString("fa-IR")} روز مجاز${opportunity.isStageOverdue ? ` · ${(opportunity.stageOverdueDays ?? 0).toLocaleString("fa-IR")} روز تأخیر` : ""}`
+        }
+        tone={opportunity.isStageOverdue ? "warning" : "info"}
+      />
+      <MetricCard
+        icon={CalendarClock}
         label={uiText.opportunities.fields.expectedCloseDate}
         value={
           formatJalaliDate(opportunity.expectedCloseDate) ||

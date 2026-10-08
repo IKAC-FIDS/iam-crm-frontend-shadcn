@@ -37,6 +37,7 @@ import { PageHero } from "@/components/shared/PageHero"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { NumberInput } from "@/components/shared/inputs/NumberInput"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 
@@ -455,6 +456,12 @@ function StagesDesigner({
                 <StatusBadge tone="neutral">
                   {TERMINAL_LABELS[stage.terminalType]}
                 </StatusBadge>
+
+                <StatusBadge tone={stage.maxDurationDays ? "info" : "neutral"}>
+                  {stage.maxDurationDays
+                    ? `حداکثر ${fa(stage.maxDurationDays)} روز`
+                    : "بدون محدودیت زمانی"}
+                </StatusBadge>
               </div>
 
               <div className="mt-4 flex items-center gap-2">
@@ -589,6 +596,9 @@ function StageEditor({
   const [code, setCode] = useState(item?.code ?? "")
   const [label, setLabel] = useState(item?.label ?? "")
   const [description, setDescription] = useState(item?.description ?? "")
+  const [maxDurationDays, setMaxDurationDays] = useState(
+    item?.maxDurationDays == null ? "" : String(item.maxDurationDays)
+  )
   const [sortOrder, setSortOrder] = useState(String(item?.sortOrder ?? 0))
   const [color, setColor] = useState(item?.color ?? DEFAULT_PIPELINE_COLOR)
   const [isActive, setIsActive] = useState(item?.isActive ?? true)
@@ -601,6 +611,15 @@ function StageEditor({
     mutationFn: async () => {
       if (!label.trim()) throw new Error("عنوان مرحله الزامی است.")
       if (!editing && !code.trim()) throw new Error("کد مرحله الزامی است.")
+      const parsedMaxDuration = maxDurationDays.trim()
+        ? Number(maxDurationDays)
+        : null
+      if (
+        parsedMaxDuration !== null &&
+        (!Number.isInteger(parsedMaxDuration) || parsedMaxDuration < 1)
+      ) {
+        throw new Error("حداکثر مدت حضور باید یک عدد صحیح مثبت باشد.")
+      }
 
       const common = {
         label: label.trim(),
@@ -617,10 +636,16 @@ function StageEditor({
         throw new Error("ترتیب نمایش نامعتبر است.")
       }
 
-      if (item) return updatePipelineStage(item.id, common)
+      if (item) {
+        return updatePipelineStage(item.id, {
+          ...common,
+          maxDurationDays: parsedMaxDuration,
+        })
+      }
 
       return createPipelineStage({
         ...common,
+        maxDurationDays: parsedMaxDuration ?? undefined,
         code: code.trim().toUpperCase().replace(/\s+/g, "_"),
       })
     },
@@ -667,6 +692,16 @@ function StageEditor({
             onChange={(event) => setSortOrder(event.target.value)}
             placeholder="ترتیب"
           />
+          <label className="grid gap-1.5 text-sm font-bold text-[var(--app-heading)]">
+            حداکثر مدت مجاز حضور (روز)
+            <NumberInput
+              min={1}
+              step={1}
+              value={maxDurationDays}
+              onValueChange={setMaxDurationDays}
+              placeholder="بدون محدودیت"
+            />
+          </label>
           <div className="flex gap-2">
             <input
               type="color"

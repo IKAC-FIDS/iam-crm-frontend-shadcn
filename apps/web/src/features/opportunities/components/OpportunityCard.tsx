@@ -7,6 +7,7 @@ import { formatOpportunityDate, formatOpportunityValue, opportunityCompanyName, 
 import { OpportunityActionsMenu, type OpportunityActionPermissions } from "./OpportunityActionsMenu"
 import { useAuthStore } from "@/store/authStore"
 import { canViewFinancials } from "@/lib/permissions"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 export function OpportunityCard({
   opportunity,
@@ -60,6 +61,22 @@ export function OpportunityCard({
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="rounded-full bg-[var(--app-primary-soft)] px-2 py-1 text-xs font-bold text-[var(--app-primary)]">{priorityLabel(opportunity.priority)}</span>
         {opportunity.probability !== null && opportunity.probability !== undefined ? <span className="text-xs font-bold text-[var(--app-heading)]">{opportunity.probability.toLocaleString("fa-IR")}%</span> : null}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
+        <span>عمر فرصت: {(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز</span>
+        <span aria-hidden="true">·</span>
+        <span>
+          مرحله فعلی: {(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")}
+          {opportunity.maxDurationDays == null
+            ? " روز"
+            : ` از ${opportunity.maxDurationDays.toLocaleString("fa-IR")} روز مجاز`}
+        </span>
+        {opportunity.isStageOverdue ? (
+          <StatusBadge tone="error" dot={false}>
+            {(opportunity.stageOverdueDays ?? 0).toLocaleString("fa-IR")} روز تأخیر
+          </StatusBadge>
+        ) : null}
       </div>
 
       {financialVisible ? <div className="mt-3 flex items-center gap-2 text-xs font-bold text-[var(--app-heading)]">

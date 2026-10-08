@@ -49,4 +49,23 @@ describe("TaskList", () => {
     expect(onEdit).toHaveBeenCalledWith(task)
     expect(onAction).toHaveBeenCalledWith(task, "assign")
   })
+
+  it("labels an unfinished overdue task without relying on color alone", () => {
+    render(
+      <MemoryRouter>
+        <TaskList
+          tasks={[{ ...task, dueAt: "2020-01-01T08:00:00.000Z" }]}
+          canCreate={false}
+          canUpdate={false}
+          canAssign={false}
+          canDelete={false}
+          onCreate={vi.fn()}
+          onEdit={vi.fn()}
+          onAction={vi.fn()}
+        />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText("سررسید گذشته")).toBeVisible()
+  })
 })

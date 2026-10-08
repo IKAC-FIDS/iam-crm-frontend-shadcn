@@ -54,6 +54,14 @@ export function OpportunityEntityCard({
   const companyName = opportunityCompanyName(opportunity)
 
   const badges: EntityBadgeDescriptor[] = [
+    ...(opportunity.isStageOverdue
+      ? [{
+          id: "stage-overdue",
+          label: `${(opportunity.stageOverdueDays ?? 0).toLocaleString("fa-IR")} روز تأخیر`,
+          tone: "error" as const,
+          dot: false,
+        }]
+      : []),
     {
       id: "status",
       label: active ? text.status.active : text.status.archived,
@@ -83,6 +91,21 @@ export function OpportunityEntityCard({
   ]
 
   const metadata: EntityMetadataDescriptor[] = [
+    {
+      id: "age",
+      label: "عمر فرصت",
+      value: `${(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز`,
+      icon: CalendarDays,
+    },
+    {
+      id: "stage-age",
+      label: "مدت حضور در مرحله فعلی",
+      value: opportunity.maxDurationDays == null
+        ? `${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} روز`
+        : `${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} از ${opportunity.maxDurationDays.toLocaleString("fa-IR")} روز مجاز`,
+      icon: Waypoints,
+      className: opportunity.isStageOverdue ? "text-[var(--destructive)]" : undefined,
+    },
     {
       id: "close-date",
       label: text.table.closeDate,

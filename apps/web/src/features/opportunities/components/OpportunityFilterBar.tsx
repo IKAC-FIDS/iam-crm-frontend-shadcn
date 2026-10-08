@@ -48,6 +48,7 @@ export function OpportunityFilterBar({
     filters.sourceOptionId,
     filters.primaryContactId,
     filters.archiveState !== "active" ? filters.archiveState : undefined,
+    filters.stageOverdueOnly ? "stageOverdueOnly" : undefined,
   ].filter(Boolean).length
   const hasActiveFilters =
     Boolean(filters.search) ||
@@ -66,6 +67,7 @@ export function OpportunityFilterBar({
       sourceOptionId: undefined,
       primaryContactId: undefined,
       archiveState: "active",
+      stageOverdueOnly: undefined,
     })
   }
 
@@ -97,7 +99,21 @@ export function OpportunityFilterBar({
                   : text.filters.unassigned}
           </Button>
         )
-      )}
+      ).concat([
+        <Button
+          key="stage-overdue"
+          type="button"
+          size="sm"
+          variant={filters.stageOverdueOnly ? "destructive" : "outline"}
+          aria-pressed={Boolean(filters.stageOverdueOnly)}
+          className="shrink-0 rounded-xl"
+          onClick={() =>
+            onChange({ stageOverdueOnly: filters.stageOverdueOnly ? undefined : true })
+          }
+        >
+          عبور از مهلت مرحله
+        </Button>,
+      ])}
       filters={
         <>
           <SearchableCompanySelect

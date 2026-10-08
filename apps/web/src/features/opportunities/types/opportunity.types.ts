@@ -15,6 +15,7 @@ export interface OpportunityStage {
   isDefault?: boolean
   isTerminal?: boolean
   terminalType?: "NONE" | "WON" | "LOST" | string | null
+  maxDurationDays?: number | null
 }
 
 export interface OpportunityTransition {
@@ -73,6 +74,11 @@ export interface Opportunity {
   wonAt?: string | null
   lostAt?: string | null
   lostReason?: string | null
+  ageDays?: number
+  currentStageAgeDays?: number
+  maxDurationDays?: number | null
+  isStageOverdue?: boolean
+  stageOverdueDays?: number
   stageHistories?: OpportunityStageHistory[]
   activities?: OpportunityActivity[]
   lineItems?: OpportunityLineItem[]
@@ -321,6 +327,7 @@ export interface OpportunityFilters {
   expectedCloseFrom?: string
   expectedCloseTo?: string
   archiveState: ArchiveState
+  stageOverdueOnly?: boolean
 }
 
 export interface OpportunityListQuery extends OpportunityFilters, PageParams {}

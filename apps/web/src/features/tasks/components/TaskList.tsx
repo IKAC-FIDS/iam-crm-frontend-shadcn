@@ -37,6 +37,9 @@ export function TaskList({ tasks, canCreate, canUpdate, canAssign, canDelete, on
       const children = task.subtasks ?? []
       const resolved = children.filter((item) => item.status === "DONE" || item.status === "CANCELLED").length
       const badges: EntityBadgeDescriptor[] = [
+        ...(isTaskOverdue(task)
+          ? [{ id: "overdue", label: "سررسید گذشته", tone: "error" as const, dot: false }]
+          : []),
         { id: "status", label: taskStatusLabel(task.status), tone: taskStatusTone(task.status) },
         { id: "priority", label: taskPriorityLabel(task.priority), tone: taskPriorityTone(task.priority), dot: false },
         { id: "review", label: taskReviewStatusLabel(task.reviewStatus), tone: taskReviewStatusTone(task.reviewStatus) },

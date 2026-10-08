@@ -15,6 +15,7 @@ export const opportunityFilterKeys = [
   "expectedCloseFrom",
   "expectedCloseTo",
   "archiveState",
+  "stageOverdueOnly",
 ] as const
 export function readOpportunityFilters(
   params: URLSearchParams
@@ -47,5 +48,6 @@ export function readOpportunityFilters(
     primaryContactId: value("primaryContactId"),
     expectedCloseFrom: value("expectedCloseFrom"),
     expectedCloseTo: value("expectedCloseTo"),
+    stageOverdueOnly: params.get("stageOverdueOnly") === "true" || undefined,
   }
 }

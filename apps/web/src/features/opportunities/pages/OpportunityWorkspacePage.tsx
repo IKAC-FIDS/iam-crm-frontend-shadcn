@@ -274,7 +274,18 @@ export function OpportunityWorkspacePage() {
         stages={stages}
         owners={Array.isArray(ownersQuery.data) ? ownersQuery.data : []}
         sources={Array.isArray(sourcesQuery.data) ? sourcesQuery.data : []}
-        onChange={(values) => patch(values, { replace: "search" in values })}
+        onChange={(values) => {
+          const { stageOverdueOnly, ...rest } = values
+          patch(
+            {
+              ...rest,
+              ...(Object.prototype.hasOwnProperty.call(values, "stageOverdueOnly")
+                ? { stageOverdueOnly: stageOverdueOnly ? "true" : undefined }
+                : {}),
+            },
+            { replace: "search" in values }
+          )
+        }}
         onClear={() =>
           patch(
             Object.fromEntries(

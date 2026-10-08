@@ -47,6 +47,7 @@ function opportunityParams(query: OpportunityListQuery) {
     expectedCloseTo: query.expectedCloseTo || undefined,
     includeArchived: query.archiveState === "all" ? "true" : undefined,
     archivedOnly: query.archiveState === "archived" ? "true" : undefined,
+    stageOverdueOnly: query.stageOverdueOnly ? "true" : undefined,
   }
 }
 

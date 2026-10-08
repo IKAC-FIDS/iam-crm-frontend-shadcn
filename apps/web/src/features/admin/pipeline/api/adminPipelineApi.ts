@@ -9,6 +9,7 @@ export type PipelineStage = {
   code: string
   label: string
   description?: string | null
+  maxDurationDays?: number | null
   sortOrder: number
   color?: string | null
   isActive: boolean
@@ -39,6 +40,7 @@ export type CreateStagePayload = {
   code: string
   label: string
   description?: string
+  maxDurationDays?: number
   sortOrder?: number
   color?: string
   isActive?: boolean
@@ -47,7 +49,10 @@ export type CreateStagePayload = {
   isDefault?: boolean
 }
 
-export type UpdateStagePayload = Omit<CreateStagePayload, "code">
+export type UpdateStagePayload = Omit<
+  CreateStagePayload,
+  "code" | "maxDurationDays"
+> & { maxDurationDays?: number | null }
 
 export type TransitionPayload = {
   fromStageId?: string | null
@@ -77,6 +82,7 @@ function normalizeStage(item: unknown): PipelineStage {
     code: String(row.code),
     label: String(row.label ?? row.code),
     description: row.description == null ? null : String(row.description),
+    maxDurationDays: row.maxDurationDays == null ? null : Number(row.maxDurationDays),
     sortOrder: Number(row.sortOrder ?? 0),
     color: row.color == null ? null : String(row.color),
     isActive: Boolean(row.isActive),
