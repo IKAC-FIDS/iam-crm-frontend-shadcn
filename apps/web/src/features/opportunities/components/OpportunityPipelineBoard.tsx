@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react"
-import { useMemo, useState, type DragEvent } from "react"
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
 
 import { ErrorState } from "@/components/shared/ErrorState"
 import { uiText } from "@/config/uiText"
@@ -126,7 +126,26 @@ function PipelineLane({
   financialVisible: boolean
 }) {
   const text = uiText.opportunities.pipeline
-  const query = usePipelineColumn(stage.id, filters)
+  const laneRef = useRef<HTMLElement>(null)
+  const [shouldLoad, setShouldLoad] = useState(
+    () => typeof IntersectionObserver === "undefined"
+  )
+  useEffect(() => {
+    const element = laneRef.current
+    if (!element || shouldLoad || typeof IntersectionObserver === "undefined") return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return
+        setShouldLoad(true)
+        observer.disconnect()
+      },
+      { rootMargin: "0px 420px" }
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [shouldLoad])
+  const query = usePipelineColumn(stage.id, filters, shouldLoad)
   const pages = query.data?.pages ?? []
   const items = pages.flatMap((page) => Array.isArray(page.data) ? page.data : [])
   const total = pages[0]?.meta.total ?? 0
@@ -135,6 +154,7 @@ function PipelineLane({
 
   return (
     <section
+      ref={laneRef}
       className={[
         "flex h-[clamp(520px,calc(100vh-300px),680px)] w-[calc(100vw-2rem)] max-w-[380px] min-w-0 shrink-0 flex-col overflow-hidden rounded-[22px] border bg-[var(--app-background)]/75 transition sm:w-[340px] lg:w-[380px]",
         validDrop ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]/45 ring-2 ring-[var(--app-primary)]/15" : "border-[var(--app-divider)]",
@@ -165,7 +185,7 @@ function PipelineLane({
       </header>
 
       <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-2.5">
-        {query.isLoading ? <div className="grid h-32 place-items-center"><Loader2 className="size-5 animate-spin text-[var(--app-primary)]" /></div> : query.isError ? (
+        {!shouldLoad || query.isLoading ? <div className="grid h-32 place-items-center"><Loader2 className="size-5 animate-spin text-[var(--app-primary)]" /></div> : query.isError ? (
           <ErrorState title={uiText.opportunities.errors.listTitle} description={uiText.opportunities.errors.listDescription} retryLabel={uiText.common.retry} onRetry={() => void query.refetch()} />
         ) : items.length ? (
           <div className="grid min-w-0 gap-2.5">

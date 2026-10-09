@@ -19,6 +19,14 @@ it("separates list caches by organization/user while preserving invalidation roo
   expect(opportunityQueryKeys.list(opportunities, "scope").slice(0, 3)).toEqual(
     opportunityQueryKeys.lists()
   )
+  expect(
+    opportunityQueryKeys.pipelineColumn("stage-1", opportunities, "tenant-a")
+  ).not.toEqual(
+    opportunityQueryKeys.pipelineColumn("stage-1", opportunities, "tenant-b")
+  )
+  expect(opportunityQueryKeys.stages("tenant-a")).not.toEqual(
+    opportunityQueryKeys.stages("tenant-b")
+  )
   expect(adminUserKeys.list(params, "scope")[0]).toBe("admin-users")
   expect(adminUserKeys.count(true, "tenant-a")).not.toEqual(
     adminUserKeys.count(true, "tenant-b")

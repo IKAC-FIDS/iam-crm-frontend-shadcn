@@ -69,14 +69,17 @@ export const opportunityQueryKeys = {
   list: (query: OpportunityListQuery, scope: string) =>
     [...opportunityQueryKeys.lists(), scope, query] as const,
   pipeline: () => [...opportunityQueryKeys.workspace(), "pipeline"] as const,
-  pipelineColumn: (stageId: string, filters: OpportunityFilters) =>
-    [...opportunityQueryKeys.pipeline(), stageId, filters] as const,
+  pipelineColumn: (
+    stageId: string,
+    filters: OpportunityFilters,
+    scope: string
+  ) => [...opportunityQueryKeys.pipeline(), scope, stageId, filters] as const,
   details: () => [...opportunityQueryKeys.all, "detail"] as const,
   detail: (id: string) => [...opportunityQueryKeys.details(), id] as const,
-  stages: ["pipeline", "stages"] as const,
-  transitions: ["pipeline", "transitions"] as const,
-  sources: ["opportunities", "sources"] as const,
-  owners: ["opportunities", "owners"] as const,
+  stages: (scope: string) => ["pipeline", "stages", scope] as const,
+  transitions: (scope: string) => ["pipeline", "transitions", scope] as const,
+  sources: (scope: string) => ["opportunities", "sources", scope] as const,
+  owners: (scope: string) => ["opportunities", "owners", scope] as const,
   companyPeople: (companyId: string) =>
     ["opportunities", "company-people", companyId] as const,
   lineItems: (id: string) =>
@@ -110,14 +113,17 @@ export function usePipelineColumn(
   filters: OpportunityFilters,
   enabled = true
 ) {
+  const scope = useQueryScope()
   return useInfiniteQuery({
-    queryKey: opportunityQueryKeys.pipelineColumn(stageId, filters),
+    queryKey: opportunityQueryKeys.pipelineColumn(stageId, filters, scope),
     queryFn: ({ pageParam }) =>
       getOpportunities({ ...filters, stageId, page: pageParam, limit: 20 }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.meta.hasNext ? lastPage.meta.page + 1 : undefined,
     enabled: enabled && Boolean(stageId),
+    staleTime: 60_000,
+    refetchOnMount: false,
   })
 }
 
@@ -130,38 +136,42 @@ export function useOpportunity(id: string, enabled = true) {
 }
 
 export function usePipelineStages(enabled = true) {
+  const scope = useQueryScope()
   return useQuery({
-    queryKey: opportunityQueryKeys.stages,
+    queryKey: opportunityQueryKeys.stages(scope),
     queryFn: getPipelineStages,
     enabled,
-    staleTime: 5 * 60_000,
+    staleTime: 10 * 60_000,
   })
 }
 
 export function usePipelineTransitions(enabled = true) {
+  const scope = useQueryScope()
   return useQuery({
-    queryKey: opportunityQueryKeys.transitions,
+    queryKey: opportunityQueryKeys.transitions(scope),
     queryFn: getPipelineTransitions,
-    enabled,
-    staleTime: 60_000,
-  })
-}
-
-export function useOpportunitySources(enabled = true) {
-  return useQuery({
-    queryKey: opportunityQueryKeys.sources,
-    queryFn: getOpportunitySources,
     enabled,
     staleTime: 5 * 60_000,
   })
 }
 
-export function useOpportunityOwners(enabled = true) {
+export function useOpportunitySources(enabled = true) {
+  const scope = useQueryScope()
   return useQuery({
-    queryKey: opportunityQueryKeys.owners,
+    queryKey: opportunityQueryKeys.sources(scope),
+    queryFn: getOpportunitySources,
+    enabled,
+    staleTime: 10 * 60_000,
+  })
+}
+
+export function useOpportunityOwners(enabled = true) {
+  const scope = useQueryScope()
+  return useQuery({
+    queryKey: opportunityQueryKeys.owners(scope),
     queryFn: getOpportunityOwnerOptions,
     enabled,
-    staleTime: 60_000,
+    staleTime: 2 * 60_000,
   })
 }
 
@@ -245,22 +255,22 @@ export function useChangeOpportunityStage() {
         snapshots
           .filter(
             ([key, data]) =>
-              key[3] === opportunity.stageId &&
+              key[4] === opportunity.stageId &&
               Boolean(
                 data?.pages.some((page) =>
                   page.data.some((item) => item.id === opportunity.id)
                 )
               )
           )
-          .map(([key]) => JSON.stringify(key[4]))
+          .map(([key]) => JSON.stringify(key[5]))
       )
 
       for (const [key, data] of snapshots) {
         if (!data) continue
-        const keyStageId = key[3]
+        const keyStageId = key[4]
         if (keyStageId !== opportunity.stageId && keyStageId !== stageId)
           continue
-        if (!matchingFilters.has(JSON.stringify(key[4]))) continue
+        if (!matchingFilters.has(JSON.stringify(key[5]))) continue
         queryClient.setQueryData<InfiniteData<OpportunityPage>>(key, {
           ...data,
           pages: data.pages.map((page, pageIndex) => {
