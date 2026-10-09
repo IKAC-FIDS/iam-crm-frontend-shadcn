@@ -14,7 +14,17 @@ const clean = (value: object) =>
   )
 
 export async function getNotifications(query: NotificationQuery = {}) {
-  const response = await api.get("/notifications", { params: clean(query) })
+  const response = await api.get("/notifications", {
+    params: clean({
+      ...query,
+      types: query.types?.join(","),
+      priorities: query.priorities?.join(","),
+      archivedOnly:
+        query.archivedOnly == null ? undefined : String(query.archivedOnly),
+      includeArchived:
+        query.includeArchived == null ? undefined : String(query.includeArchived),
+    }),
+  })
   return parsePaginatedResponse(
     response.data,
     z.custom<Notification>(

@@ -14,7 +14,11 @@ import { useListQueryState, enumParam } from "@/lib/listQuery"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import { AlertTriangle, Bell, CheckCircle2, ClipboardCheck } from "lucide-react"
+import { DataTableShell, type DataTableColumn } from "@/components/shared/DataTableShell"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { PersianDateRangePicker } from "@/components/shared/date"
+import { AlertTriangle, Bell, BriefcaseBusiness, CalendarDays, CheckCircle2, ClipboardCheck, CreditCard, FileText, Gavel, LayoutGrid, LayoutList, ListTodo, MailOpen, Paperclip } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -23,7 +27,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
-import type { StatusTone } from "@/components/shared/StatusBadge"
+import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
@@ -62,9 +66,23 @@ import {
 import type {
   Notification,
   NotificationPriority,
+  NotificationQuery,
+  NotificationType,
 } from "@/features/notifications/types/notification.types"
+import { parsePageParam, parsePageSize } from "@/lib/listQuery"
 
-type NotificationQuick = "all" | "unread" | "important" | "archived"
+type NotificationQuick = "all" | "unread" | "read" | "important" | "archived"
+type NotificationTypeGroup = "TASK" | "OPPORTUNITY" | "MEETING" | "COMMERCIAL_DOCUMENT" | "PAYMENT" | "SYSTEM" | "OTHER"
+
+const notificationTypeGroups: Record<NotificationTypeGroup, NotificationType[]> = {
+  TASK: ["TASK_CREATED", "TASK_ASSIGNED", "TASK_STATUS_CHANGED", "TASK_COMPLETED", "TASK_RESCHEDULED"],
+  OPPORTUNITY: ["OPPORTUNITY_UPDATED"],
+  MEETING: ["MEETING_REMINDER"],
+  COMMERCIAL_DOCUMENT: ["COMMERCIAL_DOCUMENT_UPDATED"],
+  PAYMENT: ["PAYMENT_UPDATED"],
+  SYSTEM: ["SYSTEM"],
+  OTHER: ["ATTACHMENT_UPLOADED", "PERSONAL_TODO_REMINDER", "TENDER_WORKFLOW"],
+}
 
 export function AttentionCenterPage() {
   const { params, page, pageSize, patch: patchList } = useListQueryState()
@@ -131,7 +149,7 @@ export function AttentionCenterPage() {
         description="موارد نیازمند اقدام، پیگیری و اعلان‌های مهم را در یک نمای متمرکز مدیریت کنید."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {canManageNotifications ? (
+            {canNotifications ? (
               <Button
                 type="button"
                 variant="outline"
@@ -564,28 +582,64 @@ function NotificationList({
   canManage: boolean
   navigate: (path: string) => void
 }) {
-  const { params, page, pageSize, patch, setPage, setPageSize } =
-    useListQueryState()
+  const { params, patch } = useListQueryState()
   const search = params.get("notificationSearch") || ""
   const quick = enumParam(
     params.get("notificationQuick"),
-    ["all", "unread", "important", "archived"],
+    ["all", "unread", "read", "important", "archived"],
     "all"
   )
-  const setSearch = (value: string) =>
-    patch({ notificationSearch: value }, { replace: true })
-  const setQuick = (value: NotificationQuick) =>
-    patch({ notificationQuick: value })
-  const debouncedSearch = useDebouncedValue(search, 300)
-  const query = useNotifications(
+  const view = enumParam(params.get("notificationView"), ["list", "cards"], "list")
+  const typeGroup = enumParam(
+    params.get("notificationType"),
+    ["TASK", "OPPORTUNITY", "MEETING", "COMMERCIAL_DOCUMENT", "PAYMENT", "SYSTEM", "OTHER"],
+    undefined as unknown as NotificationTypeGroup
+  )
+  const priority = enumParam(
+    params.get("notificationPriority"),
+    ["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"],
+    undefined as unknown as NotificationPriority
+  )
+  const sort = enumParam(
+    params.get("notificationSort"),
+    ["createdAt:desc", "createdAt:asc", "priority:desc", "priority:asc"],
+    "createdAt:desc"
+  )
+  const [sortBy, sortOrder] = sort.split(":") as ["createdAt" | "priority", "asc" | "desc"]
+  const page = parsePageParam(params.get("notificationPage"))
+  const pageSize = parsePageSize(params.get("notificationLimit"))
+  const dateFrom = params.get("notificationDateFrom") || undefined
+  const dateTo = params.get("notificationDateTo") || undefined
+  const patchNotifications = (
+    values: Record<string, string | number | undefined>,
+    options: { resetPage?: boolean; replace?: boolean } = {}
+  ) => patch(
     {
-      page,
-      limit: pageSize,
-      search: debouncedSearch.trim() || undefined,
-      status: quick === "unread" ? "unread" : "all",
-      priority: quick === "important" ? "HIGH" : undefined,
-      archivedOnly: quick === "archived" ? true : undefined,
+      ...values,
+      ...(options.resetPage === false ? {} : { notificationPage: 1 }),
     },
+    { resetPage: false, replace: options.replace }
+  )
+  const setSearch = (value: string) =>
+    patchNotifications({ notificationSearch: value }, { replace: true })
+  const setQuick = (value: NotificationQuick) =>
+    patchNotifications({ notificationQuick: value === "all" ? undefined : value })
+  const debouncedSearch = useDebouncedValue(search, 300)
+  const queryParams: NotificationQuery = {
+    page,
+    limit: pageSize,
+    search: debouncedSearch.trim() || undefined,
+    status: quick === "unread" ? "unread" : quick === "read" ? "read" : "all",
+    priorities: quick === "important" ? ["HIGH", "URGENT"] : priority ? [priority] : undefined,
+    types: typeGroup ? notificationTypeGroups[typeGroup] : undefined,
+    archivedOnly: quick === "archived" || undefined,
+    dateFrom,
+    dateTo,
+    sortBy,
+    sortOrder,
+  }
+  const query = useNotifications(
+    queryParams,
     search === debouncedSearch
   )
   const markRead = useMarkRead(),
@@ -596,7 +650,7 @@ function NotificationList({
 
   async function openNotification(notification: Notification) {
     try {
-      if (canManage && !notification.readAt) await markRead.mutateAsync(notification.id)
+      if (!notification.readAt) await markRead.mutateAsync(notification.id)
       const actionUrl = safeNotificationActionUrl(notification.actionUrl)
       if (actionUrl) navigate(actionUrl)
       else setDetail(notification)
@@ -604,6 +658,40 @@ function NotificationList({
   }
 
   const [detail, setDetail] = useState<Notification | null>(null)
+  const rows = query.data?.data ?? []
+  const hasActiveFilters = Boolean(
+    search || quick !== "all" || typeGroup || priority || dateFrom || dateTo || sort !== "createdAt:desc"
+  )
+  const columns: DataTableColumn<Notification>[] = [
+    {
+      id: "notification",
+      header: "اعلان",
+      cell: (item) => (
+        <div className="flex w-[min(34rem,45vw)] min-w-64 items-start gap-3 whitespace-normal">
+          <NotificationTypeIcon notification={item} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              {!item.readAt ? <span className="size-2 shrink-0 rounded-full bg-[var(--app-primary)]" aria-label="خوانده‌نشده" /> : null}
+              <strong className="truncate text-sm">{item.title}</strong>
+            </div>
+            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.body || "بدون توضیحات"}</p>
+          </div>
+        </div>
+      ),
+    },
+    { id: "type", header: "نوع", cell: (item) => notificationTypeLabel(item.type) },
+    { id: "priority", header: "اولویت", cell: (item) => <StatusBadge size="xs" tone={notificationPriorityTone(item.priority)}>{notificationPriorityLabel(item.priority)}</StatusBadge> },
+    { id: "state", header: "وضعیت", cell: (item) => <StatusBadge size="xs" tone={!item.readAt ? "primary" : "neutral"}>{notificationInboxState(item)}</StatusBadge> },
+    { id: "date", header: "زمان", cell: (item) => dt(item.createdAt) },
+  ]
+
+  const actionsFor = (item: Notification): EntityAction[] => [
+    { id: "view", label: "مشاهده", icon: Eye, onClick: () => openNotification(item) },
+    { id: "details", label: "مشاهده متن کامل", icon: Eye, onClick: () => { if (!item.readAt) void markRead.mutateAsync(item.id); setDetail(item) } },
+    { id: "read", label: item.readAt ? "خوانده‌نشده" : "خوانده‌شده", icon: MailOpen, onClick: () => item.readAt ? markUnread.mutateAsync(item.id) : markRead.mutateAsync(item.id) },
+    { id: "archive", label: item.archivedAt ? "خروج از بایگانی" : "بایگانی", icon: Archive, onClick: () => item.archivedAt ? unarchive.mutateAsync(item.id) : archive.mutateAsync(item.id), visible: canManage },
+    { id: "delete", label: "حذف", icon: Trash2, onClick: () => remove.mutateAsync(item.id), visible: canManage, variant: "danger", confirmation: { title: "حذف اعلان", description: "این اعلان حذف شود؟" } },
+  ]
 
   return (
     <div className="flex min-w-0 flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
@@ -611,21 +699,36 @@ function NotificationList({
         <DialogContent className="max-h-[85dvh] overflow-y-auto" dir="rtl">
           <DialogHeader><DialogTitle>{detail?.title}</DialogTitle></DialogHeader>
           <p className="whitespace-pre-wrap break-words text-sm leading-7">{detail?.body || "این اعلان متن بیشتری ندارد."}</p>
+          {safeNotificationActionUrl(detail?.actionUrl) ? (
+            <Button type="button" onClick={() => navigate(safeNotificationActionUrl(detail?.actionUrl)!)}>
+              مشاهده مورد مرتبط
+            </Button>
+          ) : null}
         </DialogContent>
       </Dialog>
       <DataTableToolbar
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="جستجو در اعلان‌ها..."
-        hasActiveFilters={Boolean(search || quick !== "all")}
-        onClearFilters={() =>
-          patch({ notificationSearch: undefined, notificationQuick: undefined })
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={() => patchNotifications({ notificationSearch: undefined, notificationQuick: undefined, notificationType: undefined, notificationPriority: undefined, notificationDateFrom: undefined, notificationDateTo: undefined, notificationSort: undefined })}
+        actions={
+          <div className="flex gap-1 rounded-xl border border-[var(--app-divider)] p-1">
+            <Button size="icon-sm" variant={view === "list" ? "default" : "ghost"} aria-label="نمای فهرستی" onClick={() => patchNotifications({ notificationView: undefined }, { resetPage: false })}><LayoutList className="size-4" /></Button>
+            <Button size="icon-sm" variant={view === "cards" ? "default" : "ghost"} aria-label="نمای کارتی" onClick={() => patchNotifications({ notificationView: "cards" }, { resetPage: false })}><LayoutGrid className="size-4" /></Button>
+          </div>
         }
         filters={
+          <>
+            <SearchableOptionSelect value={typeGroup || ""} options={notificationTypeGroupOptions} onChange={(value) => patchNotifications({ notificationType: value || undefined })} search="" onSearchChange={() => undefined} searchable={false} placeholder="نوع اعلان: همه" ariaLabel="نوع اعلان" />
+            <SearchableOptionSelect value={priority || ""} options={notificationPriorityOptions} onChange={(value) => patchNotifications({ notificationPriority: value || undefined, notificationQuick: quick === "important" ? undefined : params.get("notificationQuick") || undefined })} search="" onSearchChange={() => undefined} searchable={false} placeholder="اولویت: همه" ariaLabel="اولویت اعلان" />
+            <PersianDateRangePicker value={{ from: safeNotificationDate(dateFrom), to: safeNotificationDate(dateTo) }} onChange={(range) => { const from = range?.from; const to = range?.to; if (from) from.setHours(0, 0, 0, 0); if (to) to.setHours(23, 59, 59, 999); patchNotifications({ notificationDateFrom: from?.toISOString(), notificationDateTo: to?.toISOString() }) }} />
+            <SearchableOptionSelect value={sort} options={notificationSortOptions} onChange={(value) => patchNotifications({ notificationSort: value === "createdAt:desc" ? undefined : value })} search="" onSearchChange={() => undefined} searchable={false} placeholder="مرتب‌سازی" ariaLabel="مرتب‌سازی اعلان‌ها" />
+          </>
+        }
+        quickFilters={
           <div className="flex flex-wrap gap-1">
-            {(
-              ["all", "unread", "important", "archived"] as NotificationQuick[]
-            ).map((value) => (
+            {(["all", "unread", "read", "important", "archived"] as NotificationQuick[]).map((value) => (
               <Button
                 key={value}
                 type="button"
@@ -643,16 +746,20 @@ function NotificationList({
 
       <QueryContent query={query} errorTitle="دریافت اعلان‌ها ناموفق بود">
         <div className="flex flex-col gap-3 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
-          {(query.data?.data ?? []).length ? (
-            <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+          <p className="text-xs font-medium text-muted-foreground" aria-live="polite">
+            {query.data?.meta.total.toLocaleString("fa-IR") ?? "۰"} نتیجه
+          </p>
+          {rows.length ? (
+            view === "cards" ? <div className="rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)]/55 p-2 shadow-[var(--app-shadow-card)] lg:min-h-0 lg:flex-1 lg:overflow-hidden">
               <div className="ui-contained-scroll overflow-visible ps-2 pe-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-primary)] lg:h-full lg:overflow-y-auto lg:overscroll-contain" aria-label="فهرست اعلان‌ها" tabIndex={0}>
                 <div className="grid gap-2.5">
-                  {(query.data?.data ?? []).map((notification) => (
+                  {rows.map((notification) => (
                     <NotificationEntityCard
                       key={notification.id}
                       notification={notification}
                       canManage={canManage}
                       onView={() => void openNotification(notification)}
+                      onDetails={() => { if (!notification.readAt) void markRead.mutateAsync(notification.id); setDetail(notification) }}
                       onToggleRead={() => notification.readAt ? markUnread.mutateAsync(notification.id) : markRead.mutateAsync(notification.id)}
                       onToggleArchive={() => notification.archivedAt ? unarchive.mutateAsync(notification.id) : archive.mutateAsync(notification.id)}
                       onDelete={() => remove.mutateAsync(notification.id)}
@@ -660,7 +767,7 @@ function NotificationList({
                   ))}
                 </div>
               </div>
-            </div>
+            </div> : <DataTableShell rows={rows} columns={columns} getRowKey={(item) => item.id} onRowClick={(item) => void openNotification(item)} renderRowActions={(item) => <EntityRowActions actions={actionsFor(item)} />} caption="فهرست اعلان‌ها" mobile={{ title: (item) => item.title, subtitle: (item) => item.body || "بدون توضیحات", avatar: (item) => <NotificationTypeIcon notification={item} compact />, status: (item) => <StatusBadge size="xs" tone={!item.readAt ? "primary" : "neutral"}>{notificationInboxState(item)}</StatusBadge>, fields: [{ id: "type", label: "نوع", render: (item) => notificationTypeLabel(item.type) }, { id: "priority", label: "اولویت", render: (item) => notificationPriorityLabel(item.priority) }, { id: "date", label: "زمان", render: (item) => dt(item.createdAt) }] }} />
           ) : (
             <EmptyState
               icon={Bell}
@@ -669,7 +776,7 @@ function NotificationList({
             />
           )}
           <div className="shrink-0">
-            <PaginationControls page={query.data?.meta.page ?? page} pageCount={query.data?.meta.totalPages ?? 1} pageSize={pageSize} total={query.data?.meta.total} disabled={query.isFetching} onPageChange={setPage} onPageSizeChange={setPageSize} />
+            <PaginationControls page={query.data?.meta.page ?? page} pageCount={query.data?.meta.totalPages ?? 1} pageSize={pageSize} total={query.data?.meta.total} disabled={query.isFetching} onPageChange={(value) => patchNotifications({ notificationPage: value }, { resetPage: false })} onPageSizeChange={(value) => patchNotifications({ notificationLimit: value, notificationPage: 1 }, { resetPage: false })} />
           </div>
         </div>
       </QueryContent>
@@ -681,6 +788,7 @@ function NotificationEntityCard({
   notification,
   canManage,
   onView,
+  onDetails,
   onToggleRead,
   onToggleArchive,
   onDelete,
@@ -688,6 +796,7 @@ function NotificationEntityCard({
   notification: Notification
   canManage: boolean
   onView: () => void
+  onDetails: () => void
   onToggleRead: () => Promise<unknown>
   onToggleArchive: () => Promise<unknown>
   onDelete: () => Promise<unknown>
@@ -713,12 +822,13 @@ function NotificationEntityCard({
   ]
   const actions: EntityAction[] = [
     { id: "view", label: "مشاهده", accessibleLabel: "مشاهده", icon: Eye, onClick: onView },
+    { id: "details", label: "مشاهده متن کامل", icon: FileText, onClick: onDetails },
     {
       id: "read",
       label: notification.readAt ? "علامت‌گذاری به‌عنوان خوانده‌نشده" : "علامت‌گذاری به‌عنوان خوانده‌شده",
       icon: CheckCircle2,
       onClick: onToggleRead,
-      visible: canManage,
+      visible: true,
     },
     {
       id: "archive",
@@ -768,18 +878,20 @@ function NotificationEntityCard({
 
 function notificationFilterLabel(value: NotificationQuick) {
   if (value === "unread") return "خوانده‌نشده"
+  if (value === "read") return "خوانده‌شده"
   if (value === "important") return "مهم"
   if (value === "archived") return "بایگانی"
   return "همه"
 }
 function notificationPriorityLabel(priority: NotificationPriority) {
+  if (priority === "CRITICAL") return "بحرانی"
   if (priority === "URGENT") return "فوری"
   if (priority === "HIGH") return "بالا"
   if (priority === "LOW") return "پایین"
   return "عادی"
 }
 function notificationPriorityTone(priority: NotificationPriority): StatusTone {
-  if (priority === "URGENT") return "error"
+  if (priority === "URGENT" || priority === "CRITICAL") return "error"
   if (priority === "HIGH") return "warning"
   if (priority === "LOW") return "neutral"
   return "info"
@@ -797,6 +909,65 @@ function notificationTypeLabel(type: Notification["type"]) {
     PAYMENT_UPDATED: "بروزرسانی پرداخت",
     ATTACHMENT_UPLOADED: "بارگذاری پیوست",
     MEETING_REMINDER: "یادآوری جلسه",
+    PERSONAL_TODO_REMINDER: "یادآوری کار شخصی",
+    TENDER_WORKFLOW: "گردش‌کار مناقصه",
   }
   return labels[type] || type
+}
+
+const notificationTypeGroupOptions = [
+  { id: "TASK", label: "کارها" },
+  { id: "OPPORTUNITY", label: "فرصت‌های فروش" },
+  { id: "MEETING", label: "جلسات" },
+  { id: "COMMERCIAL_DOCUMENT", label: "اسناد تجاری" },
+  { id: "PAYMENT", label: "پرداخت‌ها" },
+  { id: "SYSTEM", label: "اعلان‌های سیستمی" },
+  { id: "OTHER", label: "سایر" },
+]
+
+const notificationPriorityOptions = (["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"] as NotificationPriority[]).map((id) => ({
+  id,
+  label: notificationPriorityLabel(id),
+}))
+
+const notificationSortOptions = [
+  { id: "createdAt:desc", label: "جدیدترین ابتدا" },
+  { id: "createdAt:asc", label: "قدیمی‌ترین ابتدا" },
+  { id: "priority:desc", label: "بالاترین اولویت ابتدا" },
+  { id: "priority:asc", label: "پایین‌ترین اولویت ابتدا" },
+]
+
+function safeNotificationDate(value?: string) {
+  if (!value) return undefined
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function NotificationTypeIcon({
+  notification,
+  compact = false,
+}: {
+  notification: Notification
+  compact?: boolean
+}) {
+  const Icon = notification.entityType === "TASK"
+    ? ListTodo
+    : notification.entityType === "OPPORTUNITY"
+      ? BriefcaseBusiness
+      : notification.entityType === "MEETING"
+        ? CalendarDays
+        : notification.entityType === "PAYMENT"
+          ? CreditCard
+          : notification.entityType === "COMMERCIAL_DOCUMENT"
+            ? FileText
+            : notification.entityType === "ATTACHMENT"
+              ? Paperclip
+              : notification.entityType === "TENDER"
+                ? Gavel
+                : Bell
+  return (
+    <span className={compact ? "text-[var(--app-primary)]" : "grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]"}>
+      <Icon className="size-4" aria-hidden="true" />
+    </span>
+  )
 }
