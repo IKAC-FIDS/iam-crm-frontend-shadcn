@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react"
-import { MessageCircleMore, Plus, Trash2, Users } from "lucide-react"
+import { Files, MessageCircleMore, Plus, Trash2, Users } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { EntityConversationPanel } from "@/features/conversations/components/EntityConversationPanel"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import { getConversationMentionOptions } from "@/features/conversations/api/conversations.api"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { EntityListPage } from "@/components/shared/EntityListPage"
@@ -40,6 +41,7 @@ type DialogState = {
   topic?: CollaborationTopic
   channel?: CollaborationChannel
 } | null
+type ChannelView = "conversation" | "files"
 const has = (permissions: readonly string[] | undefined, permission: string) =>
   Boolean(permissions?.includes(permission))
 
@@ -52,6 +54,7 @@ export function CollaborationPage() {
   const [selectedId, setSelectedId] = useState("")
   const [dialog, setDialog] = useState<DialogState>(null)
   const [membersOpen, setMembersOpen] = useState(false)
+  const [channelView, setChannelView] = useState<ChannelView>("conversation")
   const allChannels = useMemo(
     () => topics.data?.data.flatMap((topic) => topic.channels) ?? [],
     [topics.data]
@@ -181,16 +184,55 @@ export function CollaborationPage() {
                     اعضا
                   </Button>
                 </div>
-                <EntityConversationPanel
-                  entityType="COLLABORATION_CHANNEL"
-                  entityId={selected.id}
-                  title={selected.name}
-                  description={
-                    selected.description ||
-                    `کانال ${selectedTopic?.name ?? "همکاری"}`
-                  }
-                  showStatus={false}
-                />
+                <div
+                  className="mb-3 flex w-fit items-center gap-1 rounded-xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-1"
+                  role="tablist"
+                  aria-label="محتوای کانال"
+                >
+                  <Button
+                    role="tab"
+                    aria-selected={channelView === "conversation"}
+                    variant={channelView === "conversation" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setChannelView("conversation")}
+                  >
+                    <MessageCircleMore className="size-4" />
+                    گفتگو
+                  </Button>
+                  <Button
+                    role="tab"
+                    aria-selected={channelView === "files"}
+                    variant={channelView === "files" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => setChannelView("files")}
+                  >
+                    <Files className="size-4" />
+                    فایل‌ها و لینک‌ها
+                  </Button>
+                </div>
+                {channelView === "conversation" ? (
+                  <EntityConversationPanel
+                    entityType="COLLABORATION_CHANNEL"
+                    entityId={selected.id}
+                    title={selected.name}
+                    description={
+                      selected.description ||
+                      `کانال ${selectedTopic?.name ?? "همکاری"}`
+                    }
+                    showStatus={false}
+                  />
+                ) : (
+                  <ArtifactPanel
+                    key={selected.id}
+                    entityType="COLLABORATION_CHANNEL"
+                    entityId={selected.id}
+                    title={`فایل‌ها و لینک‌های ${selected.name}`}
+                    emptyTitle="هنوز فایل یا لینکی برای این کانال ثبت نشده است"
+                    emptyDescription="برای اشتراک مستندات، فایل بارگذاری کنید یا یک مرجع خارجی اضافه کنید."
+                  />
+                )}
               </>
             ) : (
               <SurfaceCard className="grid min-h-96 place-items-center p-8 text-center">

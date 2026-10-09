@@ -27,6 +27,34 @@ it("renders provider metadata and permission-gated artifact actions", async () =
   expect(screen.getByRole("button", { name: "حذف آرتیفکت" })).toBeInTheDocument()
 })
 
+it("scopes collaboration artifacts to the selected channel", async () => {
+  vi.mocked(api.get).mockResolvedValueOnce(
+    response({
+      data: [],
+      meta: { total: 0, page: 1, limit: 10, totalPages: 0, hasNext: false, hasPrevious: false },
+    })
+  )
+
+  render(
+    <ArtifactPanel
+      entityType="COLLABORATION_CHANNEL"
+      entityId="00000000-0000-4000-8000-000000000009"
+      emptyTitle="هنوز فایل یا لینکی برای این کانال ثبت نشده است"
+    />,
+    { wrapper }
+  )
+
+  expect(
+    await screen.findByText("هنوز فایل یا لینکی برای این کانال ثبت نشده است")
+  ).toBeInTheDocument()
+  expect(api.get).toHaveBeenCalledWith("/artifacts", {
+    params: expect.objectContaining({
+      entityType: "COLLABORATION_CHANNEL",
+      entityId: "00000000-0000-4000-8000-000000000009",
+    }),
+  })
+})
+
 it("registers an external reference without requesting its remote content", async () => {
   render(<ArtifactPanel entityType="TASK" entityId="00000000-0000-4000-8000-000000000001" />, { wrapper })
   await screen.findByText("Architecture Repository")
