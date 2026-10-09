@@ -1,0 +1,919 @@
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import {
+  BookOpen,
+  FileText,
+  FolderOpen,
+  Gavel,
+  Eye,
+  PackageOpen,
+  Plus,
+} from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { PageHero } from "@/components/shared/PageHero"
+import { EntityListPage } from "@/components/shared/EntityListPage"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { AdvancedFilterPopover } from "@/components/shared/AdvancedFilterPopover"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { QueryContent } from "@/components/shared/QueryContent"
+import { PersianDatePicker } from "@/components/shared/date"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
+import { useAuthStore } from "@/store/authStore"
+import { useTechnicalList } from "../hooks"
+import { technicalLookups } from "../api"
+import {
+  KnowledgeReviewBadge,
+  KnowledgeVisibilityBadge,
+  ReleaseSupportBadge,
+  TechnicalStatusBadge,
+  ResponsiveTechnicalList,
+} from "../components/TechnicalPrimitives"
+import { TechnicalFormDialog } from "../components/TechnicalFormDialog"
+import {
+  confidentialityLabels,
+  documentPresentation,
+  faDate,
+  knowledgePresentation,
+  relationName,
+  releasePresentation,
+  resourcePresentation,
+  resourceTypeLabels,
+  tenderPresentation,
+  tenderTypeLabels,
+} from "../presentation"
+import type {
+  KnowledgeArticle,
+  TechnicalDocument,
+  TechnicalRelease,
+  TechnicalResource,
+  Tender,
+} from "../types"
+
+function useListState() {
+  const [sp, setSp] = useSearchParams(),
+    page = Math.max(Number(sp.get("page")) || 1, 1),
+    limit = [10, 20, 50, 100].includes(Number(sp.get("limit")))
+      ? Number(sp.get("limit"))
+      : 20
+  const patch = (v: Record<string, string | number | undefined>) =>
+    setSp(
+      (p) => {
+        const n = new URLSearchParams(p)
+        Object.entries(v).forEach(([k, x]) =>
+          x === undefined || x === "" ? n.delete(k) : n.set(k, String(x))
+        )
+        if (!("page" in v)) n.set("page", "1")
+        return n
+      },
+      { replace: true }
+    )
+  return { sp, page, limit, patch }
+}
+function usePermission(name: string) {
+  return useAuthStore((s) => s.user?.permissions.includes(name) ?? false)
+}
+const selectClass =
+  "h-11 min-w-44 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 text-sm"
+function StaticFilterSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value?: string
+  options: Record<string, string>
+  onChange: (value?: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const normalized = search.trim().toLocaleLowerCase("fa")
+  const visible = Object.entries(options)
+    .filter(
+      ([id, optionLabel]) =>
+        !normalized ||
+        id.toLocaleLowerCase("en").includes(normalized) ||
+        optionLabel.toLocaleLowerCase("fa").includes(normalized)
+    )
+    .map(([id, optionLabel]) => ({ id, label: optionLabel }))
+  return (
+    <div className="min-w-44">
+      <SearchableOptionSelect
+        value={value}
+        onChange={onChange}
+        options={visible}
+        search={search}
+        onSearchChange={setSearch}
+        placeholder={`${label}: همه`}
+        ariaLabel={label}
+      />
+    </div>
+  )
+}
+function Filters({
+  search,
+  status,
+  statuses,
+  type,
+  types,
+  patch,
+  extra,
+  hasExtra,
+  clearExtra,
+}: {
+  search: string
+  status: string
+  statuses: Record<string, string>
+  type?: string
+  types?: Record<string, string>
+  patch: (v: Record<string, string | number | undefined>) => void
+  extra?: React.ReactNode
+  hasExtra?: boolean
+  clearExtra?: Record<string, undefined>
+}) {
+  return (
+    <DataTableToolbar
+      searchValue={search}
+      onSearchChange={(v) => patch({ search: v || undefined })}
+      searchPlaceholder="جست‌وجو در مرکز فنی..."
+      hasActiveFilters={Boolean(search || status || type || hasExtra)}
+      onClearFilters={() =>
+        patch({
+          search: undefined,
+          status: undefined,
+          type: undefined,
+          ...clearExtra,
+        })
+      }
+      filters={
+        <>
+          <StaticFilterSelect
+            label="وضعیت"
+            value={status}
+            options={statuses}
+            onChange={(value) => patch({ status: value })}
+          />
+          {types ? (
+            <StaticFilterSelect
+              label="نوع"
+              value={type}
+              options={types}
+              onChange={(value) => patch({ type: value })}
+            />
+          ) : null}
+          {extra}
+        </>
+      }
+    />
+  )
+}
+function Shell<T extends { id: string }>({
+  title,
+  description,
+  icon: Icon,
+  kind,
+  viewPermission,
+  managePermission,
+  createLabel = "ایجاد",
+  statuses,
+  types,
+  card,
+}: {
+  title: string
+  description: string
+  icon: typeof PackageOpen
+  kind: "releases" | "knowledge-base" | "documents" | "resources" | "tenders"
+  viewPermission: string
+  managePermission: string
+  createLabel?: string
+  statuses: Record<string, string>
+  types?: Record<string, string>
+  card: {
+    title: (r: T) => React.ReactNode
+    subtitle?: (r: T) => React.ReactNode
+    media?: (r: T) => React.ReactNode
+    status?: (r: T) => React.ReactNode
+    fields: {
+      id: string
+      label: React.ReactNode
+      render: (r: T) => React.ReactNode
+    }[]
+  }
+}) {
+  const nav = useNavigate(),
+    { sp, page, limit, patch } = useListState(),
+    canView = usePermission(viewPermission),
+    canManage = usePermission(managePermission),
+    createOpen = sp.get("create") === "1",
+    search = sp.get("search") || "",
+    status = sp.get("status") || "",
+    type = sp.get("type") || "",
+    productId = sp.get("productId") || "",
+    releaseId = sp.get("releaseId") || "",
+    companyId = sp.get("companyId") || "",
+    tenderId = sp.get("tenderId") || "",
+    confidentiality = sp.get("confidentiality") || "",
+    ownerId = sp.get("ownerId") || "",
+    version = sp.get("version") || "",
+    category = sp.get("category") || "",
+    visibility = sp.get("visibility") || "",
+    reviewDue = sp.get("reviewDue") || "",
+    from = sp.get("from") || "",
+    to = sp.get("to") || "",
+    sort = sp.get("sort") || "updatedAt",
+    sortDirection = (sp.get("sortDirection") === "asc" ? "asc" : "desc") as
+      "asc" | "desc"
+  const params = useMemo(
+    () => ({
+      page,
+      limit,
+      search: search || undefined,
+      status: status || undefined,
+      type: type || undefined,
+      productId: productId || undefined,
+      releaseId: releaseId || undefined,
+      companyId: companyId || undefined,
+      tenderId: tenderId || undefined,
+      confidentiality:
+        (confidentiality as "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED") ||
+        undefined,
+      ownerId: ownerId || undefined,
+      version: version || undefined,
+      category: category || undefined,
+      visibility: (visibility as "INTERNAL" | "RESTRICTED") || undefined,
+      reviewDue: reviewDue || undefined,
+      from: from || undefined,
+      to: to || undefined,
+      sort,
+      sortDirection,
+    }),
+    [
+      page,
+      limit,
+      search,
+      status,
+      type,
+      productId,
+      releaseId,
+      companyId,
+      tenderId,
+      confidentiality,
+      ownerId,
+      version,
+      category,
+      visibility,
+      reviewDue,
+      from,
+      to,
+      sort,
+      sortDirection,
+    ]
+  )
+  const query = useTechnicalList(kind, params, canView)
+  const advancedFilterCount = [
+    productId,
+    releaseId,
+    companyId,
+    tenderId,
+    confidentiality,
+    ownerId,
+    version,
+    category,
+    visibility,
+    reviewDue,
+    from,
+    to,
+    sort !== "updatedAt" ? sort : "",
+    sortDirection !== "desc" ? sortDirection : "",
+  ].filter(Boolean).length
+  return (
+    <EntityListPage>
+      <PageHero
+        title={title}
+        description={description}
+        eyebrow="مرکز فنی"
+        icon={Icon}
+        showRefresh={false}
+        primaryAction={
+          canManage
+            ? {
+                label: createLabel,
+                icon: Plus,
+                onClick: () => patch({ create: 1 }),
+              }
+            : undefined
+        }
+      />
+      <Filters
+        search={search}
+        status={status}
+        statuses={statuses}
+        type={type}
+        types={types}
+        patch={patch}
+        hasExtra={advancedFilterCount > 0}
+        clearExtra={{
+          productId: undefined,
+          releaseId: undefined,
+          companyId: undefined,
+          tenderId: undefined,
+          confidentiality: undefined,
+          ownerId: undefined,
+          version: undefined,
+          category: undefined,
+          visibility: undefined,
+          reviewDue: undefined,
+          from: undefined,
+          to: undefined,
+          sort: undefined,
+          sortDirection: undefined,
+        }}
+        extra={
+          <AdvancedFilterPopover
+            activeCount={advancedFilterCount}
+            label="فیلترهای پیشرفته"
+            onClear={() =>
+              patch({
+                productId: undefined,
+                releaseId: undefined,
+                companyId: undefined,
+                tenderId: undefined,
+                confidentiality: undefined,
+                ownerId: undefined,
+                version: undefined,
+                category: undefined,
+                visibility: undefined,
+                reviewDue: undefined,
+                from: undefined,
+                to: undefined,
+                sort: undefined,
+                sortDirection: undefined,
+              })
+            }
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <SupportedFilters
+                kind={kind}
+                values={{
+                  productId,
+                  releaseId,
+                  companyId,
+                  tenderId,
+                  confidentiality,
+                  ownerId,
+                  version,
+                  category,
+                  visibility,
+                  reviewDue,
+                  from,
+                  to,
+                  sort,
+                  sortDirection,
+                }}
+                patch={patch}
+              />
+            </div>
+          </AdvancedFilterPopover>
+        }
+      />
+      <QueryContent query={query} errorTitle={`دریافت ${title} ناموفق بود`}>
+        <ResponsiveTechnicalList
+          rows={(query.data?.data ?? []) as unknown as T[]}
+          card={card}
+          getKey={(r) => r.id}
+          onOpen={(r) => nav(`/technical/${kind}/${r.id}`)}
+          renderRowActions={(r) => (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => nav(`/technical/${kind}/${r.id}`)}
+            >
+              <Eye className="size-4" />
+              مشاهده جزئیات
+            </Button>
+          )}
+          meta={query.data?.meta}
+          pageSize={limit}
+          onPage={(p) => patch({ page: p })}
+          onPageSize={(n) => patch({ limit: n, page: 1 })}
+          emptyState={
+            <EmptyState
+              icon={Icon}
+              title="موردی یافت نشد"
+              description="فیلترها را تغییر دهید یا مورد جدیدی ایجاد کنید."
+            />
+          }
+        />
+      </QueryContent>
+      <TechnicalFormDialog
+        open={canManage && createOpen}
+        onOpenChange={(open) => patch({ create: open ? 1 : undefined })}
+        kind={kind}
+        onSaved={(row) => nav(`/technical/${kind}/${row.id}`)}
+      />
+    </EntityListPage>
+  )
+}
+
+function SupportedFilters({
+  kind,
+  values,
+  patch,
+}: {
+  kind: "releases" | "knowledge-base" | "documents" | "resources" | "tenders"
+  values: Record<string, string>
+  patch: (v: Record<string, string | number | undefined>) => void
+}) {
+  const usesProduct = kind !== "tenders",
+    usesRelease = ["knowledge-base", "documents", "resources"].includes(kind),
+    usesCompany = kind === "documents" || kind === "tenders",
+    usesOwner = [
+      "knowledge-base",
+      "documents",
+      "resources",
+      "tenders",
+    ].includes(kind)
+  const sortOptions: Record<string, string> =
+    kind === "releases"
+      ? {
+          updatedAt: "آخرین تغییر",
+          releaseDate: "تاریخ انتشار",
+          title: "عنوان",
+          version: "نسخه",
+        }
+      : kind === "knowledge-base"
+        ? {
+            updatedAt: "آخرین تغییر",
+            title: "عنوان",
+            nextReviewAt: "تاریخ بازبینی",
+          }
+        : kind === "documents"
+          ? {
+              updatedAt: "آخرین تغییر",
+              title: "عنوان",
+              effectiveFrom: "تاریخ اثر",
+              expiresAt: "انقضا",
+            }
+          : kind === "resources"
+            ? { updatedAt: "آخرین تغییر", title: "عنوان", version: "نسخه" }
+            : {
+                updatedAt: "آخرین تغییر",
+                title: "عنوان",
+                submissionDeadline: "مهلت ارسال",
+                estimatedValue: "ارزش",
+              }
+  return (
+    <>
+      {usesProduct ? (
+        <LookupFilter
+          kind="products"
+          label="محصول"
+          value={values.productId}
+          onChange={(value) => patch({ productId: value })}
+        />
+      ) : null}
+      {usesRelease ? (
+        <LookupFilter
+          kind="releases"
+          label="انتشار"
+          value={values.releaseId}
+          onChange={(value) => patch({ releaseId: value })}
+        />
+      ) : null}
+      {usesCompany ? (
+        <LookupFilter
+          kind="companies"
+          label="شرکت"
+          value={values.companyId}
+          onChange={(value) => patch({ companyId: value })}
+        />
+      ) : null}
+      {usesOwner ? (
+        <LookupFilter
+          kind="users"
+          label="مالک"
+          value={values.ownerId}
+          onChange={(value) => patch({ ownerId: value })}
+        />
+      ) : null}
+      {kind === "documents" ? (
+        <LookupFilter
+          kind="tenders"
+          label="مناقصه"
+          value={values.tenderId}
+          onChange={(value) => patch({ tenderId: value })}
+        />
+      ) : null}
+      {kind === "documents" ? (
+        <StaticFilterSelect
+          label="محرمانگی"
+          value={values.confidentiality || ""}
+          options={confidentialityLabels}
+          onChange={(value) => patch({ confidentiality: value })}
+        />
+      ) : null}
+      {kind === "releases" ? (
+        <Input
+          aria-label="نسخه"
+          className={selectClass}
+          value={values.version || ""}
+          onChange={(e) => patch({ version: e.target.value || undefined })}
+          placeholder="نسخه"
+        />
+      ) : null}
+      {kind === "knowledge-base" ? (
+        <LookupFilter
+          kind="knowledge-categories"
+          label="دسته‌بندی"
+          value={values.category}
+          onChange={(value) => patch({ category: value })}
+        />
+      ) : null}
+      {kind === "knowledge-base" ? (
+        <StaticFilterSelect
+          label="سطح دسترسی"
+          value={values.visibility || ""}
+          options={{ INTERNAL: "داخلی", RESTRICTED: "محدود" }}
+          onChange={(value) => patch({ visibility: value })}
+        />
+      ) : null}
+      {kind === "knowledge-base" ? (
+        <StaticFilterSelect
+          label="موعد بازبینی"
+          value={values.reviewDue || ""}
+          options={{ true: "سررسیدشده", false: "سررسیدنشده" }}
+          onChange={(value) => patch({ reviewDue: value })}
+        />
+      ) : null}
+      {kind === "releases" || kind === "tenders" ? (
+        <div className="min-w-44" aria-label="از تاریخ">
+          <PersianDatePicker
+            value={filterDate(values.from)}
+            onChange={(date) => patch({ from: dateParam(date) })}
+            placeholder="از تاریخ"
+          />
+        </div>
+      ) : null}
+      {kind === "releases" || kind === "tenders" ? (
+        <div className="min-w-44" aria-label="تا تاریخ">
+          <PersianDatePicker
+            value={filterDate(values.to)}
+            onChange={(date) => patch({ to: dateParam(date) })}
+            placeholder="تا تاریخ"
+          />
+        </div>
+      ) : null}
+      <StaticFilterSelect
+        label="مرتب‌سازی"
+        value={values.sort}
+        options={sortOptions}
+        onChange={(value) => patch({ sort: value || "updatedAt" })}
+      />
+      <StaticFilterSelect
+        label="جهت مرتب‌سازی"
+        value={values.sortDirection}
+        options={{ desc: "نزولی", asc: "صعودی" }}
+        onChange={(value) => patch({ sortDirection: value || "desc" })}
+      />
+    </>
+  )
+}
+
+function LookupFilter({
+  kind,
+  label,
+  value,
+  onChange,
+}: {
+  kind:
+    | "products"
+    | "releases"
+    | "knowledge-categories"
+    | "companies"
+    | "users"
+    | "tenders"
+  label: string
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const debouncedSearch = useDebouncedValue(search, 250)
+  const query = useQuery({
+    queryKey: ["technical-list-lookups", kind, debouncedSearch],
+    queryFn: () => technicalLookups(kind, debouncedSearch),
+  })
+  return (
+    <div className="min-w-44">
+      <SearchableOptionSelect
+        value={value}
+        onChange={onChange}
+        options={query.data ?? []}
+        search={search}
+        onSearchChange={setSearch}
+        placeholder={`${label}: همه`}
+        ariaLabel={label}
+        loading={query.isLoading || query.isFetching}
+        emptyText={query.isError ? "دریافت گزینه‌ها انجام نشد." : undefined}
+      />
+    </div>
+  )
+}
+
+function filterDate(value?: string) {
+  return value ? new Date(`${value.slice(0, 10)}T12:00:00`) : undefined
+}
+
+function dateParam(date?: Date) {
+  return date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : undefined
+}
+
+export function TechnicalReleasesPage() {
+  return (
+    <Shell<TechnicalRelease>
+      title="انتشارهای فنی"
+      description="نسخه‌ها، زمان‌بندی انتشار و چرخه پشتیبانی محصولات"
+      icon={PackageOpen}
+      kind="releases"
+      viewPermission="technical-release:view"
+      managePermission="technical-release:manage"
+      statuses={releasePresentation.label}
+      card={{
+        title: (r) => r.title,
+        subtitle: (r) => `${relationName(r.product)} · ${r.version}`,
+        media: () => <PackageOpen className="size-5" />,
+        status: (r) => (
+          <TechnicalStatusBadge
+            status={r.status}
+            presentation={releasePresentation}
+          />
+        ),
+        fields: [
+          { id: "date", label: "انتشار", render: (r) => faDate(r.releaseDate) },
+          {
+            id: "support-state",
+            label: "چرخه پشتیبانی",
+            render: (r) => <ReleaseSupportBadge release={r} />,
+          },
+          {
+            id: "support",
+            label: "پایان پشتیبانی",
+            render: (r) => faDate(r.supportEndDate),
+          },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
+          },
+        ],
+      }}
+    />
+  )
+}
+export function TechnicalKnowledgeBasePage() {
+  return (
+    <Shell<KnowledgeArticle>
+      title="پایگاه دانش"
+      description="دانش فنی قابل استفاده مجدد، قابل بازبینی و انتشار"
+      icon={BookOpen}
+      kind="knowledge-base"
+      viewPermission="technical-knowledge:view"
+      managePermission="technical-knowledge:manage"
+      createLabel="ایجاد دانش"
+      statuses={knowledgePresentation.label}
+      card={{
+        title: (r) => r.title,
+        subtitle: (r) =>
+          [r.category, relationName(r.product)]
+            .filter((value) => value && value !== "—")
+            .join(" · ") ||
+          r.summary ||
+          "—",
+        media: () => <BookOpen className="size-5" />,
+        status: (r) => (
+          <TechnicalStatusBadge
+            status={r.status}
+            presentation={knowledgePresentation}
+          />
+        ),
+        fields: [
+          { id: "category", label: "دسته", render: (r) => r.category || "—" },
+          {
+            id: "content-type",
+            label: "نوع محتوا",
+            render: (r) =>
+              r.contentType === "EXTERNAL_LINK" ? "لینک خارجی" : "متن داخلی",
+          },
+          {
+            id: "visibility",
+            label: "دسترسی",
+            render: (r) => (
+              <KnowledgeVisibilityBadge visibility={r.visibility} />
+            ),
+          },
+          {
+            id: "review",
+            label: "بازبینی",
+            render: (r) => (
+              <KnowledgeReviewBadge nextReviewAt={r.nextReviewAt} />
+            ),
+          },
+          {
+            id: "owner",
+            label: "مالک",
+            render: (r) => relationName(r.owner),
+          },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
+          },
+        ],
+      }}
+    />
+  )
+}
+export function TechnicalDocumentsPage() {
+  return (
+    <Shell<TechnicalDocument>
+      title="اسناد فنی"
+      description="مستندات نسخه‌بندی‌شده با چرخه تأیید و محرمانگی"
+      icon={FileText}
+      kind="documents"
+      viewPermission="technical-document:view"
+      managePermission="technical-document:manage"
+      statuses={documentPresentation.label}
+      card={{
+        title: (r) => r.title,
+        subtitle: (r) =>
+          `${r.documentType} · ${r.versions?.[0]?.version || "بدون نسخه"}`,
+        media: () => <FileText className="size-5" />,
+        status: (r) => (
+          <TechnicalStatusBadge
+            status={r.status}
+            presentation={documentPresentation}
+          />
+        ),
+        fields: [
+          {
+            id: "conf",
+            label: "محرمانگی",
+            render: (r) => confidentialityLabels[r.confidentiality],
+          },
+          {
+            id: "relation",
+            label: "ارتباط",
+            render: (r) =>
+              r.product
+                ? relationName(r.product)
+                : r.company
+                  ? relationName(r.company)
+                  : r.opportunity
+                    ? relationName(r.opportunity)
+                    : "—",
+          },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
+          },
+        ],
+      }}
+    />
+  )
+}
+export function TechnicalResourcesPage() {
+  return (
+    <Shell<TechnicalResource>
+      title="منابع فنی"
+      description="SDK، نمونه‌کد، اسکریپت، Firmware و پیوندهای قابل استفاده مجدد"
+      icon={FolderOpen}
+      kind="resources"
+      viewPermission="technical-resource:view"
+      managePermission="technical-resource:manage"
+      statuses={resourcePresentation.label}
+      types={resourceTypeLabels}
+      card={{
+        title: (r) => r.title,
+        subtitle: (r) => resourceTypeLabels[r.resourceType],
+        media: () => <FolderOpen className="size-5" />,
+        status: (r) => (
+          <TechnicalStatusBadge
+            status={r.status}
+            presentation={resourcePresentation}
+          />
+        ),
+        fields: [
+          { id: "version", label: "نسخه", render: (r) => r.version || "—" },
+          {
+            id: "source",
+            label: "منبع",
+            render: (r) =>
+              r.url
+                ? "پیوند"
+                : (r.artifactCount ?? 0) > 0 || r.attachmentId
+                  ? `${(r.artifactCount ?? 1).toLocaleString("fa-IR")} فایل/لینک`
+                  : "—",
+          },
+          {
+            id: "updated",
+            label: "آخرین تغییر",
+            render: (r) => faDate(r.updatedAt),
+          },
+        ],
+      }}
+    />
+  )
+}
+export function TechnicalTendersPage() {
+  return (
+    <Shell<Tender>
+      title="مناقصه‌ها"
+      description="فضای فنی–تجاری RFP/RFQ/RFI و الزامات تحویل"
+      icon={Gavel}
+      kind="tenders"
+      viewPermission="technical-tender:view"
+      managePermission="technical-tender:manage"
+      createLabel="ایجاد مناقصه"
+      statuses={tenderPresentation.label}
+      types={tenderTypeLabels}
+      card={{
+        title: (r) => r.title,
+        subtitle: (r) => r.referenceNumber || relationName(r.company),
+        media: () => <Gavel className="size-5" />,
+        status: (r) => (
+          <TechnicalStatusBadge
+            status={r.status}
+            presentation={tenderPresentation}
+          />
+        ),
+        fields: [
+          {
+            id: "company",
+            label: "شرکت",
+            render: (r) => relationName(r.company),
+          },
+          {
+            id: "opportunity",
+            label: "فرصت",
+            render: (r) => relationName(r.opportunity),
+          },
+          {
+            id: "type",
+            label: "نوع",
+            render: (r) => tenderTypeLabels[r.tenderType],
+          },
+          {
+            id: "deadline",
+            label: "مهلت ارسال",
+            render: (r) => <Deadline value={r.submissionDeadline} />,
+          },
+          {
+            id: "readiness",
+            label: "آمادگی",
+            render: (r) =>
+              r.readiness?.overallReady
+                ? "آماده"
+                : `${(r.readiness?.blockers.length ?? 0).toLocaleString("fa-IR")} مانع`,
+          },
+          {
+            id: "value",
+            label: "ارزش",
+            render: (r) =>
+              r.estimatedValue
+                ? `${Number(r.estimatedValue).toLocaleString("fa-IR")} ${r.currency || ""}`
+                : "—",
+          },
+        ],
+      }}
+    />
+  )
+}
+export function Deadline({ value }: { value?: string | null }) {
+  if (!value) return <>—</>
+  const end = new Date(value),
+    days = Math.ceil((end.getTime() - Date.now()) / 86400000),
+    tone =
+      days < 0
+        ? "text-destructive"
+        : days <= 3
+          ? "text-amber-700"
+          : "text-foreground"
+  return (
+    <span className={tone}>
+      {faDate(value)}{" "}
+      <span className="sr-only">
+        {days < 0 ? "گذشته" : days <= 3 ? "نزدیک" : "آینده"}
+      </span>
+      {days < 0
+        ? "(گذشته)"
+        : days <= 3
+          ? `(${days.toLocaleString("fa-IR")} روز)`
+          : null}
+    </span>
+  )
+}

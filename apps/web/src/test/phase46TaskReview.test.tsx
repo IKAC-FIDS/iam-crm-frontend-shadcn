@@ -1,0 +1,21 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { render, screen, waitFor } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import type { ReactNode } from "react"
+import { beforeEach, expect, it, vi } from "vitest"
+import { TaskReviewSection } from "@/features/tasks/components/TaskReviewSection"
+import type { Task } from "@/features/tasks/types/task.types"
+import { api } from "@/lib/api"
+import { useAuthStore } from "@/store/authStore"
+import { response, user } from "./fixtures"
+
+vi.mock("@/lib/api", () => ({ api: { get: vi.fn(), post: vi.fn() } }))
+const task = { id: "00000000-0000-4000-8000-000000000001", title: "بازبینی امنیت", status: "IN_PROGRESS", priority: "HIGH", assignmentScope: "SELF", requiresReview: true, reviewStatus: "PENDING_REVIEW", reviewerId: user.id, reviewer: { id: user.id, fullName: user.fullName, email: user.email }, assignedToId: "assignee-1", createdAt: "2026-08-31T08:00:00Z", updatedAt: "2026-08-31T08:00:00Z", _count: { subtasks: 0, reviewRounds: 1 } } as Task
+const round = { id: "r1", roundNumber: 1, decision: "PENDING", reviewer: task.reviewer, submittedBy: { id: "assignee-1", fullName: "علی" }, submittedAt: "2026-08-31T08:00:00Z", artifacts: [] }
+function wrapper({ children }: { children: ReactNode }) { return <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>{children}</QueryClientProvider> }
+beforeEach(() => { vi.clearAllMocks(); useAuthStore.setState({ user: { ...user, permissions: ["task:view", "task:review", "task:submit-review"] }, status: "authenticated" }); vi.mocked(api.get).mockImplementation((url: string) => Promise.resolve(response(url.includes("reviews") ? [round] : { data: [{ id: "artifact-1", name: "Evidence.pdf", type: "FILE", provider: "LOCAL", createdAt: "2026-08-31T08:00:00Z", updatedAt: "2026-08-31T08:00:00Z", links: [], _count: { links: 1 } }], meta: { total: 1, page: 1, limit: 100, totalPages: 1, hasNext: false, hasPrevious: false } }))); vi.mocked(api.post).mockResolvedValue(response({ data: task })) })
+
+it("shows review status, history and reviewer-only actions", async () => { render(<TaskReviewSection task={task} />, { wrapper }); expect((await screen.findAllByText("دوره ۱")).length).toBeGreaterThan(0); expect(screen.getByText("در انتظار بازبینی")).toBeInTheDocument(); expect(screen.getByRole("button", { name: "تأیید" })).toBeInTheDocument(); expect(screen.getByRole("button", { name: "درخواست اصلاح" })).toBeInTheDocument() })
+it("approves the current review", async () => { render(<TaskReviewSection task={task} />, { wrapper }); await userEvent.click(await screen.findByRole("button", { name: "تأیید" })); await userEvent.click(screen.getAllByRole("button", { name: "تأیید" }).at(-1)!); await waitFor(() => expect(api.post).toHaveBeenCalledWith(`/tasks/${task.id}/review/approve`, { comment: undefined })) })
+it("requires feedback and submits changes requested", async () => { render(<TaskReviewSection task={task} />, { wrapper }); await userEvent.click(await screen.findByRole("button", { name: "درخواست اصلاح" })); const submit = screen.getByRole("button", { name: "ثبت درخواست اصلاح" }); expect(submit).toBeDisabled(); await userEvent.type(screen.getByLabelText(/نظر بازبین/), "فرضیات فنی اصلاح شود"); await userEvent.click(submit); await waitFor(() => expect(api.post).toHaveBeenCalledWith(`/tasks/${task.id}/review/request-changes`, { comment: "فرضیات فنی اصلاح شود" })) })
+it("submits a draft review with selected task artifacts", async () => { const draft = { ...task, reviewStatus: "DRAFT", _count: { subtasks: 0, reviewRounds: 0 }, reviewRounds: [] } as Task; render(<TaskReviewSection task={draft} />, { wrapper }); await userEvent.click(await screen.findByRole("button", { name: "ارسال برای بازبینی" })); expect(screen.getByText(/دوره ۱ ایجاد می‌شود/)).toBeInTheDocument(); await userEvent.click(await screen.findByText("Evidence.pdf")); await userEvent.click(screen.getByRole("button", { name: "ارسال" })); await waitFor(() => expect(api.post).toHaveBeenCalledWith(`/tasks/${task.id}/submit-review`, { reviewerId: user.id, note: undefined, artifactIds: ["artifact-1"] })) })

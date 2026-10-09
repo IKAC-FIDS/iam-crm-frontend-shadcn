@@ -1,0 +1,139 @@
+import { api } from "@/lib/api"
+import { z } from "zod"
+import { parsePaginatedResponse } from "@/lib/pagination"
+import { unwrapApiResponse } from "@/lib/apiResponse"
+
+import type {
+  CompaniesQuery,
+  Company,
+  PaginatedCompanies,
+  CreateCompanyPayload,
+  UpdateCompanyPayload,
+  CompanyRegistryLookupResult,
+  PersonCompanyLookupResult,
+} from "../types/company.types"
+
+// Validate the list's structural boundary, retaining optional domain fields.
+const companyRowSchema = z.custom<Company>(
+  (value) =>
+    z.object({ id: z.string(), legalName: z.string() }).safeParse(value).success
+)
+
+export type CompanyOwnerOption = {
+  id: string
+  fullName: string
+  email?: string | null
+  role?: string | null
+  team?: string | null
+  teamId?: string | null
+  teamRef?: {
+    id?: string
+    code?: string
+    name?: string
+  } | null
+}
+
+export async function getCompanies(query: CompaniesQuery) {
+  const response = await api.get<unknown>("/companies", {
+    params: {
+      page: query.page,
+      limit: query.limit,
+      search: query.search || undefined,
+      priority: query.priority || undefined,
+      ownershipScope:
+        query.ownershipScope && query.ownershipScope !== "ALL"
+          ? query.ownershipScope.toLowerCase()
+          : undefined,
+      includeArchived: query.includeArchived ? "true" : undefined,
+      archivedOnly: query.archivedOnly ? "true" : undefined,
+      engagementStatus: query.engagementStatus || undefined,
+      pinnedOnly: query.pinnedOnly ? "true" : undefined,
+    },
+  })
+
+  return parsePaginatedResponse(
+    response.data,
+    companyRowSchema
+  ) satisfies PaginatedCompanies
+}
+
+export async function getCompany(companyId: string) {
+  const response = await api.get(`/companies/${companyId}`)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function createCompany(payload: CreateCompanyPayload) {
+  const response = await api.post("/companies", payload)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function lookupCompanyRegistry(nationalId: string) {
+  const response = await api.get("/companies/registry-lookup", {
+    params: { nationalId },
+  })
+  return unwrapApiResponse<CompanyRegistryLookupResult>(response.data)
+}
+
+export async function lookupPersonCompanies(nationalCode: string) {
+  const response = await api.get("/companies/person-company-lookup", {
+    params: { nationalCode },
+  })
+  return unwrapApiResponse<PersonCompanyLookupResult>(response.data)
+}
+
+export async function updateCompany(
+  companyId: string,
+  payload: UpdateCompanyPayload
+) {
+  const response = await api.patch(`/companies/${companyId}`, payload)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function getCompanyOwnerOptions() {
+  const response = await api.get("/users/owner-options")
+  return unwrapApiResponse<CompanyOwnerOption[]>(response.data)
+}
+
+export async function changeCompanyOwner(
+  companyId: string,
+  newOwnerId: string
+) {
+  const response = await api.patch(`/companies/${companyId}/owner`, {
+    newOwnerId,
+  })
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function archiveCompany(companyId: string, reason?: string) {
+  const response = await api.patch(`/companies/${companyId}/archive`, {
+    reason: reason?.trim() || undefined,
+  })
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function restoreCompany(companyId: string) {
+  const response = await api.patch(`/companies/${companyId}/restore`)
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function updateCompanyEngagement(
+  companyId: string,
+  payload: {
+    status: import("../types/company.types").CompanyEngagementStatus
+    reason?: string
+    nextReviewAt?: string
+  }
+) {
+  const response = await api.patch(
+    `/companies/${companyId}/engagement`,
+    payload
+  )
+  return unwrapApiResponse<Company>(response.data)
+}
+
+export async function updateCompanyPin(companyId: string, isPinned: boolean) {
+  const response = await api.patch(`/companies/${companyId}/pin`, { isPinned })
+  return unwrapApiResponse<{ companyId: string; isPinned: boolean }>(
+    response.data
+  )
+}

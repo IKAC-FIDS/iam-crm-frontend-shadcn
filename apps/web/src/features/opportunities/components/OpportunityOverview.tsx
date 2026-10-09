@@ -1,0 +1,426 @@
+import {
+  Activity,
+  Building2,
+  CalendarClock,
+  CircleDollarSign,
+  ContactRound,
+  ExternalLink,
+  Target,
+  UserRound,
+} from "lucide-react"
+import { useEffect, useState, type ReactNode } from "react"
+
+import { EmptyState } from "@/components/shared/EmptyState"
+import { DashboardMetricGrid } from "@/components/shared/DashboardSection"
+import { IdentityAvatar } from "@/components/shared/IdentityAvatar"
+import { MetricCard } from "@/components/shared/MetricCard"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { uiText } from "@/config/uiText"
+import { formatJalaliDate, formatJalaliDateTime } from "@/lib/date/jalali"
+import { Button } from "@workspace/ui/components/button"
+import { useAuthStore } from "@/store/authStore"
+import { canViewFinancials } from "@/lib/permissions"
+import type { Opportunity } from "../types/opportunity.types"
+import {
+  formatOpportunityValue,
+  opportunityCompanyName,
+} from "../utils/opportunityFormatters"
+
+export function OpportunityExecutiveSummary({
+  opportunity,
+}: {
+  opportunity: Opportunity
+}) {
+  const financialVisible = canViewFinancials(
+    useAuthStore((state) => state.user?.permissions)
+  )
+  const text = uiText.opportunities.detail.summary
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const value = Number(opportunity.estimatedValue) || 0
+  const probability = opportunity.probability
+  const weighted =
+    probability === null || probability === undefined
+      ? null
+      : (value * probability) / 100
+  const close = opportunity.expectedCloseDate
+    ? new Date(opportunity.expectedCloseDate)
+    : null
+  const days =
+    close && !Number.isNaN(close.getTime())
+      ? Math.ceil((close.getTime() - now) / 86_400_000)
+      : null
+  const activities = Array.isArray(opportunity.activities)
+    ? opportunity.activities
+    : []
+  return (
+    <DashboardMetricGrid columns={4} className="lg:grid-cols-2">
+      {financialVisible ? (
+        <MetricCard
+          icon={CircleDollarSign}
+          label={text.commercial}
+          value={valueLabel(opportunity.estimatedValue)}
+          helper={`${text.weighted}: ${
+            weighted === null
+              ? uiText.common.notAvailable
+              : valueLabel(weighted)
+          }`}
+        />
+      ) : null}
+      <MetricCard
+        icon={CalendarClock}
+        label="عمر فرصت"
+        value={`${(opportunity.ageDays ?? 0).toLocaleString("fa-IR")} روز`}
+        helper={
+          opportunity.maxDurationDays == null
+            ? `مدت حضور در مرحله فعلی: ${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} روز`
+            : `${(opportunity.currentStageAgeDays ?? 0).toLocaleString("fa-IR")} از ${opportunity.maxDurationDays.toLocaleString("fa-IR")} روز مجاز${opportunity.isStageOverdue ? ` · ${(opportunity.stageOverdueDays ?? 0).toLocaleString("fa-IR")} روز تأخیر` : ""}`
+        }
+        tone={opportunity.isStageOverdue ? "warning" : "info"}
+      />
+      <MetricCard
+        icon={CalendarClock}
+        label={uiText.opportunities.fields.expectedCloseDate}
+        value={
+          formatJalaliDate(opportunity.expectedCloseDate) ||
+          uiText.common.notAvailable
+        }
+        helper={`${text.remaining}: ${
+          days === null
+            ? uiText.common.notAvailable
+            : days === 0
+              ? text.today
+              : `${Math.abs(days).toLocaleString("fa-IR")} ${text.days}${days < 0 ? ` · ${text.overdue}` : ""}`
+        }`}
+        tone={days !== null && days < 0 ? "warning" : "primary"}
+      />
+      <MetricCard
+        icon={Target}
+        label={uiText.opportunities.fields.probability}
+        value={
+          probability === null || probability === undefined
+            ? uiText.common.notAvailable
+            : `${probability.toLocaleString("fa-IR")}%`
+        }
+        helper={`${uiText.opportunities.fields.primaryContact}: ${
+          opportunity.primaryContact?.fullName || uiText.common.notAvailable
+        }`}
+        tone="info"
+      />
+      <MetricCard
+        icon={Activity}
+        label={text.activity}
+        value={
+          activities[0]?.occurredAt
+            ? formatJalaliDateTime(activities[0].occurredAt)
+            : text.noActivity
+        }
+        helper={`${uiText.opportunities.detail.fields.owner}: ${
+          opportunity.owner?.fullName || uiText.opportunities.fields.noOwner
+        }`}
+        tone="success"
+      />
+    </DashboardMetricGrid>
+  )
+}
+
+export function OpportunityOverview({
+  opportunity,
+  canViewCompany,
+  canViewPerson,
+  canEdit,
+  onCompany,
+  onPerson,
+  onEdit,
+}: {
+  opportunity: Opportunity
+  canViewCompany: boolean
+  canViewPerson: boolean
+  canEdit: boolean
+  onCompany: () => void
+  onPerson: () => void
+  onEdit: () => void
+}) {
+  const text = uiText.opportunities.detail
+  const activities = Array.isArray(opportunity.activities)
+    ? opportunity.activities
+    : []
+  return (
+    <div className="grid w-full min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(240px,300px)] xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+      <div className="grid min-w-0 content-start gap-3">
+        <SurfaceCard className="min-w-0 p-4">
+          <h2 className="text-sm font-bold text-[var(--app-heading)]">
+            {text.sections.description}
+          </h2>
+          {opportunity.description ? (
+            <p className="mt-2 text-xs leading-6 whitespace-pre-wrap text-[var(--app-text-secondary)]">
+              {opportunity.description}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
+              {text.empty.description}
+            </p>
+          )}
+        </SurfaceCard>
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
+          <h2 className="text-sm font-bold text-[var(--app-heading)]">
+            {text.sections.businessContext}
+          </h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <Info
+              label={text.fields.source}
+              value={opportunity.sourceOption?.label || opportunity.source}
+            />
+            <Info
+              label={text.fields.competitor}
+              value={opportunity.competitor}
+            />
+            <Info
+              label={text.fields.createdAt}
+              value={formatJalaliDateTime(opportunity.createdAt)}
+            />
+            <Info
+              label={text.fields.updatedAt}
+              value={formatJalaliDateTime(opportunity.updatedAt)}
+            />
+          </div>
+        </SurfaceCard>
+        <SurfaceCard className="min-w-0 p-4">
+          <h2 className="text-sm font-bold text-[var(--app-heading)]">
+            {text.sections.recentActivity}
+          </h2>
+          <div className="mt-3 max-h-[360px] min-h-0 overflow-y-auto overscroll-contain pe-1">
+            {activities.length ? (
+              <div className="grid gap-0">
+                {activities.slice(0, 8).map((item, index, recent) => (
+                  <div
+                    key={item.id}
+                    className="relative min-w-0 border-s border-[var(--app-divider)] ps-4 pb-4 last:pb-0"
+                  >
+                    {index === 0 ||
+                    formatJalaliDate(recent[index - 1]?.occurredAt) !==
+                      formatJalaliDate(item.occurredAt) ? (
+                      <p className="mb-2 text-xs font-bold text-[var(--app-text-secondary)]">
+                        {formatJalaliDate(item.occurredAt)}
+                      </p>
+                    ) : null}
+                    <span className="absolute -start-1.5 top-1 size-3 rounded-full border-2 border-[var(--app-surface)] bg-[var(--app-primary)]" />
+                    <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                      <StatusBadge
+                        tone={
+                          item.type === "STAGE_CHANGE" ? "primary" : "neutral"
+                        }
+                      >
+                        {activityLabel(item.type)}
+                      </StatusBadge>
+                      <time className="text-xs text-[var(--app-text-secondary)]">
+                        {formatJalaliDateTime(item.occurredAt)}
+                      </time>
+                    </div>
+                    {item.outcome ? (
+                      <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
+                        {item.outcome}
+                      </p>
+                    ) : null}
+                    {item.notes ? (
+                      <p className="mt-1 text-xs leading-5 break-words whitespace-pre-wrap text-[var(--app-text-secondary)]">
+                        {item.notes}
+                      </p>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <CompactEmpty icon={Activity} title={text.empty.activities} />
+            )}
+          </div>
+        </SurfaceCard>
+      </div>
+      <aside className="grid min-w-0 content-start gap-3">
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <IdentityAvatar
+              name={opportunityCompanyName(opportunity)}
+              mediaPath={
+                opportunity.company?.id
+                  ? `/companies/${opportunity.company.id}/logo`
+                  : null
+              }
+              hasMedia={Boolean(opportunity.company?.logoObjectKey)}
+              mediaVersion={opportunity.company?.logoObjectKey}
+              fallbackIcon={<Building2 className="size-4.5" />}
+              className="size-9 rounded-xl text-xs"
+            />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-bold text-[var(--app-heading)]">
+                {text.sections.company}
+              </h2>
+              <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
+                {opportunityCompanyName(opportunity)}
+              </p>
+              <p className="mt-1 text-xs break-words text-[var(--app-text-secondary)]">
+                {opportunity.company?.industry || uiText.common.notAvailable}
+              </p>
+            </div>
+          </div>
+          {canViewCompany ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
+              onClick={onCompany}
+            >
+              <ExternalLink className="size-3.5" />
+              {text.actions.company}
+            </Button>
+          ) : null}
+        </SurfaceCard>
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <IdentityAvatar
+              name={
+                opportunity.primaryContact?.fullName || text.sections.contact
+              }
+              fallbackIcon={<ContactRound className="size-4.5" />}
+              className="size-9 rounded-xl text-xs"
+            />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-bold text-[var(--app-heading)]">
+                {text.sections.contact}
+              </h2>
+              {opportunity.primaryContact ? (
+                <>
+                  <p className="mt-2 text-xs font-bold break-words text-[var(--app-heading)]">
+                    {opportunity.primaryContact.fullName}
+                  </p>
+                  <p className="mt-1 text-xs break-words text-[var(--app-text-secondary)]">
+                    {[
+                      opportunity.primaryContact.title,
+                      opportunity.primaryContact.department,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || uiText.common.notAvailable}
+                  </p>
+                  <p className="mt-2 text-xs break-all text-[var(--app-text-secondary)]">
+                    {opportunity.primaryContact.email ||
+                      opportunity.primaryContact.phone ||
+                      uiText.common.notAvailable}
+                  </p>
+                </>
+              ) : (
+                <p className="mt-2 text-xs leading-5 text-[var(--app-text-secondary)]">
+                  {text.empty.contact}
+                </p>
+              )}
+            </div>
+          </div>
+          {opportunity.primaryContact && canViewPerson ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
+              onClick={onPerson}
+            >
+              <UserRound className="size-3.5" />
+              {text.actions.contact}
+            </Button>
+          ) : !opportunity.primaryContact && canEdit ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg text-xs"
+              onClick={onEdit}
+            >
+              {uiText.opportunities.actions.edit}
+            </Button>
+          ) : null}
+        </SurfaceCard>
+        <SurfaceCard className="min-w-0 p-4 shadow-sm">
+          <h2 className="text-sm font-bold text-[var(--app-heading)]">
+            {text.sections.ownership}
+          </h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+            <Info
+              icon={<UserRound />}
+              label={text.fields.owner}
+              value={
+                opportunity.owner ? (
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <IdentityAvatar
+                      name={opportunity.owner.fullName}
+                      mediaPath={`/users/${opportunity.owner.id}/avatar`}
+                      hasMedia={Boolean(opportunity.owner.avatarObjectKey)}
+                      mediaVersion={opportunity.owner.avatarObjectKey}
+                      className="size-7 rounded-lg text-xs"
+                    />
+                    <span className="truncate">
+                      {opportunity.owner.fullName}
+                    </span>
+                  </span>
+                ) : null
+              }
+            />
+            <Info
+              icon={<CalendarClock />}
+              label={uiText.opportunities.fields.expectedCloseDate}
+              value={formatJalaliDate(opportunity.expectedCloseDate)}
+            />
+          </div>
+        </SurfaceCard>
+      </aside>
+    </div>
+  )
+}
+
+function Info({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value?: ReactNode
+  icon?: ReactNode
+}) {
+  return (
+    <div className="min-w-0 rounded-xl bg-[var(--app-background)]/65 p-2.5">
+      <p className="flex items-center gap-1 text-xs font-bold text-[var(--app-text-secondary)] [&_svg]:size-3">
+        {icon}
+        {label}
+      </p>
+      <p className="mt-1.5 text-xs break-words text-[var(--app-heading)]">
+        {value || uiText.common.notAvailable}
+      </p>
+    </div>
+  )
+}
+
+function CompactEmpty({
+  icon,
+  title,
+}: {
+  icon: typeof Activity
+  title: string
+}) {
+  return (
+    <div className="w-full max-w-full min-w-0 [&_.size-11]:size-9 [&_h3]:mt-2 [&>div]:min-h-0 [&>div]:w-full [&>div]:max-w-full [&>div]:p-4">
+      <EmptyState icon={icon} title={title} />
+    </div>
+  )
+}
+function activityLabel(type: string) {
+  const labels = uiText.opportunities.detail.activityTypes as Record<
+    string,
+    string
+  >
+  return labels[type] || type
+}
+
+function valueLabel(value?: number | string | null) {
+  if (value === null || value === undefined || value === "")
+    return uiText.common.notAvailable
+  return `${formatOpportunityValue(value)} ${uiText.opportunities.fields.valueUnit}`
+}

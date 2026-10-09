@@ -1,0 +1,675 @@
+import { useMemo, useState, type ReactNode } from "react"
+import {
+  Check,
+  ClipboardCheck,
+  ListTodo,
+  ListPlus,
+  Pencil,
+  RefreshCcw,
+  Trash2,
+  WandSparkles,
+} from "lucide-react"
+import { toast } from "sonner"
+import { Button } from "@workspace/ui/components/button"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+import { Input } from "@workspace/ui/components/input"
+import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
+import { FormActions } from "@/components/shared/FormActions"
+import {
+  FormDialogBody,
+  FormDialogFooter,
+} from "@/components/shared/FormDialogLayout"
+import { FormSection } from "@/components/shared/FormSection"
+import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
+import { PersianDateTimePicker } from "@/components/shared/PersianDateTimePicker"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
+import { SearchableCompanySelect } from "@/features/people/components/SearchableCompanySelect"
+import { useTaskOpportunityOptions } from "@/features/tasks/hooks/useTasks"
+import { getApiErrorMessage } from "@/lib/apiResponse"
+import { useAuthStore } from "@/store/authStore"
+import type {
+  PersonalTodo,
+  PersonalTodoInput,
+  PersonalTodoRecurrence,
+} from "../types/personalTodo.types"
+import { usePersonalTodoMutations } from "../hooks/usePersonalTodos"
+import { useOperationsWorkspace } from "@/features/operations/hooks/useOperationsWorkspace"
+
+type Tab = "today" | "upcoming" | "completed"
+const recurrenceLabels: Record<PersonalTodoRecurrence, string> = {
+  NONE: "تکرار نمی‌شود",
+  DAILY: "هر روز",
+  WEEKLY: "هر هفته",
+  MONTHLY: "هر ماه",
+  CUSTOM: "سفارشی",
+}
+
+function itemsForTab(items: PersonalTodo[], tab: Tab) {
+  return items.filter((todo) =>
+    tab === "completed" ? todo.status === "DONE" : todo.status === "TODO"
+  )
+}
+
+export function PersonalTodoPanel({
+  data,
+  readOnly = false,
+  subjectName,
+  userId,
+}: {
+  data?: {
+    today: PersonalTodo[]
+    upcoming: PersonalTodo[]
+    completed: PersonalTodo[]
+    counts: { today: number; overdue: number; upcoming: number }
+  }
+  readOnly?: boolean
+  subjectName?: string
+  userId?: string
+}) {
+  const canCreateTask = useAuthStore(
+    (state) => state.user?.permissions.includes("task:create") ?? false
+  )
+  const [tab, setTab] = useState<Tab>("today")
+  const [title, setTitle] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<PersonalTodo | null>(null)
+  const [showAllTodos, setShowAllTodos] = useState(false)
+  const [details, setDetails] = useState<Omit<PersonalTodoInput, "title">>({
+    recurrenceType: "NONE",
+  })
+  const mutations = usePersonalTodoMutations()
+  const items = useMemo(
+    () => itemsForTab(data?.[tab] ?? [], tab),
+    [data, tab]
+  )
+  const expandedWorkspace = useOperationsWorkspace(userId, 100, showAllTodos)
+  const allItems = itemsForTab(
+    expandedWorkspace.data?.personalTodos[tab] ?? items,
+    tab
+  )
+  const resetEditor = () => {
+    setTitle("")
+    setEditingId(null)
+    setDetails({ recurrenceType: "NONE" })
+    setEditorOpen(false)
+  }
+  const submit = async () => {
+    if (!title.trim()) return
+    try {
+      if (editingId)
+        await mutations.update.mutateAsync({
+          id: editingId,
+          input: { title: title.trim(), ...details },
+        })
+      else
+        await mutations.create.mutateAsync({ title: title.trim(), ...details })
+      resetEditor()
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "ثبت کار شخصی انجام نشد."))
+    }
+  }
+  const quickCreate = async () => {
+    if (!title.trim()) return
+    try {
+      await mutations.create.mutateAsync({
+        title: title.trim(),
+        recurrenceType: "NONE",
+      })
+      setTitle("")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "ثبت کار شخصی انجام نشد."))
+    }
+  }
+  const act = async (action: () => Promise<unknown>, success: string) => {
+    try {
+      await action()
+      toast.success(success)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "عملیات انجام نشد."))
+    }
+  }
+  return (
+    <SurfaceCard className="p-4" aria-labelledby="personal-todos-title">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="personal-todos-title" className="ui-section-title">
+            {subjectName ? `کارهای شخصی ${subjectName}` : "کارهای شخصی من"}
+          </h2>
+          <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+            {readOnly
+              ? "نمای فقط‌خواندنی یادآورهای شخصی کاربر"
+              : "یادآورهای خصوصی و سریع روزانه"}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {items.length ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowAllTodos(true)}
+            >
+              مشاهده همه
+            </Button>
+          ) : null}
+          {data?.counts.overdue ? (
+            <StatusBadge tone="danger">
+              {data.counts.overdue.toLocaleString("fa-IR")} عقب‌افتاده
+            </StatusBadge>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-4 flex gap-2" role="tablist">
+        {(["today", "upcoming", "completed"] as Tab[]).map((value) => (
+          <Button
+            key={value}
+            type="button"
+            size="sm"
+            variant={tab === value ? "default" : "outline"}
+            onClick={() => setTab(value)}
+          >
+            {value === "today"
+              ? "امروز"
+              : value === "upcoming"
+                ? "آینده"
+                : "تکمیل‌شده"}
+          </Button>
+        ))}
+      </div>
+      {!readOnly ? (
+        <div className="mt-3 flex gap-2">
+          <Input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void quickCreate()
+            }}
+            placeholder="افزودن سریع کار شخصی..."
+            aria-label="عنوان کار شخصی"
+          />
+          <Button
+            type="button"
+            onClick={() => void quickCreate()}
+            disabled={!title.trim() || mutations.create.isPending}
+            title="افزودن سریع"
+          >
+            <WandSparkles className="size-4" />
+            <span className="sr-only">افزودن سریع</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setEditingId(null)
+              setDetails({ recurrenceType: "NONE" })
+              setEditorOpen(true)
+            }}
+            aria-haspopup="dialog"
+            title="ایجاد کار شخصی با جزئیات"
+          >
+            <ListPlus className="size-4" />
+            <span className="sr-only">ایجاد کار شخصی با جزئیات</span>
+          </Button>
+        </div>
+      ) : null}
+      <Dialog
+        open={editorOpen}
+        onOpenChange={(open) => {
+          if (!open) resetEditor()
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          dir="rtl"
+          className="max-h-[94dvh] w-full max-w-[calc(100%_-_1rem)] min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[var(--app-radius-hero)] p-0 sm:max-w-[840px]"
+        >
+          <DialogHeroHeader
+            title={editingId ? "ویرایش کار شخصی" : "کار شخصی جدید"}
+            description="زمان، تکرار و ارتباط اختیاری با اطلاعات CRM"
+            icon={ClipboardCheck}
+            onClose={resetEditor}
+          />
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void submit()
+            }}
+          >
+            <FormDialogBody>
+              <FormSection
+                title="اطلاعات کار شخصی"
+                description="عنوان و توضیحات کوتاه این یادآور را وارد کنید."
+              >
+                <div className="grid gap-4">
+                  <Field label="عنوان کار شخصی">
+                    <Input
+                      value={title}
+                      onChange={(event) => setTitle(event.target.value)}
+                      placeholder="مثلاً پیگیری پیشنهاد قیمت"
+                      aria-label="عنوان کار شخصی در فرم"
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
+                  <Field label="یادداشت">
+                    <textarea
+                      value={details.note ?? ""}
+                      onChange={(event) =>
+                        setDetails((value) => ({
+                          ...value,
+                          note: event.target.value,
+                        }))
+                      }
+                      aria-label="یادداشت کار شخصی"
+                      placeholder="توضیحات تکمیلی (اختیاری)"
+                      rows={3}
+                      className={textareaClass}
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="زمان‌بندی"
+                description="زمان انجام و یادآوری این کار را مشخص کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="زمان انجام">
+                    <PersianDateTimePicker
+                      value={
+                        details.dueAt ? new Date(details.dueAt) : undefined
+                      }
+                      placeholder="انتخاب تاریخ انجام"
+                      onChange={(date) =>
+                        setDetails((value) => ({
+                          ...value,
+                          dueAt: date?.toISOString(),
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="زمان یادآوری">
+                    <PersianDateTimePicker
+                      value={
+                        details.reminderAt
+                          ? new Date(details.reminderAt)
+                          : undefined
+                      }
+                      placeholder="انتخاب تاریخ یادآوری"
+                      onChange={(date) =>
+                        setDetails((value) => ({
+                          ...value,
+                          reminderAt: date?.toISOString(),
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="تکرار"
+                description="در صورت تکرارشونده بودن، الگوی ساخت نمونه بعدی را انتخاب کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="نحوه تکرار">
+                    <SearchableOptionSelect
+                      value={details.recurrenceType}
+                      search=""
+                      onSearchChange={() => undefined}
+                      searchable={false}
+                      allowEmpty={false}
+                      ariaLabel="تکرار کار شخصی"
+                      options={Object.entries(recurrenceLabels).map(
+                        ([id, label]) => ({ id, label })
+                      )}
+                      onChange={(recurrenceType) =>
+                        setDetails((value) => ({
+                          ...value,
+                          recurrenceType:
+                            recurrenceType as PersonalTodoRecurrence,
+                          recurrenceInterval:
+                            recurrenceType === "CUSTOM"
+                              ? (value.recurrenceInterval ?? 2)
+                              : undefined,
+                        }))
+                      }
+                    />
+                  </Field>
+                  {details.recurrenceType === "CUSTOM" ? (
+                    <Field label="فاصله تکرار">
+                      <div className="flex h-11 items-center gap-3 rounded-xl border border-input px-3">
+                        <span className="shrink-0 text-sm">هر</span>
+                        <Input
+                          type="number"
+                          min={2}
+                          max={365}
+                          value={details.recurrenceInterval ?? 2}
+                          onChange={(event) =>
+                            setDetails((value) => ({
+                              ...value,
+                              recurrenceInterval: Math.min(
+                                365,
+                                Math.max(2, Number(event.target.value) || 2)
+                              ),
+                            }))
+                          }
+                          aria-label="تعداد روزهای فاصله تکرار"
+                          className="h-8 w-20 text-center"
+                        />
+                        <span className="shrink-0 text-sm">روز یک‌بار</span>
+                      </div>
+                    </Field>
+                  ) : null}
+                </div>
+              </FormSection>
+
+              <FormSection
+                title="ارتباط با CRM"
+                description="در صورت نیاز، این یادآور را به شرکت یا فرصت مرتبط کنید."
+              >
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="شرکت مرتبط (اختیاری)">
+                    <SearchableCompanySelect
+                      value={details.companyId}
+                      onChange={(companyId) =>
+                        setDetails((value) => ({
+                          ...value,
+                          companyId,
+                          opportunityId: undefined,
+                        }))
+                      }
+                      placeholder="انتخاب شرکت"
+                    />
+                  </Field>
+                  <Field label="فرصت مرتبط (اختیاری)">
+                    <TodoOpportunitySelect
+                      companyId={details.companyId}
+                      value={details.opportunityId}
+                      onChange={(opportunityId) =>
+                        setDetails((current) => ({
+                          ...current,
+                          opportunityId,
+                        }))
+                      }
+                    />
+                  </Field>
+                </div>
+              </FormSection>
+            </FormDialogBody>
+            <FormDialogFooter>
+              <FormActions
+                onCancel={resetEditor}
+                pending={
+                  mutations.create.isPending || mutations.update.isPending
+                }
+                disabled={!title.trim()}
+                submitLabel={editingId ? "ذخیره تغییرات" : "ایجاد کار شخصی"}
+              />
+            </FormDialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <div className="mt-4 grid gap-2">
+        {items.length === 0 ? (
+          <EmptyState
+            title="موردی در این بخش نیست"
+            description="یک یادآور شخصی سریع اضافه کنید."
+          />
+        ) : (
+          items.slice(0, 5).map((todo) => (
+            <article
+              key={todo.id}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--app-border)] p-3"
+            >
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={() =>
+                    void act(
+                      () =>
+                        todo.status === "DONE"
+                          ? mutations.reopen.mutateAsync(todo.id)
+                          : mutations.complete.mutateAsync(todo.id),
+                      todo.status === "DONE"
+                        ? "کار دوباره باز شد."
+                        : todo.recurrenceType === "NONE"
+                          ? "انجام شد."
+                          : "انجام شد؛ نوبت بعدی کار تکرارشونده ایجاد می‌شود."
+                    )
+                  }
+                >
+                  {todo.status === "DONE" ? (
+                    <RefreshCcw className="size-4" />
+                  ) : (
+                    <Check className="size-4" />
+                  )}
+                </Button>
+              ) : null}
+              <div className="min-w-0 flex-1">
+                <p
+                  className={
+                    todo.status === "DONE"
+                      ? "line-through opacity-60"
+                      : "font-medium"
+                  }
+                >
+                  {todo.title}
+                </p>
+                <p className="mt-1 text-xs text-[var(--app-text-secondary)]">
+                  {todo.company
+                    ? todo.company.brandName || todo.company.legalName
+                    : "بدون ارتباط CRM"}
+                  {todo.opportunity ? ` · ${todo.opportunity.title}` : ""}
+                  {todo.dueAt
+                    ? ` · ${new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(todo.dueAt))}`
+                    : ""}
+                </p>
+                {todo.recurrenceType !== "NONE" ? (
+                  <StatusBadge className="mt-2" size="xs" tone="info">
+                    تکرار: {recurrenceLabels[todo.recurrenceType]}
+                  </StatusBadge>
+                ) : null}
+              </div>
+              {!readOnly &&
+              canCreateTask &&
+              !todo.task &&
+              todo.status !== "DONE" ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    void act(
+                      () => mutations.convert.mutateAsync(todo.id),
+                      "به کار رسمی تبدیل شد."
+                    )
+                  }
+                >
+                  <ClipboardCheck className="size-4" />
+                  تبدیل به کار
+                </Button>
+              ) : null}
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditingId(todo.id)
+                    setTitle(todo.title)
+                    setDetails({
+                      note: todo.note ?? undefined,
+                      dueAt: todo.dueAt ?? undefined,
+                      reminderAt: todo.reminderAt ?? undefined,
+                      recurrenceType: todo.recurrenceType,
+                      recurrenceInterval: todo.recurrenceInterval,
+                      companyId: todo.company?.id,
+                      opportunityId: todo.opportunity?.id,
+                    })
+                    setEditorOpen(true)
+                  }}
+                >
+                  <Pencil className="size-4" />
+                  <span className="sr-only">ویرایش</span>
+                </Button>
+              ) : null}
+              {!readOnly ? (
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="text-red-500"
+                  onClick={() => setDeleteTarget(todo)}
+                >
+                  <Trash2 className="size-4" />
+                  <span className="sr-only">حذف</span>
+                </Button>
+              ) : null}
+            </article>
+          ))
+        )}
+      </div>
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && !mutations.remove.isPending) setDeleteTarget(null)
+        }}
+        title="حذف کار شخصی"
+        description={
+          deleteTarget ? `«${deleteTarget.title}» حذف شود؟` : undefined
+        }
+        tone="danger"
+        isPending={mutations.remove.isPending}
+        onConfirm={() =>
+          deleteTarget
+            ? act(
+                () => mutations.remove.mutateAsync(deleteTarget.id),
+                "حذف شد."
+              ).then(() => setDeleteTarget(null))
+            : undefined
+        }
+      />
+      <ResponsiveModal
+        open={showAllTodos}
+        onClose={() => setShowAllTodos(false)}
+        title={
+          subjectName ? `همه کارهای شخصی ${subjectName}` : "همه کارهای شخصی من"
+        }
+        description={
+          tab === "today"
+            ? "کارهای شخصی امروز"
+            : tab === "upcoming"
+              ? "کارهای شخصی آینده"
+              : "کارهای شخصی تکمیل‌شده"
+        }
+        icon={ListTodo}
+        width="max-w-3xl"
+      >
+        {expandedWorkspace.isLoading ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            در حال دریافت همه موارد...
+          </p>
+        ) : (
+          <div className="grid divide-y divide-[var(--app-divider)]">
+            {allItems.map((todo) => (
+              <div key={todo.id} className="flex items-start gap-3 px-3 py-4">
+                <StatusBadge
+                  size="xs"
+                  tone={todo.status === "DONE" ? "success" : "info"}
+                >
+                  {todo.status === "DONE" ? "تکمیل‌شده" : "در انتظار"}
+                </StatusBadge>
+                <div className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm">
+                    {todo.title}
+                  </strong>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {todo.company
+                      ? todo.company.brandName || todo.company.legalName
+                      : "بدون ارتباط CRM"}
+                    {todo.opportunity ? ` · ${todo.opportunity.title}` : ""}
+                    {todo.dueAt
+                      ? ` · ${new Intl.DateTimeFormat("fa-IR", { dateStyle: "medium", timeStyle: "short" }).format(new Date(todo.dueAt))}`
+                      : ""}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {!allItems.length ? (
+              <EmptyState
+                title="موردی در این بخش نیست"
+                description="برای این دسته کار شخصی ثبت نشده است."
+              />
+            ) : null}
+          </div>
+        )}
+      </ResponsiveModal>
+    </SurfaceCard>
+  )
+}
+
+function TodoOpportunitySelect({
+  companyId,
+  value,
+  onChange,
+}: {
+  companyId?: string
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const [search, setSearch] = useState("")
+  const opportunities = useTaskOpportunityOptions(
+    companyId ?? "",
+    search,
+    Boolean(companyId)
+  )
+  const options = useMemo(
+    () =>
+      opportunities.data?.pages
+        .flatMap((page) => page.data)
+        .map((item) => ({
+          id: item.id,
+          label: item.title,
+          secondary:
+            item.company?.brandName || item.company?.legalName || undefined,
+        })) ?? [],
+    [opportunities.data]
+  )
+  return (
+    <SearchableOptionSelect
+      value={value}
+      search={search}
+      onSearchChange={setSearch}
+      options={options}
+      loading={opportunities.isLoading || opportunities.isFetching}
+      disabled={!companyId}
+      placeholder={
+        companyId ? "فرصت مرتبط (اختیاری)" : "ابتدا شرکت را انتخاب کنید"
+      }
+      ariaLabel="فرصت مرتبط با کار شخصی"
+      onChange={onChange}
+    />
+  )
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="grid min-w-0 gap-2">
+      <span className="text-xs font-bold text-[var(--app-heading)]">
+        {label}
+      </span>
+      {children}
+    </label>
+  )
+}
+
+const textareaClass =
+  "w-full resize-none rounded-xl border border-input bg-transparent p-3 text-sm outline-none focus:border-[var(--app-primary)]"
