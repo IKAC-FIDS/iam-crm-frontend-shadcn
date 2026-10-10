@@ -122,7 +122,12 @@ export function ActivityFormDialog({
               undefined,
           }
         : undefined,
-      opportunity: undefined,
+      opportunity: activity?.opportunityId
+        ? {
+            id: activity.opportunityId,
+            label: activity.opportunity?.title || "فرصت فعلی",
+          }
+        : undefined,
       type:
         activity?.type && activity.type !== "STAGE_CHANGE" ? activity.type : "",
       notes: activity?.notes || "",
@@ -182,7 +187,7 @@ export function ActivityFormDialog({
   const opportunities = useActivityOpportunityOptions(
     companyId,
     useDebounced(opportunitySearch),
-    open && !editing && targetType === "COMPANY" && Boolean(companyId)
+    open && targetType === "COMPANY" && Boolean(companyId)
   )
 
   const validation = useMemo(() => {
@@ -217,6 +222,8 @@ export function ActivityFormDialog({
         const payload: UpdateActivityPayload = {
           type,
           personId: person?.id ?? null,
+          opportunityId:
+            targetType === "COMPANY" ? opportunity?.id ?? null : undefined,
           notes: notes.trim() || null,
           outcome: outcome.trim() || null,
           occurredAt: occurredAt?.toISOString(),
@@ -426,7 +433,7 @@ export function ActivityFormDialog({
                   </Field>
                 ) : null}
 
-                {!editing && targetType === "COMPANY" ? (
+                {targetType === "COMPANY" ? (
                   <Field label="فرصت فروش" error={errors.opportunity?.message}>
                     <ActivityOptionSelect
                       value={opportunity?.id}

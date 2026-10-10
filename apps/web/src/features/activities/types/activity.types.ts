@@ -49,6 +49,11 @@ export interface ActivityTaskSummary {
   parentTask?: { id: string; title: string } | null
 }
 
+export interface ActivityOpportunitySummary {
+  id: string
+  title: string
+}
+
 export interface Activity {
   id: string
   targetType?: ActivityTargetType
@@ -70,6 +75,7 @@ export interface Activity {
   status?: ActivityStatus
   activityDate?: string | null
   company?: ActivityCompany | null
+  opportunity?: ActivityOpportunitySummary | null
   person?: ActivityPerson | null
   user?: ActivityUser | null
   owner?: ActivityUser | null
@@ -124,6 +130,7 @@ export interface CreateActivityPayload {
 export interface UpdateActivityPayload {
   type?: ManualActivityType
   personId?: string | null
+  opportunityId?: string | null
   notes?: string | null
   outcome?: string | null
   occurredAt?: string
