@@ -435,23 +435,67 @@ export function ActivityFormDialog({
 
                 {targetType === "COMPANY" ? (
                   <Field label="فرصت فروش" error={errors.opportunity?.message}>
-                    <ActivityOptionSelect
-                      value={opportunity?.id}
-                      selectedOption={opportunity}
-                      options={opportunities.data || []}
-                      onChange={(next) =>
-                        setValue("opportunity", next, { shouldDirty: true })
-                      }
-                      search={opportunitySearch}
-                      onSearchChange={setOpportunitySearch}
-                      placeholder={
-                        companyId
-                          ? "انتخاب فرصت فروش"
-                          : "ابتدا شرکت را انتخاب کنید"
-                      }
-                      loading={opportunities.isLoading}
-                      disabled={!companyId || opportunities.isError}
-                    />
+                    {editing ? (
+                      <select
+                        className={selectClass}
+                        value={opportunity?.id || ""}
+                        disabled={
+                          !companyId ||
+                          opportunities.isLoading ||
+                          opportunities.isError
+                        }
+                        onChange={(event) => {
+                          const nextId = event.target.value
+                          const next = (opportunities.data || []).find(
+                            (item) => item.id === nextId
+                          )
+                          setValue(
+                            "opportunity",
+                            nextId
+                              ? next || {
+                                  id: nextId,
+                                  label: opportunity?.label || nextId,
+                                }
+                              : undefined,
+                            { shouldDirty: true }
+                          )
+                        }}
+                      >
+                        <option value="">بدون فرصت فروش</option>
+                        {opportunity &&
+                        !(opportunities.data || []).some(
+                          (item) => item.id === opportunity.id
+                        ) ? (
+                          <option value={opportunity.id}>
+                            {opportunity.label}
+                          </option>
+                        ) : null}
+                        {(opportunities.data || []).map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.label}
+                            {item.secondary ? ` — ${item.secondary}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <ActivityOptionSelect
+                        value={opportunity?.id}
+                        selectedOption={opportunity}
+                        options={opportunities.data || []}
+                        onChange={(next) =>
+                          setValue("opportunity", next, { shouldDirty: true })
+                        }
+                        search={opportunitySearch}
+                        onSearchChange={setOpportunitySearch}
+                        placeholder={
+                          companyId
+                            ? "انتخاب فرصت فروش"
+                            : "ابتدا شرکت را انتخاب کنید"
+                        }
+                        loading={opportunities.isLoading}
+                        disabled={!companyId || opportunities.isError}
+                      />
+                    )}
                     {opportunities.isError ? (
                       <p className="mt-1 text-xs text-destructive">
                         دریافت فرصت‌های این شرکت ناموفق بود.

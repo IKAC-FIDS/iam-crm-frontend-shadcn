@@ -52,11 +52,11 @@ it("allows changing the related opportunity while editing an activity", async ()
     />
   )
 
-  expect(screen.getByRole("button", { name: "فرصت فروش" })).toHaveTextContent(
-    "فرصت فعلی"
-  )
-  await user.click(screen.getByRole("button", { name: "فرصت فروش" }))
-  await user.click(screen.getByText("فرصت جدید").closest("button")!)
+  const opportunitySelect = screen.getByRole("combobox", {
+    name: "فرصت فروش",
+  })
+  expect(opportunitySelect).toHaveValue("opportunity-1")
+  await user.selectOptions(opportunitySelect, "opportunity-2")
   await user.click(screen.getByRole("button", { name: "ذخیره" }))
 
   expect(updateActivity).toHaveBeenCalledWith({
