@@ -20,6 +20,23 @@ export async function removePushSubscription(id: string) {
   return unwrapApiResponse<{ disabled: boolean }>(response.data)
 }
 
+export async function testCurrentPushNotification() {
+  const response = await api.post("/notification-push/test")
+  const result = unwrapApiResponse<{
+    attempted: number
+    successful: number
+    failed: number
+  }>(response.data)
+  if (!result.successful) {
+    throw new Error(
+      result.attempted
+        ? "ارسال اعلان آزمایشی به این دستگاه ناموفق بود."
+        : "برای کاربر جاری دستگاه فعالی ثبت نشده است."
+    )
+  }
+  return result
+}
+
 export function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4)
   const raw = window.atob((value + padding).replace(/-/g, "+").replace(/_/g, "/"))

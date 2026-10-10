@@ -1,4 +1,8 @@
-export type NotificationChannel = "EMAIL" | "SMS" | "PUSH" | "IN_APP"
+export type NotificationChannel =
+  | "EMAIL"
+  | "SMS"
+  | "DESKTOP_PUSH"
+  | "IN_APP"
 
 export type NotificationEventName =
   | "MEETING.CREATED"

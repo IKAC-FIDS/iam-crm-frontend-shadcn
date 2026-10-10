@@ -12,6 +12,7 @@ import {
   getPushSubscriptions,
   removePushSubscription,
   savePushSubscription,
+  testCurrentPushNotification,
 } from "../api/pushNotificationApi"
 import {
   isNotificationSoundEnabled,
@@ -46,7 +47,7 @@ export function PushNotificationSettingsCard() {
   const enable = useMutation({
     mutationFn: async () => {
       if (!supported || !config.data?.publicKey)
-        throw new Error("اعلان پوش در این مرورگر یا سازمان آماده نیست")
+        throw new Error("اعلان دسکتاپ در این مرورگر یا سازمان آماده نیست")
       const permission = await Notification.requestPermission()
       if (permission !== "granted")
         throw new Error(
@@ -60,7 +61,7 @@ export function PushNotificationSettingsCard() {
     onSuccess: async (endpoint) => {
       window.localStorage.setItem("crm.pushEndpointId", endpoint.id)
       await client.invalidateQueries({ queryKey: ["push-subscriptions"] })
-      toast.success("اعلان پوش برای این دستگاه فعال شد.")
+      toast.success("اعلان دسکتاپ برای این دستگاه فعال شد.")
     },
     onError: (error) =>
       toast.error(
@@ -68,7 +69,7 @@ export function PushNotificationSettingsCard() {
           error,
           error instanceof Error
             ? error.message
-            : "فعال‌سازی اعلان پوش ناموفق بود"
+            : "فعال‌سازی اعلان دسکتاپ ناموفق بود"
         )
       ),
   })
@@ -79,8 +80,26 @@ export function PushNotificationSettingsCard() {
       await (await registration?.pushManager.getSubscription())?.unsubscribe()
       window.localStorage.removeItem("crm.pushEndpointId")
       await client.invalidateQueries({ queryKey: ["push-subscriptions"] })
-      toast.success("اعلان پوش این دستگاه غیرفعال شد.")
+      toast.success("اعلان دسکتاپ این دستگاه غیرفعال شد.")
     },
+  })
+  const testNotification = useMutation({
+    mutationFn: async () => {
+      if (!supported || Notification.permission !== "granted") {
+        throw new Error("اجازه اعلان دسکتاپ برای این مرورگر فعال نیست.")
+      }
+      return testCurrentPushNotification()
+    },
+    onSuccess: () => toast.success("اعلان آزمایشی دسکتاپ ارسال شد."),
+    onError: (error) =>
+      toast.error(
+        getApiErrorMessage(
+          error,
+          error instanceof Error
+            ? error.message
+            : "ارسال اعلان آزمایشی ناموفق بود"
+        )
+      ),
   })
   const count = subscriptions.data?.length ?? 0
   const thisDeviceEndpointId =
@@ -117,23 +136,23 @@ export function PushNotificationSettingsCard() {
         <div>
           <h2 className="flex items-center gap-2 text-lg font-black">
             <BellRing className="size-5 text-[var(--app-primary)]" />
-            اعلان پوش
+            اعلان دسکتاپ
           </h2>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            اعلان کارها و جلسات را حتی وقتی تب سامانه باز نیست دریافت کنید.
+            دریافت اعلان‌های انتخاب‌شده در قوانین، حتی وقتی تب سامانه باز نیست.
           </p>
         </div>
         <StatusBadge
           tone={count ? "success" : config.data?.configured ? "warning" : "neutral"}
         >
           {!supported
-            ? "مرورگر پشتیبانی نمی‌کند"
+            ? "این مرورگر از اعلان دسکتاپ پشتیبانی نمی‌کند"
             : Notification.permission === "denied"
-              ? "اجازه مسدود شده"
+              ? "اعلان دسکتاپ در مرورگر مسدود است"
               : count
                 ? `${count.toLocaleString("fa-IR")} اشتراک فعال`
                 : config.data?.enabled
-                  ? "آماده فعال‌سازی"
+                  ? "اعلان دسکتاپ فعال نیست"
                   : "در سازمان غیرفعال"}
         </StatusBadge>
       </div>
@@ -152,9 +171,24 @@ export function PushNotificationSettingsCard() {
             disabled={!supported || !config.data?.publicKey || enable.isPending}
             onClick={() => enable.mutate()}
           >
-            {enable.isPending ? "در حال فعال‌سازی..." : "فعال‌سازی اعلان‌های پوش"}
+            {enable.isPending ? "در حال فعال‌سازی..." : "فعال‌سازی اعلان دسکتاپ"}
           </Button>
         )}
+        <Button
+          type="button"
+          variant="outline"
+          disabled={
+            !supported ||
+            !currentDeviceEnabled ||
+            Notification.permission !== "granted" ||
+            testNotification.isPending
+          }
+          onClick={() => testNotification.mutate()}
+        >
+          {testNotification.isPending
+            ? "در حال ارسال..."
+            : "ارسال اعلان آزمایشی"}
+        </Button>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--app-divider)] pt-4">
@@ -171,7 +205,7 @@ export function PushNotificationSettingsCard() {
             </StatusBadge>
           </div>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">
-            فقط برای اعلان پوش جدید و زمانی که یکی از تب‌های سامانه قابل مشاهده باشد.
+            فقط برای اعلان دسکتاپ جدید و زمانی که یکی از تب‌های سامانه قابل مشاهده باشد.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

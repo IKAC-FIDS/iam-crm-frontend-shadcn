@@ -1,4 +1,8 @@
-export type NotificationChannel = "EMAIL" | "SMS" | "PUSH" | "IN_APP"
+export type NotificationChannel =
+  | "EMAIL"
+  | "SMS"
+  | "DESKTOP_PUSH"
+  | "IN_APP"
 export type NotificationPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL"
 export type NotificationRecipientType =
   | "USER"

@@ -78,7 +78,7 @@ const recipientLabels: Record<NotificationRecipientType, string> = {
 const channelLabels: Record<NotificationChannel, string> = {
   EMAIL: "ایمیل",
   SMS: "پیامک",
-  PUSH: "Push",
+  DESKTOP_PUSH: "اعلان دسکتاپ",
   IN_APP: "اعلان سامانه",
 }
 

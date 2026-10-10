@@ -3,7 +3,7 @@ import type { NotificationChannel, NotificationEventName } from "../types/notifi
 export const notificationChannels: ReadonlyArray<{ value: NotificationChannel; label: string }> = [
   { value: "EMAIL", label: "ایمیل" },
   { value: "SMS", label: "پیامک" },
-  { value: "PUSH", label: "Push" },
+  { value: "DESKTOP_PUSH", label: "اعلان دسکتاپ" },
   { value: "IN_APP", label: "اعلان سامانه" },
 ]
 

@@ -13,13 +13,13 @@ import { createDigestPolicy, createEscalationPolicy, deleteDigestPolicy, deleteE
 import { useNotificationRuleCatalog } from "../hooks/useNotificationRules"
 import type { DigestPolicy, EscalationPolicy, EscalationStep, NotificationChannel, NotificationPriority, NotificationRecipientType, NotificationRuleConditions, QuietHoursPolicy } from "../types/rule-engine.types"
 
-const channels: Array<{ id: NotificationChannel; label: string }> = [{ id: "EMAIL", label: "ایمیل" }, { id: "SMS", label: "پیامک" }, { id: "PUSH", label: "پوش" }, { id: "IN_APP", label: "داخل سامانه" }]
+const channels: Array<{ id: NotificationChannel; label: string }> = [{ id: "EMAIL", label: "ایمیل" }, { id: "SMS", label: "پیامک" }, { id: "DESKTOP_PUSH", label: "اعلان دسکتاپ" }, { id: "IN_APP", label: "داخل سامانه" }]
 const field = "grid gap-2 text-sm font-medium"
 const selectClass = "h-11 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3"
 
 export function QuietHoursTab() {
   const client = useQueryClient(), query = useQuery({ queryKey: ["notification-quiet-hours"], queryFn: getQuietHours })
-  const [form, setForm] = useState<QuietHoursPolicy>({ enabled: false, startTime: "22:00", endTime: "07:00", timezone: "Asia/Tehran", channels: ["SMS", "PUSH"], allowCritical: true, mode: "DEFER" })
+  const [form, setForm] = useState<QuietHoursPolicy>({ enabled: false, startTime: "22:00", endTime: "07:00", timezone: "Asia/Tehran", channels: ["SMS", "DESKTOP_PUSH"], allowCritical: true, mode: "DEFER" })
   useEffect(() => { if (query.data) setForm(query.data) }, [query.data])
   const save = useMutation({ mutationFn: updateQuietHours, onSuccess: async () => { await client.invalidateQueries({ queryKey: ["notification-quiet-hours"] }); toast.success("ساعات سکوت ذخیره شد.") }, onError: error => toast.error(getApiErrorMessage(error, "ذخیره ساعات سکوت ناموفق بود.")) })
   const toggle = (channel: NotificationChannel) => setForm(value => ({ ...value, channels: value.channels.includes(channel) ? value.channels.filter(item => item !== channel) : [...value.channels, channel] }))
