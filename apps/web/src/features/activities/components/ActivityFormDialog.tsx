@@ -450,8 +450,13 @@ export function ActivityFormDialog({
                           : "ابتدا شرکت را انتخاب کنید"
                       }
                       loading={opportunities.isLoading}
-                      disabled={!companyId}
+                      disabled={!companyId || opportunities.isError}
                     />
+                    {opportunities.isError ? (
+                      <p className="mt-1 text-xs text-destructive">
+                        دریافت فرصت‌های این شرکت ناموفق بود.
+                      </p>
+                    ) : null}
                   </Field>
                 ) : null}
 

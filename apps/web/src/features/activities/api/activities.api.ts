@@ -1,10 +1,7 @@
 import { z } from "zod"
 import { parsePaginatedResponse } from "@/lib/pagination"
 import { getPeopleDirectory } from "@/features/people/api/people.api"
-import {
-  getOpportunities,
-  getOpportunityOwnerOptions,
-} from "@/features/opportunities/api/opportunities.api"
+import { getOpportunityOwnerOptions } from "@/features/opportunities/api/opportunities.api"
 import { getTasks } from "@/features/tasks/api/tasks.api"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
@@ -127,20 +124,14 @@ export async function getActivityOpportunityOptions(
   search: string
 ): Promise<ActivityOption[]> {
   if (!companyId) return []
-  const page = await getOpportunities({
-    page: 1,
-    limit: 25,
-    search: search.trim() || undefined,
-    companyId,
-    ownershipScope: "all",
-    archiveState: "active",
+  const response = await api.get("/activities/opportunities/options", {
+    params: {
+      companyId,
+      search: search.trim() || undefined,
+    },
   })
-
-  return page.data.map((item) => ({
-    id: item.id,
-    label: item.title,
-    secondary: item.company?.brandName || item.company?.legalName || undefined,
-  }))
+  const data = unwrapApiResponse<ActivityOption[]>(response.data)
+  return Array.isArray(data) ? data : []
 }
 
 export async function getActivityOwnerOptions(): Promise<
