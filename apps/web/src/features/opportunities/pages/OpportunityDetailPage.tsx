@@ -57,6 +57,7 @@ import type {
   OpportunityUpdatePayload,
 } from "../types/opportunity.types"
 import { opportunityCompanyName } from "../utils/opportunityFormatters"
+import { getAllowedOpportunityStages } from "../utils/opportunityTransitions"
 
 type DetailTab = "overview" | "commercial" | "execution" | "files"
 
@@ -66,20 +67,12 @@ function allowedTargets(
   transitions: OpportunityTransition[],
   role?: string
 ) {
-  const relevant = transitions.filter(
-    (rule) => rule.fromStageId === opportunity.stageId
+  return getAllowedOpportunityStages(
+    opportunity.stageId,
+    stages,
+    transitions,
+    role
   )
-  return stages.filter((stage) => {
-    if (stage.id === opportunity.stageId) return false
-    const roleRule = relevant.find(
-      (rule) => rule.toStageId === stage.id && rule.role === role
-    )
-    const generalRule = relevant.find(
-      (rule) => rule.toStageId === stage.id && rule.role == null
-    )
-    const rule = roleRule ?? generalRule
-    return Boolean(rule && (rule.isAllowed ?? rule.allowed ?? false))
-  })
 }
 
 export function OpportunityDetailPage() {

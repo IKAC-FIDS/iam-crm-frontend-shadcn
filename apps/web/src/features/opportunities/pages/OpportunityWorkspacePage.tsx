@@ -44,6 +44,7 @@ import type {
   OpportunityTransition,
   OpportunityUpdatePayload,
 } from "../types/opportunity.types"
+import { getAllowedOpportunityStages } from "../utils/opportunityTransitions"
 
 function allowedTargets(
   opportunity: Opportunity,
@@ -51,22 +52,12 @@ function allowedTargets(
   transitions: OpportunityTransition[],
   role?: string
 ) {
-  const relevant = transitions.filter(
-    (rule) => rule.fromStageId === opportunity.stageId
+  return getAllowedOpportunityStages(
+    opportunity.stageId,
+    stages,
+    transitions,
+    role
   )
-  return stages.filter((stage) => {
-    if (stage.id === opportunity.stageId) return false
-    const specific = relevant.find(
-      (rule) => rule.toStageId === stage.id && rule.role === role
-    )
-    const general = relevant.find(
-      (rule) => rule.toStageId === stage.id && rule.role == null
-    )
-    const selected = specific ?? general
-    return Boolean(
-      selected && (selected.isAllowed ?? selected.allowed ?? false)
-    )
-  })
 }
 
 export function OpportunityWorkspacePage() {

@@ -12,6 +12,7 @@ import { OpportunityCard } from "./OpportunityCard"
 import type { OpportunityActionPermissions } from "./OpportunityActionsMenu"
 import { useAuthStore } from "@/store/authStore"
 import { canViewFinancials } from "@/lib/permissions"
+import { getAllowedOpportunityStages } from "../utils/opportunityTransitions"
 
 type Action = (opportunity: Opportunity) => void
 
@@ -46,15 +47,14 @@ export function OpportunityPipelineBoard({
   const [dragged, setDragged] = useState<Opportunity | null>(null)
   const validTargetIds = useMemo(() => {
     if (!dragged || !transitions) return new Set<string>()
-    const candidates = transitions.filter((rule) => rule.fromStageId === dragged.stageId)
-    const targets = new Set<string>()
-    for (const target of stages) {
-      const specific = candidates.find((rule) => rule.toStageId === target.id && rule.role === role)
-      const general = candidates.find((rule) => rule.toStageId === target.id && rule.role == null)
-      const selected = specific ?? general
-      if (selected && (selected.isAllowed ?? selected.allowed ?? false)) targets.add(target.id)
-    }
-    return targets
+    return new Set(
+      getAllowedOpportunityStages(
+        dragged.stageId,
+        stages,
+        transitions,
+        role
+      ).map((stage) => stage.id)
+    )
   }, [dragged, role, stages, transitions])
 
   return (
