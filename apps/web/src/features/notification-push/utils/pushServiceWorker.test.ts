@@ -4,8 +4,16 @@ import {
   PUSH_SERVICE_WORKER_SCOPE,
   PUSH_SERVICE_WORKER_URL,
   getOrCreatePushSubscription,
+  pushSubscriptionError,
+  validateVapidPublicKey,
   waitForPushServiceWorkerActivation,
 } from "./pushServiceWorker"
+
+const VALID_VAPID_PUBLIC_KEY = window
+  .btoa(String.fromCharCode(4, ...Array<number>(64).fill(1)))
+  .replace(/\+/g, "-")
+  .replace(/\//g, "_")
+  .replace(/=+$/, "")
 
 class FakeWorker extends EventTarget {
   state: ServiceWorkerState
@@ -52,7 +60,7 @@ describe("push Service Worker activation", () => {
       ready: Promise.resolve(registration),
     } as Pick<ServiceWorkerContainer, "register" | "ready">
 
-    await expect(getOrCreatePushSubscription("AQID", serviceWorkers)).resolves.toBe(
+    await expect(getOrCreatePushSubscription(VALID_VAPID_PUBLIC_KEY, serviceWorkers)).resolves.toBe(
       subscription
     )
     expect(register).toHaveBeenCalledWith(PUSH_SERVICE_WORKER_URL, {
@@ -102,5 +110,15 @@ describe("push Service Worker activation", () => {
     worker.setState("redundant")
 
     await expect(result).rejects.toThrow("فعال‌سازی سرویس اعلان ناموفق شد")
+  })
+
+  it("rejects a malformed VAPID key before contacting the browser push service", () => {
+    expect(() => validateVapidPublicKey("AQID")).toThrow("کلید عمومی VAPID معتبر نیست")
+  })
+
+  it("turns browser push-service failures into an actionable Persian error", () => {
+    const error = pushSubscriptionError(new DOMException("Registration failed - push service error", "AbortError"))
+    expect(error.message).toContain("سرویس Push خود")
+    expect(error.message).toContain("Shields")
   })
 })

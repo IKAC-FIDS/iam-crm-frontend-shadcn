@@ -11,6 +11,35 @@ type ServiceWorkerContainerLike = Pick<
 
 let subscriptionRequest: Promise<PushSubscription> | null = null
 
+export function validateVapidPublicKey(publicKey: string) {
+  let bytes: Uint8Array
+  try {
+    bytes = urlBase64ToUint8Array(publicKey.trim())
+  } catch {
+    throw new Error("کلید عمومی VAPID معتبر نیست؛ مدیر سامانه باید کلید عمومی را دوباره تنظیم کند.")
+  }
+  if (bytes.length !== 65 || bytes[0] !== 4) {
+    throw new Error("کلید عمومی VAPID معتبر نیست؛ کلید باید از نوع P-256 و ۶۵ بایتی باشد.")
+  }
+  const key = new Uint8Array(bytes.length)
+  key.set(bytes)
+  return key.buffer
+}
+
+export function pushSubscriptionError(error: unknown) {
+  const candidate = error as { name?: string; message?: string }
+  const name = candidate?.name ?? ""
+  const message = candidate?.message ?? ""
+  if (name === "NotAllowedError") return new Error("اجازه اعلان یا Push در Firefox مسدود شده است؛ مجوز سایت را روی Allow قرار دهید.")
+  if (name === "InvalidStateError") return new Error("Service Worker اعلان هنوز آماده نیست؛ صفحه را تازه‌سازی و دوباره تلاش کنید.")
+  if (name === "NotSupportedError") return new Error("Push در این مرورگر یا حالت فعلی آن پشتیبانی نمی‌شود.")
+  if (name === "AbortError" || /push service|registration failed/i.test(message)) {
+    return new Error("مرورگر نتوانست به سرویس Push خود متصل شود. مجوز اعلان، تنظیمات حریم خصوصی یا Shields، اتصال اینترنت، VPN/Proxy و فایروال را بررسی و دوباره تلاش کنید.")
+  }
+  if (name === "TypeError") return new Error("ساخت اشتراک Push ممکن نشد؛ تنظیمات VAPID یا امنیت HTTPS را بررسی کنید.")
+  return error instanceof Error ? error : new Error("ساخت اشتراک اعلان دسکتاپ در مرورگر ناموفق بود.")
+}
+
 function expectedScriptUrl() {
   return new URL(PUSH_SERVICE_WORKER_URL, window.location.origin).href
 }
@@ -119,6 +148,10 @@ async function subscribeToPush(
   publicKey: string,
   serviceWorkers: ServiceWorkerContainerLike
 ) {
+  if (window.isSecureContext === false) {
+    throw new Error("اعلان دسکتاپ فقط روی اتصال امن HTTPS قابل فعال‌سازی است.")
+  }
+  const applicationServerKey = validateVapidPublicKey(publicKey)
   const registered = await serviceWorkers.register(PUSH_SERVICE_WORKER_URL, {
     scope: PUSH_SERVICE_WORKER_SCOPE,
   })
@@ -133,13 +166,13 @@ async function subscribeToPush(
   try {
     return await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey,
     })
   } catch (error) {
     // A concurrent browser operation may have created the subscription first.
     const createdConcurrently = await registration.pushManager.getSubscription()
     if (createdConcurrently) return createdConcurrently
-    throw error
+    throw pushSubscriptionError(error)
   }
 }
 
