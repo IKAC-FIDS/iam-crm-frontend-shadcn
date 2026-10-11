@@ -63,9 +63,21 @@ export async function updatePushSettings(input: { provider: string; publicKey?: 
   const response = await api.patch("/admin/notification-channels/push", input)
   return unwrapApiResponse<PushSettings>(response.data)
 }
+export type PushRecipientTarget = {
+  id: string
+  fullName: string
+  email: string
+  subscriptionCount: number
+  lastSeenAt: string
+  devices: Array<{ label?: string | null; userAgent?: string | null } | null>
+}
+export async function getPushRecipientTargets(search?: string) {
+  const response = await api.get("/admin/notification-channels/push/recipients", { params: { search: search?.trim() || undefined } })
+  return unwrapApiResponse<PushRecipientTarget[]>(response.data)
+}
 export async function testPushSettings(input: { recipientUserId: string; title?: string; body?: string }) {
   const response = await api.post("/admin/notification-channels/push/test", input)
-  return unwrapApiResponse<{ attempted: number; successful: number; failed: number }>(response.data)
+  return unwrapApiResponse<{ recipientUserId: string; subscriptionCount: number; attempted: number; accepted: number; successful: number; failed: number; displayConfirmed: false }>(response.data)
 }
 export async function dispatchNotificationDelivery(id: string) {
   const response = await api.post(`/admin/notification-deliveries/${id}/retry`)

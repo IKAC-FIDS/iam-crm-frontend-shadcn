@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest"
 import { api } from "@/lib/api"
-import { createDigestPolicy, dispatchNotificationDelivery, getNotificationDeliveries, getNotificationDelivery, getQuietHours, updateQuietHours } from "./notificationAdminApi"
+import { createDigestPolicy, dispatchNotificationDelivery, getNotificationDeliveries, getNotificationDelivery, getPushRecipientTargets, getQuietHours, testPushSettings, updateQuietHours } from "./notificationAdminApi"
 
 vi.mock("@/lib/api", () => ({ api: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() } }))
 
@@ -33,4 +33,16 @@ it("loads safe delivery detail and retries the existing delivery endpoint", asyn
   expect(api.get).toHaveBeenCalledWith("/admin/notification-deliveries/delivery-1")
   expect(api.post).toHaveBeenCalledWith("/admin/notification-deliveries/delivery-1/retry")
   expect(retried).toMatchObject({ id: "delivery-1", status: "RETRYING" })
+})
+
+it("loads only push-capable recipients and preserves the selected recipient in the test request", async () => {
+  vi.mocked(api.get).mockResolvedValue({ data: { success: true, data: [{ id: "user-b", fullName: "کاربر ب", email: "b@example.com", subscriptionCount: 1 }] } })
+  vi.mocked(api.post).mockResolvedValue({ data: { success: true, data: { recipientUserId: "user-b", subscriptionCount: 1, attempted: 1, accepted: 1, successful: 1, failed: 0, displayConfirmed: false } } })
+
+  const recipients = await getPushRecipientTargets("کاربر ب")
+  const result = await testPushSettings({ recipientUserId: recipients[0].id })
+
+  expect(api.get).toHaveBeenCalledWith("/admin/notification-channels/push/recipients", { params: { search: "کاربر ب" } })
+  expect(api.post).toHaveBeenCalledWith("/admin/notification-channels/push/test", { recipientUserId: "user-b" })
+  expect(result).toMatchObject({ recipientUserId: "user-b", accepted: 1, displayConfirmed: false })
 })
