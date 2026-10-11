@@ -3,12 +3,18 @@ self.addEventListener("push", (event) => {
   try { payload = event.data ? event.data.json() : {} } catch { payload = { body: event.data ? event.data.text() : "" } }
   const safePath = typeof payload.actionUrl === "string" && payload.actionUrl.startsWith("/") && !payload.actionUrl.startsWith("//") ? payload.actionUrl : "/notifications"
   const eventId = String(payload.id || payload.notificationId || payload.deliveryId || (self.crypto.randomUUID ? self.crypto.randomUUID() : `${Date.now()}-${Math.random()}`))
-  event.waitUntil(Promise.all([
-    self.registration.showNotification(payload.title || "NESHANE OPERATION CENTER", { body: payload.body || "", icon: payload.icon || "/neshane-logo.png", badge: payload.badge || "/neshane-logo.png", data: { actionUrl: safePath } }),
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      clients.forEach((client) => client.postMessage({ type: "CRM_PUSH_RECEIVED", eventId }))
-    }),
-  ]))
+  event.waitUntil((async () => {
+    const title = payload.title || "NESHANE OPERATION CENTER"
+    const baseOptions = { body: payload.body || "", data: { actionUrl: safePath } }
+    try {
+      await self.registration.showNotification(title, { ...baseOptions, icon: payload.icon || "/neshane-logo.png", badge: payload.badge || "/neshane-logo.png" })
+    } catch {
+      // A malformed or unsupported image must not prevent the notification itself.
+      await self.registration.showNotification(title, baseOptions)
+    }
+    const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true })
+    clients.forEach((client) => client.postMessage({ type: "CRM_PUSH_RECEIVED", eventId }))
+  })())
 })
 self.addEventListener("notificationclick", (event) => {
   event.notification.close()
