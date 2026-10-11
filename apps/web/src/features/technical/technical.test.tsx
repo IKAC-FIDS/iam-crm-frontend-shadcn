@@ -17,6 +17,7 @@ import { technicalApi, technicalLookups } from "./api"
 import { buildPayload } from "./payload"
 import { releasePresentation, releaseTransitions } from "./presentation"
 import { TechnicalDocumentsPage } from "./pages/TechnicalListPages"
+import { TechnicalLibraryPage } from "./pages/TechnicalLibraryPage"
 import {
   TechnicalDocumentDetailPage,
   TechnicalTenderDetailPage,
@@ -40,6 +41,68 @@ beforeEach(() => {
 })
 
 describe("Technical Center contract", () => {
+  it("creates a unified library item and opens the shared artifact panel", async () => {
+    useAuthStore.setState({
+      user: {
+        ...user,
+        permissions: [
+          "technical-resource:view",
+          "technical-resource:manage",
+          "artifact:view",
+          "artifact:create",
+        ],
+      },
+      status: "authenticated",
+    })
+    vi.mocked(api.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: [],
+        meta: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      },
+    })
+    vi.mocked(api.post).mockResolvedValue({
+      data: { success: true, data: { id: "resource-1" } },
+    })
+
+    render(
+      <MemoryRouter initialEntries={["/technical/library"]}>
+        <TechnicalLibraryPage />
+      </MemoryRouter>,
+      { wrapper }
+    )
+    await userEvent.click(
+      await screen.findByRole("button", { name: "افزودن مورد" })
+    )
+    await userEvent.type(screen.getByLabelText("عنوان"), "راهنمای نسخه جدید")
+    await userEvent.click(screen.getByRole("button", { name: "نسخه" }))
+    await userEvent.click(
+      screen.getByRole("button", { name: "ایجاد و افزودن فایل یا لینک" })
+    )
+
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("/technical/resources", {
+        title: "راهنمای نسخه جدید",
+        description: undefined,
+        resourceType: "RELEASE",
+      })
+    )
+    expect(await screen.findByText("فایل‌ها و مراجع")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "بارگذاری فایل" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "افزودن لینک" })
+    ).toBeInTheDocument()
+  })
+
   it("preserves pagination metadata from the standard API envelope", async () => {
     vi.mocked(api.get).mockResolvedValue({
       data: {

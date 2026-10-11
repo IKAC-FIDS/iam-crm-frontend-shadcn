@@ -1,237 +1,389 @@
-import { useState, type ComponentType } from "react"
+import { useMemo, useState } from "react"
 import {
-  FileText,
+  FileArchive,
   FolderOpen,
-  PackageOpen,
   Plus,
+  RefreshCw,
   UploadCloud,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import { useSearchParams } from "react-router-dom"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
+import { Label } from "@workspace/ui/components/label"
+import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
+import {
+  DataTableShell,
+  type DataTableColumn,
+} from "@/components/shared/DataTableShell"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityListPage } from "@/components/shared/EntityListPage"
+import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { ErrorState } from "@/components/shared/ErrorState"
 import { PageHero } from "@/components/shared/PageHero"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
-import { SurfaceCard } from "@/components/shared/SurfaceCard"
+import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { getApiErrorMessage } from "@/lib/apiResponse"
+import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
-import { useTechnicalList } from "../hooks"
-import { faDate, relationName, resourceTypeLabels } from "../presentation"
-import type {
-  TechnicalDocument,
-  TechnicalRelease,
-  TechnicalResource,
-} from "../types"
+import { useTechnicalList, useTechnicalSave } from "../hooks"
+import { faDate, resourceTypeLabels } from "../presentation"
+import type { ResourceType, TechnicalResource } from "../types"
 
-const definitions = [
-  {
-    kind: "releases" as const,
-    title: "نسخه و انتشار محصول",
-    description: "نسخه محصول و چرخه انتشار و پشتیبانی",
-    path: "/technical/releases",
-    permission: "technical-release:view",
-    manage: "technical-release:manage",
-    icon: PackageOpen,
-  },
-  {
-    kind: "documents" as const,
-    title: "سند نسخه‌بندی‌شده",
-    description: "سند رسمی با محرمانگی، نسخه و فرایند تأیید",
-    path: "/technical/documents",
-    permission: "technical-document:view",
-    manage: "technical-document:manage",
-    icon: FileText,
-  },
-  {
-    kind: "resources" as const,
-    title: "فایل، ابزار یا لینک فنی",
-    description: "SDK، درایور، Firmware، نمونه‌کد و منابع خارجی",
-    path: "/technical/resources",
-    permission: "technical-resource:view",
-    manage: "technical-resource:manage",
-    icon: FolderOpen,
-  },
-]
+const libraryTypes = [
+  "RELEASE",
+  "DOCUMENT",
+  "TOOL",
+] as const satisfies readonly ResourceType[]
+type LibraryType = (typeof libraryTypes)[number]
+const typeOptions = libraryTypes.map((id) => ({
+  id,
+  label: resourceTypeLabels[id],
+}))
 
 export function TechnicalLibraryPage() {
-  const navigate = useNavigate()
   const permissions = useAuthStore((state) => state.user?.permissions ?? [])
+  const canView = permissions.includes("technical-resource:view")
+  const canManage = permissions.includes("technical-resource:manage")
+  const [params, setParams] = useSearchParams()
+  const [searchInput, setSearchInput] = useState(params.get("search") ?? "")
+  const [typeSearch, setTypeSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
-  const releaseQuery = useTechnicalList(
-    "releases",
-    { page: 1, limit: 4, sort: "updatedAt", sortDirection: "desc" },
-    permissions.includes("technical-release:view")
-  )
-  const documentQuery = useTechnicalList(
-    "documents",
-    { page: 1, limit: 4, sort: "updatedAt", sortDirection: "desc" },
-    permissions.includes("technical-document:view")
-  )
-  const resourceQuery = useTechnicalList(
+  const [selected, setSelected] =
+    useState<Pick<TechnicalResource, "id" | "title" | "resourceType">>()
+  const page = Math.max(1, Number(params.get("page")) || 1)
+  const selectedType = libraryTypes.includes(params.get("type") as LibraryType)
+    ? (params.get("type") as LibraryType)
+    : undefined
+  const search = useDebouncedValue(searchInput.trim(), 300)
+  const query = useTechnicalList(
     "resources",
-    { page: 1, limit: 4, sort: "updatedAt", sortDirection: "desc" },
-    permissions.includes("technical-resource:view")
+    {
+      page,
+      limit: 20,
+      search: search || undefined,
+      type: selectedType,
+      sort: "updatedAt",
+      sortDirection: "desc",
+    },
+    canView
   )
-  const queries = {
-    releases: releaseQuery,
-    documents: documentQuery,
-    resources: resourceQuery,
+
+  function patch(next: { page?: number; search?: string; type?: string }) {
+    const copy = new URLSearchParams(params)
+    for (const [key, value] of Object.entries(next)) {
+      if (value == null || value === "" || (key === "page" && value === 1))
+        copy.delete(key)
+      else copy.set(key, String(value))
+    }
+    setParams(copy, { replace: true })
   }
-  const canCreate = definitions.some((item) =>
-    permissions.includes(item.manage)
+
+  const columns = useMemo<DataTableColumn<TechnicalResource>[]>(
+    () => [
+      {
+        id: "title",
+        header: "عنوان",
+        cell: (row) => (
+          <div className="max-w-96 min-w-52">
+            <b className="block truncate">{row.title}</b>
+            {row.description ? (
+              <span className="mt-1 block truncate text-xs text-muted-foreground">
+                {row.description}
+              </span>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        id: "type",
+        header: "نوع",
+        cell: (row) => (
+          <StatusBadge tone="neutral" dot={false}>
+            {libraryLabel(row.resourceType)}
+          </StatusBadge>
+        ),
+      },
+      {
+        id: "artifacts",
+        header: "فایل و لینک",
+        cell: (row) =>
+          `${(row.artifactCount ?? 0).toLocaleString("fa-IR")} مورد`,
+      },
+      {
+        id: "updatedAt",
+        header: "آخرین تغییر",
+        cell: (row) => faDate(row.updatedAt),
+      },
+    ],
+    []
   )
 
   return (
     <EntityListPage>
       <PageHero
-        title="مستندات و منابع فنی"
+        title="مستندات فنی"
         eyebrow="مرکز فنی"
         icon={FolderOpen}
-        description="نسخه‌های محصول، اسناد کنترل‌شده، فایل‌ها و لینک‌های فنی را از یک فضای واحد مدیریت کنید."
-        showRefresh={false}
+        description="نسخه‌ها، اسناد و ابزارهای فنی را به‌صورت فایل یا مرجع لینک در یک کتابخانه نگه‌داری کنید."
+        showRefresh
+        onRefresh={() => void query.refetch()}
+        refreshing={query.isFetching}
         primaryAction={
-          canCreate
+          canManage
             ? {
-                label: "افزودن منابع",
+                label: "افزودن مورد",
                 icon: Plus,
                 onClick: () => setCreateOpen(true),
               }
             : undefined
         }
       />
-      <section className="grid gap-4 lg:grid-cols-3">
-        {definitions
-          .filter((item) => permissions.includes(item.permission))
-          .map((item) => {
-            const query = queries[item.kind]
-            const Icon = item.icon
-            return (
-              <SurfaceCard key={item.kind} className="min-w-0 overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => navigate(item.path)}
-                  className="flex w-full items-start gap-3 border-b p-4 text-start hover:bg-muted/40 sm:p-5"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--app-primary-soft)] text-[var(--app-primary)]">
-                    <Icon className="size-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <b className="block text-sm">{item.title}</b>
-                    <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                      {item.description}
-                    </span>
-                  </span>
-                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
-                    {query.data?.meta.total?.toLocaleString("fa-IR") ?? "—"}
-                  </span>
-                </button>
-                <div className="min-h-44 p-3">
-                  {query.isLoading ? (
-                    <p className="p-4 text-center text-xs text-muted-foreground">
-                      در حال دریافت...
-                    </p>
-                  ) : query.data?.data.length ? (
-                    <div className="grid gap-1">
-                      {query.data.data.map((row) => (
-                        <button
-                          key={row.id}
-                          type="button"
-                          onClick={() => navigate(`${item.path}/${row.id}`)}
-                          className="flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-start hover:bg-muted"
-                        >
-                          <span className="min-w-0">
-                            <b className="block truncate text-xs">
-                              {row.title}
-                            </b>
-                            <span className="mt-1 block truncate text-xs text-muted-foreground">
-                              {rowSubtitle(item.kind, row)}
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {faDate(row.updatedAt)}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="p-4 text-center text-xs text-muted-foreground">
-                      موردی ثبت نشده است.
-                    </p>
-                  )}
-                </div>
-                <div className="border-t p-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => navigate(item.path)}
-                  >
-                    مشاهده همه
-                  </Button>
-                </div>
-              </SurfaceCard>
-            )
-          })}
-      </section>
-      <ResponsiveModal
+      <DataTableToolbar
+        searchValue={searchInput}
+        onSearchChange={(value) => {
+          setSearchInput(value)
+          patch({ page: 1, search: value })
+        }}
+        searchPlaceholder="جستجو در مستندات فنی..."
+        filters={
+          <SearchableOptionSelect
+            value={selectedType}
+            options={typeOptions.filter((option) =>
+              option.label.includes(typeSearch)
+            )}
+            onChange={(value) => patch({ page: 1, type: value })}
+            search={typeSearch}
+            onSearchChange={setTypeSearch}
+            searchable={false}
+            placeholder="همه انواع"
+            ariaLabel="نوع محتوای فنی"
+          />
+        }
+        hasActiveFilters={Boolean(searchInput || selectedType)}
+        onClearFilters={() => {
+          setSearchInput("")
+          patch({ page: 1, search: "", type: "" })
+        }}
+      />
+      {!canView ? (
+        <ErrorState
+          title="دسترسی ندارید"
+          description="مجوز مشاهده منابع فنی برای شما فعال نیست."
+        />
+      ) : query.isError ? (
+        <ErrorState
+          title="دریافت مستندات انجام نشد"
+          description="دوباره تلاش کنید."
+          onRetry={() => void query.refetch()}
+        />
+      ) : (
+        <DataTableShell
+          rows={query.data?.data ?? []}
+          columns={columns}
+          getRowKey={(row) => row.id}
+          loading={query.isLoading}
+          onRowClick={(row) => setSelected(row)}
+          emptyState={
+            <EmptyState
+              icon={FileArchive}
+              title="موردی ثبت نشده است"
+              description="یک نسخه، سند یا ابزار فنی را به‌صورت فایل یا لینک اضافه کنید."
+            />
+          }
+          renderRowActions={(row) => (
+            <EntityRowActions
+              label="مشاهده فایل‌ها و لینک‌ها"
+              onView={() => setSelected(row)}
+            />
+          )}
+          mobile={{
+            title: (row) => row.title,
+            subtitle: (row) => row.description || "بدون توضیحات",
+            avatar: () => <FileArchive className="size-5" />,
+            status: (row) => (
+              <StatusBadge tone="neutral" dot={false}>
+                {libraryLabel(row.resourceType)}
+              </StatusBadge>
+            ),
+            fields: [
+              {
+                id: "artifacts",
+                label: "فایل و لینک",
+                render: (row) =>
+                  `${(row.artifactCount ?? 0).toLocaleString("fa-IR")} مورد`,
+              },
+              {
+                id: "updatedAt",
+                label: "آخرین تغییر",
+                render: (row) => faDate(row.updatedAt),
+              },
+            ],
+          }}
+          pagination={
+            query.data
+              ? {
+                  page: query.data.meta.page,
+                  pageCount: query.data.meta.totalPages,
+                  total: query.data.meta.total,
+                  pageSize: query.data.meta.limit,
+                  onPageChange: (next) => patch({ page: next }),
+                  disabled: query.isFetching,
+                }
+              : undefined
+          }
+        />
+      )}
+      <CreateLibraryItemDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title="چه چیزی اضافه می‌کنید؟"
-        description="نوع محتوای فنی را انتخاب کنید تا فرم مناسب باز شود."
-        icon={UploadCloud}
+        onCreated={(item) => {
+          setCreateOpen(false)
+          setSelected(item)
+        }}
+      />
+      <ResponsiveModal
+        open={Boolean(selected)}
+        onClose={() => setSelected(undefined)}
+        title={selected?.title ?? "مستند فنی"}
+        description={
+          selected ? `نوع: ${libraryLabel(selected.resourceType)}` : undefined
+        }
+        icon={FileArchive}
+        width="max-w-5xl"
       >
-        <div className="grid gap-3 sm:grid-cols-3">
-          {definitions
-            .filter((item) => permissions.includes(item.manage))
-            .map((item) => (
-              <CreateChoice
-                key={item.kind}
-                icon={item.icon}
-                title={item.title}
-                description={item.description}
-                onClick={() => navigate(`${item.path}?create=1`)}
-              />
-            ))}
-        </div>
+        {selected ? (
+          <ArtifactPanel
+            entityType="TECHNICAL_RESOURCE"
+            entityId={selected.id}
+            title="فایل‌ها و مراجع"
+          />
+        ) : null}
       </ResponsiveModal>
     </EntityListPage>
   )
 }
 
-function CreateChoice({
-  icon: Icon,
-  title,
-  description,
-  onClick,
+function CreateLibraryItemDialog({
+  open,
+  onClose,
+  onCreated,
 }: {
-  icon: ComponentType<{ className?: string }>
-  title: string
-  description: string
-  onClick: () => void
+  open: boolean
+  onClose: () => void
+  onCreated: (
+    item: Pick<TechnicalResource, "id" | "title" | "resourceType">
+  ) => void
 }) {
+  const save = useTechnicalSave("resources")
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [resourceType, setResourceType] = useState<LibraryType>("DOCUMENT")
+  function close() {
+    if (save.isPending) return
+    setTitle("")
+    setDescription("")
+    setResourceType("DOCUMENT")
+    onClose()
+  }
+  async function submit() {
+    if (!title.trim()) return
+    try {
+      const finalTitle = title.trim()
+      const created = await save.mutateAsync({
+        payload: {
+          title: finalTitle,
+          description: description.trim() || undefined,
+          resourceType,
+        },
+      })
+      toast.success("مورد فنی ایجاد شد؛ اکنون فایل یا لینک آن را اضافه کنید.")
+      setTitle("")
+      setDescription("")
+      onCreated({ id: created.id, title: finalTitle, resourceType })
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "ایجاد مورد فنی انجام نشد."))
+    }
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group min-h-44 rounded-2xl border p-4 text-start transition hover:border-[var(--app-primary)] hover:bg-[var(--app-primary-soft)]"
+    <ResponsiveModal
+      open={open}
+      onClose={close}
+      title="افزودن مستند فنی"
+      description="نوع و عنوان را مشخص کنید؛ در مرحله بعد فایل بارگذاری یا لینک مرجع ثبت می‌کنید."
+      icon={UploadCloud}
     >
-      <span className="grid size-11 place-items-center rounded-xl bg-muted text-[var(--app-primary)] group-hover:bg-background">
-        <Icon className="size-5" />
-      </span>
-      <b className="mt-4 block text-sm">{title}</b>
-      <span className="mt-2 block text-xs leading-6 text-muted-foreground">
-        {description}
-      </span>
-    </button>
+      <div className="grid gap-5">
+        <div className="grid gap-2">
+          <Label htmlFor="technical-library-title">عنوان</Label>
+          <Input
+            id="technical-library-title"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="مثلاً راهنمای نصب نسخه ۲.۴"
+            autoFocus
+          />
+        </div>
+        <fieldset className="grid gap-2">
+          <legend className="text-sm font-medium">نوع محتوا</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {typeOptions.map((option) => (
+              <Button
+                key={option.id}
+                type="button"
+                variant={resourceType === option.id ? "default" : "outline"}
+                className="h-11 rounded-xl"
+                onClick={() => setResourceType(option.id)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </fieldset>
+        <div className="grid gap-2">
+          <Label htmlFor="technical-library-description">
+            توضیحات (اختیاری)
+          </Label>
+          <textarea
+            id="technical-library-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            rows={3}
+            className="w-full resize-y rounded-xl border border-input bg-transparent p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="توضیح کوتاه برای پیدا کردن سریع‌تر این مورد"
+          />
+        </div>
+        <div className="flex justify-end gap-2 border-t pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={save.isPending}
+            onClick={close}
+          >
+            انصراف
+          </Button>
+          <Button
+            type="button"
+            disabled={save.isPending || !title.trim()}
+            onClick={() => void submit()}
+          >
+            {save.isPending ? (
+              <RefreshCw className="size-4 animate-spin" />
+            ) : (
+              <Plus className="size-4" />
+            )}
+            ایجاد و افزودن فایل یا لینک
+          </Button>
+        </div>
+      </div>
+    </ResponsiveModal>
   )
 }
 
-function rowSubtitle(
-  kind: "releases" | "documents" | "resources",
-  row: TechnicalRelease | TechnicalDocument | TechnicalResource
-) {
-  if (kind === "releases") {
-    const release = row as TechnicalRelease
-    return `${relationName(release.product)} · ${release.version}`
-  }
-  if (kind === "documents") return (row as TechnicalDocument).documentType
-  return resourceTypeLabels[(row as TechnicalResource).resourceType]
+function libraryLabel(type: ResourceType) {
+  return libraryTypes.includes(type as LibraryType)
+    ? resourceTypeLabels[type]
+    : "ابزار فنی"
 }

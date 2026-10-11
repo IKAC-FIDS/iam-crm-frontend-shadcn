@@ -196,6 +196,9 @@ export type DocumentPayload = {
   revision?: number
 }
 export type ResourceType =
+  | "RELEASE"
+  | "DOCUMENT"
+  | "TOOL"
   | "SDK"
   | "SAMPLE_CODE"
   | "API_COLLECTION"
@@ -221,7 +224,15 @@ export type TechnicalResource = {
   version?: string | null
   checksum?: string | null
   attachmentId?: string | null
-  attachment?: { id: string; name: string; originalFileName?: string | null; mimeType?: string | null; sizeBytes?: number | null; sha256?: string | null; deletedAt?: string | null } | null
+  attachment?: {
+    id: string
+    name: string
+    originalFileName?: string | null
+    mimeType?: string | null
+    sizeBytes?: number | null
+    sha256?: string | null
+    deletedAt?: string | null
+  } | null
   artifactCount?: number
   ownerId?: string | null
   owner?: EntityRef | null
@@ -267,11 +278,15 @@ export type TenderStatus =
 export type RequirementStatus =
   "OPEN" | "IN_PROGRESS" | "READY" | "VERIFIED" | "NOT_APPLICABLE" | "BLOCKED"
 export type TenderBidDecision = "UNDECIDED" | "BID" | "NO_BID"
-export type TenderQualificationDecision = "PENDING" | "GO" | "CONDITIONAL_GO" | "NO_GO"
+export type TenderQualificationDecision =
+  "PENDING" | "GO" | "CONDITIONAL_GO" | "NO_GO"
 export type RequirementDependency = {
   id: string
   dependsOnRequirementId: string
-  dependsOnRequirement?: Pick<TenderRequirement, "id" | "title" | "referenceId" | "status">
+  dependsOnRequirement?: Pick<
+    TenderRequirement,
+    "id" | "title" | "referenceId" | "status"
+  >
 }
 export type TenderRequirement = {
   id: string
@@ -289,7 +304,12 @@ export type TenderRequirement = {
   ownerId?: string | null
   owner?: EntityRef | null
   taskId?: string | null
-  task?: { id: string; title: string; status: string; assignedToId?: string | null } | null
+  task?: {
+    id: string
+    title: string
+    status: string
+    assignedToId?: string | null
+  } | null
   dependencies?: RequirementDependency[]
   dueDate?: string | null
   response?: string | null
@@ -308,7 +328,8 @@ export type TenderDeliverable = {
   createdAt: string
 }
 export type TenderReviewType = "TECHNICAL" | "COMMERCIAL"
-export type TenderReviewStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
+export type TenderReviewStatus =
+  "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"
 export type TenderReview = {
   id: string
   tenderId: string
@@ -346,11 +367,35 @@ export type TenderReadiness = {
     dependencyBlockedRequirements: number
   }
   checks: {
-    mandatoryRequirements: { total: number; satisfied: number; unresolved: number; blocked: number }
-    requirements: { total: number; verified: number; inProgress: number; open: number; blocked: number; overdue: number; unassigned: number }
-    deliverables: { total: number; required: number; completedRequired: number; missing: number }
-    technicalReview: { status: TenderReviewStatus | "NOT_STARTED"; reviewId?: string | null }
-    commercialReview: { status: TenderReviewStatus | "NOT_STARTED"; reviewId?: string | null }
+    mandatoryRequirements: {
+      total: number
+      satisfied: number
+      unresolved: number
+      blocked: number
+    }
+    requirements: {
+      total: number
+      verified: number
+      inProgress: number
+      open: number
+      blocked: number
+      overdue: number
+      unassigned: number
+    }
+    deliverables: {
+      total: number
+      required: number
+      completedRequired: number
+      missing: number
+    }
+    technicalReview: {
+      status: TenderReviewStatus | "NOT_STARTED"
+      reviewId?: string | null
+    }
+    commercialReview: {
+      status: TenderReviewStatus | "NOT_STARTED"
+      reviewId?: string | null
+    }
     submissionDeadline: { value?: string | null; overdue: boolean }
     requiredTenderFields: { complete: boolean; missing: string[] }
   }

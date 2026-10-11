@@ -4,17 +4,14 @@ import { Navigate } from "react-router-dom"
 import type { RouteObject } from "react-router-dom"
 const technical = () => import("@/features/technical/pages/TechnicalPages")
 export const technicalRoutes: RouteObject[] = [
-  routeGroup(
-    "technical-library",
-    lazyRoute(technical, "TechnicalLibraryPage")
-  ),
+  routeGroup("technical-library", lazyRoute(technical, "TechnicalLibraryPage")),
   routeGroup(
     "technical-releases",
-    lazyRoute(technical, "TechnicalReleasesPage"),
+    <Navigate to="/technical/library" replace />,
     [
       {
         path: "/technical/releases/new",
-        element: lazyRoute(technical, "TechnicalReleaseEditorPage"),
+        element: <Navigate to="/technical/library" replace />,
       },
       {
         path: "/technical/releases/:id",
@@ -42,11 +39,11 @@ export const technicalRoutes: RouteObject[] = [
   },
   routeGroup(
     "technical-documents",
-    lazyRoute(technical, "TechnicalDocumentsPage"),
+    <Navigate to="/technical/library" replace />,
     [
       {
         path: "/technical/documents/new",
-        element: lazyRoute(technical, "TechnicalDocumentEditorPage"),
+        element: <Navigate to="/technical/library" replace />,
       },
       {
         path: "/technical/documents/:id",
@@ -56,11 +53,11 @@ export const technicalRoutes: RouteObject[] = [
   ),
   routeGroup(
     "technical-resources",
-    lazyRoute(technical, "TechnicalResourcesPage"),
+    <Navigate to="/technical/library" replace />,
     [
       {
         path: "/technical/resources/new",
-        element: lazyRoute(technical, "TechnicalResourceEditorPage"),
+        element: <Navigate to="/technical/library" replace />,
       },
       {
         path: "/technical/resources/:id",

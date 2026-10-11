@@ -146,6 +146,9 @@ export const requirementPresentation: Present<RequirementStatus> = {
   },
 }
 export const resourceTypeLabels: Record<ResourceType, string> = {
+  RELEASE: "نسخه",
+  DOCUMENT: "سند",
+  TOOL: "ابزار فنی",
   SDK: "SDK",
   SAMPLE_CODE: "کد نمونه",
   API_COLLECTION: "مجموعه API",
@@ -223,5 +226,13 @@ export function relationName(
     email?: string
   } | null
 ) {
-  return ref?.title || ref?.name || ref?.fullName || ref?.brandName || ref?.legalName || ref?.email || "—"
+  return (
+    ref?.title ||
+    ref?.name ||
+    ref?.fullName ||
+    ref?.brandName ||
+    ref?.legalName ||
+    ref?.email ||
+    "—"
+  )
 }

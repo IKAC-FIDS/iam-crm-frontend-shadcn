@@ -72,11 +72,7 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
     group: "operations",
     order: 150,
     icon: FolderOpen,
-    access: technicalAny([
-      "technical-release:view",
-      "technical-document:view",
-      "technical-resource:view",
-    ]),
+    access: technicalAny(["technical-resource:view"]),
   },
   {
     id: "technical-releases",
@@ -127,7 +123,11 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     group: null,
     order: 7,
     icon: MessagesSquare,
-    access: { type: "permissions", mode: "all", permissions: ["collaboration:view"] },
+    access: {
+      type: "permissions",
+      mode: "all",
+      permissions: ["collaboration:view"],
+    },
   },
   {
     id: "operations-workspace",
