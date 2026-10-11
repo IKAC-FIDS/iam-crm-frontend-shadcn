@@ -106,9 +106,12 @@ export function PushNotificationSettingsCard() {
     typeof window === "undefined"
       ? null
       : window.localStorage.getItem("crm.pushEndpointId")
-  const currentDeviceEnabled = Boolean(
+  const currentDeviceRegistered = Boolean(
     thisDeviceEndpointId &&
       subscriptions.data?.some((item) => item.id === thisDeviceEndpointId)
+  )
+  const currentDeviceEnabled = Boolean(
+    currentDeviceRegistered && Notification.permission === "granted"
   )
 
   async function toggleSound() {
@@ -149,6 +152,8 @@ export function PushNotificationSettingsCard() {
             ? "این مرورگر از اعلان دسکتاپ پشتیبانی نمی‌کند"
             : Notification.permission === "denied"
               ? "اعلان دسکتاپ در مرورگر مسدود است"
+              : currentDeviceRegistered && Notification.permission !== "granted"
+                ? "مجوز اعلان این دستگاه صادر نشده است"
               : count
                 ? `${count.toLocaleString("fa-IR")} اشتراک فعال`
                 : config.data?.enabled

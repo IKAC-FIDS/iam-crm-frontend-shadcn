@@ -5,7 +5,15 @@ self.addEventListener("push", (event) => {
   const eventId = String(payload.id || payload.notificationId || payload.deliveryId || (self.crypto.randomUUID ? self.crypto.randomUUID() : `${Date.now()}-${Math.random()}`))
   event.waitUntil((async () => {
     const title = payload.title || "NESHANE OPERATION CENTER"
-    const baseOptions = { body: payload.body || "", data: { actionUrl: safePath } }
+    const baseOptions = {
+      body: payload.body || "",
+      data: { actionUrl: safePath, eventId },
+      tag: `neshane-push-${eventId}`,
+      renotify: true,
+      requireInteraction: true,
+      silent: false,
+      timestamp: Date.now(),
+    }
     try {
       await self.registration.showNotification(title, { ...baseOptions, icon: payload.icon || "/neshane-logo.png", badge: payload.badge || "/neshane-logo.png" })
     } catch {
