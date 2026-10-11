@@ -1,7 +1,9 @@
 import { lazyRoute } from "../lazyRoute"
 import { routeGroup } from "./routeGroup"
+import { Navigate } from "react-router-dom"
+import type { RouteObject } from "react-router-dom"
 const technical = () => import("@/features/technical/pages/TechnicalPages")
-export const technicalRoutes = [
+export const technicalRoutes: RouteObject[] = [
   routeGroup(
     "technical-library",
     lazyRoute(technical, "TechnicalLibraryPage")
@@ -34,20 +36,10 @@ export const technicalRoutes = [
       },
     ]
   ),
-  routeGroup(
-    "technical-tenders",
-    lazyRoute(technical, "TechnicalTendersPage"),
-    [
-      {
-        path: "/technical/tenders/new",
-        element: lazyRoute(technical, "TechnicalTenderEditorPage"),
-      },
-      {
-        path: "/technical/tenders/:id",
-        element: lazyRoute(technical, "TechnicalTenderDetailPage"),
-      },
-    ]
-  ),
+  {
+    path: "/technical/tenders/*",
+    element: <Navigate to="/collaboration" replace />,
+  },
   routeGroup(
     "technical-documents",
     lazyRoute(technical, "TechnicalDocumentsPage"),

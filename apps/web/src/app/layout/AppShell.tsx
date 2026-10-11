@@ -21,7 +21,6 @@ export function AppShell() {
     location.pathname.startsWith("/admin/libraries") ||
     location.pathname === "/technical/library" ||
     location.pathname === "/technical/knowledge-base" ||
-    location.pathname === "/technical/tenders" ||
     (location.pathname === "/opportunities" && (opportunityView === "list" || opportunityView === null)) ||
     (location.pathname === "/meetings" && (meetingView === "list" || meetingView === null))
   const usesContainedPageScroll =

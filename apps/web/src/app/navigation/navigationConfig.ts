@@ -60,7 +60,6 @@ const routeDescriptions: Record<string, string> = {
   reports: "شاخص‌ها و گزارش‌های فروش",
   "technical-library": "نسخه‌ها، اسناد، فایل‌ها و لینک‌های فنی",
   "technical-knowledge-base": "مقالات و دانش قابل استفاده مجدد",
-  "technical-tenders": "فرایند فنی و تجاری مناقصه",
   "admin-users": "کاربران و وضعیت دسترسی",
   "admin-teams": "ساختار و اعضای تیم‌ها",
   "admin-exchange-rates": "نرخ‌های ارز سازمان",
@@ -95,7 +94,6 @@ const workspaceSections = [
     routeIds: [
       "technical-library",
       "technical-knowledge-base",
-      "technical-tenders",
     ],
   },
   {

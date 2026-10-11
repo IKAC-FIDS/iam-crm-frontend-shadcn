@@ -53,8 +53,15 @@ describe("routing manifest", () => {
         "/follow-ups",
         "/notifications",
         "/account/profile",
+        "/technical/tenders/*",
       ])
     )
     expect(paths(publicRoutes)).toEqual(["/login", "/", "*"])
+  })
+
+  it("retires the legacy technical tenders destination", () => {
+    expect(appMenuRoutes.some((route) => route.id === "technical-tenders")).toBe(false)
+    expect(paths(groups)).not.toContain("/technical/tenders")
+    expect(paths(groups)).toContain("/technical/tenders/*")
   })
 })

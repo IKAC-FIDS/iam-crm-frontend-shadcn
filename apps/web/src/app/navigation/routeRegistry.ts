@@ -20,7 +20,6 @@ import {
   Rocket,
   FileText,
   FolderOpen,
-  Gavel,
   Mail,
   MessagesSquare,
 } from "lucide-react"
@@ -60,7 +59,6 @@ export const technicalCenterAccess: RouteAccessPolicy = technicalAny([
   "technical-knowledge:view",
   "technical-document:view",
   "technical-resource:view",
-  "technical-tender:view",
 ])
 
 const any = (permissions: readonly string[]) =>
@@ -98,15 +96,6 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
     order: 160,
     icon: BookOpen,
     access: technicalAny(["technical-knowledge:view"]),
-  },
-  {
-    id: "technical-tenders",
-    path: "/technical/tenders",
-    label: uiText.technicalCenter.tenders.title,
-    group: "operations",
-    order: 170,
-    icon: Gavel,
-    access: technicalAny(["technical-tender:view"]),
   },
   {
     id: "technical-documents",
