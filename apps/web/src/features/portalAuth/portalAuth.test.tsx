@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { PortalProtectedRoute } from "./PortalProtectedRoute"
 import { usePortalAuthStore } from "./portalAuth.store"
+import { queryClient } from "@/lib/queryClient"
 
 describe("portal authentication boundary", () => {
   beforeEach(() => usePortalAuthStore.getState().clear())
@@ -27,5 +28,17 @@ describe("portal authentication boundary", () => {
     store.setSession({ accessToken: "old", user: { id: "u1", fullName: "Customer", email: "c@example.com", principalType: "CUSTOMER" }, activeCompany: { membershipId: "m1", companyId: "c1", legalName: "One", brandName: null, role: "CUSTOMER_ADMIN" } })
     usePortalAuthStore.getState().setSession({ accessToken: "new", user: { id: "u1", fullName: "Customer", email: "c@example.com", principalType: "CUSTOMER" }, activeCompany: { membershipId: "m2", companyId: "c2", legalName: "Two", brandName: null, role: "CUSTOMER_USER" } })
     expect(usePortalAuthStore.getState()).toMatchObject({ accessToken: "new", activeCompany: { companyId: "c2", membershipId: "m2" } })
+  })
+
+  it("removes portal query data when the active company changes", () => {
+    const store = usePortalAuthStore.getState()
+    store.setSession({ accessToken: "old", user: { id: "u1", fullName: "Customer", email: "c@example.com", principalType: "CUSTOMER" }, activeCompany: { membershipId: "m1", companyId: "c1", legalName: "One", brandName: null, role: "CUSTOMER_ADMIN" } })
+    queryClient.setQueryData(["portal-company", "summary"], { companyId: "c1", secret: true })
+    queryClient.setQueryData(["internal-company", "summary"], { companyId: "internal" })
+
+    usePortalAuthStore.getState().setSession({ accessToken: "new", user: { id: "u1", fullName: "Customer", email: "c@example.com", principalType: "CUSTOMER" }, activeCompany: { membershipId: "m2", companyId: "c2", legalName: "Two", brandName: null, role: "CUSTOMER_USER" } })
+
+    expect(queryClient.getQueryData(["portal-company", "summary"])).toBeUndefined()
+    expect(queryClient.getQueryData(["internal-company", "summary"])).toEqual({ companyId: "internal" })
   })
 })

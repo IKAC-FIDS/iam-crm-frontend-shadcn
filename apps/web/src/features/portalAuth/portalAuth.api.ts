@@ -17,12 +17,20 @@ portalApi.interceptors.request.use((config: Retryable) => {
   if (state.accessToken) config.headers.set("Authorization", `Bearer ${state.accessToken}`)
   return config
 })
-portalApi.interceptors.response.use((r) => r, async (error: unknown) => {
+portalApi.interceptors.response.use((response) => {
+  const config = response.config as Retryable
+  if (config._revision !== usePortalAuthStore.getState().revision) {
+    throw new axios.CanceledError("Portal session changed")
+  }
+  return response
+}, async (error: unknown) => {
   if (!axios.isAxiosError(error) || error.response?.status !== 401 || !error.config) throw error
   const original = error.config as Retryable
+  if (original._revision !== usePortalAuthStore.getState().revision) throw error
   if (original._retry || original.url?.includes("/portal/auth/")) { usePortalAuthStore.getState().clear(); throw error }
   original._retry = true
   const session = await refreshPortalSession()
+  original._revision = usePortalAuthStore.getState().revision
   original.headers = AxiosHeaders.from(original.headers); original.headers.set("Authorization", `Bearer ${session.accessToken}`)
   return portalApi(original)
 })

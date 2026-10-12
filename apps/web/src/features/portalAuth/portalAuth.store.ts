@@ -21,11 +21,29 @@ interface PortalState {
   clear: () => void
 }
 
-export const usePortalAuthStore = create<PortalState>((set) => ({
+function clearPortalQueries() {
+  queryClient.removeQueries({
+    predicate: (query) =>
+      typeof query.queryKey[0] === "string" &&
+      query.queryKey[0].startsWith("portal"),
+  })
+}
+
+export const usePortalAuthStore = create<PortalState>((set, get) => ({
   user: null, activeCompany: null, companies: [], accessToken: null, selectionToken: null, status: "loading", revision: 0,
-  setSession: ({ user, activeCompany, accessToken }) => set((s) => ({ user, activeCompany, accessToken, selectionToken: null, status: "authenticated", revision: s.revision + 1 })),
+  setSession: ({ user, activeCompany, accessToken }) => {
+    const previous = get()
+    if (
+      previous.user?.id !== user.id ||
+      (previous.activeCompany &&
+        previous.activeCompany.membershipId !== activeCompany.membershipId)
+    ) {
+      clearPortalQueries()
+    }
+    set((state) => ({ user, activeCompany, accessToken, selectionToken: null, status: "authenticated", revision: state.revision + 1 }))
+  },
   requireSelection: (companies, selectionToken) => set({ companies, selectionToken, status: "selection" }),
   setCompanies: (companies) => set({ companies }),
   setStatus: (status) => set({ status }),
-  clear: () => { queryClient.removeQueries({ predicate: (q) => q.queryKey[0] === "portal" }); set((s) => ({ user: null, activeCompany: null, companies: [], accessToken: null, selectionToken: null, status: "anonymous", revision: s.revision + 1 })); },
+  clear: () => { clearPortalQueries(); set((s) => ({ user: null, activeCompany: null, companies: [], accessToken: null, selectionToken: null, status: "anonymous", revision: s.revision + 1 })); },
 }))
