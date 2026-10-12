@@ -22,6 +22,8 @@ import {
   FolderOpen,
   Mail,
   MessagesSquare,
+  ClipboardList,
+  ClipboardPenLine,
 } from "lucide-react"
 
 import { uiText } from "@/config/uiText"
@@ -116,6 +118,24 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
 ]
 
 export const appMenuRoutes: readonly AppMenuRoute[] = [
+  {
+    id: "customer-requests",
+    path: "/customer-requests",
+    label: "درخواست‌های مشتریان",
+    group: "operations",
+    order: 65,
+    icon: ClipboardList,
+    access: any(["customer-request:view"]),
+  },
+  {
+    id: "admin-customer-request-types",
+    path: "/admin/customer-request-types",
+    label: "انواع درخواست مشتری",
+    group: "management",
+    order: 288,
+    icon: ClipboardPenLine,
+    access: any(["customer-request-type:view", "customer-request-type:manage"]),
+  },
   {
     id: "collaboration",
     path: "/collaboration",

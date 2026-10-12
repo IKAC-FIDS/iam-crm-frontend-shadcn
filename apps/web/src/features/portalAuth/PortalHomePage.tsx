@@ -1,2 +1,1 @@
-import { usePortalAuthStore } from "./portalAuth.store"
-export function PortalHomePage(){const user=usePortalAuthStore(s=>s.user),company=usePortalAuthStore(s=>s.activeCompany);return <section className="rounded-3xl border bg-card p-6 sm:p-8"><h1 className="text-2xl font-bold">خوش آمدید، {user?.fullName}</h1><p className="mt-2 text-muted-foreground">شرکت فعال: {company?.brandName||company?.legalName}</p><div className="mt-6 rounded-2xl bg-muted/60 p-5 text-sm leading-7">زیرساخت امن هویت و دسترسی پرتال فعال است. قابلیت درخواست خدمات در مرحله بعد اضافه خواهد شد.</div></section>}
+export { PortalRequestsHome as PortalHomePage } from "@/features/customerRequests/PortalRequestPages"

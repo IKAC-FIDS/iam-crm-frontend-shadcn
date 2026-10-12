@@ -1,9 +1,61 @@
 import { lazyRoute } from "../lazyRoute"
 import { routeGroup } from "./routeGroup"
 export const adminRoutes = [
-  routeGroup('admin-work-schedules', lazyRoute(() => import('@/features/timesheets/WorkSchedulesPage'), 'WorkSchedulesPage')),
-  routeGroup('admin-timesheets', lazyRoute(() => import('@/features/timesheets/TimesheetPages'), 'ManagerTimesheetsPage')),
-  routeGroup('admin-timesheet-reports', lazyRoute(() => import('@/features/timesheets/TimesheetPages'), 'TimesheetReportsPage')),
+  routeGroup(
+    "admin-customer-request-types",
+    lazyRoute(
+      () => import("@/features/customerRequests/InternalCustomerRequestPages"),
+      "CustomerRequestTypesAdminPage"
+    ),
+    [
+      {
+        path: "/admin/customer-request-types/:id",
+        element: lazyRoute(
+          () =>
+            import("@/features/customerRequests/InternalCustomerRequestPages"),
+          "CustomerRequestTypeEditorPage"
+        ),
+      },
+    ]
+  ),
+  routeGroup(
+    "customer-requests",
+    lazyRoute(
+      () => import("@/features/customerRequests/InternalCustomerRequestPages"),
+      "CustomerRequestsInboxPage"
+    ),
+    [
+      {
+        path: "/customer-requests/:id",
+        element: lazyRoute(
+          () =>
+            import("@/features/customerRequests/InternalCustomerRequestPages"),
+          "CustomerRequestInternalDetailPage"
+        ),
+      },
+    ]
+  ),
+  routeGroup(
+    "admin-work-schedules",
+    lazyRoute(
+      () => import("@/features/timesheets/WorkSchedulesPage"),
+      "WorkSchedulesPage"
+    )
+  ),
+  routeGroup(
+    "admin-timesheets",
+    lazyRoute(
+      () => import("@/features/timesheets/TimesheetPages"),
+      "ManagerTimesheetsPage"
+    )
+  ),
+  routeGroup(
+    "admin-timesheet-reports",
+    lazyRoute(
+      () => import("@/features/timesheets/TimesheetPages"),
+      "TimesheetReportsPage"
+    )
+  ),
   routeGroup(
     "admin-users",
     lazyRoute(
@@ -71,13 +123,16 @@ export const adminRoutes = [
       () => import("@/features/notification-core/pages/AdminNotificationsPage"),
       "AdminNotificationsPage"
     ),
-    [{
-      path: "/admin/notification-rules",
-      element: lazyRoute(
-        () => import("@/features/notification-core/pages/AdminNotificationsPage"),
-        "AdminNotificationsPage"
-      ),
-    }]
+    [
+      {
+        path: "/admin/notification-rules",
+        element: lazyRoute(
+          () =>
+            import("@/features/notification-core/pages/AdminNotificationsPage"),
+          "AdminNotificationsPage"
+        ),
+      },
+    ]
   ),
   routeGroup(
     "admin-audit-logs",
