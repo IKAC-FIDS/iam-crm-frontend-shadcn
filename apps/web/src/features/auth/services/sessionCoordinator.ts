@@ -19,12 +19,12 @@ export function publishSessionEvent(kind: SessionEvent["kind"]) {
 }
 
 /** No lease stealing: an HTTP request may still rotate a cookie after a JS timeout. */
-export async function withSessionLock<T>(work: () => Promise<T>, timeoutMs = 45_000): Promise<T> {
+export async function withSessionLock<T>(work: () => Promise<T>, timeoutMs = 45_000, lockName = "crm-refresh-cookie-v1"): Promise<T> {
   if (!navigator.locks) throw new Error("Secure session coordination requires Web Locks")
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    return await navigator.locks.request("crm-refresh-cookie-v1", { mode: "exclusive", signal: controller.signal }, async () => {
+    return await navigator.locks.request(lockName, { mode: "exclusive", signal: controller.signal }, async () => {
       clearTimeout(timer)
       return work()
     })

@@ -5,8 +5,10 @@ import { Button } from "@workspace/ui/components/button"
 import { restoreSession, watchBrowserSession } from "../services/session.service"
 
 export function SessionBoundary({ children }: { children: ReactNode }) {
+  const isPortal = window.location.pathname.startsWith("/portal")
   const status = useAuthStore((state) => state.status)
   useEffect(() => {
+    if (isPortal) return
     try {
       const stop = watchBrowserSession()
       void restoreSession()
@@ -14,7 +16,8 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     } catch {
       useAuthStore.getState().setStatus("error")
     }
-  }, [])
+  }, [isPortal])
+  if (isPortal) return children
   if (status === "loading")
     return (
       <div role="status" className="grid min-h-svh place-items-center">

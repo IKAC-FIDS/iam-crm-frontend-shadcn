@@ -62,6 +62,7 @@ import {
 } from "@/features/opportunities/hooks/useOpportunities"
 import type { OpportunityPayload } from "@/features/opportunities/types/opportunity.types"
 import { useAuthStore } from "@/store/authStore"
+import { CompanyCustomerAccessSection } from "@/features/customerAccess/CompanyCustomerAccessSection"
 
 import { ArchiveCompanyDialog } from "../components/ArchiveCompanyDialog"
 import { ChangeCompanyOwnerDialog } from "../components/ChangeCompanyOwnerDialog"
@@ -187,6 +188,8 @@ export function CompanyDetailPage() {
   const canCreateBranch = permissions.includes("branch:manage")
   const canCreateSocial = permissions.includes("social-channel:manage")
   const canCreateLegalDocument = permissions.includes("company:update")
+  const canViewPortalUsers = permissions.includes("company-customer-user:view")
+  const canManagePortalUsers = permissions.includes("company-customer-user:manage")
 
   const query = useCompany(companyId)
   const overviewQuery = useCompany360Overview(companyId)
@@ -1079,6 +1082,9 @@ export function CompanyDetailPage() {
         entityId={companyId}
         title="مستندات و مراجع شرکت"
       />
+      {canViewPortalUsers ? (
+        <CompanyCustomerAccessSection companyId={companyId} canManage={canManagePortalUsers} />
+      ) : null}
       <EntityConversationPanel entityType="COMPANY" entityId={companyId} />
 
       {selectedPersonId ? (

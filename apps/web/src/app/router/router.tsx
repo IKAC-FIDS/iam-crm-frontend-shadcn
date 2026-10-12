@@ -8,9 +8,11 @@ import { salesRoutes } from "./routes/salesRoutes"
 import { technicalRoutes } from "./routes/technicalRoutes"
 import { adminRoutes } from "./routes/adminRoutes"
 import { accountRoutes } from "./routes/accountRoutes"
+import { portalRoutes } from "./routes/portalRoutes"
 
 export const appRoutes: RouteObject[] = [
   ...publicRoutes,
+  ...portalRoutes,
   {
     element: <ProtectedRoute />,
     errorElement: <RouteErrorPage />,
