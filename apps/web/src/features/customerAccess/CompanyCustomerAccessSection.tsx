@@ -14,9 +14,26 @@ import { getCompanyPortalAccess, inviteCustomer, resendCustomerInvitation, revok
 
 export function CompanyCustomerAccessSection({ companyId, canManage }: { companyId: string; canManage: boolean }) {
   const client = useQueryClient(), [open, setOpen] = useState(false), [email, setEmail] = useState(""), [role, setRole] = useState<CustomerRole>("CUSTOMER_USER")
+  const [invitePending, setInvitePending] = useState(false)
   const key = ["company-portal-access", companyId] as const
   const query = useQuery({ queryKey: key, queryFn: () => getCompanyPortalAccess(companyId) })
   const run = (action: () => Promise<unknown>, message: string) => action().then(() => { toast.success(message); return client.invalidateQueries({ queryKey: key }) }).catch(error => toast.error(getApiErrorMessage(error, "عملیات انجام نشد")))
+  async function submitInvitation(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (invitePending) return
+    setInvitePending(true)
+    try {
+      await inviteCustomer(companyId, email, role)
+      await client.invalidateQueries({ queryKey: key })
+      toast.success("دعوت‌نامه ارسال شد")
+      setOpen(false)
+      setEmail("")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "ارسال دعوت‌نامه انجام نشد"))
+    } finally {
+      setInvitePending(false)
+    }
+  }
   if (query.isLoading) return <SurfaceCard><p className="p-5 text-sm text-muted-foreground">در حال بارگذاری کاربران پرتال…</p></SurfaceCard>
   if (!query.data) return <SurfaceCard><p className="p-5 text-sm text-destructive">دریافت اطلاعات پرتال انجام نشد.</p></SurfaceCard>
   const data = query.data
@@ -35,7 +52,7 @@ export function CompanyCustomerAccessSection({ companyId, canManage }: { company
       </div>
     </SurfaceCard>
     <ResponsiveModal open={open} onClose={() => setOpen(false)} title="دعوت کاربر پرتال" description="دعوت‌نامه امن و زمان‌دار ارسال می‌شود." icon={Send}>
-      <form className="grid gap-4" onSubmit={e => { e.preventDefault(); void run(() => inviteCustomer(companyId, email, role), "دعوت‌نامه ارسال شد").then(() => { setOpen(false); setEmail("") }) }}><div className="grid gap-2"><Label>ایمیل</Label><Input dir="ltr" type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div><div className="grid gap-2"><Label>نقش</Label><select className="h-10 rounded-lg border bg-background px-3" value={role} onChange={e => setRole(e.target.value as CustomerRole)}><option value="CUSTOMER_ADMIN">مدیر پرتال</option><option value="CUSTOMER_USER">کاربر پرتال</option></select></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setOpen(false)}>انصراف</Button><Button>ارسال دعوت</Button></div></form>
+      <form className="grid gap-4" onSubmit={event => void submitInvitation(event)}><div className="grid gap-2"><Label>ایمیل</Label><Input dir="ltr" type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div><div className="grid gap-2"><Label>نقش</Label><select className="h-10 rounded-lg border bg-background px-3" value={role} onChange={e => setRole(e.target.value as CustomerRole)}><option value="CUSTOMER_ADMIN">مدیر پرتال</option><option value="CUSTOMER_USER">کاربر پرتال</option></select></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" disabled={invitePending} onClick={() => setOpen(false)}>انصراف</Button><Button type="submit" disabled={invitePending}>{invitePending ? "در حال ارسال…" : "ارسال دعوت"}</Button></div></form>
     </ResponsiveModal>
   </>
 }
