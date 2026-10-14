@@ -12,7 +12,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "turbo format",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "ui:guardrails": "node scripts/check-ui-guardrails.mjs"
   },
   "devDependencies": {
     "prettier": "^3.8.3",

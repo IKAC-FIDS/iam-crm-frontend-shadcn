@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -9,7 +8,8 @@
 @source "../**/*.{ts,tsx}";
 
 @theme inline {
-    --font-heading: var(--font-sans);
+    --font-heading: var(--app-heading-font-family, var(--app-font-family, Tahoma, Arial, sans-serif));
+    --font-mono: var(--app-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -24,6 +24,20 @@
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
+    --color-brand: var(--brand);
+    --color-brand-hover: var(--brand-hover);
+    --color-brand-active: var(--brand-active);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-soft: var(--brand-soft);
+    --color-brand-soft-foreground: var(--brand-soft-foreground);
+    --color-text-secondary: var(--text-secondary);
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-destructive-soft: var(--destructive-soft);
+    --color-info: var(--info);
+    --color-info-soft: var(--info-soft);
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
@@ -48,11 +62,13 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
-    --font-sans: 'Geist Variable', sans-serif;
+    --font-sans: var(--app-font-family, Tahoma, Arial, sans-serif);
 }
 
 :root {
     color-scheme: light;
+    /* Canonical semantic color foundation. Application-facing --app-* names
+       alias these tokens in apps/web and must not redefine their values. */
     --background: #fafaf9;
     --foreground: #1c1917;
     --card: #ffffff;
@@ -71,6 +87,20 @@
     --border: #e7e5e4;
     --input: #d6d3d1;
     --ring: #2563eb;
+    --brand: #2563eb;
+    --brand-hover: #1d4ed8;
+    --brand-active: #1e40af;
+    --brand-foreground: #ffffff;
+    --brand-soft: #eff6ff;
+    --brand-soft-foreground: #1e3a8a;
+    --text-secondary: #57534e;
+    --success: #15803d;
+    --success-soft: #f0fdf4;
+    --warning: #b45309;
+    --warning-soft: #fffbeb;
+    --destructive-soft: #fef2f2;
+    --info: #2563eb;
+    --info-soft: #eff6ff;
     --chart-1: #2563eb;
     --chart-2: #57534e;
     --chart-3: #78716c;
@@ -107,6 +137,20 @@
     --border: #44403c;
     --input: #44403c;
     --ring: #60a5fa;
+    --brand: #60a5fa;
+    --brand-hover: #93c5fd;
+    --brand-active: #3b82f6;
+    --brand-foreground: #0c0a09;
+    --brand-soft: #172554;
+    --brand-soft-foreground: #dbeafe;
+    --text-secondary: #a8a29e;
+    --success: #4ade80;
+    --success-soft: #052e16;
+    --warning: #fbbf24;
+    --warning-soft: #451a03;
+    --destructive-soft: #450a0a;
+    --info: #60a5fa;
+    --info-soft: #172554;
     --chart-1: #60a5fa;
     --chart-2: #d6d3d1;
     --chart-3: #a8a29e;
