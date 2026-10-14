@@ -37,7 +37,7 @@ describe("MeetingActionsMenu", () => {
     expect(onComplete).toHaveBeenCalledOnce()
   })
 
-  it("does not render mutation actions for completed meetings", () => {
+  it("offers outcome editing for completed meetings", () => {
     render(
       <MeetingActionsMenu
         meeting={{ ...meeting, status: "COMPLETED" }}
@@ -52,6 +52,8 @@ describe("MeetingActionsMenu", () => {
       />,
     )
 
-    expect(screen.queryByRole("button")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: uiText.meetings.actions.editOutcome })).toBeVisible()
+    expect(screen.queryByRole("button", { name: uiText.meetings.actions.complete })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: uiText.meetings.actions.cancel })).not.toBeInTheDocument()
   })
 })

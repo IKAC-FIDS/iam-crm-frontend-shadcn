@@ -72,6 +72,13 @@ export async function completeMeeting(id: string, completionNote?: string) {
   return unwrapApiResponse<Meeting>(response.data)
 }
 
+export async function updateMeetingOutcome(id: string, completionNote: string) {
+  const response = await api.patch(`/meetings/${id}/outcome`, {
+    completionNote,
+  })
+  return unwrapApiResponse<Meeting>(response.data)
+}
+
 export async function cancelMeeting(id: string, cancellationReason?: string) {
   const response = await api.patch(`/meetings/${id}/cancel`, {
     cancellationReason: cancellationReason?.trim() || undefined,

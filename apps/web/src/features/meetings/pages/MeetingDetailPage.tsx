@@ -38,6 +38,7 @@ import { Button } from "@workspace/ui/components/button"
 import { toast } from "sonner"
 
 import { MeetingFormDialog } from "../components/MeetingFormDialog"
+import { MeetingOutcomeDialog } from "../components/MeetingOutcomeDialog"
 import { MeetingStatusActionDialog } from "../components/MeetingStatusActionDialog"
 import { useMeeting, useNotifyMeetingAssignees } from "../hooks/useMeetings"
 import type {
@@ -70,6 +71,7 @@ export function MeetingDetailPage() {
 
   const meetingQuery = useMeeting(id, canView)
   const [editOpen, setEditOpen] = useState(false)
+  const [outcomeOpen, setOutcomeOpen] = useState(false)
   const [notifyOpen, setNotifyOpen] = useState(false)
   const notifyAssignees = useNotifyMeetingAssignees()
   const [statusAction, setStatusAction] = useState<
@@ -234,6 +236,15 @@ export function MeetingDetailPage() {
                   </Button>
                 ) : null}
               </>
+            ) : meeting.status === "COMPLETED" && canUpdate ? (
+              <Button
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setOutcomeOpen(true)}
+              >
+                <Pencil className="size-4" />
+                {text.actions.editOutcome}
+              </Button>
             ) : undefined
           }
         />
@@ -254,7 +265,11 @@ export function MeetingDetailPage() {
             value={meeting.description}
             empty={detailText.empty.description}
           />
-          <OutcomeCard meeting={meeting} />
+          <OutcomeCard
+            meeting={meeting}
+            canEdit={canUpdate}
+            onEdit={() => setOutcomeOpen(true)}
+          />
           <ArtifactPanel entityType="MEETING" entityId={meeting.id} title="مستندات جلسه" readOnly={meeting.status !== "COMPLETED"} />
           <div id="conversation">
             <EntityConversationPanel
@@ -296,6 +311,14 @@ export function MeetingDetailPage() {
           onOpenChange={(open) => {
             if (!open) setStatusAction(undefined)
           }}
+        />
+      ) : null}
+
+      {outcomeOpen ? (
+        <MeetingOutcomeDialog
+          meeting={meeting}
+          open
+          onOpenChange={setOutcomeOpen}
         />
       ) : null}
 
@@ -552,7 +575,15 @@ function LifecycleCard({ meeting }: { meeting: Meeting }) {
   )
 }
 
-function OutcomeCard({ meeting }: { meeting: Meeting }) {
+function OutcomeCard({
+  meeting,
+  canEdit,
+  onEdit,
+}: {
+  meeting: Meeting
+  canEdit: boolean
+  onEdit: () => void
+}) {
   const text = uiText.meetings.detail
   if (meeting.status === "SCHEDULED") {
     return (
@@ -594,6 +625,14 @@ function OutcomeCard({ meeting }: { meeting: Meeting }) {
           cancelled
             ? text.sections.cancellation
             : text.sections.outcome
+        }
+        action={
+          !cancelled && canEdit ? (
+            <Button variant="ghost" size="sm" className="rounded-xl" onClick={onEdit}>
+              <Pencil className="size-4" />
+              {uiText.meetings.actions.editOutcome}
+            </Button>
+          ) : undefined
         }
       />
       <div className="p-4 sm:p-5">
@@ -637,14 +676,17 @@ function NarrativeCard({
 function SectionHeader({
   icon,
   title,
+  action,
 }: {
   icon: ReactNode
   title: string
+  action?: ReactNode
 }) {
   return (
     <div className="flex items-center gap-2 border-b border-[var(--app-divider)] px-4 py-3 sm:px-5">
       <span className="text-[var(--app-primary)]">{icon}</span>
       <h2 className="text-sm font-bold text-[var(--app-heading)]">{title}</h2>
+      {action ? <div className="ms-auto">{action}</div> : null}
     </div>
   )
 }

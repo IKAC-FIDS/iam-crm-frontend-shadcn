@@ -18,6 +18,7 @@ import {
 } from "../components/MeetingFilters"
 import { MeetingFormDialog } from "../components/MeetingFormDialog"
 import { MeetingList } from "../components/MeetingList"
+import { MeetingOutcomeDialog } from "../components/MeetingOutcomeDialog"
 import { MeetingStatusActionDialog } from "../components/MeetingStatusActionDialog"
 import { useMeetings } from "../hooks/useMeetings"
 import type {
@@ -93,6 +94,12 @@ export function MeetingsPage() {
     meeting: Meeting
     action: "complete" | "cancel"
   }>()
+  const [outcomeMeeting, setOutcomeMeeting] = useState<Meeting>()
+
+  function editMeeting(meeting: Meeting) {
+    if (meeting.status === "COMPLETED") setOutcomeMeeting(meeting)
+    else setFormMeeting(meeting)
+  }
 
   const statusParam = searchParams.get("status")
   const modeParam = searchParams.get("mode")
@@ -282,7 +289,7 @@ export function MeetingsPage() {
               canComplete={canComplete}
               canCancel={canCancel}
               onCreate={() => setFormMeeting(null)}
-              onEdit={setFormMeeting}
+              onEdit={editMeeting}
               onComplete={(meeting) =>
                 setStatusState({
                   meeting,
@@ -323,7 +330,7 @@ export function MeetingsPage() {
                   canComplete={canComplete}
                   canCancel={canCancel}
                   onCreate={() => setFormMeeting(null)}
-                  onEdit={setFormMeeting}
+                  onEdit={editMeeting}
                   onComplete={(meeting) =>
                     setStatusState({ meeting, action: "complete" })
                   }
@@ -382,6 +389,16 @@ export function MeetingsPage() {
             if (!open) {
               setStatusState(undefined)
             }
+          }}
+        />
+      ) : null}
+
+      {outcomeMeeting ? (
+        <MeetingOutcomeDialog
+          meeting={outcomeMeeting}
+          open
+          onOpenChange={(open) => {
+            if (!open) setOutcomeMeeting(undefined)
           }}
         />
       ) : null}

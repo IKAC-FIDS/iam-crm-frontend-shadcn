@@ -59,6 +59,7 @@ export function MeetingEntityCard({
   const text = uiText.meetings
   const companyName = meetingCompanyName(meeting)
   const active = meeting.status === "SCHEDULED"
+  const completed = meeting.status === "COMPLETED"
   const assignedUsers = meeting.assignees?.map((item) => item.user) ?? []
   const responsible = assignedUsers[0] || meeting.organizer || null
   const additionalAssignees = Math.max(0, assignedUsers.length - 1)
@@ -117,10 +118,10 @@ export function MeetingEntityCard({
     },
     {
       id: "edit",
-      label: text.actions.edit,
+      label: completed ? text.actions.editOutcome : text.actions.edit,
       icon: Pencil,
       onClick: onEdit,
-      visible: active && canUpdate,
+      visible: (active || completed) && canUpdate,
     },
     {
       id: "complete",

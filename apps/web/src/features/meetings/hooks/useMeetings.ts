@@ -20,6 +20,7 @@ import {
   getMeetings,
   getMeetingTypes,
   updateMeeting,
+  updateMeetingOutcome,
   notifyMeetingAssignees,
   uploadMeetingAttachment,
 } from "../api/meetings.api"
@@ -142,6 +143,15 @@ export function useCompleteMeeting() {
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note?: string }) =>
       completeMeeting(id, note),
+    onSuccess: invalidate,
+  })
+}
+
+export function useUpdateMeetingOutcome() {
+  const invalidate = useInvalidateMeeting()
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note: string }) =>
+      updateMeetingOutcome(id, note),
     onSuccess: invalidate,
   })
 }

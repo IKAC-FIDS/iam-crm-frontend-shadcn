@@ -26,6 +26,7 @@ export function MeetingActionsMenu({
 }) {
   const text = uiText.meetings.actions
   const active = meeting.status === "SCHEDULED"
+  const completed = meeting.status === "COMPLETED"
   const actions = [
     {
       id: "view",
@@ -36,10 +37,10 @@ export function MeetingActionsMenu({
     },
     {
       id: "edit",
-      label: text.edit,
+      label: completed ? text.editOutcome : text.edit,
       icon: Pencil,
       onClick: onEdit,
-      enabled: active && canUpdate,
+      enabled: (active || completed) && canUpdate,
     },
     {
       id: "complete",

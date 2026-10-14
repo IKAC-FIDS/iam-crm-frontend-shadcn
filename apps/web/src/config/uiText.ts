@@ -1106,6 +1106,8 @@ tasks: {
     actions: {
       create: "جلسه جدید",
       edit: "ویرایش جلسه",
+      editOutcome: "ثبت یا ویرایش نتیجه",
+      saveOutcome: "ذخیره نتیجه",
       complete: "ثبت به‌عنوان برگزارشده",
       cancel: "لغو جلسه",
       save: "ذخیره جلسه",
@@ -1186,6 +1188,7 @@ tasks: {
       loading: "در حال دریافت گزینه‌ها...",
       selectedCount: "مورد انتخاب شده",
       optionalNote: "یادداشت اختیاری",
+      outcome: "نتیجه و جمع‌بندی جلسه را وارد کنید",
     },
     agenda: {
       assignees: "مسئول",
@@ -1205,6 +1208,8 @@ tasks: {
       editTitle: "ویرایش جلسه",
       completeTitle: "ثبت برگزاری جلسه",
       completeDescription: "این جلسه به‌عنوان برگزارشده ثبت می‌شود.",
+      outcomeTitle: "نتیجه جلسه",
+      outcomeDescription: "نتیجه جلسه برگزارشده را ثبت یا ویرایش کنید.",
       cancelTitle: "لغو جلسه",
       cancelDescription: "این جلسه لغو می‌شود و دیگر قابل ویرایش نخواهد بود.",
       companyChangeTitle: "تغییر شرکت جلسه",
@@ -1345,6 +1350,7 @@ tasks: {
       updated: "جلسه به‌روزرسانی شد.",
       completed: "جلسه به‌عنوان برگزارشده ثبت شد.",
       cancelled: "جلسه لغو شد.",
+      outcomeUpdated: "نتیجه جلسه ذخیره شد.",
     },
   },
 
