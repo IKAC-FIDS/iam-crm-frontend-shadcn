@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card"
 import { Input } from "@workspace/ui/components/input"
+import { useAuthStore } from "@/store/authStore"
 import { DynamicRequestForm } from "./DynamicRequestForm"
 import { internalRequestApi } from "./customerRequests.api"
 import type {
@@ -18,6 +19,9 @@ import type {
   FormField,
   FormSchema,
   RequestStatus,
+  RequestPriority,
+  RequestRoutingDestination,
+  CustomerRequest,
 } from "./customerRequests.types"
 import { requestStatusFa } from "./customerRequests.presentation"
 
@@ -42,6 +46,8 @@ const blankField = (index: number): FormField => ({
   label: "فیلد جدید",
   required: false,
 })
+const priorityFa: Record<RequestPriority, string> = { LOW: "کم", NORMAL: "عادی", HIGH: "زیاد", URGENT: "فوری" }
+const routingFa: Record<RequestRoutingDestination, string> = { MANUAL: "رسیدگی دستی", TASK: "کار داخلی", TECHNICAL_DOCUMENT: "مرکز فنی", OPPORTUNITY: "فرصت فروش" }
 
 export function CustomerRequestTypesAdminPage() {
   const client = useQueryClient(),
@@ -239,6 +245,7 @@ export function CustomerRequestTypeEditorPage() {
               در دسترس همه شرکت‌ها
             </Button>
           </div>
+          <label className="grid max-w-sm gap-2 text-sm font-medium">مسیر پیشنهادی پیش‌فرض<select className="h-10 rounded-md border bg-background px-3" value={type?.defaultRoutingDestination ?? "MANUAL"} onChange={(event) => metadata.mutate({ defaultRoutingDestination: event.target.value })}>{Object.entries(routingFa).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <div>
             <p className="mb-2 text-sm font-medium">محدود به شرکت‌های منتخب</p>
             <div className="grid max-h-48 gap-2 overflow-auto rounded-lg border p-3 sm:grid-cols-2">
@@ -409,12 +416,35 @@ export function CustomerRequestsInboxPage() {
   const [params, setParams] = useSearchParams(),
     status = params.get("status") || "",
     search = params.get("search") || "",
+    priority = params.get("priority") || "",
+    triageStatus = params.get("triageStatus") || "",
+    assignedToId = params.get("assignedToId") || "",
+    requestTypeId = params.get("requestTypeId") || "",
+    requestedSort = params.get("sort") || "submittedAt:asc",
+    sort = ["submittedAt:asc", "submittedAt:desc", "updatedAt:desc"].includes(requestedSort) ? requestedSort : "submittedAt:asc",
+    [sortBy, sortOrder] = sort.split(":") as ["submittedAt" | "updatedAt", "asc" | "desc"],
+    page = Math.max(1, Number(params.get("page")) || 1),
+    assignees = useQuery({
+      queryKey: ["customer-request-assignees"],
+      queryFn: internalRequestApi.assignees,
+    }),
+    options = useQuery({
+      queryKey: ["customer-request-triage-options"],
+      queryFn: internalRequestApi.triageOptions,
+    }),
     query = useQuery({
-      queryKey: ["customer-requests-inbox", status, search],
+      queryKey: ["customer-requests-inbox", status, search, priority, triageStatus, assignedToId, requestTypeId, sort, page],
       queryFn: () =>
-        internalRequestApi.list({
+        internalRequestApi.triageList({
+          page,
+          sortBy,
+          sortOrder,
           ...(status && { status }),
           ...(search && { search }),
+          ...(priority && { priority }),
+          ...(triageStatus && { triageStatus }),
+          ...(assignedToId && { assignedToId }),
+          ...(requestTypeId && { requestTypeId }),
         }),
     })
   return (
@@ -425,7 +455,7 @@ export function CustomerRequestsInboxPage() {
           درخواست‌های ثبت‌شده را بررسی و وضعیت آن‌ها را مدیریت کنید.
         </p>
       </div>
-      <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2">
+      <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <Input
           placeholder="عنوان یا شماره پیگیری"
           defaultValue={search}
@@ -433,6 +463,7 @@ export function CustomerRequestsInboxPage() {
             const p = new URLSearchParams(params)
             if (e.target.value) p.set("search", e.target.value)
             else p.delete("search")
+            p.delete("page")
             setParams(p, { replace: true })
           }}
         />
@@ -455,6 +486,11 @@ export function CustomerRequestsInboxPage() {
               </option>
             ))}
         </select>
+        <select className="h-10 rounded-md border bg-background px-3" value={priority} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("priority", e.target.value); else p.delete("priority"); p.delete("page"); setParams(p) }}><option value="">همه اولویت‌ها</option>{Object.entries(priorityFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select>
+        <select className="h-10 rounded-md border bg-background px-3" value={triageStatus} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("triageStatus", e.target.value); else p.delete("triageStatus"); p.delete("page"); setParams(p) }}><option value="">همه وضعیت‌های تریاژ</option><option value="UNTRIAGED">بررسی‌نشده</option><option value="TRIAGED">تریاژشده</option></select>
+        <select className="h-10 rounded-md border bg-background px-3" value={assignedToId} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("assignedToId", e.target.value); else p.delete("assignedToId"); p.delete("page"); setParams(p) }}><option value="">همه مسئولان</option>{assignees.data?.map((person) => <option key={person.id} value={person.id}>{person.fullName || person.label || person.email}</option>)}</select>
+        <select className="h-10 rounded-md border bg-background px-3" value={requestTypeId} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("requestTypeId", e.target.value); else p.delete("requestTypeId"); p.delete("page"); setParams(p) }}><option value="">همه انواع درخواست</option>{options.data?.requestTypes.map((type) => <option key={type.id} value={type.id}>{type.displayName}</option>)}</select>
+        <select className="h-10 rounded-md border bg-background px-3" value={sort} onChange={(e) => { const p = new URLSearchParams(params); p.set("sort", e.target.value); p.delete("page"); setParams(p) }}><option value="submittedAt:asc">قدیمی‌ترین ارسال</option><option value="submittedAt:desc">جدیدترین ارسال</option><option value="updatedAt:desc">آخرین تغییر</option></select>
       </div>
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
@@ -465,6 +501,8 @@ export function CustomerRequestsInboxPage() {
               <th className="p-3 text-start">شرکت</th>
               <th className="p-3 text-start">نوع</th>
               <th className="p-3 text-start">وضعیت</th>
+              <th className="p-3 text-start">اولویت</th>
+              <th className="p-3 text-start">مسئول</th>
             </tr>
           </thead>
           <tbody>
@@ -487,13 +525,76 @@ export function CustomerRequestsInboxPage() {
                 <td className="p-3">
                   <Badge variant="secondary">{requestStatusFa[r.status]}</Badge>
                 </td>
+                <td className="p-3"><Badge variant={r.priority === "URGENT" ? "destructive" : "outline"}>{priorityFa[r.priority ?? "NORMAL"]}</Badge></td>
+                <td className="p-3">{r.assignedTo?.fullName || "بدون مسئول"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {(query.data?.meta.totalPages ?? 0) > 1 && <div className="flex items-center justify-end gap-2"><Button variant="outline" size="sm" disabled={!query.data?.meta.hasPrevious} onClick={() => { const p = new URLSearchParams(params); p.set("page", String(page - 1)); setParams(p) }}>قبلی</Button><span className="text-sm text-muted-foreground">صفحه {page} از {query.data?.meta.totalPages}</span><Button variant="outline" size="sm" disabled={!query.data?.meta.hasNext} onClick={() => { const p = new URLSearchParams(params); p.set("page", String(page + 1)); setParams(p) }}>بعدی</Button></div>}
     </section>
   )
+}
+
+function CustomerRequestOperationsPanel({ request }: { request: CustomerRequest }) {
+  const client = useQueryClient(), user = useAuthStore((s) => s.user), permissions = user?.permissions ?? []
+  const [priority, setPriority] = useState<RequestPriority>(request.priority ?? "NORMAL")
+  const [assignee, setAssignee] = useState(request.assignedToId ?? "")
+  const [team, setTeam] = useState(request.responsibleTeamId ?? "")
+  const [routing, setRouting] = useState<RequestRoutingDestination>(request.routingDestination ?? request.requestType.defaultRoutingDestination ?? "MANUAL")
+  const [reason, setReason] = useState(request.triageReason ?? "")
+  const [targetType, setTargetType] = useState("TASK"), [targetId, setTargetId] = useState("")
+  const assignees = useQuery({ queryKey: ["customer-request-assignees"], queryFn: internalRequestApi.assignees })
+  const options = useQuery({ queryKey: ["customer-request-triage-options"], queryFn: internalRequestApi.triageOptions })
+  const history = useQuery({ queryKey: ["customer-request-triage-history", request.id], queryFn: () => internalRequestApi.triageHistory(request.id) })
+  const links = useQuery({ queryKey: ["customer-request-links", request.id], queryFn: () => internalRequestApi.links(request.id) })
+  const refresh = () => { void client.invalidateQueries({ queryKey: ["customer-request-internal", request.id] }); void client.invalidateQueries({ queryKey: ["customer-request-links", request.id] }); void client.invalidateQueries({ queryKey: ["customer-request-triage-history", request.id] }); void client.invalidateQueries({ queryKey: ["customer-requests-inbox"] }) }
+  const triage = useMutation({ mutationFn: () => internalRequestApi.updateTriage(request.id, { expectedRevision: request.revision ?? 1, priority, ...(permissions.includes("customer-request:assign") && { assignedToId: assignee || null, responsibleTeamId: team || null }), ...(permissions.includes("customer-request:route") && { routingDestination: routing }), internalReason: reason, completeTriage: true }), onSuccess: () => { toast.success("تریاژ ثبت شد."); refresh() }, onError: () => toast.error("ثبت تریاژ انجام نشد؛ صفحه را تازه‌سازی کنید.") })
+  const link = useMutation({ mutationFn: () => internalRequestApi.linkExisting(request.id, { targetType, targetId }), onSuccess: () => { setTargetId(""); refresh() }, onError: () => toast.error("پیوند رکورد انجام نشد.") })
+  const create = useMutation({
+    mutationFn: (kind: "TASK" | "OPPORTUNITY" | "TECHNICAL_DOCUMENT") => {
+      if (!user?.id) throw new Error("Authenticated user is required")
+      const idempotencyKey = crypto.randomUUID()
+      if (kind === "TASK") {
+        return internalRequestApi.createLinkedTask(request.id, {
+          title: request.title,
+          assignedToId: user.id,
+          idempotencyKey,
+        })
+      }
+      if (kind === "OPPORTUNITY") {
+        return internalRequestApi.createLinkedOpportunity(request.id, {
+          title: request.title,
+          ownerId: user.id,
+          idempotencyKey,
+        })
+      }
+      return internalRequestApi.createLinkedTechnicalDocument(request.id, {
+        title: request.title,
+        ownerId: user.id,
+        documentType: "CUSTOMER_REQUEST",
+        idempotencyKey,
+      })
+    },
+    onSuccess: refresh,
+    onError: () => toast.error("ایجاد رکورد مرتبط انجام نشد."),
+  })
+  return <div className="space-y-5">
+    {permissions.includes("customer-request:triage") && <Card><CardHeader><CardTitle>تریاژ و ارجاع داخلی</CardTitle></CardHeader><CardContent className="space-y-3">
+      <label className="grid gap-1 text-sm">اولویت<select className="h-10 rounded-md border bg-background px-3" value={priority} onChange={(e) => setPriority(e.target.value as RequestPriority)}>{Object.entries(priorityFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <label className="grid gap-1 text-sm">مسئول<select className="h-10 rounded-md border bg-background px-3" value={assignee} onChange={(e) => setAssignee(e.target.value)} disabled={!permissions.includes("customer-request:assign")}><option value="">بدون مسئول</option>{assignees.data?.map((p) => <option key={p.id} value={p.id}>{p.fullName || p.label || p.email}</option>)}</select></label>
+      <label className="grid gap-1 text-sm">تیم مسئول<select className="h-10 rounded-md border bg-background px-3" value={team} onChange={(e) => setTeam(e.target.value)} disabled={!permissions.includes("customer-request:assign")}><option value="">بدون تیم</option>{options.data?.teams.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="grid gap-1 text-sm">مقصد عملیاتی<select className="h-10 rounded-md border bg-background px-3" value={routing} onChange={(e) => setRouting(e.target.value as RequestRoutingDestination)} disabled={!permissions.includes("customer-request:route")}>{Object.entries(routingFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <textarea className="min-h-20 w-full rounded-md border bg-background p-3 text-sm" placeholder="دلیل داخلی تریاژ" value={reason} onChange={(e) => setReason(e.target.value)} /><Button disabled={triage.isPending} onClick={() => triage.mutate()}>ثبت تریاژ</Button>
+    </CardContent></Card>}
+    <Card><CardHeader><CardTitle>رکوردهای مرتبط CRM</CardTitle></CardHeader><CardContent className="space-y-3">
+      {links.data?.map((item) => { const entity = item.task || item.opportunity || item.technicalDocument; const path = item.task ? `/tasks/${item.task.id}` : item.opportunity ? `/opportunities/${item.opportunity.id}` : `/technical/documents/${item.technicalDocument?.id}`; return <div key={item.id} className="flex items-center justify-between rounded-lg border p-3"><Link className="font-semibold text-primary" to={path}>{entity?.title}</Link>{permissions.includes("customer-request:link") && <Button variant="ghost" size="sm" onClick={() => internalRequestApi.unlink(request.id, item.id, "حذف پیوند").then(refresh)}>حذف</Button>}</div> })}
+      {!links.data?.length && <p className="text-sm text-muted-foreground">رکورد مرتبطی ثبت نشده است.</p>}
+      {permissions.includes("customer-request:link") && <><div className="flex flex-wrap gap-2">{permissions.includes("task:create") && <Button variant="outline" size="sm" onClick={() => create.mutate("TASK")}>ایجاد کار</Button>}{permissions.includes("opportunity:create") && <Button variant="outline" size="sm" onClick={() => create.mutate("OPPORTUNITY")}>ایجاد فرصت</Button>}{permissions.includes("technical-document:manage") && <Button variant="outline" size="sm" onClick={() => create.mutate("TECHNICAL_DOCUMENT")}>ایجاد سند فنی</Button>}</div><div className="grid gap-2 sm:grid-cols-[150px_1fr_auto]"><select className="h-10 rounded-md border bg-background px-2" value={targetType} onChange={(e) => setTargetType(e.target.value)}><option value="TASK">کار</option><option value="OPPORTUNITY">فرصت</option><option value="TECHNICAL_DOCUMENT">سند فنی</option></select><Input dir="ltr" placeholder="شناسه رکورد موجود" value={targetId} onChange={(e) => setTargetId(e.target.value)} /><Button variant="outline" disabled={!targetId || link.isPending} onClick={() => link.mutate()}>پیوند</Button></div></>}
+    </CardContent></Card>
+    <Card><CardHeader><CardTitle>تاریخچه عملیاتی</CardTitle></CardHeader><CardContent className="space-y-2">{history.data?.map((h) => <div key={h.id} className="border-s ps-3 text-sm"><strong>{h.action}</strong><p className="text-muted-foreground">{h.actor.fullName}{h.internalReason ? ` · ${h.internalReason}` : ""}</p></div>)}{!history.data?.length && <p className="text-sm text-muted-foreground">رویدادی ثبت نشده است.</p>}</CardContent></Card>
+  </div>
 }
 
 export function CustomerRequestInternalDetailPage() {
@@ -553,6 +654,7 @@ export function CustomerRequestInternalDetailPage() {
           </CardContent>
         </Card>
         <div className="space-y-5">
+          <CustomerRequestOperationsPanel request={r} />
           <Card>
             <CardHeader>
               <CardTitle>تغییر وضعیت</CardTitle>

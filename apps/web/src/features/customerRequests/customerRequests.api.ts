@@ -7,6 +7,13 @@ import type {
   Page,
   RequestStatus,
   RequestType,
+  RequestCrmLink,
+  RequestOperationalHistory,
+  RequestPriority,
+  RequestRoutingDestination,
+  CreateLinkedTaskInput,
+  CreateLinkedOpportunityInput,
+  CreateLinkedTechnicalDocumentInput,
 } from "./customerRequests.types"
 const unwrap = <T>(p: Promise<{ data: unknown }>) =>
   p.then((r) => unwrapApiResponse<T>(r.data))
@@ -91,6 +98,17 @@ export const internalRequestApi = {
     unwrap<Page<CustomerRequest>>(api.get("/customer-requests", { params })),
   detail: (id: string) =>
     unwrap<CustomerRequest>(api.get(`/customer-requests/${id}`)),
+  triageList: (params?: Record<string, unknown>) => unwrap<Page<CustomerRequest>>(api.get("/customer-requests/triage", { params })),
+  triageOptions: () => unwrap<{ teams: Array<{ id: string; name: string; code: string }>; requestTypes: Array<{ id: string; displayName: string }> }>(api.get("/customer-requests/triage-options")),
+  updateTriage: (id: string, input: { expectedRevision: number; priority?: RequestPriority; assignedToId?: string | null; responsibleTeamId?: string | null; routingDestination?: RequestRoutingDestination; internalReason?: string; completeTriage?: boolean }) => unwrap<CustomerRequest>(api.patch(`/customer-requests/${id}/triage`, input)),
+  triageHistory: (id: string) => unwrap<RequestOperationalHistory[]>(api.get(`/customer-requests/${id}/triage-history`)),
+  links: (id: string) => unwrap<RequestCrmLink[]>(api.get(`/customer-requests/${id}/crm-links`)),
+  linkExisting: (id: string, input: { targetType: string; targetId: string; purpose?: string }) => unwrap<RequestCrmLink>(api.post(`/customer-requests/${id}/crm-links`, input)),
+  unlink: (id: string, linkId: string, reason: string) => unwrap<RequestCrmLink>(api.delete(`/customer-requests/${id}/crm-links/${linkId}`, { data: { reason } })),
+  createLinkedTask: (id: string, input: CreateLinkedTaskInput) => unwrap<RequestCrmLink>(api.post(`/customer-requests/${id}/crm-links/tasks`, input)),
+  createLinkedOpportunity: (id: string, input: CreateLinkedOpportunityInput) => unwrap<RequestCrmLink>(api.post(`/customer-requests/${id}/crm-links/opportunities`, input)),
+  createLinkedTechnicalDocument: (id: string, input: CreateLinkedTechnicalDocumentInput) => unwrap<RequestCrmLink>(api.post(`/customer-requests/${id}/crm-links/technical-documents`, input)),
+  assignees: () => unwrap<{ data: Array<{ id: string; fullName?: string; label?: string; email?: string }> }>(api.get("/users/assignee-options", { params: { page: 1, limit: 100 } })).then((value) => value.data),
   status: (
     id: string,
     status: RequestStatus,

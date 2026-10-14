@@ -7,6 +7,10 @@ export type RequestStatus =
   | "RESOLVED"
   | "CLOSED"
   | "CANCELLED"
+export type RequestPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT"
+export type RequestTriageStatus = "UNTRIAGED" | "TRIAGED"
+export type RequestRoutingDestination = "MANUAL" | "TASK" | "TECHNICAL_DOCUMENT" | "OPPORTUNITY"
+export type RequestCrmTargetType = "TASK" | "TECHNICAL_DOCUMENT" | "OPPORTUNITY"
 export type FieldType =
   | "TEXT"
   | "TEXTAREA"
@@ -49,6 +53,7 @@ export interface RequestType {
   isEnabled?: boolean
   retiredAt?: string | null
   availabilityPolicy?: "ALL_PORTAL_COMPANIES" | "SELECTED_COMPANIES"
+  defaultRoutingDestination?: RequestRoutingDestination
   companyAvailability?: { companyId: string }[]
   currentPublishedVersion?: {
     id: string
@@ -62,12 +67,21 @@ export interface CustomerRequest {
   trackingNumber: string | null
   title: string
   status: RequestStatus
+  priority?: RequestPriority
+  triageStatus?: RequestTriageStatus
+  assignedToId?: string | null
+  assignedTo?: { id: string; fullName: string; email?: string } | null
+  responsibleTeamId?: string | null
+  responsibleTeam?: { id: string; name: string; code?: string } | null
+  routingDestination?: RequestRoutingDestination | null
+  triageReason?: string | null
+  revision?: number
   answers?: Record<string, unknown>
   submittedAt: string | null
   createdAt: string
   updatedAt: string
   creatorMembershipId: string
-  requestType: { id: string; code: string; displayName: string }
+  requestType: { id: string; code: string; displayName: string; defaultRoutingDestination?: RequestRoutingDestination }
   formVersion?: { id: string; version: number; schema: FormSchema }
   histories?: History[]
   allowedActions?: {
@@ -79,6 +93,37 @@ export interface CustomerRequest {
   allowedTransitions?: RequestStatus[]
   company?: { id: string; legalName: string; brandName?: string | null }
   creator?: { id: string; fullName: string; email: string }
+  _count?: { crmLinks: number }
+}
+export interface RequestOperationalHistory { id: string; action: string; internalReason?: string | null; createdAt: string; actor: { id: string; fullName: string } }
+export interface RequestCrmLink { id: string; targetType: RequestCrmTargetType; purpose?: string | null; task?: { id: string; title: string } | null; technicalDocument?: { id: string; title: string } | null; opportunity?: { id: string; title: string } | null }
+export interface CreateLinkedTaskInput {
+  title: string
+  description?: string
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
+  dueAt?: string
+  assignedToId?: string
+  purpose?: string
+  idempotencyKey: string
+}
+export interface CreateLinkedOpportunityInput {
+  title: string
+  description?: string
+  ownerId?: string
+  stageId?: string
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "STRATEGIC"
+  expectedCloseDate?: string
+  purpose?: string
+  idempotencyKey: string
+}
+export interface CreateLinkedTechnicalDocumentInput {
+  title: string
+  documentType: string
+  ownerId: string
+  description?: string
+  confidentiality?: "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED"
+  purpose?: string
+  idempotencyKey: string
 }
 export interface History {
   id: string
