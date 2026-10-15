@@ -44,6 +44,8 @@ const tokenOwners = new Set([
   "packages/ui/src/styles/globals.css",
   "apps/web/src/styles/globals.css",
 ])
+const isCanonicalPrimitiveOwner = (file) =>
+  file.startsWith("packages/ui/src/components/")
 const warnings = []
 let file = ""
 let newLine = 0
@@ -66,6 +68,12 @@ for (const line of diff.split(/\r?\n/)) {
   const content = line.slice(1)
   for (const check of checks) {
     if (check.id === "hardcoded-color" && tokenOwners.has(file)) continue
+    if (
+      isCanonicalPrimitiveOwner(file) &&
+      (check.id === "raw-control" || check.id === "generic-feature-primitive")
+    ) {
+      continue
+    }
     if (check.pattern.test(content)) {
       warnings.push({ file, line: newLine, ...check })
     }

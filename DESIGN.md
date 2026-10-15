@@ -136,6 +136,40 @@ adding profile-specific forks to the component:
   submit and cancel actions predictable in RTL.
 - Do not create a feature-local generic control when a canonical primitive exists.
 
+### Field states
+
+- Normal: visible label, control, and optional helper text. Helper text is linked
+  to the control using `aria-describedby`.
+- Invalid: retain the visible label, set `aria-invalid`, and render the linked
+  error message with `role="alert"`. An error replaces neither label nor helper.
+- Server validation: use `applyServerFieldErrors` with an explicit allowlist to
+  map API errors to RHF fields. Unmapped or general errors stay at form level.
+- Required/optional: use the visible Persian indicator supplied by `FormField`
+  and native `required`/`aria-required` semantics. Do not communicate this state
+  with color alone.
+- Placeholder: an example or format hint only; it never replaces a visible label.
+- Disabled: disable the real control, retain its label, and preserve readable
+  context. Do not simulate disabled state with styling alone.
+
+`FormField` is the canonical presentation/accessibility wrapper. It does not own
+form state, validation rules, or submission and does not replace React Hook Form.
+Use `NativeSelect` for small native option sets. Use the composed `Select`,
+searchable select, or combobox only when search, async loading, large data,
+multi-selection, or rich option rendering requires it.
+
+### Actions
+
+- `FormActions` is the canonical submit/cancel pair for application forms and
+  form dialogs. Cancel is secondary; submit is primary.
+- While pending, both cancellation and duplicate submission are disabled and
+  the submit label communicates progress.
+- Domain validation may additionally disable submit, but the reason must remain
+  discoverable from field errors or nearby helper text.
+- Destructive actions do not replace submit/cancel; place them separately and
+  use the canonical confirmation flow.
+- `DialogFooter` remains the layout primitive for non-form dialog actions. Do
+  not create a second feature-local footer abstraction.
+
 ## List and table taxonomy
 
 - `DataTableShell`: paginated, sortable, filterable entity collections; use its

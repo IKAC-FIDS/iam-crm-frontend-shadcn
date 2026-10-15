@@ -101,6 +101,7 @@ it("Contact form restores edit defaults on reopen and blocks an empty contact",a
 it("Contact create submits the selected lookup id instead of a legacy type string",async()=>{
   const onSubmit=vi.fn().mockResolvedValue(undefined)
   render(<PersonContactDialog open onOpenChange={vi.fn()} isPending={false} onSubmit={onSubmit}/>,{wrapper})
+  await screen.findByRole("option",{name:"تلفن کاری"})
   await userEvent.selectOptions(await screen.findByLabelText(uiText.people.contactHub.type),contactType.id)
   await userEvent.type(screen.getByLabelText(uiText.people.contactHub.value),"02133333333")
   await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
@@ -112,6 +113,7 @@ it("Contact edit keeps a legacy type display-only until a current lookup option 
   render(<PersonContactDialog open onOpenChange={vi.fn()} isPending={false} onSubmit={onSubmit} contact={{id:"legacy",type:"FAX_LEGACY",typeOptionId:null,value:"02144444444"}}/>,{wrapper})
   expect(await screen.findByText(/FAX_LEGACY/)).toBeInTheDocument()
   expect(screen.getByRole("button",{name:uiText.people.actions.save})).toBeDisabled()
+  await screen.findByRole("option",{name:"تلفن کاری"})
   await userEvent.selectOptions(screen.getByLabelText(uiText.people.contactHub.type),contactType.id)
   await userEvent.click(screen.getByRole("button",{name:uiText.people.actions.save}))
   await waitFor(()=>expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({typeOptionId:contactType.id})))
