@@ -10,7 +10,11 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useCreateEducationHistory, useDeleteEducationHistory, usePersonEducationHistory, useUpdateEducationHistory } from "../hooks/usePeople"
 import type { EducationHistory, EducationHistoryPayload } from "../types/person.types"
 import { formatPersonDate } from "../utils/personFormatters"
-import { EmptyLine, RowActions, SectionHeader } from "./PersonContactsSection"
+import {
+  PersonNestedEmptyLine as EmptyLine,
+  PersonNestedRowActions as RowActions,
+  PersonNestedSectionHeader as SectionHeader,
+} from "./PersonNestedSectionPrimitives"
 import { PersonEducationDialog } from "./PersonEducationDialog"
 
 export function PersonEducationSection({ personId, canEdit }: { personId: string; canEdit: boolean }) {

@@ -24,7 +24,11 @@ import type {
 } from "../types/person.types"
 import { getPeopleErrorMessage } from "../utils/peopleError"
 import { formatPersonDate } from "../utils/personFormatters"
-import { EmptyLine, RowActions, SectionHeader } from "./PersonContactsSection"
+import {
+  PersonNestedEmptyLine as EmptyLine,
+  PersonNestedRowActions as RowActions,
+  PersonNestedSectionHeader as SectionHeader,
+} from "./PersonNestedSectionPrimitives"
 import { PersonEmploymentDialog } from "./PersonEmploymentDialog"
 import { PersonPositionDialog } from "./PersonPositionDialog"
 
