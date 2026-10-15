@@ -21,10 +21,8 @@ export const portalRequestApi = {
   types: () => unwrap<RequestType[]>(portalApi.get("/portal/request-types")),
   type: (id: string) =>
     unwrap<RequestType>(portalApi.get(`/portal/request-types/${id}`)),
-  list: (params?: Record<string, unknown>) =>
-    unwrap<Page<CustomerRequest>>(
-      portalApi.get("/portal/requests", { params })
-    ),
+  list: async (params?: Record<string, unknown>) =>
+    (await portalApi.get<Page<CustomerRequest>>("/portal/requests", { params })).data,
   detail: (id: string) =>
     unwrap<CustomerRequest>(portalApi.get(`/portal/requests/${id}`)),
   create: (input: {
