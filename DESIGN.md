@@ -172,19 +172,51 @@ multi-selection, or rich option rendering requires it.
 
 ## List and table taxonomy
 
-- `DataTableShell`: paginated, sortable, filterable entity collections; use its
-  canonical mobile presentation.
-- `EntityCard` / `MobileEntityCard`: entity summaries and responsive list rows.
+- `DataTableShell`: ordinary structured CRUD datasets where comparison,
+  columns, filters, row actions, or pagination matter. Use its canonical mobile
+  configuration rather than creating a second list for small screens.
+- `EntityCardList`: identity-first collections where the entity summary matters
+  more than column-by-column comparison.
+- `EntityCard` / `MobileEntityCard`: entity summaries and responsive list rows;
+  they are presentation primitives, not replacements for query state handling.
 - `EntityRowActions`: permission-aware row actions.
 - Simple list: short, non-tabular action/feed content only.
+- Pipeline, calendar, matrix, timeline, kanban, and analytical views remain
+  specialized visualizations. Do not force them into `DataTableShell`.
 - A table must retain headers and keyboard semantics. Do not reproduce a table
   using arbitrary grids when data is genuinely tabular.
 
+### Mobile CRUD lists
+
+- Prioritize entity identity, current status, primary context, then actions.
+- Prefer three to five meaningful summaries over copying every desktop column.
+- Keep information needed for the primary task; combine related values into a
+  readable summary rather than silently dropping them.
+- Actions remain permission-aware, keyboard reachable, and explicitly named.
+
+### Toolbars
+
+- `DataTableToolbar` owns search, primary filters, advanced-filter entry,
+  clear/reset, and genuine view switches.
+- Search and filters stay out of `PageHero`. Result counts may appear near the
+  list when they help orientation, but are not mandatory toolbar decoration.
+- Clearing filters must restore URL/query state through the feature's existing
+  query-state mechanism; the toolbar does not own domain state.
+
 ## Modal and dialog taxonomy
 
-- `ResponsiveModal`: create/edit/detail workflows that adapt to smaller screens.
-- Canonical `Dialog`: focused confirmation or short interaction.
-- `AlertDialog` / `ConfirmDialog`: destructive or consequential confirmation.
+- `ResponsiveModal`: read-only detail, quick information, lightweight actions,
+  and short non-form workflows that adapt to smaller screens. It owns responsive
+  containment and an accessible title/description, not form submission.
+- Form dialog: compose the canonical `Dialog`, `DialogContent`, `DialogHeader`,
+  `DialogTitle`, optional `DialogDescription`, `FormDialogBody`,
+  `FormDialogFooter`, and `FormActions`. Do not add another form-modal wrapper.
+- Canonical `Dialog`: focused short interactions and the accessible foundation
+  for composed form dialogs.
+- `ConfirmDialog`: destructive or consequential confirmation. Name the affected
+  entity and consequence, use explicit destructive semantics, and retain a clear
+  cancel action. Text-entry confirmation is reserved for genuinely high-risk
+  operations.
 - Sheet/drawer: supporting context that should preserve the current page.
 - Popover: brief, non-blocking choices or preview content.
 
@@ -192,14 +224,51 @@ Never build a custom fixed overlay, focus trap, escape handler, or scroll lock i
 a feature. Overlays require an accessible name, initial/final focus behavior,
 Escape handling, and keyboard containment through the canonical primitive.
 
+### Header, body, and footer
+
+- Ordinary dialogs use a compact `DialogHeader`; `DialogHeroHeader` is reserved
+  for existing large multi-section workflows and is not the default for new
+  dialogs. Dialog headers are not page heroes.
+- `DialogTitle` supplies the accessible name. Use `DialogDescription` for useful
+  context; decorative icons remain hidden from the accessible name.
+- Long form dialogs use a stable `header / scrollable body / footer` structure.
+  `FormDialogBody` owns the single vertical scroll region and
+  `FormDialogFooter` keeps actions reachable. Avoid scrolling the entire popup
+  or nesting another scroll region without a domain need.
+- `FormActions` is the canonical RTL submit/cancel contract. During submission,
+  duplicate submit and cancel/close are disabled and the primary label reports
+  progress. Validation and mutation behavior remain owned by the feature form.
+
+### Responsive sizes and close behavior
+
+- `ResponsiveModal` supports `sm`, `md`, `lg`, and `xl`; `md` is the default.
+  Its legacy `width` escape hatch remains only for proven specialized layouts.
+- Dialogs keep a viewport gutter on narrow screens and a bounded `dvh` height.
+  Controls and the close action retain a 44px target without horizontal overflow.
+- Base UI owns focus entry/trapping, Escape, overlay dismissal, scroll lock, and
+  focus return. Do not add document-level keyboard handlers. A controlled form
+  may reject dismissal while its mutation is pending; otherwise close button,
+  Escape, and overlay dismissal retain their expected behavior.
+
 ## Loading, empty, and error states
 
-- Use `QueryContent`, skeletons, `EmptyState`, and `ErrorState` where available.
-- Initial loading uses shape-appropriate skeletons; avoid layout jumps.
+- `QueryContent` is the canonical boundary for initial loading and recoverable
+  query errors. It preserves TanStack Query ownership and supplies safe retry;
+  it does not own domain data, empty-state copy, or mutation behavior.
+- Generic loading uses `LoadingState`. CRUD tables/lists should use the loading
+  support of their canonical list primitive when maintaining approximate shape
+  materially reduces layout shift. Add detail loading only for repeated detail
+  layouts, not as a feature-specific skeleton library.
+- Loading is announced accessibly and must respect reduced motion.
 - Background refresh preserves useful content and indicates progress subtly.
-- Empty copy distinguishes “no data” from “no filtered results” and offers a
-  relevant next action when authorized.
-- Errors provide a Persian explanation and a safe retry action where meaningful.
+- A true empty state explains that no records exist and may offer the authorized
+  create action. A filtered empty state says no matching results were found and
+  should offer filter reset or revised search instead of record creation by
+  default. Both use `EmptyState`; features own their copy and actions.
+- Query failures use `ErrorState` through `QueryContent`, provide a Persian safe
+  explanation and retry where meaningful, and never expose raw transport or
+  server exceptions. Mutation failures remain toast plus field/root errors as
+  appropriate; do not route them through the query-state boundary.
 
 ## Accessibility
 

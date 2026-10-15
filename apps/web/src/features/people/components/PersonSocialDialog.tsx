@@ -3,12 +3,24 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { applyServerFieldErrors } from "@/lib/formErrors"
 import { FormActions } from "@/components/shared/FormActions"
-import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
+import {
+  FormDialogBody,
+  FormDialogFooter,
+} from "@/components/shared/FormDialogLayout"
 import { useEffect, useMemo } from "react"
 
 import { uiText } from "@/config/uiText"
-import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
+import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 import { PERSON_SOCIAL_PLATFORM_OPTIONS } from "../constants/personOptions"
 import type {
@@ -103,109 +115,110 @@ export function PersonSocialDialog({
     }
   }
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next || !isPending) onOpenChange(next)
+      }}
+    >
       <DialogContent
-        showCloseButton={false}
+        closeButtonDisabled={isPending}
         dir="rtl"
-        className="max-h-[90vh] max-w-lg gap-0 overflow-y-auto rounded-[26px] border-[var(--app-divider)] bg-[var(--app-surface)] p-0"
+        className="grid max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-[var(--app-radius-feature)] border-border bg-popover p-0 sm:max-h-[90dvh]"
       >
-        <DialogHeroHeader
-          title={social ? text.edit : text.add}
-          onClose={() => onOpenChange(false)}
-        />
+        <DialogHeader className="border-b border-border px-5 py-4 pe-16 text-start">
+          <DialogTitle>{social ? text.edit : text.add}</DialogTitle>
+          <DialogDescription>
+            پلتفرم، شناسه و توضیحات ارتباط اجتماعی را ثبت کنید.
+          </DialogDescription>
+        </DialogHeader>
         <form
           noValidate
           onSubmit={handleSubmit(submit)}
-          className="grid gap-4 p-5"
+          className="contents"
+          aria-busy={isPending || undefined}
         >
-          {errors.root?.server?.message ? (
-            <p role="alert" className="text-sm text-destructive">
-              {errors.root.server.message}
-            </p>
-          ) : null}
-          <Field label={text.platform} error={errors.platform?.message}>
-            <select
-              {...register("platform")}
-              aria-invalid={Boolean(errors.platform)}
-              value={platform}
-              onChange={(event) =>
-                setPlatform(event.target.value as PersonSocialPlatform)
-              }
-              className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
+          <FormDialogBody>
+            {errors.root?.server?.message ? (
+              <p role="alert" className="text-sm text-destructive">
+                {errors.root.server.message}
+              </p>
+            ) : null}
+            <FormField
+              label={text.platform}
+              required
+              error={errors.platform?.message}
             >
-              {PERSON_SOCIAL_PLATFORM_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field label={text.handle} error={errors.handle?.message}>
-            <Input
-              {...register("handle")}
-              aria-invalid={Boolean(errors.handle)}
-              dir="auto"
-              value={handle}
-              onChange={(event) => setHandle(event.target.value)}
-              className="h-11 rounded-xl"
-            />
-          </Field>
-          <Field label={text.note} error={errors.note?.message}>
-            <textarea
-              {...register("note")}
-              aria-invalid={Boolean(errors.note)}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              className="min-h-24 rounded-xl border border-input bg-background p-3 text-sm"
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-sm text-[var(--app-heading)]">
-            <input
-              type="checkbox"
-              checked={isPrimary}
-              onChange={(event) => setIsPrimary(event.target.checked)}
-            />
-            {text.primary}
-          </label>
-          {error ? (
-            <InlineError
-              message={getPeopleErrorMessage(
-                error,
-                uiText.people.nested.mutationError
+              {(fieldProps) => (
+                <NativeSelect
+                  {...register("platform")}
+                  {...fieldProps}
+                  autoFocus
+                  value={platform}
+                  onChange={(event) =>
+                    setPlatform(event.target.value as PersonSocialPlatform)
+                  }
+                >
+                  {PERSON_SOCIAL_PLATFORM_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </NativeSelect>
               )}
+            </FormField>
+            <FormField
+              label={text.handle}
+              required
+              error={errors.handle?.message}
+            >
+              {(fieldProps) => (
+                <Input
+                  {...register("handle")}
+                  {...fieldProps}
+                  dir="auto"
+                  value={handle}
+                  onChange={(event) => setHandle(event.target.value)}
+                />
+              )}
+            </FormField>
+            <FormField label={text.note} optional error={errors.note?.message}>
+              {(fieldProps) => (
+                <Textarea
+                  {...register("note")}
+                  {...fieldProps}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                />
+              )}
+            </FormField>
+            <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={isPrimary}
+                onChange={(event) => setIsPrimary(event.target.checked)}
+              />
+              {text.primary}
+            </label>
+            {error ? (
+              <InlineError
+                message={getPeopleErrorMessage(
+                  error,
+                  uiText.people.nested.mutationError
+                )}
+              />
+            ) : null}
+          </FormDialogBody>
+          <FormDialogFooter>
+            <FormActions
+              pending={isPending}
+              onCancel={() => onOpenChange(false)}
+              submitLabel={uiText.people.actions.save}
             />
-          ) : null}
-          <FormActions
-            pending={isPending}
-            onCancel={() => onOpenChange(false)}
-            submitLabel={uiText.people.actions.save}
-          />
+          </FormDialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
-}
-function Field({
-  label,
-  children,
-  error,
-}: {
-  label: string
-  children: React.ReactNode
-  error?: string
-}) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-xs font-bold text-[var(--app-heading)]">
-        {label}
-      </span>
-      {children}
-      {error ? (
-        <span role="alert" className="text-xs text-destructive">
-          {error}
-        </span>
-      ) : null}
-    </label>
   )
 }
 function InlineError({ message }: { message: string }) {

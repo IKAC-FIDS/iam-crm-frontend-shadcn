@@ -5,16 +5,26 @@ import { unwrapApiResponse, getApiErrorMessage } from '@/lib/apiResponse'
 import { EntityListPage } from '@/components/shared/EntityListPage'
 import { PageHero } from '@/components/shared/PageHero'
 import { QueryContent } from '@/components/shared/QueryContent'
-import { EntityCardList } from '@/components/shared/EntityCardList'
+import { DataTableShell, type DataTableColumn } from '@/components/shared/DataTableShell'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
 import { FormSection } from '@/components/shared/FormSection'
 import { FormActions } from '@/components/shared/FormActions'
 import { PersianDatePicker } from '@/components/shared/date/PersianDatePicker'
 import { NumberInput } from '@/components/shared/inputs/NumberInput'
+import { Button } from '@workspace/ui/components/button'
 import { formatJalaliDate } from '@/lib/date/jalali'
 import { localDate, parseDate, minutesLabel, weekDays } from './presentation'
 type Schedule = { id: string; effectiveFrom: string; effectiveTo: string | null; days: { weekday: number; regularMinutes: number }[] }
+const scheduleMinutes = (schedule: Schedule, weekday: number) => schedule.days.find(item => item.weekday === weekday)?.regularMinutes ?? 0
+const schedulePeriod = (schedule: Schedule) => `از ${formatJalaliDate(parseDate(schedule.effectiveFrom)!)} تا ${schedule.effectiveTo ? formatJalaliDate(parseDate(schedule.effectiveTo)!) : 'بدون تاریخ پایان'}`
+const scheduleDays = (schedule: Schedule, working: boolean) => weekDays.filter(day => (scheduleMinutes(schedule, day.id) > 0) === working).map(day => day.label).join('، ') || '—'
+const scheduleTotal = (schedule: Schedule) => minutesLabel(weekDays.reduce((total, day) => total + scheduleMinutes(schedule, day.id), 0))
+const scheduleColumns: DataTableColumn<Schedule>[] = [
+  { id: 'period', header: 'بازه اعتبار', cell: schedulePeriod },
+  ...weekDays.map(day => ({ id: String(day.id), header: day.label, cell: (schedule: Schedule) => { const minutes = scheduleMinutes(schedule, day.id); return minutes === 0 ? 'تعطیل' : minutesLabel(minutes) } })),
+  { id: 'total', header: 'مجموع هفتگی', cell: scheduleTotal },
+]
 export function WorkSchedulesPage() {
   const [open, setOpen] = useState(false), client = useQueryClient()
   const query = useQuery({ queryKey: ['work-schedules'], queryFn: async () => unwrapApiResponse<Schedule[]>((await api.get('/admin/work-schedules')).data) })
@@ -22,10 +32,13 @@ export function WorkSchedulesPage() {
     <PageHero title="برنامه کاری سازمان" description="ساعات موظفی روزهای هفته؛ مبنای محاسبه مرخصی روزانه و نیم‌روز" onRefresh={() => query.refetch()} primaryAction={{ label: 'ثبت برنامه کاری', onClick: () => setOpen(true) }} />
     <p className="text-sm leading-7 text-muted-foreground">برنامه پایه سازمان برای همه اعضا اعمال می‌شود، مگر اینکه برنامه اختصاصی تیم یا کاربر داشته باشند. زمان‌ها خالص و بدون استراحت هستند. تاریخ شروع باید روز درخواست مرخصی را پوشش دهد. ساعات پیش‌فرضی تعیین نشده است.</p>
     <QueryContent query={query}>
-      <EntityCardList rows={query.data ?? []} getRowKey={row => row.id} layout="row" density="compact" fieldsClassName="lg:grid-cols-4"
-        title={() => 'برنامه پایه سازمان'} subtitle={schedule => `از ${formatJalaliDate(parseDate(schedule.effectiveFrom)!)} تا ${schedule.effectiveTo ? formatJalaliDate(parseDate(schedule.effectiveTo)!) : 'بدون تاریخ پایان'}`}
-        fields={weekDays.map(day => ({ id: String(day.id), label: day.label, render: (schedule: Schedule) => { const minutes = schedule.days.find(item => item.weekday === day.id)?.regularMinutes ?? 0; return minutes === 0 ? 'تعطیل' : minutesLabel(minutes) } }))}
-        emptyState={<EmptyState title="برنامه کاری تعریف نشده است" description="برای محاسبه مرخصی، برنامه واقعی سازمان و تاریخ اعتبار آن را ثبت کنید." />} />
+      <DataTableShell rows={query.data ?? []} columns={scheduleColumns} getRowKey={row => row.id} caption="برنامه‌های کاری سازمان"
+        mobile={{ title: () => 'برنامه پایه سازمان', subtitle: schedulePeriod, fields: [
+          { id: 'working-days', label: 'روزهای کاری', render: schedule => scheduleDays(schedule, true) },
+          { id: 'holidays', label: 'روزهای تعطیل', render: schedule => scheduleDays(schedule, false) },
+          { id: 'weekly-total', label: 'مجموع هفتگی', render: scheduleTotal },
+        ] }}
+        emptyState={<EmptyState title="برنامه کاری تعریف نشده است" description="برای محاسبه مرخصی، برنامه واقعی سازمان و تاریخ اعتبار آن را ثبت کنید." action={<Button type="button" onClick={() => setOpen(true)}>ثبت برنامه کاری</Button>} />} />
       <p className="text-xs text-muted-foreground">نمایش حداکثر ۱۰۰ برنامه اخیر. برای حفظ سوابق، این صفحه برنامه‌های قبلی را تغییر یا حذف نمی‌کند؛ بازه‌های برنامه جدید نباید هم‌پوشانی داشته باشند.</p>
     </QueryContent>
     {open && <ScheduleForm onClose={() => setOpen(false)} onSaved={() => { setOpen(false); void client.invalidateQueries({ queryKey: ['work-schedules'] }) }} />}

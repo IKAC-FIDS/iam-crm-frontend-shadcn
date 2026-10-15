@@ -22,7 +22,11 @@ export function FormActions({
       >
         {uiText.common.cancel}
       </Button>
-      <Button type="submit" disabled={pending || disabled}>
+      <Button
+        type="submit"
+        disabled={pending || disabled}
+        aria-busy={pending || undefined}
+      >
         {pending ? uiText.common.processing : submitLabel}
       </Button>
     </div>

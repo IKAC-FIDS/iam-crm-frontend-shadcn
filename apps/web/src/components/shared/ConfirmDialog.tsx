@@ -41,7 +41,12 @@ export function ConfirmDialog({
   confirmDisabled?: boolean
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next || !isPending) onOpenChange(next)
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="max-w-md gap-0 rounded-[var(--app-radius-feature)] border-[var(--app-divider)] bg-[var(--app-surface)] p-0 shadow-[var(--app-shadow-elevated)]"
@@ -92,6 +97,7 @@ export function ConfirmDialog({
                 : "bg-[var(--app-primary)] text-[var(--app-on-primary)] hover:bg-[var(--app-primary-hover)]",
             ].join(" ")}
             disabled={isPending || confirmDisabled}
+            aria-busy={isPending || undefined}
             onClick={() => void onConfirm()}
           >
             {isPending ? uiText.common.processing : confirmLabel}
