@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link, useParams, useSearchParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { toast } from "sonner"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -23,7 +23,7 @@ import type {
   RequestRoutingDestination,
   CustomerRequest,
 } from "./customerRequests.types"
-import { requestStatusFa } from "./customerRequests.presentation"
+import { requestPriorityFa, requestStatusFa } from "./customerRequests.presentation"
 
 const fieldTypes: { value: FieldType; label: string }[] = [
   { value: "TEXT", label: "متن کوتاه" },
@@ -46,7 +46,6 @@ const blankField = (index: number): FormField => ({
   label: "فیلد جدید",
   required: false,
 })
-const priorityFa: Record<RequestPriority, string> = { LOW: "کم", NORMAL: "عادی", HIGH: "زیاد", URGENT: "فوری" }
 const routingFa: Record<RequestRoutingDestination, string> = { MANUAL: "رسیدگی دستی", TASK: "کار داخلی", TECHNICAL_DOCUMENT: "مرکز فنی", OPPORTUNITY: "فرصت فروش" }
 
 export function CustomerRequestTypesAdminPage() {
@@ -412,130 +411,7 @@ export function CustomerRequestTypeEditorPage() {
   )
 }
 
-export function CustomerRequestsInboxPage() {
-  const [params, setParams] = useSearchParams(),
-    status = params.get("status") || "",
-    search = params.get("search") || "",
-    priority = params.get("priority") || "",
-    triageStatus = params.get("triageStatus") || "",
-    assignedToId = params.get("assignedToId") || "",
-    requestTypeId = params.get("requestTypeId") || "",
-    requestedSort = params.get("sort") || "submittedAt:asc",
-    sort = ["submittedAt:asc", "submittedAt:desc", "updatedAt:desc"].includes(requestedSort) ? requestedSort : "submittedAt:asc",
-    [sortBy, sortOrder] = sort.split(":") as ["submittedAt" | "updatedAt", "asc" | "desc"],
-    page = Math.max(1, Number(params.get("page")) || 1),
-    assignees = useQuery({
-      queryKey: ["customer-request-assignees"],
-      queryFn: internalRequestApi.assignees,
-    }),
-    options = useQuery({
-      queryKey: ["customer-request-triage-options"],
-      queryFn: internalRequestApi.triageOptions,
-    }),
-    query = useQuery({
-      queryKey: ["customer-requests-inbox", status, search, priority, triageStatus, assignedToId, requestTypeId, sort, page],
-      queryFn: () =>
-        internalRequestApi.triageList({
-          page,
-          sortBy,
-          sortOrder,
-          ...(status && { status }),
-          ...(search && { search }),
-          ...(priority && { priority }),
-          ...(triageStatus && { triageStatus }),
-          ...(assignedToId && { assignedToId }),
-          ...(requestTypeId && { requestTypeId }),
-        }),
-    })
-  return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">صندوق درخواست‌های مشتریان</h1>
-        <p className="text-sm text-muted-foreground">
-          درخواست‌های ثبت‌شده را بررسی و وضعیت آن‌ها را مدیریت کنید.
-        </p>
-      </div>
-      <div className="grid gap-3 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <Input
-          placeholder="عنوان یا شماره پیگیری"
-          defaultValue={search}
-          onChange={(e) => {
-            const p = new URLSearchParams(params)
-            if (e.target.value) p.set("search", e.target.value)
-            else p.delete("search")
-            p.delete("page")
-            setParams(p, { replace: true })
-          }}
-        />
-        <select
-          className="h-10 rounded-md border bg-background px-3"
-          value={status}
-          onChange={(e) => {
-            const p = new URLSearchParams(params)
-            if (e.target.value) p.set("status", e.target.value)
-            else p.delete("status")
-            setParams(p)
-          }}
-        >
-          <option value="">همه وضعیت‌ها</option>
-          {Object.entries(requestStatusFa)
-            .filter(([k]) => k !== "DRAFT")
-            .map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-        </select>
-        <select className="h-10 rounded-md border bg-background px-3" value={priority} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("priority", e.target.value); else p.delete("priority"); p.delete("page"); setParams(p) }}><option value="">همه اولویت‌ها</option>{Object.entries(priorityFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select>
-        <select className="h-10 rounded-md border bg-background px-3" value={triageStatus} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("triageStatus", e.target.value); else p.delete("triageStatus"); p.delete("page"); setParams(p) }}><option value="">همه وضعیت‌های تریاژ</option><option value="UNTRIAGED">بررسی‌نشده</option><option value="TRIAGED">تریاژشده</option></select>
-        <select className="h-10 rounded-md border bg-background px-3" value={assignedToId} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("assignedToId", e.target.value); else p.delete("assignedToId"); p.delete("page"); setParams(p) }}><option value="">همه مسئولان</option>{assignees.data?.map((person) => <option key={person.id} value={person.id}>{person.fullName || person.label || person.email}</option>)}</select>
-        <select className="h-10 rounded-md border bg-background px-3" value={requestTypeId} onChange={(e) => { const p = new URLSearchParams(params); if (e.target.value) p.set("requestTypeId", e.target.value); else p.delete("requestTypeId"); p.delete("page"); setParams(p) }}><option value="">همه انواع درخواست</option>{options.data?.requestTypes.map((type) => <option key={type.id} value={type.id}>{type.displayName}</option>)}</select>
-        <select className="h-10 rounded-md border bg-background px-3" value={sort} onChange={(e) => { const p = new URLSearchParams(params); p.set("sort", e.target.value); p.delete("page"); setParams(p) }}><option value="submittedAt:asc">قدیمی‌ترین ارسال</option><option value="submittedAt:desc">جدیدترین ارسال</option><option value="updatedAt:desc">آخرین تغییر</option></select>
-      </div>
-      <div className="overflow-x-auto rounded-xl border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/60">
-            <tr>
-              <th className="p-3 text-start">پیگیری</th>
-              <th className="p-3 text-start">عنوان</th>
-              <th className="p-3 text-start">شرکت</th>
-              <th className="p-3 text-start">نوع</th>
-              <th className="p-3 text-start">وضعیت</th>
-              <th className="p-3 text-start">اولویت</th>
-              <th className="p-3 text-start">مسئول</th>
-            </tr>
-          </thead>
-          <tbody>
-            {query.data?.data.map((r) => (
-              <tr key={r.id} className="border-t">
-                <td className="p-3">
-                  <Link
-                    className="text-primary"
-                    to={`/customer-requests/${r.id}`}
-                    dir="ltr"
-                  >
-                    {r.trackingNumber}
-                  </Link>
-                </td>
-                <td className="p-3">{r.title}</td>
-                <td className="p-3">
-                  {r.company?.brandName || r.company?.legalName}
-                </td>
-                <td className="p-3">{r.requestType.displayName}</td>
-                <td className="p-3">
-                  <Badge variant="secondary">{requestStatusFa[r.status]}</Badge>
-                </td>
-                <td className="p-3"><Badge variant={r.priority === "URGENT" ? "destructive" : "outline"}>{priorityFa[r.priority ?? "NORMAL"]}</Badge></td>
-                <td className="p-3">{r.assignedTo?.fullName || "بدون مسئول"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {(query.data?.meta.totalPages ?? 0) > 1 && <div className="flex items-center justify-end gap-2"><Button variant="outline" size="sm" disabled={!query.data?.meta.hasPrevious} onClick={() => { const p = new URLSearchParams(params); p.set("page", String(page - 1)); setParams(p) }}>قبلی</Button><span className="text-sm text-muted-foreground">صفحه {page} از {query.data?.meta.totalPages}</span><Button variant="outline" size="sm" disabled={!query.data?.meta.hasNext} onClick={() => { const p = new URLSearchParams(params); p.set("page", String(page + 1)); setParams(p) }}>بعدی</Button></div>}
-    </section>
-  )
-}
+export { CustomerRequestsInboxPage } from "./CustomerRequestsInboxPage"
 
 function CustomerRequestOperationsPanel({ request }: { request: CustomerRequest }) {
   const client = useQueryClient(), user = useAuthStore((s) => s.user), permissions = user?.permissions ?? []
@@ -582,7 +458,7 @@ function CustomerRequestOperationsPanel({ request }: { request: CustomerRequest 
   })
   return <div className="space-y-5">
     {permissions.includes("customer-request:triage") && <Card><CardHeader><CardTitle>تریاژ و ارجاع داخلی</CardTitle></CardHeader><CardContent className="space-y-3">
-      <label className="grid gap-1 text-sm">اولویت<select className="h-10 rounded-md border bg-background px-3" value={priority} onChange={(e) => setPriority(e.target.value as RequestPriority)}>{Object.entries(priorityFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+      <label className="grid gap-1 text-sm">اولویت<select className="h-10 rounded-md border bg-background px-3" value={priority} onChange={(e) => setPriority(e.target.value as RequestPriority)}>{Object.entries(requestPriorityFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>
       <label className="grid gap-1 text-sm">مسئول<select className="h-10 rounded-md border bg-background px-3" value={assignee} onChange={(e) => setAssignee(e.target.value)} disabled={!permissions.includes("customer-request:assign")}><option value="">بدون مسئول</option>{assignees.data?.map((p) => <option key={p.id} value={p.id}>{p.fullName || p.label || p.email}</option>)}</select></label>
       <label className="grid gap-1 text-sm">تیم مسئول<select className="h-10 rounded-md border bg-background px-3" value={team} onChange={(e) => setTeam(e.target.value)} disabled={!permissions.includes("customer-request:assign")}><option value="">بدون تیم</option>{options.data?.teams.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label className="grid gap-1 text-sm">مقصد عملیاتی<select className="h-10 rounded-md border bg-background px-3" value={routing} onChange={(e) => setRouting(e.target.value as RequestRoutingDestination)} disabled={!permissions.includes("customer-request:route")}>{Object.entries(routingFa).map(([v,l]) => <option key={v} value={v}>{l}</option>)}</select></label>

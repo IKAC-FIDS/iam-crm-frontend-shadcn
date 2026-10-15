@@ -1,4 +1,8 @@
-import type { FormSchema, RequestStatus } from "./customerRequests.types"
+import type {
+  FormSchema,
+  RequestPriority,
+  RequestStatus,
+} from "./customerRequests.types"
 export const requestStatusFa: Record<RequestStatus, string> = {
   DRAFT: "پیش‌نویس",
   SUBMITTED: "ثبت‌شده",
@@ -8,6 +12,12 @@ export const requestStatusFa: Record<RequestStatus, string> = {
   RESOLVED: "حل‌شده",
   CLOSED: "بسته‌شده",
   CANCELLED: "لغوشده",
+}
+export const requestPriorityFa: Record<RequestPriority, string> = {
+  LOW: "کم",
+  NORMAL: "عادی",
+  HIGH: "زیاد",
+  URGENT: "فوری",
 }
 export function validateDynamicAnswers(
   schema: FormSchema,
