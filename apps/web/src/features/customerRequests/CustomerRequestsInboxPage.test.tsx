@@ -141,7 +141,7 @@ describe("CustomerRequestsInboxPage", () => {
       (await screen.findAllByText("هنوز درخواستی ثبت نشده است")).length
     ).toBeGreaterThan(0)
     expect(
-      screen.queryByRole("button", { name: "پاک‌کردن فیلترها" })
+      screen.queryByRole("button", { name: "پاک کردن فیلترها" })
     ).not.toBeInTheDocument()
 
     unmount()
@@ -151,7 +151,7 @@ describe("CustomerRequestsInboxPage", () => {
     ).toBeGreaterThan(0)
 
     await user.click(
-      screen.getAllByRole("button", { name: "پاک‌کردن فیلترها" })[0]
+      screen.getAllByRole("button", { name: "پاک کردن فیلترها" })[0]
     )
     expect(screen.getByTestId("location")).toHaveTextContent(
       "/customer-requests"

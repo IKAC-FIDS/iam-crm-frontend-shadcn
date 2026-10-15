@@ -3,6 +3,7 @@ import type {
   RequestPriority,
   RequestStatus,
 } from "./customerRequests.types"
+import type { StatusTone } from "@/components/shared/StatusBadge"
 export const requestStatusFa: Record<RequestStatus, string> = {
   DRAFT: "پیش‌نویس",
   SUBMITTED: "ثبت‌شده",
@@ -18,6 +19,22 @@ export const requestPriorityFa: Record<RequestPriority, string> = {
   NORMAL: "عادی",
   HIGH: "زیاد",
   URGENT: "فوری",
+}
+export const requestStatusTone: Record<RequestStatus, StatusTone> = {
+  DRAFT: "secondary",
+  SUBMITTED: "info",
+  UNDER_REVIEW: "warning",
+  IN_PROGRESS: "primary",
+  WAITING_FOR_CUSTOMER: "warning",
+  RESOLVED: "success",
+  CLOSED: "neutral",
+  CANCELLED: "error",
+}
+export const requestPriorityTone: Record<RequestPriority, StatusTone> = {
+  LOW: "secondary",
+  NORMAL: "neutral",
+  HIGH: "warning",
+  URGENT: "error",
 }
 export function validateDynamicAnswers(
   schema: FormSchema,
