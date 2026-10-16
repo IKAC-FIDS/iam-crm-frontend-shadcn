@@ -10,6 +10,8 @@ import { AdvancedFilterPopover } from '@/components/shared/AdvancedFilterPopover
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Clock, Download, Pencil, Send, X } from 'lucide-react'
 import { Button } from '@workspace/ui/components/button'
+import { FormField } from '@workspace/ui/components/form-field'
+import { Textarea } from '@workspace/ui/components/textarea'
 import { EntityListPage } from '@/components/shared/EntityListPage'
 import { PageHero } from '@/components/shared/PageHero'
 import { DataTableToolbar } from '@/components/shared/DataTableToolbar'
@@ -123,7 +125,7 @@ function EntriesPage({ manager, initialDomain }: { manager: boolean; initialDoma
       emptyState={<EmptyState title="درخواستی پیدا نشد" description="بازه یا فیلترها را تغییر دهید؛ درخواست جدید ابتدا به‌صورت پیش‌نویس ذخیره می‌شود." />} />
       <PaginationControls page={filters.page} pageCount={query.data?.meta.totalPages ?? 1} total={query.data?.meta.total} onPageChange={filters.setPage} pageSize={filters.pageSize} onPageSizeChange={filters.setPageSize} disabled={query.isFetching} /></QueryContent>
     {form && <EntryForm domain={domain} entry={form.entry} onClose={() => setForm(null)} onSaved={() => { setForm(null); void refresh() }} />}
-    {reject && <ResponsiveModal open title="رد درخواست" onClose={() => { if (!decision.isPending) setReject(null) }}><form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (reason.trim() && !decision.isPending) decision.mutate({ row: reject, action: 'reject', reason: reason.trim() }) }}><label className="grid gap-2">دلیل رد<textarea className="min-h-24 rounded-xl border bg-background p-3" required maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} /></label>{message && <p role="alert">{message}</p>}<FormActions onCancel={() => setReject(null)} pending={decision.isPending} disabled={!reason.trim()} submitLabel="رد درخواست" /></form></ResponsiveModal>}
+    {reject && <ResponsiveModal open title="رد درخواست" onClose={() => { if (!decision.isPending) setReject(null) }}><form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (reason.trim() && !decision.isPending) decision.mutate({ row: reject, action: 'reject', reason: reason.trim() }) }}><FormField label="دلیل رد" required>{props => <Textarea {...props} maxLength={2000} value={reason} onChange={e => setReason(e.target.value)} />}</FormField>{message && <p role="alert">{message}</p>}<FormActions onCancel={() => setReject(null)} pending={decision.isPending} disabled={!reason.trim()} submitLabel="رد درخواست" /></form></ResponsiveModal>}
     {detail && <ResponsiveModal open title="جزئیات درخواست" onClose={() => setDetail(null)}><div className="grid gap-4"><p>{detail.description || detail.reason || 'بدون توضیح'}</p><p>تیم هنگام ثبت: {detail.teamNameSnapshot ?? '—'}</p>{detail.rejectionReason && <p>دلیل رد: {detail.rejectionReason}</p>}<h3>سوابق تصمیم‌گیری (حداکثر ۱۰۰ رویداد)</h3>{detail.approvalHistory?.map(item => <SurfaceCard key={item.id} className="p-3"><p>{item.actorMembership?.user.fullName ?? '—'}؛ {labels[item.action] ?? 'تغییر وضعیت'}</p><p>{labels[item.fromStatus] ?? '—'} ← {labels[item.toStatus] ?? '—'}</p><p>{new Date(item.createdAt).toLocaleString('fa-IR')}</p><p>{item.reason}</p></SurfaceCard>)}</div></ResponsiveModal>}
   </EntityListPage>
 }

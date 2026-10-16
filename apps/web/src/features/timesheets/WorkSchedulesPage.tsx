@@ -13,6 +13,7 @@ import { FormActions } from '@/components/shared/FormActions'
 import { PersianDatePicker } from '@/components/shared/date/PersianDatePicker'
 import { NumberInput } from '@/components/shared/inputs/NumberInput'
 import { Button } from '@workspace/ui/components/button'
+import { FormField } from '@workspace/ui/components/form-field'
 import { formatJalaliDate } from '@/lib/date/jalali'
 import { localDate, parseDate, minutesLabel, weekDays } from './presentation'
 type Schedule = { id: string; effectiveFrom: string; effectiveTo: string | null; days: { weekday: number; regularMinutes: number }[] }
@@ -54,11 +55,11 @@ export function ScheduleForm({ onClose, onSaved }: { onClose: () => void; onSave
   return <ResponsiveModal open onClose={() => { if (!save.isPending) onClose() }} title="ثبت برنامه کاری سازمان" description="ساعات را طبق سیاست واقعی سازمان وارد کنید.">
     <form className="grid gap-4" onSubmit={e => { e.preventDefault(); if (!invalid && confirmed && !save.isPending) save.mutate() }}>
       <FormSection title="بازه اعتبار"><div className="grid gap-3 sm:grid-cols-2">
-        <div className="grid gap-2"><label htmlFor="schedule-from">شروع اعتبار (الزامی)</label><PersianDatePicker id="schedule-from" value={from} onChange={setFrom} maxDate={to} /></div>
-        <div className="grid gap-2"><label htmlFor="schedule-to">پایان اعتبار (اختیاری)</label><PersianDatePicker id="schedule-to" value={to} onChange={setTo} minDate={from} /></div>
+        <FormField label="شروع اعتبار" id="schedule-from" required>{props => <PersianDatePicker {...props} value={from} onChange={setFrom} maxDate={to} />}</FormField>
+        <FormField label="پایان اعتبار" id="schedule-to" optional>{props => <PersianDatePicker {...props} value={to} onChange={setTo} minDate={from} />}</FormField>
       </div></FormSection>
       <FormSection title="مدت کار خالص هر روز" description="مقدار هر روز را صریح وارد کنید. برای روز تعطیل صفر وارد کنید؛ مثلاً ۴۵۰ دقیقه برابر ۷ ساعت و ۳۰ دقیقه است.">
-        <div className="grid gap-3 sm:grid-cols-2">{weekDays.map(day => <label key={day.id} className="grid gap-2">{day.label} (دقیقه)<NumberInput aria-label={`${day.label} (دقیقه)`} required value={minutes[day.id] ?? ''} onValueChange={value => { setMinutes(current => ({ ...current, [day.id]: value })); setConfirmed(false) }} /><span className="text-xs text-muted-foreground">{minutes[day.id] !== undefined && minutes[day.id] !== '' ? minutesLabel(Number(minutes[day.id])) : 'وارد نشده'}</span></label>)}</div>
+        <div className="grid gap-3 sm:grid-cols-2">{weekDays.map(day => <FormField key={day.id} label={`${day.label} (دقیقه)`} required description={minutes[day.id] !== undefined && minutes[day.id] !== '' ? minutesLabel(Number(minutes[day.id])) : 'وارد نشده'}>{props => <NumberInput {...props} value={minutes[day.id] ?? ''} onValueChange={value => { setMinutes(current => ({ ...current, [day.id]: value })); setConfirmed(false) }} />}</FormField>)}</div>
       </FormSection>
       <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />ساعات و تاریخ اعتبار مطابق برنامه واقعی سازمان است.</label>
       {save.isError && <p role="alert" className="text-destructive">{getApiErrorMessage(save.error, 'ثبت برنامه کاری انجام نشد.')}</p>}
