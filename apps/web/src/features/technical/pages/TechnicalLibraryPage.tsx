@@ -3,14 +3,14 @@ import {
   FileArchive,
   FolderOpen,
   Plus,
-  RefreshCw,
   UploadCloud,
 } from "lucide-react"
 import { toast } from "sonner"
 import { useSearchParams } from "react-router-dom"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Label } from "@workspace/ui/components/label"
+import { FormField } from "@workspace/ui/components/form-field"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { ArtifactPanel } from "@/features/artifacts/components/ArtifactPanel"
 import {
   DataTableShell,
@@ -22,7 +22,9 @@ import { EntityListPage } from "@/components/shared/EntityListPage"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
 import { ErrorState } from "@/components/shared/ErrorState"
 import { PageHero } from "@/components/shared/PageHero"
+import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
+import { FormActions } from "@/components/shared/FormActions"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
@@ -173,68 +175,63 @@ export function TechnicalLibraryPage() {
           title="دسترسی ندارید"
           description="مجوز مشاهده منابع فنی برای شما فعال نیست."
         />
-      ) : query.isError ? (
-        <ErrorState
-          title="دریافت مستندات انجام نشد"
-          description="دوباره تلاش کنید."
-          onRetry={() => void query.refetch()}
-        />
       ) : (
-        <DataTableShell
-          rows={query.data?.data ?? []}
-          columns={columns}
-          getRowKey={(row) => row.id}
-          loading={query.isLoading}
-          onRowClick={(row) => setSelected(row)}
-          emptyState={
-            <EmptyState
-              icon={FileArchive}
-              title="موردی ثبت نشده است"
-              description="یک نسخه، سند یا ابزار فنی را به‌صورت فایل یا لینک اضافه کنید."
-            />
-          }
-          renderRowActions={(row) => (
-            <EntityRowActions
-              label="مشاهده فایل‌ها و لینک‌ها"
-              onView={() => setSelected(row)}
-            />
-          )}
-          mobile={{
-            title: (row) => row.title,
-            subtitle: (row) => row.description || "بدون توضیحات",
-            avatar: () => <FileArchive className="size-5" />,
-            status: (row) => (
-              <StatusBadge tone="neutral" dot={false}>
-                {libraryLabel(row.resourceType)}
-              </StatusBadge>
-            ),
-            fields: [
-              {
-                id: "artifacts",
-                label: "فایل و لینک",
-                render: (row) =>
-                  `${(row.artifactCount ?? 0).toLocaleString("fa-IR")} مورد`,
-              },
-              {
-                id: "updatedAt",
-                label: "آخرین تغییر",
-                render: (row) => faDate(row.updatedAt),
-              },
-            ],
-          }}
-          pagination={
-            query.data
-              ? {
-                  page: query.data.meta.page,
-                  pageCount: query.data.meta.totalPages,
-                  total: query.data.meta.total,
-                  pageSize: query.data.meta.limit,
-                  onPageChange: (next) => patch({ page: next }),
-                  disabled: query.isFetching,
-                }
-              : undefined
-          }
-        />
+        <QueryContent query={query} errorTitle="دریافت مستندات انجام نشد">
+          <DataTableShell
+            rows={query.data?.data ?? []}
+            columns={columns}
+            getRowKey={(row) => row.id}
+            onRowClick={(row) => setSelected(row)}
+            emptyState={
+              <EmptyState
+                icon={FileArchive}
+                title="موردی ثبت نشده است"
+                description="یک نسخه، سند یا ابزار فنی را به‌صورت فایل یا لینک اضافه کنید."
+              />
+            }
+            renderRowActions={(row) => (
+              <EntityRowActions
+                label="مشاهده فایل‌ها و لینک‌ها"
+                onView={() => setSelected(row)}
+              />
+            )}
+            mobile={{
+              title: (row) => row.title,
+              subtitle: (row) => row.description || "بدون توضیحات",
+              avatar: () => <FileArchive className="size-5" />,
+              status: (row) => (
+                <StatusBadge tone="neutral" dot={false}>
+                  {libraryLabel(row.resourceType)}
+                </StatusBadge>
+              ),
+              fields: [
+                {
+                  id: "artifacts",
+                  label: "فایل و لینک",
+                  render: (row) =>
+                    `${(row.artifactCount ?? 0).toLocaleString("fa-IR")} مورد`,
+                },
+                {
+                  id: "updatedAt",
+                  label: "آخرین تغییر",
+                  render: (row) => faDate(row.updatedAt),
+                },
+              ],
+            }}
+            pagination={
+              query.data
+                ? {
+                    page: query.data.meta.page,
+                    pageCount: query.data.meta.totalPages,
+                    total: query.data.meta.total,
+                    pageSize: query.data.meta.limit,
+                    onPageChange: (next) => patch({ page: next }),
+                    disabled: query.isFetching,
+                  }
+                : undefined
+            }
+          />
+        </QueryContent>
       )}
       <CreateLibraryItemDialog
         open={createOpen}
@@ -315,17 +312,16 @@ function CreateLibraryItemDialog({
       description="نوع و عنوان را مشخص کنید؛ در مرحله بعد فایل بارگذاری یا لینک مرجع ثبت می‌کنید."
       icon={UploadCloud}
     >
-      <div className="grid gap-5">
-        <div className="grid gap-2">
-          <Label htmlFor="technical-library-title">عنوان</Label>
-          <Input
-            id="technical-library-title"
+      <form className="grid gap-5" onSubmit={(event) => { event.preventDefault(); void submit() }}>
+        <FormField label="عنوان" id="technical-library-title" required>
+          {(props) => <Input
+            {...props}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="مثلاً راهنمای نصب نسخه ۲.۴"
             autoFocus
-          />
-        </div>
+          />}
+        </FormField>
         <fieldset className="grid gap-2">
           <legend className="text-sm font-medium">نوع محتوا</legend>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -342,42 +338,17 @@ function CreateLibraryItemDialog({
             ))}
           </div>
         </fieldset>
-        <div className="grid gap-2">
-          <Label htmlFor="technical-library-description">
-            توضیحات (اختیاری)
-          </Label>
-          <textarea
-            id="technical-library-description"
+        <FormField label="توضیحات" id="technical-library-description" optional>
+          {(props) => <Textarea
+            {...props}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             rows={3}
-            className="w-full resize-y rounded-xl border border-input bg-transparent p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="توضیح کوتاه برای پیدا کردن سریع‌تر این مورد"
-          />
-        </div>
-        <div className="flex justify-end gap-2 border-t pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={save.isPending}
-            onClick={close}
-          >
-            انصراف
-          </Button>
-          <Button
-            type="button"
-            disabled={save.isPending || !title.trim()}
-            onClick={() => void submit()}
-          >
-            {save.isPending ? (
-              <RefreshCw className="size-4 animate-spin" />
-            ) : (
-              <Plus className="size-4" />
-            )}
-            ایجاد و افزودن فایل یا لینک
-          </Button>
-        </div>
-      </div>
+          />}
+        </FormField>
+        <FormActions onCancel={close} pending={save.isPending} disabled={!title.trim()} submitLabel="ایجاد و افزودن فایل یا لینک" />
+      </form>
     </ResponsiveModal>
   )
 }

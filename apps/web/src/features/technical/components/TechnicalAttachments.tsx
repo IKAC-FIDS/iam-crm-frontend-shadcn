@@ -4,6 +4,8 @@ import { Download, Eye, FileArchive, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { FormField } from "@workspace/ui/components/form-field"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { api } from "@/lib/api"
 import { unwrapApiResponse } from "@/lib/apiResponse"
 import { FormSection } from "@/components/shared/FormSection"
@@ -11,6 +13,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
+import { FormActions } from "@/components/shared/FormActions"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import {
   ATTACHMENT_ACCEPT,
@@ -189,19 +192,14 @@ export function TechnicalAttachments({
             upload.mutate()
           }}
         >
-          <Input
-            type="file"
-            accept={ATTACHMENT_ACCEPT}
-            required
-            onChange={(e) => setFile(e.target.files?.[0])}
-          />
-          <textarea
-            className="min-h-24 rounded-xl border p-3"
-            placeholder="توضیحات"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-          <Button disabled={!file || upload.isPending}>بارگذاری</Button>
+          <FormField label="فایل" required>
+            {(props) => <Input {...props} type="file" accept={ATTACHMENT_ACCEPT} onChange={(e) => setFile(e.target.files?.[0])} />}
+          </FormField>
+          <FormField label="توضیحات" optional>
+            {(props) => <Textarea {...props} value={description} onChange={(e) => setDescription(e.target.value)} />}
+          </FormField>
+          {upload.isError ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(upload.error, "بارگذاری فایل انجام نشد.")}</p> : null}
+          <FormActions onCancel={() => setOpen(false)} pending={upload.isPending} disabled={!file} submitLabel="بارگذاری" />
         </form>
       </ResponsiveModal>
     </FormSection>

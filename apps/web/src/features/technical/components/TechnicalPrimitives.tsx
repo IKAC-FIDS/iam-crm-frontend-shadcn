@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { FormField } from "@workspace/ui/components/form-field"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { StatusBadge, type StatusTone } from "@/components/shared/StatusBadge"
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog"
 import { EntityCardList } from "@/components/shared/EntityCardList"
@@ -226,18 +228,16 @@ export function LifecycleActions<T extends string>({
         }}
       >
         {target && requiresReason(target) ? (
-          <label className="grid gap-2 text-sm font-bold text-[var(--app-heading)]">
-            دلیل تغییر وضعیت
-            <textarea
+          <FormField label="دلیل تغییر وضعیت" required>
+            {(props) => <Textarea
+              {...props}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
               rows={3}
-              required
               autoFocus
-              className="min-h-24 w-full resize-y rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 py-2 font-normal text-[var(--app-text)] outline-none focus:border-[var(--app-primary)] focus:ring-2 focus:ring-[var(--app-primary-soft)]"
               placeholder="دلیل را ثبت کنید"
-            />
-          </label>
+            />}
+          </FormField>
         ) : null}
       </ConfirmDialog>
     </>

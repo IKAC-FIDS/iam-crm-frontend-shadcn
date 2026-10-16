@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { NativeSelect } from "@workspace/ui/components/native-select"
 import { TaskOptionSelect } from "@/features/tasks/components/TaskOptionSelect"
 import { useDebouncedValue } from "@/lib/useDebouncedValue"
 import { useAuthStore } from "@/store/authStore"
@@ -51,16 +52,15 @@ export function ScopedUserSelect({
   return (
     <div className="grid gap-2">
       <span className="text-xs text-muted-foreground">دامنه انتخاب</span>
-      <select
+      <NativeSelect
         value={scope}
         onChange={(event) => changeScope(event.target.value)}
         aria-label={`${ariaLabel}؛ دامنه انتخاب`}
-        className="h-11 w-full rounded-xl border border-input bg-transparent px-3 text-sm outline-none focus:border-[var(--app-primary)]"
       >
         <option value="SELF">خودم</option>
         <option value="TEAM">تیم</option>
         <option value="ORGANIZATION">سازمان</option>
-      </select>
+      </NativeSelect>
       {scope === "TEAM" ? (
         <TaskOptionSelect
           value={teamId}

@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query"
 import { UploadCloud } from "lucide-react"
 import { z } from "zod"
 import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { FormSection } from "@/components/shared/FormSection"
 import {
   FormDialogBody,
@@ -990,9 +991,9 @@ function Area({
 }) {
   return (
     <Field label={label} error={error} className={large ? "md:col-span-2" : undefined}>
-      <textarea
+      <Textarea
         {...reg}
-        className={`${large ? "min-h-72" : "min-h-28"} rounded-xl border bg-background p-3 text-sm`}
+        className={large ? "min-h-72" : "min-h-28"}
       />
     </Field>
   )

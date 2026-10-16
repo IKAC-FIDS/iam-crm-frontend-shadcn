@@ -20,11 +20,14 @@ import {
   UploadCloud,
 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 import { PageHero } from "@/components/shared/PageHero"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { FormSection } from "@/components/shared/FormSection"
+import { FormActions } from "@/components/shared/FormActions"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityRowActions } from "@/components/shared/EntityRowActions"
@@ -703,23 +706,21 @@ function DocumentVersions({
             }
           }}
         >
-          <label className="grid gap-2 text-sm font-bold">
-            شماره نسخه
-            <Input
+          <FormField label="شماره نسخه" required>
+            {(props) => <Input
+              {...props}
               value={version}
               onChange={(e) => setVersion(e.target.value)}
-              required
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            فایل نسخه
-            <Input
+            />}
+          </FormField>
+          <FormField label="فایل نسخه" required>
+            {(props) => <Input
+              {...props}
               type="file"
               accept={ATTACHMENT_ACCEPT}
-              required
               onChange={(e) => setFile(e.target.files?.[0])}
-            />
-          </label>
+            />}
+          </FormField>
           <p className="text-xs text-muted-foreground">
             حداکثر حجم فایل ۲۵ مگابایت است. فرمت‌های PDF، Word، Excel، تصویر و فایل متنی پشتیبانی می‌شوند.
           </p>
@@ -731,13 +732,7 @@ function DocumentVersions({
               <span className="text-xs text-muted-foreground">{progress.toLocaleString("fa-IR")}٪ بارگذاری شده</span>
             </div>
           ) : null}
-          <Button
-            type="submit"
-            disabled={!version.trim() || !file || submitting}
-          >
-            <UploadCloud className="size-4" />
-            {submitting ? "در حال بارگذاری..." : "بارگذاری و ثبت نسخه"}
-          </Button>
+          <FormActions onCancel={() => setOpen(false)} pending={submitting} disabled={!version.trim() || !file} submitLabel="بارگذاری و ثبت نسخه" />
         </form>
       </ResponsiveModal>
     </FormSection>
@@ -1067,9 +1062,9 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
     <ResponsiveModal open={Boolean(dialog)} onClose={() => setDialog(undefined)} title={dialog?.reviewId ? (dialog.status === "APPROVED" ? "تأیید بازبینی" : "رد بازبینی") : "درخواست بازبینی"}>
       <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!dialog) return; try { if (dialog.reviewId && dialog.status) await mutations.decideReview.mutateAsync({ reviewId: dialog.reviewId, status: dialog.status, comment: comment || undefined, revision: tender.revision }); else await mutations.requestReview.mutateAsync({ type: dialog.type, reviewerId: reviewerId || undefined, comment: comment || undefined, revision: tender.revision }); setDialog(undefined) } catch { /* Mutation error is rendered below. */ } }}>
         {!dialog?.reviewId ? <label className="grid gap-1">بازبین<ScopedUserSelect value={reviewerId} onChange={(value) => setReviewerId(value || "")} ariaLabel="بازبین مناقصه" required /><span className="text-xs leading-5 text-muted-foreground">درخواست برای این فرد ثبت می‌شود و اعلان دریافت خواهد کرد.</span></label> : null}
-        <label className="grid gap-1">توضیح<textarea className="min-h-28 w-full rounded-xl border p-3" placeholder={dialog?.status === "REJECTED" ? "دلیل رد و اصلاحات موردنیاز را بنویسید" : "توضیح اختیاری برای بازبین یا نتیجه بررسی"} value={comment} onChange={(e) => setComment(e.target.value)} required={dialog?.status === "REJECTED"} /></label>
+        <FormField label="توضیح" required={dialog?.status === "REJECTED"} optional={dialog?.status !== "REJECTED"}>{(props) => <Textarea {...props} className="min-h-28" placeholder={dialog?.status === "REJECTED" ? "دلیل رد و اصلاحات موردنیاز را بنویسید" : "توضیح اختیاری برای بازبین یا نتیجه بررسی"} value={comment} onChange={(e) => setComment(e.target.value)} />}</FormField>
         {mutations.requestReview.error || mutations.decideReview.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(mutations.requestReview.error || mutations.decideReview.error, "ثبت بازبینی انجام نشد.")}</p> : null}
-        <Button type="submit" disabled={mutations.requestReview.isPending || mutations.decideReview.isPending || (!dialog?.reviewId && !reviewerId) || (dialog?.status === "REJECTED" && !comment.trim())}>{dialog?.reviewId ? "ثبت نتیجه بازبینی" : "ارسال درخواست بازبینی"}</Button>
+        <FormActions onCancel={() => setDialog(undefined)} pending={mutations.requestReview.isPending || mutations.decideReview.isPending} disabled={(!dialog?.reviewId && !reviewerId) || (dialog?.status === "REJECTED" && !comment.trim())} submitLabel={dialog?.reviewId ? "ثبت نتیجه بازبینی" : "ارسال درخواست بازبینی"} />
       </form>
     </ResponsiveModal>
     <ResponsiveModal open={qualificationOpen} onClose={() => setQualificationOpen(false)} title="ارزیابی صلاحیت مناقصه">
@@ -1090,20 +1085,20 @@ function TenderWorkflowPanels({ tender, permissions }: { tender: Tender; permiss
         <div className="grid gap-3 sm:grid-cols-2">
           <label>تصمیم شرکت<SearchableOptionSelect value={qualification.bidDecision} onChange={(value) => setQualification({ ...qualification, bidDecision: (value || "UNDECIDED") as typeof qualification.bidDecision })} options={[{ id: "UNDECIDED", label: "تصمیم‌گیری نشده" }, { id: "BID", label: "شرکت می‌کنیم" }, { id: "NO_BID", label: "شرکت نمی‌کنیم" }].filter((x) => x.label.includes(bidSearch))} search={bidSearch} onSearchChange={setBidSearch} allowEmpty={false} ariaLabel="تصمیم شرکت در مناقصه" /></label>
           <label>تصمیم نهایی<SearchableOptionSelect value={qualification.qualificationDecision} onChange={(value) => setQualification({ ...qualification, qualificationDecision: (value || "PENDING") as typeof qualification.qualificationDecision })} options={[{ id: "PENDING", label: "در انتظار" }, { id: "GO", label: "ادامه" }, { id: "CONDITIONAL_GO", label: "ادامه مشروط" }, { id: "NO_GO", label: "عدم ادامه" }].filter((x) => x.label.includes(decisionSearch))} search={decisionSearch} onSearchChange={setDecisionSearch} allowEmpty={false} ariaLabel="تصمیم نهایی صلاحیت" /></label>
-          <label>امتیاز تناسب<Input type="number" min={0} max={100} value={qualification.fitScore} onChange={(e) => setQualification({ ...qualification, fitScore: e.target.value })} /></label>
-          <label>امتیاز ریسک<Input type="number" min={0} max={100} value={qualification.riskScore} onChange={(e) => setQualification({ ...qualification, riskScore: e.target.value })} /></label>
-          <label>امتیاز امکان‌پذیری<Input type="number" min={0} max={100} value={qualification.feasibilityScore} onChange={(e) => setQualification({ ...qualification, feasibilityScore: e.target.value })} /></label>
+          <FormField label="امتیاز تناسب">{(props) => <Input {...props} type="number" min={0} max={100} value={qualification.fitScore} onChange={(e) => setQualification({ ...qualification, fitScore: e.target.value })} />}</FormField>
+          <FormField label="امتیاز ریسک">{(props) => <Input {...props} type="number" min={0} max={100} value={qualification.riskScore} onChange={(e) => setQualification({ ...qualification, riskScore: e.target.value })} />}</FormField>
+          <FormField label="امتیاز امکان‌پذیری">{(props) => <Input {...props} type="number" min={0} max={100} value={qualification.feasibilityScore} onChange={(e) => setQualification({ ...qualification, feasibilityScore: e.target.value })} />}</FormField>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
-          <label>یادداشت تناسب<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.fitNotes} onChange={(e) => setQualification({ ...qualification, fitNotes: e.target.value })} /></label>
-          <label>یادداشت ریسک<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.riskNotes} onChange={(e) => setQualification({ ...qualification, riskNotes: e.target.value })} /></label>
-          <label>یادداشت امکان‌پذیری<textarea className="min-h-20 w-full rounded-xl border p-3" value={qualification.feasibilityNotes} onChange={(e) => setQualification({ ...qualification, feasibilityNotes: e.target.value })} /></label>
+          <FormField label="یادداشت تناسب">{(props) => <Textarea {...props} className="min-h-20" value={qualification.fitNotes} onChange={(e) => setQualification({ ...qualification, fitNotes: e.target.value })} />}</FormField>
+          <FormField label="یادداشت ریسک">{(props) => <Textarea {...props} className="min-h-20" value={qualification.riskNotes} onChange={(e) => setQualification({ ...qualification, riskNotes: e.target.value })} />}</FormField>
+          <FormField label="یادداشت امکان‌پذیری">{(props) => <Textarea {...props} className="min-h-20" value={qualification.feasibilityNotes} onChange={(e) => setQualification({ ...qualification, feasibilityNotes: e.target.value })} />}</FormField>
         </div>
-        <label>جمع‌بندی<textarea className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationSummary} onChange={(e) => setQualification({ ...qualification, qualificationSummary: e.target.value })} /></label>
-        {qualification.qualificationDecision === "CONDITIONAL_GO" ? <label>شرایط ادامه<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.qualificationConditions} onChange={(e) => setQualification({ ...qualification, qualificationConditions: e.target.value })} /></label> : null}
-        {qualification.qualificationDecision === "NO_GO" || qualification.bidDecision === "NO_BID" ? <label>دلیل تصمیم<textarea required className="min-h-24 w-full rounded-xl border p-3" value={qualification.decisionReason} onChange={(e) => setQualification({ ...qualification, decisionReason: e.target.value })} /></label> : null}
+        <FormField label="جمع‌بندی">{(props) => <Textarea {...props} value={qualification.qualificationSummary} onChange={(e) => setQualification({ ...qualification, qualificationSummary: e.target.value })} />}</FormField>
+        {qualification.qualificationDecision === "CONDITIONAL_GO" ? <FormField label="شرایط ادامه" required>{(props) => <Textarea {...props} value={qualification.qualificationConditions} onChange={(e) => setQualification({ ...qualification, qualificationConditions: e.target.value })} />}</FormField> : null}
+        {qualification.qualificationDecision === "NO_GO" || qualification.bidDecision === "NO_BID" ? <FormField label="دلیل تصمیم" required>{(props) => <Textarea {...props} value={qualification.decisionReason} onChange={(e) => setQualification({ ...qualification, decisionReason: e.target.value })} />}</FormField> : null}
         {mutations.saveQualification.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(mutations.saveQualification.error, "ذخیره ارزیابی انجام نشد.")}</p> : null}
-        <Button type="submit" disabled={mutations.saveQualification.isPending}>ذخیره ارزیابی</Button>
+        <FormActions onCancel={() => setQualificationOpen(false)} pending={mutations.saveQualification.isPending} submitLabel="ذخیره ارزیابی" />
       </form>
     </ResponsiveModal>
   </>
@@ -1320,26 +1315,26 @@ function Requirements({
             }
           }}
         >
-          <label>
-            عنوان
-            <Input
+          <FormField label="عنوان" required>
+            {(props) => <Input
+              {...props}
               required
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-          </label>
-          <label>
-            دسته‌بندی
-            <Input
+            />}
+          </FormField>
+          <FormField label="دسته‌بندی">
+            {(props) => <Input
+              {...props}
               value={form.category || ""}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-            />
-          </label>
-          <label>توضیحات<textarea className="min-h-24 w-full rounded-xl border p-3" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
+            />}
+          </FormField>
+          <FormField label="توضیحات">{(props) => <Textarea {...props} value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />}</FormField>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label>شناسه مرجع<Input value={form.referenceId || ""} onChange={(e) => setForm({ ...form, referenceId: e.target.value })} /></label>
-            <label>بخش<Input value={form.section || ""} onChange={(e) => setForm({ ...form, section: e.target.value })} /></label>
-            <label>صفحه<Input value={form.page || ""} onChange={(e) => setForm({ ...form, page: e.target.value })} /></label>
+            <FormField label="شناسه مرجع">{(props) => <Input {...props} value={form.referenceId || ""} onChange={(e) => setForm({ ...form, referenceId: e.target.value })} />}</FormField>
+            <FormField label="بخش">{(props) => <Input {...props} value={form.section || ""} onChange={(e) => setForm({ ...form, section: e.target.value })} />}</FormField>
+            <FormField label="صفحه">{(props) => <Input {...props} value={form.page || ""} onChange={(e) => setForm({ ...form, page: e.target.value })} />}</FormField>
           </div>
           <label>الزام والد<SearchableOptionSelect value={form.parentRequirementId || ""} onChange={(value) => setForm({ ...form, parentRequirementId: value || "" })} options={(q.data ?? []).filter((r) => r.id !== editing?.id && r.title.includes(parentSearch.trim())).map((r) => ({ id: r.id, label: r.referenceId ? `${r.referenceId} — ${r.title}` : r.title }))} search={parentSearch} onSearchChange={setParentSearch} placeholder="بدون والد" ariaLabel="الزام والد" /></label>
           <fieldset className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border p-3">
@@ -1398,32 +1393,29 @@ function Requirements({
               }
             />
           </label>
-          <label className="grid gap-1">
-            پاسخ / نحوه تأمین الزام
-            <textarea
-              className="min-h-28 rounded-xl border p-3"
+          <FormField label="پاسخ / نحوه تأمین الزام" description="متنی که برای پاسخ به الزام یا توضیح نحوه برآورده‌سازی آن استفاده می‌شود.">
+            {(props) => <Textarea
+              {...props}
+              className="min-h-28"
               placeholder="پاسخ پیشنهادی یا نحوه برآورده‌سازی این الزام"
               value={form.response || ""}
               onChange={(e) => setForm({ ...form, response: e.target.value })}
-            />
-            <span className="text-xs leading-5 text-muted-foreground">متنی که برای پاسخ به الزام یا توضیح نحوه برآورده‌سازی آن استفاده می‌شود.</span>
-          </label>
-          <label className="grid gap-1">یادداشت داخلی<textarea className="min-h-20 w-full rounded-xl border p-3" placeholder="نکات داخلی تیم درباره این الزام" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /><span className="text-xs leading-5 text-muted-foreground">برای هماهنگی داخلی تیم است و بخشی از پاسخ رسمی مناقصه محسوب نمی‌شود.</span></label>
-          {form.status === "BLOCKED" ? <label>دلیل مسدودی<textarea className="min-h-24 w-full rounded-xl border p-3" required value={form.blockedReason || ""} onChange={(e) => setForm({ ...form, blockedReason: e.target.value })} /></label> : null}
+            />}
+          </FormField>
+          <FormField label="یادداشت داخلی" description="برای هماهنگی داخلی تیم است و بخشی از پاسخ رسمی مناقصه محسوب نمی‌شود.">{(props) => <Textarea {...props} className="min-h-20" placeholder="نکات داخلی تیم درباره این الزام" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} />}</FormField>
+          {form.status === "BLOCKED" ? <FormField label="دلیل مسدودی" required>{(props) => <Textarea {...props} value={form.blockedReason || ""} onChange={(e) => setForm({ ...form, blockedReason: e.target.value })} />}</FormField> : null}
           {m.save.error ? <p role="alert" className="text-sm text-destructive">{getApiErrorMessage(m.save.error, "ثبت الزام انجام نشد. دوباره تلاش کنید.")}</p> : null}
-          <Button type="submit" disabled={!form.title.trim() || m.save.isPending}>
-            ذخیره الزام
-          </Button>
+          <FormActions onCancel={() => setEditing(undefined)} pending={m.save.isPending} disabled={!form.title.trim()} submitLabel="ذخیره الزام" />
         </form>
       </ResponsiveModal>
       <ResponsiveModal open={Boolean(taskDialog)} onClose={() => setTaskDialog(undefined)} title={taskDialog?.mode === "create" ? "ایجاد کار از الزام" : "اتصال کار موجود"}>
         {taskDialog?.mode === "link" ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); if (!taskDialog || !taskId) return; await m.linkTask.mutateAsync({ requirementId: taskDialog.requirement.id, taskId }); setTaskDialog(undefined) }}>
           <label>کار<SearchableOptionSelect value={taskId} onChange={(value) => setTaskId(value || "")} options={tasks.data ?? []} search={taskSearch} onSearchChange={setTaskSearch} loading={tasks.isLoading || tasks.isFetching} placeholder="جستجو و انتخاب کار" ariaLabel="کار موجود" /></label>
-          <Button type="submit" disabled={!taskId || m.linkTask.isPending}>اتصال کار</Button>
+          <FormActions onCancel={() => setTaskDialog(undefined)} pending={m.linkTask.isPending} disabled={!taskId} submitLabel="اتصال کار" />
         </form> : taskDialog ? <form className="grid gap-3" onSubmit={async (e) => { e.preventDefault(); await m.createTask.mutateAsync({ requirementId: taskDialog.requirement.id, payload: { title: taskTitle } }); setTaskDialog(undefined) }}>
           <label>عنوان کار<Input required value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} /></label>
           <p className="text-sm text-muted-foreground">شرح الزام و مرجع مناقصه به‌صورت خودکار به توضیحات کار افزوده می‌شود.</p>
-          <Button type="submit" disabled={!taskTitle.trim() || m.createTask.isPending}>ایجاد و اتصال کار</Button>
+          <FormActions onCancel={() => setTaskDialog(undefined)} pending={m.createTask.isPending} disabled={!taskTitle.trim()} submitLabel="ایجاد و اتصال کار" />
         </form> : null}
       </ResponsiveModal>
     </FormSection>
@@ -1573,22 +1565,14 @@ function Deliverables({
               ariaLabel="سند فنی"
             />
           </label>
-          <label>
-            عنوان تحویل
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} />
-          </label>
+          <FormField label="عنوان تحویل" optional>{(props) => <Input {...props} value={label} onChange={(e) => setLabel(e.target.value)} />}</FormField>
           <label className="flex items-center gap-2"><input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />قلم تحویلی الزامی است</label>
           {m.deliver.error ? (
             <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
               {getApiErrorMessage(m.deliver.error, "اتصال سند فنی انجام نشد.")}
             </p>
           ) : null}
-          <Button
-            type="submit"
-            disabled={!documentId || m.deliver.isPending}
-          >
-            {m.deliver.isPending ? "در حال اتصال..." : "اتصال"}
-          </Button>
+          <FormActions onCancel={() => setOpen(false)} pending={m.deliver.isPending} disabled={!documentId} submitLabel="اتصال" />
         </form>
       </ResponsiveModal>
     </FormSection>
