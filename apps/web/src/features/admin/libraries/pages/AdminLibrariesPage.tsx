@@ -29,6 +29,7 @@ import {
   Building2,
   CircleCheckBig,
   CircleOff,
+  ClipboardPenLine,
   Code2,
   GraduationCap,
   HeartPulse,
@@ -153,6 +154,17 @@ const sections: Section[] = [
     manage: "product:manage",
   },
 ]
+const linkedSections = [
+  {
+    id: "customer-request-types",
+    label: "انواع درخواست مشتری",
+    description: "فرم‌ها، دسترس‌پذیری و فرایند ثبت درخواست مشتریان",
+    icon: ClipboardPenLine,
+    view: "customer-request-type:view",
+    manage: "customer-request-type:manage",
+    href: "/admin/customer-request-types",
+  },
+] as const
 const inputClass = "h-11 rounded-xl"
 const selectClass =
   "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none"
@@ -580,6 +592,9 @@ export function AdminLibrariesPage() {
   const available = sections.filter(
     (s) => permissions.includes(s.view) || permissions.includes(s.manage)
   )
+  const availableLinkedSections = linkedSections.filter(
+    (s) => permissions.includes(s.view) || permissions.includes(s.manage)
+  )
   const { params, page, pageSize, patch, setPage, setPageSize } =
     useListQueryState()
   const requestedSectionId = sectionId || params.get("section") || undefined
@@ -659,14 +674,18 @@ export function AdminLibrariesPage() {
           showRefresh={false}
         />
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {available.map((item) => {
+          {[...available, ...availableLinkedSections].map((item) => {
             const Icon = item.icon
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() =>
-                  navigate(`/admin/libraries/${encodeURIComponent(item.id)}`)
+                  navigate(
+                    "href" in item
+                      ? item.href
+                      : `/admin/libraries/${encodeURIComponent(item.id)}`
+                  )
                 }
                 className="group flex min-h-36 items-start gap-3 rounded-[var(--app-radius-card)] border border-[var(--app-divider)] bg-[var(--app-surface)] p-4 text-start shadow-[var(--app-shadow-card)] transition hover:border-[var(--app-primary)]/35 hover:bg-[var(--app-primary-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-primary)]/35 sm:p-5"
               >
@@ -688,7 +707,7 @@ export function AdminLibrariesPage() {
             )
           })}
         </section>
-        {!available.length ? (
+        {!available.length && !availableLinkedSections.length ? (
           <EmptyState
             icon={LibraryBig}
             title="کتابخانه‌ای در دسترس نیست"

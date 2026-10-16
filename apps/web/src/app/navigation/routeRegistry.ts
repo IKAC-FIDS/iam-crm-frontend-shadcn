@@ -125,6 +125,7 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
     order: 288,
     icon: ClipboardPenLine,
     access: any(["customer-request-type:view", "customer-request-type:manage"]),
+    showInNavigation: false,
   },
   {
     id: "collaboration",
@@ -382,6 +383,8 @@ export const appMenuRoutes: readonly AppMenuRoute[] = [
       "library:university:manage",
       "product:view",
       "product:manage",
+      "customer-request-type:view",
+      "customer-request-type:manage",
     ]),
   },
   {

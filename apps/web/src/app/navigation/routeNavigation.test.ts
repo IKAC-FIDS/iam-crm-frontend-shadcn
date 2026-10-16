@@ -56,6 +56,15 @@ describe("operations navigation", () => {
     expect(ids).not.toContain("admin-email-settings")
   })
 
+  it("opens request type management through Libraries without a duplicate menu item", () => {
+    const ids = getVisibleMenuGroups(
+      user(["customer-request-type:view"])
+    ).flatMap((item) => item.routes.map((route) => route.id))
+
+    expect(ids).toContain("admin-libraries")
+    expect(ids).not.toContain("admin-customer-request-types")
+  })
+
   it("keeps the unified technical library active on its legacy child routes", () => {
     expect(isMenuRouteActive("/technical/library", "/technical/resources/r1")).toBe(true)
     expect(isMenuRouteActive("/technical/library", "/technical/documents/d1")).toBe(true)

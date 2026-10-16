@@ -63,7 +63,7 @@ const routeDescriptions: Record<string, string> = {
   "admin-teams": "ساختار و اعضای تیم‌ها",
   "admin-exchange-rates": "نرخ‌های ارز سازمان",
   "admin-permissions": "نقش‌ها و مجوزها",
-  "admin-libraries": "داده‌های مرجع سامانه",
+  "admin-libraries": "داده‌های مرجع و انواع درخواست مشتری",
   "admin-pipeline": "مراحل و قوانین انتقال",
   "admin-audit-logs": "ردیابی تغییرات و رویدادها",
   "admin-timesheets": "بررسی و تأیید کارکرد اعضای تیم",

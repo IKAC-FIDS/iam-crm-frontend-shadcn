@@ -131,6 +131,19 @@ it("Libraries opens with section buttons and supports dedicated section routes",
   expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expect(screen.queryByText("انتخاب کتابخانه")).not.toBeInTheDocument()
 })
+it("Libraries exposes customer request types through the existing management route",async()=>{
+  useAuthStore.setState({
+    user:{...user,permissions:["customer-request-type:view"]},
+    status:"authenticated",
+  })
+  const overview=mount(<AdminLibrariesPage/>,"/admin/libraries")
+  await userEvent.click(
+    await screen.findByRole("button",{name:/انواع درخواست مشتری/})
+  )
+  expect(overview.router.state.location.pathname).toBe(
+    "/admin/customer-request-types"
+  )
+})
 it("Team members paginate the returned array without inventing server page requests",async()=>{
   mount(<AdminTeamDetailsPage/>,"/admin/teams/t1","/admin/teams/:teamId")
   expect(await screen.findByText("عضو 0")).toBeInTheDocument()
