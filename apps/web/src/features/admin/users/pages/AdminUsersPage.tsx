@@ -34,7 +34,7 @@ import {
   UserCheck,
   UsersRound,
 } from "lucide-react"
-import { useMemo, useState, type SelectHTMLAttributes } from "react"
+import { useMemo, useState } from "react"
 
 import { toast } from "sonner"
 import { useNavigate } from "react-router-dom"
@@ -44,6 +44,7 @@ import { useAuthStore } from "@/store/authStore"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { Button } from "@workspace/ui/components/button"
+import { NativeSelect } from "@workspace/ui/components/native-select"
 
 import {
   USER_ROLES,
@@ -69,14 +70,6 @@ function formatDate(value?: string) {
   }
 }
 
-function NativeSelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
-}
 export function AdminUsersPage() {
   const navigate = useNavigate()
   const current = useAuthStore((s) => s.user)

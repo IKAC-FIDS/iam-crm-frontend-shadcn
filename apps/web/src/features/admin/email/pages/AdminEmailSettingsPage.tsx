@@ -8,6 +8,7 @@ import { FormSection } from "@/components/shared/FormSection"
 import { QueryContent } from "@/components/shared/QueryContent"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { getEmailSettings, sendTestEmail, updateEmailSettings, type EmailSettingsPayload } from "../api/emailSettingsApi"
 
@@ -35,8 +36,8 @@ export function AdminEmailSettingsPage() {
             <label className={fieldClass}>پورت<Input type="number" min={1} max={65535} value={form.port} onChange={(e) => set("port", Number(e.target.value))} required dir="ltr" /></label>
             <label className={fieldClass}>نام کاربری<Input value={form.username} onChange={(e) => set("username", e.target.value)} dir="ltr" autoComplete="username" /></label>
             <label className={fieldClass}>رمز عبور<Input type="password" value={form.password ?? ""} onChange={(e) => set("password", e.target.value || undefined)} dir="ltr" autoComplete="new-password" placeholder={query.data?.hasPassword ? "برای حفظ رمز فعلی خالی بگذارید" : "رمز SMTP"} /></label>
-            <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={form.secure} onChange={(e) => set("secure", e.target.checked)} /> اتصال امن SSL/TLS</label>
-            <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={form.enabled} onChange={(e) => set("enabled", e.target.checked)} /> فعال‌سازی ارسال ایمیل</label>
+            <label className="flex min-h-11 items-center gap-2 text-sm font-bold"><Checkbox checked={form.secure} onChange={(e) => set("secure", e.target.checked)} /> اتصال امن SSL/TLS</label>
+            <label className="flex min-h-11 items-center gap-2 text-sm font-bold"><Checkbox checked={form.enabled} onChange={(e) => set("enabled", e.target.checked)} /> فعال‌سازی ارسال ایمیل</label>
           </div>
         </FormSection>
         <FormSection title={<span className="flex items-center gap-2"><ShieldCheck className="size-5" />هویت فرستنده</span>} description="این مشخصات در ایمیل‌های خروجی نمایش داده می‌شود.">

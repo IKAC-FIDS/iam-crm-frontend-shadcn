@@ -37,6 +37,8 @@ import { PaginationControls } from "@/components/shared/PaginationControls"
 import { ResponsiveModal as Modal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 import {
   activateTeam,
@@ -54,15 +56,6 @@ function fa(value: number) {
 
 function can(permissions: string[] | undefined, permission: string) {
   return Boolean(permissions?.includes(permission))
-}
-
-function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
 }
 
 export function AdminTeamsPage() {
@@ -425,8 +418,7 @@ function CreateTeamModal({
           <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
             توضیحات
           </label>
-          <textarea
-            className="min-h-24 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+          <Textarea
             value={description}
             onChange={(event) => setDescription(event.target.value)}
           />

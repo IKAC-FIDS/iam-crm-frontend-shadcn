@@ -40,6 +40,8 @@ import { PaginationControls } from "@/components/shared/PaginationControls"
 import { PageHero } from "@/components/shared/PageHero"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 import {
   activateTeam,
@@ -75,15 +77,6 @@ const roleLabels: Record<string, string> = {
   MANAGER: "مدیر",
   REP: "کارشناس",
   BOARDS: "هیئت‌مدیره",
-}
-
-function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
 }
 
 export function AdminTeamDetailsPage() {
@@ -299,11 +292,9 @@ export function AdminTeamDetailsPage() {
         }
         metadata={
           <>
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-bold ${team.isActive ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-            >
+            <StatusBadge tone={team.isActive ? "success" : "neutral"}>
               {team.isActive ? "فعال" : "غیرفعال"}
-            </span>
+            </StatusBadge>
             <span
               className="rounded-full bg-muted px-2.5 py-1 text-xs"
               dir="ltr"
@@ -409,8 +400,8 @@ export function AdminTeamDetailsPage() {
               <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
                 توضیحات
               </label>
-              <textarea
-                className="min-h-28 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 disabled:opacity-50"
+              <Textarea
+                className="min-h-28"
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 disabled={!canManage}

@@ -37,6 +37,7 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 import {
   createExchangeRate,
@@ -440,9 +441,8 @@ export function AdminExchangeRatesPage() {
           </label>
           <label className="grid gap-2 text-sm font-bold">
             توضیحات
-            <textarea
+            <Textarea
               {...form.register("note")}
-              className="min-h-24 rounded-xl border border-input bg-background p-3 text-sm"
               placeholder="دلیل تغییر نرخ..."
             />
             <span className="text-end text-xs text-muted-foreground">

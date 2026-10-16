@@ -33,7 +33,9 @@ import { getApiErrorMessage } from "@/lib/apiResponse"
 import type { DateRangeValue } from "@/lib/date/jalali"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
 import {
   exportAuditLogs,
   type AuditLog,
@@ -46,8 +48,6 @@ const faDate = (value: string) =>
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value))
-const selectClass =
-  "h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
 const inputClass = "h-10 rounded-xl"
 const ALL = "ALL"
 
@@ -406,9 +406,8 @@ export function AdminAuditLogsPage() {
             filtersClassName="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
             filters={
               <>
-                <select
+                <NativeSelect
                   aria-label="کاربر"
-                  className={selectClass}
                   value={draft.actorId}
                   onChange={(e) =>
                     setDraft({ ...draft, actorId: e.target.value })
@@ -420,10 +419,9 @@ export function AdminAuditLogsPage() {
                       {item.fullName || item.email || item.id}
                     </option>
                   ))}
-                </select>
-                <select
+                </NativeSelect>
+                <NativeSelect
                   aria-label="نوع موجودیت"
-                  className={selectClass}
                   value={draft.entityType}
                   onChange={(e) =>
                     setDraft({ ...draft, entityType: e.target.value })
@@ -433,10 +431,9 @@ export function AdminAuditLogsPage() {
                   {options.data?.entityTypes.map((item) => (
                     <option key={item}>{item}</option>
                   ))}
-                </select>
-                <select
+                </NativeSelect>
+                <NativeSelect
                   aria-label="عملیات"
-                  className={selectClass}
                   value={draft.action}
                   onChange={(e) =>
                     setDraft({ ...draft, action: e.target.value })
@@ -446,7 +443,7 @@ export function AdminAuditLogsPage() {
                   {options.data?.actions.map((item) => (
                     <option key={item}>{item}</option>
                   ))}
-                </select>
+                </NativeSelect>
                 <Button
                   variant="outline"
                   className="rounded-xl"
@@ -461,9 +458,8 @@ export function AdminAuditLogsPage() {
         </div>
         {advanced ? (
           <div className="mt-4 grid gap-3 border-t border-[var(--app-divider)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
-            <select
+            <NativeSelect
               aria-label="متد درخواست"
-              className={selectClass}
               value={draft.method}
               onChange={(e) => setDraft({ ...draft, method: e.target.value })}
             >
@@ -471,20 +467,18 @@ export function AdminAuditLogsPage() {
               {options.data?.requestMethods.map((item) => (
                 <option key={item}>{item}</option>
               ))}
-            </select>
-            <select
+            </NativeSelect>
+            <NativeSelect
               aria-label="نتیجه"
-              className={selectClass}
               value={draft.result}
               onChange={(e) => setDraft({ ...draft, result: e.target.value })}
             >
               <option value={ALL}>همه نتایج</option>
               <option value="SUCCESS">موفق</option>
               <option value="FAILURE">ناموفق</option>
-            </select>
-            <select
+            </NativeSelect>
+            <NativeSelect
               aria-label="منبع"
-              className={selectClass}
               value={draft.source}
               onChange={(e) => setDraft({ ...draft, source: e.target.value })}
             >
@@ -497,7 +491,7 @@ export function AdminAuditLogsPage() {
               <option value="PLATFORM">Platform</option>
               <option value="SYSTEM">System</option>
               <option value="LEGACY">Legacy</option>
-            </select>
+            </NativeSelect>
             <Input
               className={inputClass}
               value={draft.entityId}
@@ -541,10 +535,8 @@ export function AdminAuditLogsPage() {
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                className="size-4 accent-[var(--app-primary)]"
+            <label className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
                 checked={includePayload}
                 onChange={(event) => setIncludePayload(event.target.checked)}
               />

@@ -8,6 +8,7 @@ import { DialogHeroHeader } from "@/components/shared/DialogHeroHeader"
 import { FormActions } from "@/components/shared/FormActions"
 import { FormSection } from "@/components/shared/FormSection"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
 import { applyServerFieldErrors } from "@/lib/formErrors"
 import {
   USER_ROLES,
@@ -119,7 +120,7 @@ export function CreateUserModal({
                       {name !== "teamId" ? " *" : ""}
                     </label>
                     {name === "roleChoice" ? (
-                      <select
+                      <NativeSelect
                         id={id}
                         {...register(name)}
                         aria-invalid={Boolean(errors[name])}
@@ -147,9 +148,9 @@ export function CreateUserModal({
                               ))}
                           </optgroup>
                         ) : null}
-                      </select>
+                      </NativeSelect>
                     ) : name === "teamId" ? (
-                      <select
+                      <NativeSelect
                         id={id}
                         {...register(name)}
                         disabled={!canUseTeams}
@@ -165,7 +166,7 @@ export function CreateUserModal({
                             {team.name}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     ) : (
                       <Input
                         id={id}

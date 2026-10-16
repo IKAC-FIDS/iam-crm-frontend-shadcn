@@ -52,7 +52,10 @@ import { MetricCard } from "@/components/shared/MetricCard"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { ResponsiveModal } from "@/components/shared/ResponsiveModal"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 import {
   lookupGroups,
   removeLibraryItem,
@@ -166,8 +169,6 @@ const linkedSections = [
   },
 ] as const
 const inputClass = "h-11 rounded-xl"
-const selectClass =
-  "h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none"
 const fa = (n: number) => new Intl.NumberFormat("fa-IR").format(n)
 const money = (value: string | number | null | undefined) =>
   value == null
@@ -309,8 +310,8 @@ function LibraryForm({
         ) : null}
         <label className="grid gap-2 text-sm font-bold">
           {persona ? "یادداشت" : "توضیحات"}
-          <textarea
-            className="min-h-28 rounded-xl border border-input bg-background p-3 text-sm"
+          <Textarea
+            className="min-h-28"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
@@ -329,10 +330,8 @@ function LibraryForm({
           </label>
         ) : null}
         {coded || university ? (
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-[var(--app-primary)]"
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <Checkbox
               checked={form.isActive}
               onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
             />
@@ -504,9 +503,8 @@ function ProductForm({
           {field("کد محصول", "code")}
           <label className="grid gap-2 text-sm font-bold">
             {uiText.products.type} *
-            <select
+            <NativeSelect
               required
-              className={selectClass}
               value={form.type}
               onChange={(e) =>
                 setForm({ ...form, type: e.target.value as ProductType })
@@ -520,7 +518,7 @@ function ProductForm({
                   {label}
                 </option>
               ))}
-            </select>
+            </NativeSelect>
           </label>
           {field("کد دیجی‌کالا", "digikalaCode")}
           {field("صفحه دیجی‌کالا", "digikalaUrl", "url")}
@@ -529,8 +527,7 @@ function ProductForm({
         </div>
         <label className="grid gap-2 text-sm font-bold">
           توضیحات
-          <textarea
-            className="min-h-24 rounded-xl border border-input bg-background p-3 text-sm"
+          <Textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
@@ -538,8 +535,7 @@ function ProductForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold">
             ارز قیمت‌گذاری
-            <select
-              className={selectClass}
+            <NativeSelect
               value={form.pricingCurrency}
               onChange={(e) =>
                 setForm({
@@ -550,7 +546,7 @@ function ProductForm({
             >
               <option value="IRR">ریال</option>
               <option value="USD">دلار</option>
-            </select>
+            </NativeSelect>
           </label>
           {field("ترتیب نمایش", "sortOrder", "number")}
           {field("قیمت ورودی حضوری", "inPersonInputPrice", "number")}
@@ -560,9 +556,8 @@ function ProductForm({
           {form.pricingCurrency === "USD" &&
             field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <Checkbox
             checked={form.isActive}
             onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
           />
@@ -793,9 +788,8 @@ export function AdminLibrariesPage() {
               filters={
                 <>
                   {section.kind === "products" && (
-                    <select
+                    <NativeSelect
                       aria-label={uiText.products.type}
-                      className={selectClass}
                       value={productType}
                       onChange={(e) => {
                         setProductType(e.target.value as ProductType | "ALL")
@@ -809,12 +803,11 @@ export function AdminLibrariesPage() {
                           </option>
                         )
                       )}
-                    </select>
+                    </NativeSelect>
                   )}
 
-                  <select
+                  <NativeSelect
                     aria-label={uiText.common.filters.status}
-                    className={selectClass}
                     value={status}
                     onChange={(e) => {
                       setStatus(e.target.value)
@@ -825,7 +818,7 @@ export function AdminLibrariesPage() {
                     </option>
                     <option value="ACTIVE">فعال</option>
                     <option value="INACTIVE">غیرفعال</option>
-                  </select>
+                  </NativeSelect>
                 </>
               }
             />

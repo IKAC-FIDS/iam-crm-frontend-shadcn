@@ -40,7 +40,10 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SurfaceCard } from "@/components/shared/SurfaceCard"
 import { NumberInput } from "@/components/shared/inputs/NumberInput"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 // Stored stage colors and native color inputs require a concrete color value.
 const DEFAULT_PIPELINE_COLOR = "#78716C"
@@ -81,15 +84,6 @@ function hasPermission(permissions: string[] | undefined, permission: string) {
 
 function fa(value: number) {
   return new Intl.NumberFormat("fa-IR").format(value)
-}
-
-function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
 }
 
 export function AdminPipelinePage() {
@@ -723,10 +717,9 @@ function StageEditor({
           </div>
         </div>
 
-        <textarea
+        <Textarea
           value={description ?? ""}
           onChange={(event) => setDescription(event.target.value)}
-          className="min-h-24 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
           placeholder="توضیحات"
         />
 
@@ -744,8 +737,7 @@ function StageEditor({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isActive}
               onChange={(event) => setIsActive(event.target.checked)}
             />
@@ -753,8 +745,7 @@ function StageEditor({
           </label>
 
           <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isDefault}
               disabled={terminalType !== "NONE" || !isActive}
               onChange={(event) => setIsDefault(event.target.checked)}

@@ -30,7 +30,10 @@ import { LoadingState } from "@/components/shared/LoadingState"
 import { MetricCard } from "@/components/shared/MetricCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
 
 import {
   createPermission,
@@ -72,15 +75,6 @@ function fa(value: number) {
 
 function isCritical(permission: ManagedPermission) {
   return CRITICAL_PERMISSIONS.has(permission.action)
-}
-
-function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
 }
 
 export function AdminPermissionsPage() {
@@ -821,8 +815,8 @@ function PermissionEditorModal({
           <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
             توضیحات
           </label>
-          <textarea
-            className="min-h-28 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+          <Textarea
+            className="min-h-28"
             value={description ?? ""}
             maxLength={1000}
             onChange={(event) => setDescription(event.target.value)}
@@ -830,8 +824,7 @@ function PermissionEditorModal({
         </div>
 
         <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={isActive}
             disabled={Boolean(permission && isCritical(permission))}
             onChange={(event) => setIsActive(event.target.checked)}
@@ -1025,8 +1018,7 @@ function RoleCreateModal({
           </div>
 
           <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={isActive}
               onChange={(event) => setIsActive(event.target.checked)}
             />
@@ -1037,7 +1029,7 @@ function RoleCreateModal({
             <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
               توضیحات
             </label>
-            <textarea
+            <Textarea
               value={description}
               maxLength={1000}
               onChange={(event) => setDescription(event.target.value)}
@@ -1161,8 +1153,7 @@ function RoleCreateModal({
                                   : "border-[var(--app-divider)]"
                               }`}
                             >
-                              <input
-                                type="checkbox"
+                              <Checkbox
                                 checked={checked}
                                 onChange={(event) =>
                                   toggle(permission.id, event.target.checked)
@@ -1300,16 +1291,15 @@ function RoleEditorModal({
           <label className="mb-1.5 block text-xs font-bold text-muted-foreground">
             توضیحات
           </label>
-          <textarea
-            className="min-h-28 w-full rounded-xl border border-input bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring/20"
+          <Textarea
+            className="min-h-28"
             value={description ?? ""}
             maxLength={1000}
             onChange={(event) => setDescription(event.target.value)}
           />
         </div>
         <label className="flex items-center gap-3 rounded-2xl bg-muted/35 p-4 text-sm">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={isActive}
             onChange={(event) => setIsActive(event.target.checked)}
           />
@@ -1544,8 +1534,7 @@ function RoleMatrixModal({
                           key={permission.id}
                           className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition ${checked ? "border-[var(--app-primary)] bg-[var(--app-primary-soft)]" : "border-[var(--app-divider)] bg-background"}`}
                         >
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={checked}
                             disabled={!editable}
                             onChange={(event) =>
