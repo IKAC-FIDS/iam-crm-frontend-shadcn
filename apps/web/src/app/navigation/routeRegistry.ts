@@ -58,7 +58,6 @@ const technicalAny = (permissions: readonly string[]) =>
 
 export const technicalCenterAccess: RouteAccessPolicy = technicalAny([
   "technical-release:view",
-  "technical-knowledge:view",
   "technical-document:view",
   "technical-resource:view",
 ])
@@ -85,15 +84,6 @@ export const technicalCenterRoutes: readonly AppMenuRoute[] = [
     icon: Rocket,
     access: technicalAny(["technical-release:view"]),
     showInNavigation: false,
-  },
-  {
-    id: "technical-knowledge-base",
-    path: "/technical/knowledge-base",
-    label: uiText.technicalCenter.knowledgeBase.title,
-    group: "operations",
-    order: 160,
-    icon: BookOpen,
-    access: technicalAny(["technical-knowledge:view"]),
   },
   {
     id: "technical-documents",

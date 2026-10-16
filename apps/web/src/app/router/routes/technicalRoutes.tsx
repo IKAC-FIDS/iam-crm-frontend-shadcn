@@ -19,20 +19,10 @@ export const technicalRoutes: RouteObject[] = [
       },
     ]
   ),
-  routeGroup(
-    "technical-knowledge-base",
-    lazyRoute(technical, "TechnicalKnowledgeBasePage"),
-    [
-      {
-        path: "/technical/knowledge-base/new",
-        element: lazyRoute(technical, "TechnicalKnowledgeEditorPage"),
-      },
-      {
-        path: "/technical/knowledge-base/:id",
-        element: lazyRoute(technical, "TechnicalKnowledgeDetailPage"),
-      },
-    ]
-  ),
+  {
+    path: "/technical/knowledge-base/*",
+    element: <Navigate to="/technical/library" replace />,
+  },
   {
     path: "/technical/tenders/*",
     element: <Navigate to="/collaboration" replace />,

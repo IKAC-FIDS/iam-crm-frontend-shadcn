@@ -4,15 +4,22 @@ import { BellRing, Pencil, Plus, Power, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHero } from "@/components/shared/PageHero"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
-import { EntityCard, type EntityBadgeDescriptor } from "@/components/shared/EntityCard"
+import { EmptyState } from "@/components/shared/EmptyState"
+import {
+  EntityCard,
+  type EntityBadgeDescriptor,
+} from "@/components/shared/EntityCard"
+import { FormActions } from "@/components/shared/FormActions"
+import { QueryContent } from "@/components/shared/QueryContent"
 import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSelect"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { getDigestPolicies } from "../api/notificationAdminApi"
 import { RuleConditionBuilder } from "../components/RuleConditionBuilder"
 import { RuleScheduleEditor } from "../components/RuleScheduleEditor"
 import { Button } from "@workspace/ui/components/button"
-import { Card, CardContent } from "@workspace/ui/components/card"
+import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
+import { NativeSelect } from "@workspace/ui/components/native-select"
 import {
   Dialog,
   DialogContent,
@@ -89,15 +96,6 @@ const defaultRecipient = (): RecipientRuleInput => ({
   enabled: true,
 })
 
-function NativeSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring/20 ${props.className ?? ""}`}
-    />
-  )
-}
-
 export function RuleDialog({
   open,
   onOpenChange,
@@ -114,12 +112,30 @@ export function RuleDialog({
     rule?.eventName ?? "MEETING.CREATED"
   )
   const [priority, setPriority] = useState(rule?.priority ?? 100)
-  const [deliveryPriority, setDeliveryPriority] = useState<NotificationPriority>(rule?.deliveryPriority ?? "NORMAL")
-  const [digestPolicyId, setDigestPolicyId] = useState(rule?.digestPolicyId ?? "")
-  const digestPolicies = useQuery({ queryKey: ["notification-digests"], queryFn: getDigestPolicies })
+  const [deliveryPriority, setDeliveryPriority] =
+    useState<NotificationPriority>(rule?.deliveryPriority ?? "NORMAL")
+  const [digestPolicyId, setDigestPolicyId] = useState(
+    rule?.digestPolicyId ?? ""
+  )
+  const digestPolicies = useQuery({
+    queryKey: ["notification-digests"],
+    queryFn: getDigestPolicies,
+  })
   const [mandatory, setMandatory] = useState(rule?.mandatory ?? false)
-  const [conditions, setConditions] = useState<NotificationRuleConditions | null>(rule?.conditions ?? null)
-  const [schedule, setSchedule] = useState<NotificationScheduleInput | null>(rule?.schedule ? { enabled: rule.schedule.enabled, type: rule.schedule.scheduleType, sourceField: rule.schedule.sourceField, triggerMode: rule.schedule.triggerMode, offsetMinutes: rule.schedule.offsetMinutes, gracePeriodMinutes: rule.schedule.gracePeriodMinutes } : null)
+  const [conditions, setConditions] =
+    useState<NotificationRuleConditions | null>(rule?.conditions ?? null)
+  const [schedule, setSchedule] = useState<NotificationScheduleInput | null>(
+    rule?.schedule
+      ? {
+          enabled: rule.schedule.enabled,
+          type: rule.schedule.scheduleType,
+          sourceField: rule.schedule.sourceField,
+          triggerMode: rule.schedule.triggerMode,
+          offsetMinutes: rule.schedule.offsetMinutes,
+          gracePeriodMinutes: rule.schedule.gracePeriodMinutes,
+        }
+      : null
+  )
   const [recipients, setRecipients] = useState<RecipientRuleInput[]>(
     rule?.recipientRules?.length
       ? rule.recipientRules.map((item) => ({
@@ -146,12 +162,32 @@ export function RuleDialog({
   const channels =
     catalog.data?.channels ??
     (Object.keys(channelLabels) as NotificationChannel[])
-  const conditionFields = catalog.data?.conditionEvents?.find(item => item.eventName === eventName)?.conditionFields ?? []
-  const scheduleDefinition = catalog.data?.scheduleEvents?.find(item => item.eventName === eventName)
+  const conditionFields =
+    catalog.data?.conditionEvents?.find((item) => item.eventName === eventName)
+      ?.conditionFields ?? []
+  const scheduleDefinition = catalog.data?.scheduleEvents?.find(
+    (item) => item.eventName === eventName
+  )
   const selectEvent = (nextEvent: string) => {
-    setEventName(nextEvent); setConditions(null)
-    const definition = catalog.data?.scheduleEvents?.find(item => item.eventName === nextEvent)
-    setSchedule(definition ? { enabled: true, type: definition.scheduleOptions.type, sourceField: definition.scheduleOptions.sourceField, triggerMode: definition.scheduleOptions.triggerModes[0]!, offsetMinutes: definition.scheduleOptions.suggestedOffsetsMinutes[0] ?? 0, gracePeriodMinutes: definition.scheduleOptions.defaultGracePeriodMinutes } : null)
+    setEventName(nextEvent)
+    setConditions(null)
+    const definition = catalog.data?.scheduleEvents?.find(
+      (item) => item.eventName === nextEvent
+    )
+    setSchedule(
+      definition
+        ? {
+            enabled: true,
+            type: definition.scheduleOptions.type,
+            sourceField: definition.scheduleOptions.sourceField,
+            triggerMode: definition.scheduleOptions.triggerModes[0]!,
+            offsetMinutes:
+              definition.scheduleOptions.suggestedOffsetsMinutes[0] ?? 0,
+            gracePeriodMinutes:
+              definition.scheduleOptions.defaultGracePeriodMinutes,
+          }
+        : null
+    )
   }
 
   const updateRecipient = (
@@ -226,76 +262,122 @@ export function RuleDialog({
             {rule ? "ویرایش قانون اعلان" : "قانون اعلان جدید"}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-5">
+        <form
+          className="grid gap-5"
+          onSubmit={(event) => {
+            event.preventDefault()
+            void submit()
+          }}
+        >
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm">
-              <span>نام قانون</span>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span>سرویس</span>
-              <NativeSelect
-                value={selectedService}
-                onChange={(e) => {
-                  const service = e.target.value
-                  const first = events.find((event) =>
-                    event.startsWith(`${service}.`)
-                  )
-                  if (first) selectEvent(first)
-                }}
-              >
-                {services.map((service) => (
-                  <option key={service} value={service}>
-                    {service === "MEETING"
-                      ? "جلسه"
-                      : service === "TASK"
-                        ? "کار"
-                        : service === "OPPORTUNITY"
-                          ? "فرصت"
-                        : service}
-                  </option>
-                ))}
-              </NativeSelect>
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span>اکشن</span>
-              <NativeSelect
-                value={selectedAction}
-                onChange={(e) => selectEvent(`${selectedService}.${e.target.value}`)}
-              >
-                {actions.map((action) => {
-                  const value = `${selectedService}.${action}`
-                  return (
-                    <option key={action} value={action}>
-                      {actionLabels[action] ?? eventLabels[value] ?? action}
+            <FormField label="نام قانون" required>
+              {(fieldProps) => (
+                <Input
+                  {...fieldProps}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              )}
+            </FormField>
+            <FormField label="سرویس">
+              {(fieldProps) => (
+                <NativeSelect
+                  {...fieldProps}
+                  value={selectedService}
+                  onChange={(e) => {
+                    const service = e.target.value
+                    const first = events.find((event) =>
+                      event.startsWith(`${service}.`)
+                    )
+                    if (first) selectEvent(first)
+                  }}
+                >
+                  {services.map((service) => (
+                    <option key={service} value={service}>
+                      {service === "MEETING"
+                        ? "جلسه"
+                        : service === "TASK"
+                          ? "کار"
+                          : service === "OPPORTUNITY"
+                            ? "فرصت"
+                            : service}
                     </option>
-                  )
-                })}
-              </NativeSelect>
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span>اولویت اجرا</span>
-              <Input
-                type="number"
-                min={0}
-                max={10000}
-                value={priority}
-                onChange={(e) => setPriority(Number(e.target.value) || 0)}
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span>فوریت اعلان</span>
-              <NativeSelect value={deliveryPriority} onChange={event => setDeliveryPriority(event.target.value as NotificationPriority)}>
-                <option value="LOW">کم</option><option value="NORMAL">عادی</option><option value="HIGH">زیاد</option><option value="URGENT">فوری</option><option value="CRITICAL">بحرانی (عبور از ساعات سکوت)</option>
-              </NativeSelect>
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span>خلاصه دوره‌ای</span>
-              <NativeSelect value={digestPolicyId} onChange={event => setDigestPolicyId(event.target.value)}>
-                <option value="">ارسال مستقیم</option>
-                {digestPolicies.data?.filter(item => item.enabled && item.eventNames.includes(eventName)).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-              </NativeSelect>
-            </label>
+                  ))}
+                </NativeSelect>
+              )}
+            </FormField>
+            <FormField label="اکشن">
+              {(fieldProps) => (
+                <NativeSelect
+                  {...fieldProps}
+                  value={selectedAction}
+                  onChange={(e) =>
+                    selectEvent(`${selectedService}.${e.target.value}`)
+                  }
+                >
+                  {actions.map((action) => {
+                    const value = `${selectedService}.${action}`
+                    return (
+                      <option key={action} value={action}>
+                        {actionLabels[action] ?? eventLabels[value] ?? action}
+                      </option>
+                    )
+                  })}
+                </NativeSelect>
+              )}
+            </FormField>
+            <FormField label="اولویت اجرا">
+              {(fieldProps) => (
+                <Input
+                  {...fieldProps}
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={priority}
+                  onChange={(e) => setPriority(Number(e.target.value) || 0)}
+                />
+              )}
+            </FormField>
+            <FormField label="فوریت اعلان">
+              {(fieldProps) => (
+                <NativeSelect
+                  {...fieldProps}
+                  value={deliveryPriority}
+                  onChange={(event) =>
+                    setDeliveryPriority(
+                      event.target.value as NotificationPriority
+                    )
+                  }
+                >
+                  <option value="LOW">کم</option>
+                  <option value="NORMAL">عادی</option>
+                  <option value="HIGH">زیاد</option>
+                  <option value="URGENT">فوری</option>
+                  <option value="CRITICAL">بحرانی (عبور از ساعات سکوت)</option>
+                </NativeSelect>
+              )}
+            </FormField>
+            <FormField label="خلاصه دوره‌ای">
+              {(fieldProps) => (
+                <NativeSelect
+                  {...fieldProps}
+                  value={digestPolicyId}
+                  onChange={(event) => setDigestPolicyId(event.target.value)}
+                >
+                  <option value="">ارسال مستقیم</option>
+                  {digestPolicies.data
+                    ?.filter(
+                      (item) =>
+                        item.enabled && item.eventNames.includes(eventName)
+                    )
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                </NativeSelect>
+              )}
+            </FormField>
             <label className="flex items-center gap-3 rounded-xl border p-3 text-sm">
               <input
                 type="checkbox"
@@ -307,8 +389,16 @@ export function RuleDialog({
             </label>
           </div>
 
-          <RuleScheduleEditor definition={scheduleDefinition} value={schedule} onChange={setSchedule} />
-          <RuleConditionBuilder fields={conditionFields} value={conditions} onChange={setConditions} />
+          <RuleScheduleEditor
+            definition={scheduleDefinition}
+            value={schedule}
+            onChange={setSchedule}
+          />
+          <RuleConditionBuilder
+            fields={conditionFields}
+            value={conditions}
+            onChange={setConditions}
+          />
 
           <div className="grid gap-3">
             <div className="flex items-center justify-between">
@@ -339,15 +429,12 @@ export function RuleDialog({
             ))}
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              انصراف
-            </Button>
-            <Button disabled={pending} onClick={() => void submit()}>
-              {pending ? "در حال ذخیره..." : "ذخیره قانون"}
-            </Button>
-          </div>
-        </div>
+          <FormActions
+            onCancel={() => onOpenChange(false)}
+            pending={pending}
+            submitLabel="ذخیره قانون"
+          />
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -382,24 +469,26 @@ function RecipientEditor({
 
   return (
     <div className="grid gap-3 rounded-2xl border bg-muted/20 p-4 md:grid-cols-[1fr_1.2fr]">
-      <label className="grid gap-2 text-sm">
-        <span>نوع گیرنده</span>
-        <NativeSelect
-          value={recipient.type}
-          onChange={(e) =>
-            onChange({
-              type: e.target.value as NotificationRecipientType,
-              targetId: null,
-            })
-          }
-        >
-          {recipientTypes.map((type) => (
-            <option key={type} value={type}>
-              {recipientLabels[type]}
-            </option>
-          ))}
-        </NativeSelect>
-      </label>
+      <FormField label="نوع گیرنده">
+        {(fieldProps) => (
+          <NativeSelect
+            {...fieldProps}
+            value={recipient.type}
+            onChange={(event) =>
+              onChange({
+                type: event.target.value as NotificationRecipientType,
+                targetId: null,
+              })
+            }
+          >
+            {recipientTypes.map((type) => (
+              <option key={type} value={type}>
+                {recipientLabels[type]}
+              </option>
+            ))}
+          </NativeSelect>
+        )}
+      </FormField>
       {needsTarget ? (
         <label className="grid gap-2 text-sm">
           <span>انتخاب گیرنده</span>
@@ -502,6 +591,16 @@ export function AdminNotificationRulesPage({
       recipientFilter,
     ]
   )
+  const hasActiveFilters = Boolean(
+    search || eventFilter || enabledFilter || channelFilter || recipientFilter
+  )
+  const clearFilters = () => {
+    setSearch("")
+    setEventFilter("")
+    setEnabledFilter("")
+    setChannelFilter("")
+    setRecipientFilter("")
+  }
 
   return (
     <div className="grid gap-6" dir="rtl">
@@ -539,20 +638,8 @@ export function AdminNotificationRulesPage({
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="جستجو در نام قانون"
-        hasActiveFilters={Boolean(
-          search ||
-          eventFilter ||
-          enabledFilter ||
-          channelFilter ||
-          recipientFilter
-        )}
-        onClearFilters={() => {
-          setSearch("")
-          setEventFilter("")
-          setEnabledFilter("")
-          setChannelFilter("")
-          setRecipientFilter("")
-        }}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={clearFilters}
         filters={
           <>
             <NativeSelect
@@ -604,75 +691,151 @@ export function AdminNotificationRulesPage({
         }
       />
 
-      {rules.isLoading ? (
-        <p className="text-sm text-muted-foreground">در حال دریافت قوانین...</p>
-      ) : null}
-      {rules.isError ? (
-        <Card>
-          <CardContent className="p-6 text-sm text-destructive">
-            دریافت قوانین اعلان ناموفق بود.
-          </CardContent>
-        </Card>
-      ) : null}
-      {!rules.isLoading && !rules.isError && !rules.data?.length ? (
-        <Card>
-          <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            هنوز قانونی تعریف نشده است.
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <div className="grid gap-3">
-        {visibleRules.map((rule) => {
-          const badges: EntityBadgeDescriptor[] = [
-            { id: "status", label: rule.enabled ? "فعال" : "غیرفعال", tone: rule.enabled ? "success" : "neutral", dot: true },
-            { id: "event", label: eventLabels[rule.eventName] ?? rule.eventName, tone: "info" },
-          ]
-          if (rule.mandatory) badges.push({ id: "mandatory", label: "اجباری", tone: "warning" })
-          if (rule.schedule) badges.push({ id: "schedule", label: rule.schedule.offsetMinutes === 0 ? "در سررسید" : `${Math.abs(rule.schedule.offsetMinutes)} دقیقه قبل`, tone: "secondary" })
-          return <EntityCard
-            key={rule.id}
-            id={rule.id}
-            title={rule.name}
-            subtitle={rule.recipientRules.map((recipient) => `${recipientLabels[recipient.type]}: ${recipient.channels.map((channel) => channelLabels[channel]).join(" + ")}`).join(" | ")}
-            fallback={<BellRing className="size-5" />}
-            badges={badges}
-            showOwner={false}
-            metadata={[]}
-            onClick={() => { setEditingRule(rule); setDialogOpen(true) }}
-            accentColor={rule.enabled ? "#22c55e" : "#64748b"}
-            actions={[
-              { id: "toggle", label: rule.enabled ? "غیرفعال‌سازی" : "فعال‌سازی", icon: Power, disabled: mutations.update.isPending, onClick: async () => {
-                    const enabled = !rule.enabled
-                    try {
-                      await mutations.update.mutateAsync({
-                        id: rule.id,
-                        input: { enabled },
-                      })
-                      toast.success(
-                        enabled ? "قانون فعال شد." : "قانون غیرفعال شد."
-                      )
-                    } catch (error) {
-                      toast.error(
-                        getApiErrorMessage(error, "تغییر وضعیت ناموفق بود.")
-                      )
-                    }
-                  } },
-              { id: "edit", label: "ویرایش", icon: Pencil, onClick: () => { setEditingRule(rule); setDialogOpen(true) } },
-              { id: "delete", label: "حذف", icon: Trash2, tone: "danger", confirmation: { title: "حذف قانون اعلان", description: `قانون «${rule.name}» حذف شود؟` }, onClick: async () => {
-                    try {
-                      await mutations.remove.mutateAsync(rule.id)
-                      toast.success("قانون حذف شد.")
-                    } catch (error) {
-                      toast.error(
-                        getApiErrorMessage(error, "حذف قانون ناموفق بود.")
-                      )
-                    }
-                  } },
-            ]}
+      <QueryContent query={rules} errorTitle="دریافت قوانین اعلان ناموفق بود">
+        {visibleRules.length ? (
+          <div className="grid gap-3">
+            {visibleRules.map((rule) => {
+              const badges: EntityBadgeDescriptor[] = [
+                {
+                  id: "status",
+                  label: rule.enabled ? "فعال" : "غیرفعال",
+                  tone: rule.enabled ? "success" : "neutral",
+                  dot: true,
+                },
+                {
+                  id: "event",
+                  label: eventLabels[rule.eventName] ?? rule.eventName,
+                  tone: "info",
+                },
+              ]
+              if (rule.mandatory)
+                badges.push({
+                  id: "mandatory",
+                  label: "اجباری",
+                  tone: "warning",
+                })
+              if (rule.schedule)
+                badges.push({
+                  id: "schedule",
+                  label:
+                    rule.schedule.offsetMinutes === 0
+                      ? "در سررسید"
+                      : `${Math.abs(rule.schedule.offsetMinutes)} دقیقه قبل`,
+                  tone: "secondary",
+                })
+              return (
+                <EntityCard
+                  key={rule.id}
+                  id={rule.id}
+                  title={rule.name}
+                  subtitle={rule.recipientRules
+                    .map(
+                      (recipient) =>
+                        `${recipientLabels[recipient.type]}: ${recipient.channels.map((channel) => channelLabels[channel]).join(" + ")}`
+                    )
+                    .join(" | ")}
+                  fallback={<BellRing className="size-5" />}
+                  badges={badges}
+                  showOwner={false}
+                  metadata={[]}
+                  onClick={() => {
+                    setEditingRule(rule)
+                    setDialogOpen(true)
+                  }}
+                  accentColor={
+                    rule.enabled
+                      ? "var(--success)"
+                      : "var(--muted-foreground)"
+                  }
+                  actions={[
+                    {
+                      id: "toggle",
+                      label: rule.enabled ? "غیرفعال‌سازی" : "فعال‌سازی",
+                      icon: Power,
+                      disabled: mutations.update.isPending,
+                      onClick: async () => {
+                        const enabled = !rule.enabled
+                        try {
+                          await mutations.update.mutateAsync({
+                            id: rule.id,
+                            input: { enabled },
+                          })
+                          toast.success(
+                            enabled ? "قانون فعال شد." : "قانون غیرفعال شد."
+                          )
+                        } catch (error) {
+                          toast.error(
+                            getApiErrorMessage(error, "تغییر وضعیت ناموفق بود.")
+                          )
+                        }
+                      },
+                    },
+                    {
+                      id: "edit",
+                      label: "ویرایش",
+                      icon: Pencil,
+                      onClick: () => {
+                        setEditingRule(rule)
+                        setDialogOpen(true)
+                      },
+                    },
+                    {
+                      id: "delete",
+                      label: "حذف",
+                      icon: Trash2,
+                      tone: "danger",
+                      confirmation: {
+                        title: "حذف قانون اعلان",
+                        description: `قانون «${rule.name}» حذف شود؟`,
+                      },
+                      onClick: async () => {
+                        try {
+                          await mutations.remove.mutateAsync(rule.id)
+                          toast.success("قانون حذف شد.")
+                        } catch (error) {
+                          toast.error(
+                            getApiErrorMessage(error, "حذف قانون ناموفق بود.")
+                          )
+                        }
+                      },
+                    },
+                  ]}
+                />
+              )
+            })}
+          </div>
+        ) : (
+          <EmptyState
+            icon={BellRing}
+            title={
+              hasActiveFilters
+                ? "قانونی مطابق فیلترها یافت نشد"
+                : "هنوز قانونی تعریف نشده است"
+            }
+            description={
+              hasActiveFilters
+                ? "فیلترها را تغییر دهید یا پاک کنید."
+                : "برای شروع، نخستین قانون اعلان را ایجاد کنید."
+            }
+            action={
+              <Button
+                type="button"
+                variant="outline"
+                onClick={
+                  hasActiveFilters
+                    ? clearFilters
+                    : () => {
+                        setEditingRule(null)
+                        setDialogOpen(true)
+                      }
+                }
+              >
+                {hasActiveFilters ? "پاک‌کردن فیلترها" : "ایجاد قانون"}
+              </Button>
+            }
           />
-        })}
-      </div>
+        )}
+      </QueryContent>
 
       {dialogOpen ? (
         <RuleDialog

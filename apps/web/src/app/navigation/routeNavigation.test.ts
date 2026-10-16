@@ -11,7 +11,7 @@ function user(permissions: string[]) {
 describe("operations navigation", () => {
   it("keeps each operational route under the permission-aware Operations group", () => {
     const operations = getVisibleMenuGroups(
-      user(["company:view", "opportunity:view", "task:view", "activity:view", "meeting:view", "notification:view", "technical-knowledge:view"])
+      user(["company:view", "opportunity:view", "task:view", "activity:view", "meeting:view", "notification:view", "technical-resource:view"])
     ).find((item) => item.group === "operations")
 
     expect(operations?.routes.map((route) => [route.id, route.path])).toEqual([
@@ -22,7 +22,7 @@ describe("operations navigation", () => {
       ["activities", "/activities"],
       ["follow-ups", "/follow-ups"],
       ["notifications", "/notifications"],
-      ["technical-knowledge-base", "/technical/knowledge-base"],
+      ["technical-library", "/technical/library"],
     ])
   })
 

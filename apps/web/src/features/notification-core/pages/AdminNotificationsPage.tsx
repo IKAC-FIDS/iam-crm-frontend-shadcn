@@ -22,6 +22,7 @@ import type { DataTableColumn } from "@/components/shared/DataTableShell"
 import { EntityCardList } from "@/components/shared/EntityCardList"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { FormActions } from "@/components/shared/FormActions"
 import { PaginationControls } from "@/components/shared/PaginationControls"
 import { PersianDatePicker } from "@/components/shared/PersianDatePicker"
 import { fromApiDate, toApiDate } from "@/lib/date/jalali"
@@ -32,9 +33,20 @@ import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSele
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
+import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
-import { AdminNotificationRulesPage, RuleDialog } from "./AdminNotificationRulesPage"
-import { DigestsTab, EscalationsTab, QuietHoursTab, policyTabIcons } from "../components/NotificationPolicyTabs"
+import { NativeSelect as Select } from "@workspace/ui/components/native-select"
+import { Textarea } from "@workspace/ui/components/textarea"
+import {
+  AdminNotificationRulesPage,
+  RuleDialog,
+} from "./AdminNotificationRulesPage"
+import {
+  DigestsTab,
+  EscalationsTab,
+  QuietHoursTab,
+  policyTabIcons,
+} from "../components/NotificationPolicyTabs"
 import { useNotificationTargets } from "../hooks/useNotificationRules"
 import {
   createNotificationTemplate,
@@ -67,7 +79,14 @@ import type {
   NotificationTemplate,
 } from "../types/rule-engine.types"
 
-type Tab = "rules" | "templates" | "channels" | "deliveries" | "quiet" | "digests" | "escalations"
+type Tab =
+  | "rules"
+  | "templates"
+  | "channels"
+  | "deliveries"
+  | "quiet"
+  | "digests"
+  | "escalations"
 const tabs: { id: Tab; label: string; icon: typeof BellRing }[] = [
   { id: "rules", label: "قوانین اعلان", icon: BellRing },
   { id: "templates", label: "قالب‌ها", icon: FileText },
@@ -93,13 +112,22 @@ const deliveryLabels: Record<NotificationDeliveryStatus, string> = {
   SKIPPED: "ردشده",
 }
 const triggerLabels: Record<NotificationTriggerType, string> = {
-  DOMAIN_EVENT: "رویداد سامانه", SCHEDULED: "زمان‌بندی‌شده", MANUAL_RETRY: "تلاش دستی",
-  AUTOMATIC_RETRY: "تلاش خودکار", SYSTEM: "سیستمی",
+  DOMAIN_EVENT: "رویداد سامانه",
+  SCHEDULED: "زمان‌بندی‌شده",
+  MANUAL_RETRY: "تلاش دستی",
+  AUTOMATIC_RETRY: "تلاش خودکار",
+  SYSTEM: "سیستمی",
 }
 const failureLabels: Record<string, string> = {
-  NETWORK: "شبکه", AUTHENTICATION: "احراز هویت", PROVIDER_REJECTED: "رد ارائه‌دهنده",
-  INVALID_DESTINATION: "مقصد نامعتبر", TEMPLATE_ERROR: "خطای قالب", RATE_LIMIT: "محدودیت نرخ",
-  TIMEOUT: "پایان مهلت", CONFIGURATION: "پیکربندی", UNKNOWN: "نامشخص",
+  NETWORK: "شبکه",
+  AUTHENTICATION: "احراز هویت",
+  PROVIDER_REJECTED: "رد ارائه‌دهنده",
+  INVALID_DESTINATION: "مقصد نامعتبر",
+  TEMPLATE_ERROR: "خطای قالب",
+  RATE_LIMIT: "محدودیت نرخ",
+  TIMEOUT: "پایان مهلت",
+  CONFIGURATION: "پیکربندی",
+  UNKNOWN: "نامشخص",
 }
 const serviceLabels: Record<string, string> = {
   MEETING: "جلسه",
@@ -134,15 +162,6 @@ const date = (value?: string | null) =>
         timeStyle: "short",
       }).format(new Date(value))
     : "—"
-function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className={`h-11 rounded-xl border border-[var(--app-divider)] bg-[var(--app-background)] px-3 text-sm ${props.className ?? ""}`}
-    />
-  )
-}
-
 export function AdminNotificationsPage() {
   const [createRuleOpen, setCreateRuleOpen] = useState(false)
   const [createTemplateOpen, setCreateTemplateOpen] = useState(false)
@@ -199,7 +218,9 @@ export function AdminNotificationsPage() {
         ))}
       </nav>
       {tab === "rules" ? <AdminNotificationRulesPage embedded /> : null}
-      {createRuleOpen ? <RuleDialog open onOpenChange={setCreateRuleOpen} /> : null}
+      {createRuleOpen ? (
+        <RuleDialog open onOpenChange={setCreateRuleOpen} />
+      ) : null}
       {createTemplateOpen ? (
         <TemplateDialog
           item={null}
@@ -219,8 +240,16 @@ export function AdminNotificationsPage() {
         />
       ) : null}
       {tab === "quiet" ? <QuietHoursTab /> : null}
-      {tab === "digests" ? <DigestsTab events={catalog.data?.events.map((item) => item.eventName) ?? []} /> : null}
-      {tab === "escalations" ? <EscalationsTab events={catalog.data?.events.map((item) => item.eventName) ?? []} /> : null}
+      {tab === "digests" ? (
+        <DigestsTab
+          events={catalog.data?.events.map((item) => item.eventName) ?? []}
+        />
+      ) : null}
+      {tab === "escalations" ? (
+        <EscalationsTab
+          events={catalog.data?.events.map((item) => item.eventName) ?? []}
+        />
+      ) : null}
     </div>
   )
 }
@@ -234,7 +263,14 @@ function TemplatesTab({ events }: { events: string[] }) {
     [active, setActive] = useState(""),
     [editing, setEditing] = useState<NotificationTemplate | "NEW" | null>(null)
   const query = useQuery({
-    queryKey: ["notification-templates", search, eventName, channel, locale, active],
+    queryKey: [
+      "notification-templates",
+      search,
+      eventName,
+      channel,
+      locale,
+      active,
+    ],
     queryFn: () =>
       getNotificationTemplates({
         search: search || undefined,
@@ -258,7 +294,8 @@ function TemplatesTab({ events }: { events: string[] }) {
       await client.invalidateQueries({ queryKey: ["notification-templates"] })
       toast.success("این نسخه فعال شد.")
     },
-    onError: (e) => toast.error(getApiErrorMessage(e, "فعال‌سازی قالب ناموفق بود.")),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e, "فعال‌سازی قالب ناموفق بود.")),
   })
   const columns: DataTableColumn<NotificationTemplate>[] = [
     { id: "event", header: "رویداد", cell: (r) => eventLabel(r.eventName) },
@@ -289,7 +326,12 @@ function TemplatesTab({ events }: { events: string[] }) {
             نسخه جدید
           </Button>
           {!r.isActive ? (
-            <Button size="icon-sm" variant="ghost" title="فعال‌کردن این نسخه" onClick={() => activate.mutate(r.id)}>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              title="فعال‌کردن این نسخه"
+              onClick={() => activate.mutate(r.id)}
+            >
               <Power className="size-4" />
             </Button>
           ) : null}
@@ -298,7 +340,8 @@ function TemplatesTab({ events }: { events: string[] }) {
             variant="ghost"
             className="text-red-600"
             onClick={() => {
-              if (confirm("این نسخه غیرفعال شود؟ تاریخچه حذف نخواهد شد.")) remove.mutate(r.id)
+              if (confirm("این نسخه غیرفعال شود؟ تاریخچه حذف نخواهد شد."))
+                remove.mutate(r.id)
             }}
           >
             <PowerOff className="size-4" />
@@ -313,7 +356,9 @@ function TemplatesTab({ events }: { events: string[] }) {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="جستجو در موضوع و متن قالب"
-        hasActiveFilters={Boolean(search || eventName || channel || locale || active)}
+        hasActiveFilters={Boolean(
+          search || eventName || channel || locale || active
+        )}
         onClearFilters={() => {
           setSearch("")
           setEventName("")
@@ -353,7 +398,11 @@ function TemplatesTab({ events }: { events: string[] }) {
               onChange={(e) => setLocale(e.target.value)}
               placeholder="زبان؛ مانند fa-IR"
             />
-            <Select value={active} onChange={(e) => setActive(e.target.value)} aria-label="وضعیت قالب">
+            <Select
+              value={active}
+              onChange={(e) => setActive(e.target.value)}
+              aria-label="وضعیت قالب"
+            >
               <option value="">همه وضعیت‌ها</option>
               <option value="true">فعال</option>
               <option value="false">غیرفعال</option>
@@ -364,14 +413,30 @@ function TemplatesTab({ events }: { events: string[] }) {
       <QueryContent query={query} errorTitle="دریافت قالب‌ها ناموفق بود">
         <EntityCardList
           rows={query.data ?? []}
-          fields={columns.filter((column) => !["event", "active", "actions"].includes(column.id)).map((column) => ({ id: column.id, label: column.header, render: column.cell }))}
+          fields={columns
+            .filter(
+              (column) => !["event", "active", "actions"].includes(column.id)
+            )
+            .map((column) => ({
+              id: column.id,
+              label: column.header,
+              render: column.cell,
+            }))}
           getRowKey={(r) => r.id}
           layout="row"
           density="compact"
           title={(r) => eventLabel(r.eventName)}
-          subtitle={(r) => r.subject || `${channelLabels[r.channel]} · ${r.locale}`}
-          badges={(r) => <StatusBadge tone={r.isActive ? "success" : "neutral"}>{r.isActive ? "فعال" : "غیرفعال"}</StatusBadge>}
-          actions={(r) => columns.find((column) => column.id === "actions")?.cell(r)}
+          subtitle={(r) =>
+            r.subject || `${channelLabels[r.channel]} · ${r.locale}`
+          }
+          badges={(r) => (
+            <StatusBadge tone={r.isActive ? "success" : "neutral"}>
+              {r.isActive ? "فعال" : "غیرفعال"}
+            </StatusBadge>
+          )}
+          actions={(r) =>
+            columns.find((column) => column.id === "actions")?.cell(r)
+          }
           emptyState={
             <EmptyState
               icon={FileText}
@@ -419,8 +484,16 @@ function TemplateDialog({
     enabled: Boolean(eventName),
   })
   const preview = useMutation({
-    mutationFn: () => previewNotificationTemplate({ eventName, channel, locale: locale.trim() || "fa-IR", subject: subject.trim() || null, body }),
-    onError: (e) => toast.error(getApiErrorMessage(e, "پیش‌نمایش قالب ناموفق بود.")),
+    mutationFn: () =>
+      previewNotificationTemplate({
+        eventName,
+        channel,
+        locale: locale.trim() || "fa-IR",
+        subject: subject.trim() || null,
+        body,
+      }),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e, "پیش‌نمایش قالب ناموفق بود.")),
   })
   const save = useMutation({
     mutationFn: (input: TemplateInput) =>
@@ -460,66 +533,126 @@ function TemplateDialog({
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm font-bold">
-            رویداد
-            <Select
-              value={eventName}
-              onChange={(e) => setEventName(e.target.value)}
-            >
-              {events.map((v) => (
-                <option key={v} value={v}>
-                  {eventLabel(v)}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            کانال
-            <Select
-              value={channel}
-              onChange={(e) =>
-                setChannel(e.target.value as NotificationChannel)
-              }
-            >
-              {Object.entries(channelLabels).map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            زبان
-            <Input value={locale} onChange={(e) => setLocale(e.target.value)} />
-          </label>
-          {item ? <div className="grid gap-2 text-sm font-bold">نسخه مبنا<Input value={`نسخه ${item.version.toLocaleString("fa-IR")}`} disabled /></div> : null}
+          <FormField label="رویداد">
+            {(fieldProps) => (
+              <Select
+                {...fieldProps}
+                value={eventName}
+                onChange={(event) => setEventName(event.target.value)}
+              >
+                {events.map((value) => (
+                  <option key={value} value={value}>
+                    {eventLabel(value)}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+          <FormField label="کانال">
+            {(fieldProps) => (
+              <Select
+                {...fieldProps}
+                value={channel}
+                onChange={(event) =>
+                  setChannel(event.target.value as NotificationChannel)
+                }
+              >
+                {Object.entries(channelLabels).map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+          <FormField label="زبان">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                value={locale}
+                onChange={(event) => setLocale(event.target.value)}
+              />
+            )}
+          </FormField>
+          {item ? (
+            <FormField label="نسخه مبنا" disabled>
+              {(fieldProps) => (
+                <Input
+                  {...fieldProps}
+                  value={`نسخه ${item.version.toLocaleString("fa-IR")}`}
+                />
+              )}
+            </FormField>
+          ) : null}
         </div>
-        <label className="grid gap-2 text-sm font-bold">
-          موضوع (اختیاری)
-          <Input value={subject} required={channel === "IN_APP"} onFocus={() => setInsertTarget("subject")} onChange={(e) => setSubject(e.target.value)} disabled={channel === "SMS"} />
-          {channel === "IN_APP" ? <span className="text-xs font-normal text-muted-foreground">عنوان اعلان داخل سامانه الزامی است.</span> : null}
-          {channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">پیامک موضوع ندارد.</span> : null}
-        </label>
-        <label className="grid gap-2 text-sm font-bold">
-          <span className="flex items-center justify-between"><span>متن قالب</span>{channel === "SMS" ? <span className="text-xs font-normal text-muted-foreground">{body.length.toLocaleString("fa-IR")} نویسه؛ متن کوتاه نمی‌شود</span> : null}</span>
-          <textarea
-            className="min-h-40 rounded-xl border bg-background p-3 font-mono text-sm"
-            value={body}
-            onFocus={() => setInsertTarget("body")}
-            onChange={(e) => setBody(e.target.value)}
-          />
-        </label>
+        <FormField
+          label="موضوع"
+          optional={channel !== "IN_APP"}
+          required={channel === "IN_APP"}
+          disabled={channel === "SMS"}
+          description={
+            channel === "IN_APP"
+              ? "عنوان اعلان داخل سامانه الزامی است."
+              : channel === "SMS"
+                ? "پیامک موضوع ندارد."
+                : undefined
+          }
+        >
+          {(fieldProps) => (
+            <Input
+              {...fieldProps}
+              value={subject}
+              onFocus={() => setInsertTarget("subject")}
+              onChange={(event) => setSubject(event.target.value)}
+            />
+          )}
+        </FormField>
+        <FormField
+          label="متن قالب"
+          required
+          description={
+            channel === "SMS"
+              ? `${body.length.toLocaleString("fa-IR")} نویسه؛ متن کوتاه نمی‌شود`
+              : undefined
+          }
+        >
+          {(fieldProps) => (
+            <Textarea
+              {...fieldProps}
+              className="min-h-40 font-mono"
+              value={body}
+              onFocus={() => setInsertTarget("body")}
+              onChange={(event) => setBody(event.target.value)}
+            />
+          )}
+        </FormField>
         <section className="grid gap-3 rounded-2xl border border-[var(--app-divider)] bg-[var(--app-background)] p-4">
           <div>
             <h3 className="text-sm font-black">متغیرهای قابل استفاده</h3>
-            <p className="mt-1 text-xs text-muted-foreground">با انتخاب هر متغیر، به {insertTarget === "subject" ? "موضوع" : "متن"} افزوده می‌شود.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              با انتخاب هر متغیر، به{" "}
+              {insertTarget === "subject" ? "موضوع" : "متن"} افزوده می‌شود.
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {variables.data?.variables.map((variable) => (
-              <Button key={variable.key} type="button" size="sm" variant="outline" title={variable.label} onClick={() => {
-                if (insertTarget === "subject" && channel !== "SMS") setSubject((value) => `${value}${value ? " " : ""}${variable.token}`)
-                else setBody((value) => `${value}${value ? " " : ""}${variable.token}`)
-              }}>
+              <Button
+                key={variable.key}
+                type="button"
+                size="sm"
+                variant="outline"
+                title={variable.label}
+                onClick={() => {
+                  if (insertTarget === "subject" && channel !== "SMS")
+                    setSubject(
+                      (value) => `${value}${value ? " " : ""}${variable.token}`
+                    )
+                  else
+                    setBody(
+                      (value) => `${value}${value ? " " : ""}${variable.token}`
+                    )
+                }}
+              >
                 <span dir="ltr">{variable.token}</span>
               </Button>
             ))}
@@ -527,10 +660,22 @@ function TemplateDialog({
         </section>
         {preview.data ? (
           <section className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-4 text-sm dark:border-blue-900 dark:bg-blue-950/20">
-            <div className="flex items-center justify-between"><h3 className="font-black">پیش‌نمایش با داده نمونه</h3><StatusBadge tone="neutral">نمونه؛ ذخیره نمی‌شود</StatusBadge></div>
-            {preview.data.subject ? <div><span className="text-muted-foreground">موضوع: </span>{preview.data.subject}</div> : null}
+            <div className="flex items-center justify-between">
+              <h3 className="font-black">پیش‌نمایش با داده نمونه</h3>
+              <StatusBadge tone="neutral">نمونه؛ ذخیره نمی‌شود</StatusBadge>
+            </div>
+            {preview.data.subject ? (
+              <div>
+                <span className="text-muted-foreground">موضوع: </span>
+                {preview.data.subject}
+              </div>
+            ) : null}
             <div className="whitespace-pre-wrap">{preview.data.body}</div>
-            {preview.data.missingVariables.length ? <p className="text-amber-700">متغیرهای بدون مقدار: {preview.data.missingVariables.join("، ")}</p> : null}
+            {preview.data.missingVariables.length ? (
+              <p className="text-amber-700">
+                متغیرهای بدون مقدار: {preview.data.missingVariables.join("، ")}
+              </p>
+            ) : null}
           </section>
         ) : null}
         <label className="flex items-center gap-2 text-sm">
@@ -545,7 +690,12 @@ function TemplateDialog({
           <Button type="button" variant="outline" onClick={onClose}>
             انصراف
           </Button>
-          <Button type="button" variant="outline" disabled={!body.trim() || preview.isPending} onClick={() => preview.mutate()}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!body.trim() || preview.isPending}
+            onClick={() => preview.mutate()}
+          >
             <Eye className="size-4" />
             پیش‌نمایش
           </Button>
@@ -612,13 +762,21 @@ function ChannelsTab() {
                 </Button>
               ) : null}
               {item.channel === "SMS" ? (
-                <Button className="mt-4" variant="outline" onClick={() => setSmsOpen(true)}>
+                <Button
+                  className="mt-4"
+                  variant="outline"
+                  onClick={() => setSmsOpen(true)}
+                >
                   <Settings className="size-4" />
                   تنظیمات پیامک
                 </Button>
               ) : null}
               {item.channel === "DESKTOP_PUSH" ? (
-                <Button className="mt-4" variant="outline" onClick={() => setPushOpen(true)}>
+                <Button
+                  className="mt-4"
+                  variant="outline"
+                  onClick={() => setPushOpen(true)}
+                >
                   <Settings className="size-4" />
                   تنظیمات اعلان دسکتاپ
                 </Button>
@@ -628,20 +786,42 @@ function ChannelsTab() {
         })}
       </div>
       {smsOpen ? <SmsSettingsDialog onClose={() => setSmsOpen(false)} /> : null}
-      {pushOpen ? <PushSettingsDialog onClose={() => setPushOpen(false)} /> : null}
+      {pushOpen ? (
+        <PushSettingsDialog onClose={() => setPushOpen(false)} />
+      ) : null}
     </QueryContent>
   )
 }
 
 function PushSettingsDialog({ onClose }: { onClose: () => void }) {
-  const query = useQuery({ queryKey: ["push-settings"], queryFn: getPushSettings })
-  return <ResponsiveModal open onClose={onClose} title="تنظیمات اعلان دسکتاپ" description="کلید خصوصی رمزنگاری می‌شود و پس از ذخیره هرگز نمایش داده نخواهد شد." icon={Smartphone}>
-    <QueryContent query={query} errorTitle="دریافت تنظیمات اعلان دسکتاپ ناموفق بود">{query.data ? <PushSettingsForm initial={query.data} onClose={onClose} /> : null}</QueryContent>
-  </ResponsiveModal>
+  const query = useQuery({
+    queryKey: ["push-settings"],
+    queryFn: getPushSettings,
+  })
+  return (
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title="تنظیمات اعلان دسکتاپ"
+      description="کلید خصوصی رمزنگاری می‌شود و پس از ذخیره هرگز نمایش داده نخواهد شد."
+      icon={Smartphone}
+    >
+      <QueryContent
+        query={query}
+        errorTitle="دریافت تنظیمات اعلان دسکتاپ ناموفق بود"
+      >
+        {query.data ? (
+          <PushSettingsForm initial={query.data} onClose={onClose} />
+        ) : null}
+      </QueryContent>
+    </ResponsiveModal>
+  )
 }
 
-function pushRecipientDeviceSummary(devices: Array<{ label?: string | null; userAgent?: string | null } | null>) {
-  const names = devices.map(device => {
+function pushRecipientDeviceSummary(
+  devices: Array<{ label?: string | null; userAgent?: string | null } | null>
+) {
+  const names = devices.map((device) => {
     if (device?.label) return device.label
     const userAgent = device?.userAgent ?? ""
     if (userAgent.includes("Firefox/")) return "Firefox"
@@ -653,30 +833,238 @@ function pushRecipientDeviceSummary(devices: Array<{ label?: string | null; user
   return [...new Set(names)].join("، ")
 }
 
-function PushSettingsForm({ initial, onClose }: { initial: import("../types/rule-engine.types").PushSettings; onClose: () => void }) {
+function PushSettingsForm({
+  initial,
+  onClose,
+}: {
+  initial: import("../types/rule-engine.types").PushSettings
+  onClose: () => void
+}) {
   const client = useQueryClient()
-  const [publicKey, setPublicKey] = useState(initial.publicKey), [privateKey, setPrivateKey] = useState(""), [clearPrivateKey, setClearPrivateKey] = useState(false), [subject, setSubject] = useState(initial.subject), [enabled, setEnabled] = useState(initial.enabled), [timeoutMs, setTimeoutMs] = useState(initial.timeoutMs), [recipientUserId, setRecipientUserId] = useState(""), [recipientSearch, setRecipientSearch] = useState("")
-  const recipients = useQuery({ queryKey: ["admin", "notification-push", "recipients", recipientSearch.trim()], queryFn: () => getPushRecipientTargets(recipientSearch), staleTime: 30_000 })
-  const save = useMutation({ mutationFn: updatePushSettings, onSuccess: async () => { setPrivateKey(""); await Promise.all([client.invalidateQueries({ queryKey: ["push-settings"] }), client.invalidateQueries({ queryKey: ["notification-channels"] })]); toast.success("تنظیمات اعلان دسکتاپ ذخیره شد.") }, onError: e => toast.error(getApiErrorMessage(e, "ذخیره تنظیمات اعلان دسکتاپ ناموفق بود.")) })
-  const test = useMutation({ mutationFn: testPushSettings, onSuccess: result => result.accepted ? toast.success(`${result.accepted.toLocaleString("fa-IR")} سرویس Push پیام را پذیرفت؛ نمایش روی دستگاه توسط مرورگر تعیین می‌شود.`) : toast.error(result.attempted ? "سرویس Push همه ارسال‌ها را رد کرد." : "این کاربر اشتراک اعلان دسکتاپ فعالی ندارد."), onError: e => toast.error(getApiErrorMessage(e, "ارسال اعلان دسکتاپ آزمایشی ناموفق بود.")) })
-  return <div className="grid gap-5"><form className="grid gap-4" onSubmit={event => { event.preventDefault(); save.mutate({ provider: initial.provider || "WEB_PUSH", publicKey: publicKey.trim(), privateKey: clearPrivateKey ? undefined : privateKey.trim() || undefined, clearPrivateKey, subject: subject.trim(), enabled, timeoutMs }) }}>
-    <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold">ارائه‌دهنده<Select value="WEB_PUSH" disabled><option value="WEB_PUSH">Web Push</option></Select></label><label className="grid gap-2 text-sm font-bold">مهلت اتصال<Input type="number" min={1000} max={60000} value={timeoutMs} onChange={e => setTimeoutMs(Number(e.target.value) || 10000)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">Subject / اطلاعات تماس<Input dir="ltr" placeholder="mailto:admin@neshane.co" value={subject} onChange={e => setSubject(e.target.value)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">کلید عمومی VAPID<Input dir="ltr" value={publicKey} onChange={e => setPublicKey(e.target.value)} /></label><label className="grid gap-2 text-sm font-bold sm:col-span-2">کلید خصوصی VAPID<Input type="password" dir="ltr" disabled={clearPrivateKey} value={privateKey} onChange={e => setPrivateKey(e.target.value)} placeholder={initial.privateKeyConfigured ? "تنظیم شده است؛ برای حفظ آن خالی بگذارید" : "کلید خصوصی"} /></label></div>
-    {initial.privateKeyConfigured ? <label className="flex gap-2 text-sm text-red-700"><input type="checkbox" checked={clearPrivateKey} onChange={e => setClearPrivateKey(e.target.checked)} />کلید خصوصی ذخیره‌شده پاک شود</label> : null}<label className="flex gap-2 text-sm font-bold"><input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />کانال اعلان دسکتاپ فعال باشد</label><p className="text-xs text-muted-foreground">برای ساخت کلیدها اجرا کنید: <code dir="ltr">npx web-push generate-vapid-keys</code></p><div className="flex justify-end gap-2 border-b pb-5"><Button type="button" variant="outline" onClick={onClose}>انصراف</Button><Button type="submit" disabled={save.isPending}>ذخیره تنظیمات</Button></div>
-  </form><section className="grid gap-3 rounded-2xl border p-4"><h3 className="font-black">ارسال آزمایشی</h3><SearchableOptionSelect value={recipientUserId || undefined} onChange={value => setRecipientUserId(value ?? "")} options={(recipients.data ?? []).map(item => ({ id: item.id, label: item.fullName, secondary: `${item.email} · ${item.subscriptionCount.toLocaleString("fa-IR")} اشتراک فعال · ${pushRecipientDeviceSummary(item.devices)}` }))} search={recipientSearch} onSearchChange={setRecipientSearch} loading={recipients.isFetching} placeholder="انتخاب کاربر دارای اشتراک فعال" emptyText="کاربری با اشتراک فعال پیدا نشد." ariaLabel="گیرنده تست پوش" /><p className="text-xs text-[var(--app-text-secondary)]">موفقیت این تست فقط پذیرش پیام توسط سرویس Push را تأیید می‌کند؛ Web Push رسید قابل‌اعتمادی برای نمایش اعلان در مرورگر ارائه نمی‌دهد.</p><Button variant="outline" disabled={!recipientUserId || test.isPending} onClick={() => test.mutate({ recipientUserId })}><Send className="size-4" />ارسال اعلان آزمایشی</Button></section></div>
+  const [publicKey, setPublicKey] = useState(initial.publicKey),
+    [privateKey, setPrivateKey] = useState(""),
+    [clearPrivateKey, setClearPrivateKey] = useState(false),
+    [subject, setSubject] = useState(initial.subject),
+    [enabled, setEnabled] = useState(initial.enabled),
+    [timeoutMs, setTimeoutMs] = useState(initial.timeoutMs),
+    [recipientUserId, setRecipientUserId] = useState(""),
+    [recipientSearch, setRecipientSearch] = useState("")
+  const recipients = useQuery({
+    queryKey: [
+      "admin",
+      "notification-push",
+      "recipients",
+      recipientSearch.trim(),
+    ],
+    queryFn: () => getPushRecipientTargets(recipientSearch),
+    staleTime: 30_000,
+  })
+  const save = useMutation({
+    mutationFn: updatePushSettings,
+    onSuccess: async () => {
+      setPrivateKey("")
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["push-settings"] }),
+        client.invalidateQueries({ queryKey: ["notification-channels"] }),
+      ])
+      toast.success("تنظیمات اعلان دسکتاپ ذخیره شد.")
+    },
+    onError: (e) =>
+      toast.error(
+        getApiErrorMessage(e, "ذخیره تنظیمات اعلان دسکتاپ ناموفق بود.")
+      ),
+  })
+  const test = useMutation({
+    mutationFn: testPushSettings,
+    onSuccess: (result) =>
+      result.accepted
+        ? toast.success(
+            `${result.accepted.toLocaleString("fa-IR")} سرویس Push پیام را پذیرفت؛ نمایش روی دستگاه توسط مرورگر تعیین می‌شود.`
+          )
+        : toast.error(
+            result.attempted
+              ? "سرویس Push همه ارسال‌ها را رد کرد."
+              : "این کاربر اشتراک اعلان دسکتاپ فعالی ندارد."
+          ),
+    onError: (e) =>
+      toast.error(
+        getApiErrorMessage(e, "ارسال اعلان دسکتاپ آزمایشی ناموفق بود.")
+      ),
+  })
+  return (
+    <div className="grid gap-5">
+      <form
+        className="grid gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          save.mutate({
+            provider: initial.provider || "WEB_PUSH",
+            publicKey: publicKey.trim(),
+            privateKey: clearPrivateKey
+              ? undefined
+              : privateKey.trim() || undefined,
+            clearPrivateKey,
+            subject: subject.trim(),
+            enabled,
+            timeoutMs,
+          })
+        }}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="ارائه‌دهنده" disabled>
+            {(fieldProps) => (
+              <Select {...fieldProps} value="WEB_PUSH">
+                <option value="WEB_PUSH">Web Push</option>
+              </Select>
+            )}
+          </FormField>
+          <FormField label="مهلت اتصال">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                type="number"
+                min={1000}
+                max={60000}
+                value={timeoutMs}
+                onChange={(event) =>
+                  setTimeoutMs(Number(event.target.value) || 10000)
+                }
+              />
+            )}
+          </FormField>
+          <FormField label="Subject / اطلاعات تماس" className="sm:col-span-2">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                dir="ltr"
+                placeholder="mailto:admin@neshane.co"
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+              />
+            )}
+          </FormField>
+          <FormField label="کلید عمومی VAPID" className="sm:col-span-2">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                dir="ltr"
+                value={publicKey}
+                onChange={(event) => setPublicKey(event.target.value)}
+              />
+            )}
+          </FormField>
+          <FormField
+            label="کلید خصوصی VAPID"
+            className="sm:col-span-2"
+            disabled={clearPrivateKey}
+          >
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                type="password"
+                dir="ltr"
+                value={privateKey}
+                onChange={(event) => setPrivateKey(event.target.value)}
+                placeholder={
+                  initial.privateKeyConfigured
+                    ? "تنظیم شده است؛ برای حفظ آن خالی بگذارید"
+                    : "کلید خصوصی"
+                }
+              />
+            )}
+          </FormField>
+        </div>
+        {initial.privateKeyConfigured ? (
+          <label className="flex gap-2 text-sm text-destructive">
+            <input
+              type="checkbox"
+              checked={clearPrivateKey}
+              onChange={(event) => setClearPrivateKey(event.target.checked)}
+            />
+            کلید خصوصی ذخیره‌شده پاک شود
+          </label>
+        ) : null}
+        <label className="flex gap-2 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(event) => setEnabled(event.target.checked)}
+          />
+          کانال اعلان دسکتاپ فعال باشد
+        </label>
+        <p className="text-xs text-muted-foreground">
+          برای ساخت کلیدها اجرا کنید:{" "}
+          <code dir="ltr">npx web-push generate-vapid-keys</code>
+        </p>
+        <FormActions
+          onCancel={onClose}
+          pending={save.isPending}
+          submitLabel="ذخیره تنظیمات"
+        />
+      </form>
+      <section className="grid gap-3 rounded-2xl border p-4">
+        <h3 className="font-black">ارسال آزمایشی</h3>
+        <SearchableOptionSelect
+          value={recipientUserId || undefined}
+          onChange={(value) => setRecipientUserId(value ?? "")}
+          options={(recipients.data ?? []).map((item) => ({
+            id: item.id,
+            label: item.fullName,
+            secondary: `${item.email} · ${item.subscriptionCount.toLocaleString("fa-IR")} اشتراک فعال · ${pushRecipientDeviceSummary(item.devices)}`,
+          }))}
+          search={recipientSearch}
+          onSearchChange={setRecipientSearch}
+          loading={recipients.isFetching}
+          placeholder="انتخاب کاربر دارای اشتراک فعال"
+          emptyText="کاربری با اشتراک فعال پیدا نشد."
+          ariaLabel="گیرنده تست پوش"
+        />
+        <p className="text-xs text-[var(--app-text-secondary)]">
+          موفقیت این تست فقط پذیرش پیام توسط سرویس Push را تأیید می‌کند؛ Web
+          Push رسید قابل‌اعتمادی برای نمایش اعلان در مرورگر ارائه نمی‌دهد.
+        </p>
+        <Button
+          variant="outline"
+          disabled={!recipientUserId || test.isPending}
+          onClick={() => test.mutate({ recipientUserId })}
+        >
+          <Send className="size-4" />
+          ارسال اعلان آزمایشی
+        </Button>
+      </section>
+    </div>
+  )
 }
 
 function SmsSettingsDialog({ onClose }: { onClose: () => void }) {
-  const query = useQuery({ queryKey: ["sms-settings"], queryFn: getSmsSettings })
+  const query = useQuery({
+    queryKey: ["sms-settings"],
+    queryFn: getSmsSettings,
+  })
   return (
-    <ResponsiveModal open onClose={onClose} title="تنظیمات کانال پیامک" description="تنظیمات به سازمان جاری تعلق دارد و کلید API پس از ذخیره قابل مشاهده نیست." icon={MessageSquare}>
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title="تنظیمات کانال پیامک"
+      description="تنظیمات به سازمان جاری تعلق دارد و کلید API پس از ذخیره قابل مشاهده نیست."
+      icon={MessageSquare}
+    >
       <QueryContent query={query} errorTitle="دریافت تنظیمات پیامک ناموفق بود">
-        {query.data ? <SmsSettingsForm initial={query.data} onClose={onClose} /> : null}
+        {query.data ? (
+          <SmsSettingsForm initial={query.data} onClose={onClose} />
+        ) : null}
       </QueryContent>
     </ResponsiveModal>
   )
 }
 
-function SmsSettingsForm({ initial, onClose }: { initial: import("../types/rule-engine.types").SmsSettings; onClose: () => void }) {
+function SmsSettingsForm({
+  initial,
+  onClose,
+}: {
+  initial: import("../types/rule-engine.types").SmsSettings
+  onClose: () => void
+}) {
   const client = useQueryClient()
   const [provider, setProvider] = useState(initial.provider)
   const [apiUrl, setApiUrl] = useState(initial.apiUrl)
@@ -691,85 +1079,338 @@ function SmsSettingsForm({ initial, onClose }: { initial: import("../types/rule-
     mutationFn: updateSmsSettings,
     onSuccess: async () => {
       setApiKey("")
-      await Promise.all([client.invalidateQueries({ queryKey: ["sms-settings"] }), client.invalidateQueries({ queryKey: ["notification-channels"] })])
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["sms-settings"] }),
+        client.invalidateQueries({ queryKey: ["notification-channels"] }),
+      ])
       toast.success("تنظیمات پیامک ذخیره شد.")
     },
-    onError: (e) => toast.error(getApiErrorMessage(e, "ذخیره تنظیمات پیامک ناموفق بود.")),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e, "ذخیره تنظیمات پیامک ناموفق بود.")),
   })
   const test = useMutation({
     mutationFn: testSmsSettings,
     onSuccess: (result) => {
-      if (result.success) toast.success(`پیامک آزمایشی ارسال شد${result.providerMessageId ? `؛ شناسه ${result.providerMessageId}` : ""}.`)
+      if (result.success)
+        toast.success(
+          `پیامک آزمایشی ارسال شد${result.providerMessageId ? `؛ شناسه ${result.providerMessageId}` : ""}.`
+        )
       else toast.error(result.errorMessage || "ارسال پیامک آزمایشی ناموفق بود.")
     },
-    onError: (e) => toast.error(getApiErrorMessage(e, "ارسال پیامک آزمایشی ناموفق بود.")),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e, "ارسال پیامک آزمایشی ناموفق بود.")),
   })
   return (
     <>
-        <form className="grid gap-5" onSubmit={(e) => { e.preventDefault(); save.mutate({ provider, apiUrl: apiUrl.trim(), apiKey: clearApiKey ? undefined : apiKey.trim() || undefined, clearApiKey, senderNumber: senderNumber.trim(), enabled, timeoutMs }) }}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-bold">ارائه‌دهنده<Select value={provider} onChange={(e) => setProvider(e.target.value)}>{initial.providers.map((value) => <option key={value} value={value}>{value === "GENERIC_HTTP_JSON" ? "HTTP JSON عمومی" : value}</option>)}</Select></label>
-            <label className="grid gap-2 text-sm font-bold">شماره فرستنده<Input value={senderNumber} onChange={(e) => setSenderNumber(e.target.value)} dir="ltr" /></label>
-            <label className="grid gap-2 text-sm font-bold sm:col-span-2">آدرس API<Input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} placeholder="https://sms.example.com/messages" dir="ltr" /></label>
-            <label className="grid gap-2 text-sm font-bold">کلید API<Input type="password" value={apiKey} disabled={clearApiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={initial.apiKeyConfigured ? "کلید API تنظیم شده است؛ برای حفظ آن خالی بگذارید" : "کلید API"} dir="ltr" /></label>
-            <label className="grid gap-2 text-sm font-bold">مهلت اتصال (میلی‌ثانیه)<Input type="number" min={1000} max={60000} value={timeoutMs} onChange={(e) => setTimeoutMs(Number(e.target.value) || 10000)} /></label>
-          </div>
-          {initial.apiKeyConfigured ? <label className="flex items-center gap-2 text-sm text-red-700"><input type="checkbox" checked={clearApiKey} onChange={(e) => setClearApiKey(e.target.checked)} />کلید API ذخیره‌شده پاک شود</label> : null}
-          <label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />کانال پیامک فعال باشد</label>
-          <div className="flex flex-wrap items-center gap-2"><StatusBadge tone={initial.configured ? "success" : "warning"}>{initial.configured ? "پیکربندی‌شده" : "ناقص"}</StatusBadge>{initial.apiKeyConfigured ? <StatusBadge tone="neutral">کلید API تنظیم شده است</StatusBadge> : null}</div>
-          <div className="flex justify-end gap-2 border-b pb-5"><Button type="button" variant="outline" onClick={onClose}>انصراف</Button><Button type="submit" disabled={save.isPending}>{save.isPending ? "در حال ذخیره..." : "ذخیره تنظیمات"}</Button></div>
-        </form>
-        <section className="mt-5 grid gap-3 rounded-2xl border border-[var(--app-divider)] p-4">
-          <h3 className="font-black">ارسال پیامک آزمایشی</h3>
-          <div className="grid gap-3 sm:grid-cols-2"><Input value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="شماره موبایل گیرنده" dir="ltr" /><Input value={message} maxLength={1000} onChange={(e) => setMessage(e.target.value)} placeholder="متن آزمایشی" /></div>
-          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>{message.length.toLocaleString("fa-IR")} نویسه</span><Button type="button" variant="outline" disabled={!recipient.trim() || test.isPending} onClick={() => test.mutate({ recipient: recipient.trim(), message: message.trim() || undefined })}><Send className="size-4" />{test.isPending ? "در حال ارسال..." : "ارسال پیامک آزمایشی"}</Button></div>
-        </section>
+      <form
+        className="grid gap-5"
+        onSubmit={(e) => {
+          e.preventDefault()
+          save.mutate({
+            provider,
+            apiUrl: apiUrl.trim(),
+            apiKey: clearApiKey ? undefined : apiKey.trim() || undefined,
+            clearApiKey,
+            senderNumber: senderNumber.trim(),
+            enabled,
+            timeoutMs,
+          })
+        }}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="ارائه‌دهنده">
+            {(fieldProps) => (
+              <Select
+                {...fieldProps}
+                value={provider}
+                onChange={(event) => setProvider(event.target.value)}
+              >
+                {initial.providers.map((value) => (
+                  <option key={value} value={value}>
+                    {value === "GENERIC_HTTP_JSON" ? "HTTP JSON عمومی" : value}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+          <FormField label="شماره فرستنده">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                value={senderNumber}
+                onChange={(event) => setSenderNumber(event.target.value)}
+                dir="ltr"
+              />
+            )}
+          </FormField>
+          <FormField label="آدرس API" className="sm:col-span-2">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                value={apiUrl}
+                onChange={(event) => setApiUrl(event.target.value)}
+                placeholder="https://sms.example.com/messages"
+                dir="ltr"
+              />
+            )}
+          </FormField>
+          <FormField label="کلید API" disabled={clearApiKey}>
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                type="password"
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                placeholder={
+                  initial.apiKeyConfigured
+                    ? "کلید API تنظیم شده است؛ برای حفظ آن خالی بگذارید"
+                    : "کلید API"
+                }
+                dir="ltr"
+              />
+            )}
+          </FormField>
+          <FormField label="مهلت اتصال (میلی‌ثانیه)">
+            {(fieldProps) => (
+              <Input
+                {...fieldProps}
+                type="number"
+                min={1000}
+                max={60000}
+                value={timeoutMs}
+                onChange={(event) =>
+                  setTimeoutMs(Number(event.target.value) || 10000)
+                }
+              />
+            )}
+          </FormField>
+        </div>
+        {initial.apiKeyConfigured ? (
+          <label className="flex items-center gap-2 text-sm text-red-700">
+            <input
+              type="checkbox"
+              checked={clearApiKey}
+              onChange={(e) => setClearApiKey(e.target.checked)}
+            />
+            کلید API ذخیره‌شده پاک شود
+          </label>
+        ) : null}
+        <label className="flex items-center gap-2 text-sm font-bold">
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+          />
+          کانال پیامک فعال باشد
+        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge tone={initial.configured ? "success" : "warning"}>
+            {initial.configured ? "پیکربندی‌شده" : "ناقص"}
+          </StatusBadge>
+          {initial.apiKeyConfigured ? (
+            <StatusBadge tone="neutral">کلید API تنظیم شده است</StatusBadge>
+          ) : null}
+        </div>
+        <FormActions
+          onCancel={onClose}
+          pending={save.isPending}
+          submitLabel="ذخیره تنظیمات"
+        />
+      </form>
+      <section className="mt-5 grid gap-3 rounded-2xl border border-[var(--app-divider)] p-4">
+        <h3 className="font-black">ارسال پیامک آزمایشی</h3>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            value={recipient}
+            onChange={(e) => setRecipient(e.target.value)}
+            placeholder="شماره موبایل گیرنده"
+            dir="ltr"
+          />
+          <Input
+            value={message}
+            maxLength={1000}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="متن آزمایشی"
+          />
+        </div>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{message.length.toLocaleString("fa-IR")} نویسه</span>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!recipient.trim() || test.isPending}
+            onClick={() =>
+              test.mutate({
+                recipient: recipient.trim(),
+                message: message.trim() || undefined,
+              })
+            }
+          >
+            <Send className="size-4" />
+            {test.isPending ? "در حال ارسال..." : "ارسال پیامک آزمایشی"}
+          </Button>
+        </div>
+      </section>
     </>
   )
 }
 
-function DeliveryDetailDialog({ id, onClose }: { id: string; onClose: () => void }) {
-  const query = useQuery({ queryKey: ["notification-delivery", id], queryFn: () => getNotificationDelivery(id) })
+function DeliveryDetailDialog({
+  id,
+  onClose,
+}: {
+  id: string
+  onClose: () => void
+}) {
+  const query = useQuery({
+    queryKey: ["notification-delivery", id],
+    queryFn: () => getNotificationDelivery(id),
+  })
   const item = query.data
-  const field = (label: string, value: React.ReactNode) => <div className="grid gap-1 rounded-xl border border-[var(--app-divider)] p-3"><span className="text-xs text-muted-foreground">{label}</span><span className="break-words text-sm font-medium">{value || "—"}</span></div>
-  return <ResponsiveModal open onClose={onClose} title="جزئیات ارسال اعلان" description="وضعیت، منشأ و تاریخچه تلاش‌های این ارسال" icon={History} width="max-w-3xl">
-    <QueryContent query={query} errorTitle="دریافت جزئیات ارسال ناموفق بود">
-      {item ? <div className="grid gap-5 p-4 sm:p-6">
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {field("رویداد", eventLabel(item.event.eventName))}
-          {field("گیرنده", item.recipientUser?.fullName ?? "—")}
-          {field("مقصد محافظت‌شده", item.destination)}
-          {field("کانال", channelLabels[item.channel])}
-          {field("وضعیت", <StatusBadge tone={item.status === "FAILED" ? "error" : item.status === "DELIVERED" || item.status === "SENT" ? "success" : "neutral"}>{deliveryLabels[item.status]}</StatusBadge>)}
-          {field("تصمیم ارسال", item.orchestrationReason)}
-          {field("تعویق تا", date(item.deferredUntil))}
-          {item.digestBucketId ? field("خلاصه دوره‌ای", item.digestBucketId) : null}
-          {item.escalationRunId ? field("مرحله افزایش سطح", item.escalationRunId) : null}
-          {field("نوع اجرا", triggerLabels[item.triggerType])}
-          {field("قانون", item.rule?.name)}
-          {field("قالب", item.template ? `نسخه ${item.template.version.toLocaleString("fa-IR")} · ${item.template.locale}` : "—")}
-          {item.channel === "EMAIL" ? field("عنوان ایمیل", item.template?.subject) : null}
-          {field("موجودیت مرتبط", item.event.aggregateType && item.event.aggregateId ? `${item.event.aggregateType} · ${item.event.aggregateId}` : "—")}
-          {field("شناسه رویداد", item.event.id)}
-          {field("کلید یکتایی رویداد", item.event.idempotencyKey)}
-          {field("قاعده گیرنده", item.recipientRule ? `${item.recipientRule.type} · ${item.recipientRule.id}` : "—")}
-          {field("ایجاد", date(item.createdAt))}
-          {field("ارسال", date(item.sentAt))}
-          {field("تحویل", date(item.deliveredAt))}
-          {field("کلید جلوگیری از تکرار", item.deduplicationKey)}
-        </section>
-        {(item.failureCode || item.failureMessage) ? <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4"><h3 className="font-bold text-destructive">آخرین خطا</h3><p className="mt-2 text-sm">{item.failureCode || "—"}</p><p className="mt-1 break-words text-sm text-muted-foreground">{item.failureMessage || "—"}</p></section> : null}
-        <section className="grid gap-3"><h3 className="font-bold">تاریخچه تلاش‌ها</h3>
-          {item.attempts.length ? <ol className="grid gap-3">{item.attempts.map((attempt) => <li key={attempt.id} className="grid gap-2 rounded-2xl border border-[var(--app-divider)] p-4 sm:grid-cols-[auto_1fr_auto]">
-            <span className="grid size-9 place-items-center rounded-full bg-[var(--app-primary-soft)] text-sm font-bold text-[var(--app-primary)]">{attempt.attemptNumber.toLocaleString("fa-IR")}</span>
-            <div><div className="flex flex-wrap items-center gap-2"><StatusBadge tone={attempt.status === "FAILED" ? "error" : attempt.status === "SENT" || attempt.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[attempt.status]}</StatusBadge><span className="text-sm">{triggerLabels[attempt.triggerType]}</span><span className="text-xs text-muted-foreground">{attempt.triggeredByUser?.fullName ?? "سامانه"}</span></div>
-            {(attempt.failureCode || attempt.failureReason) ? <p className="mt-2 break-words text-xs text-destructive">{attempt.failureCategory ? `${failureLabels[attempt.failureCategory] ?? attempt.failureCategory} · ` : ""}{attempt.failureCode ?? ""} {attempt.failureReason ?? ""}</p> : null}</div>
-            <time className="text-xs text-muted-foreground">{date(attempt.startedAt)}</time>
-          </li>)}</ol> : <p className="text-sm text-muted-foreground">هنوز تلاشی ثبت نشده است.</p>}
-        </section>
-      </div> : null}
-    </QueryContent>
-  </ResponsiveModal>
+  const field = (label: string, value: React.ReactNode) => (
+    <div className="grid gap-1 rounded-xl border border-[var(--app-divider)] p-3">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium break-words">{value || "—"}</span>
+    </div>
+  )
+  return (
+    <ResponsiveModal
+      open
+      onClose={onClose}
+      title="جزئیات ارسال اعلان"
+      description="وضعیت، منشأ و تاریخچه تلاش‌های این ارسال"
+      icon={History}
+      width="max-w-3xl"
+    >
+      <QueryContent query={query} errorTitle="دریافت جزئیات ارسال ناموفق بود">
+        {item ? (
+          <div className="grid gap-5 p-4 sm:p-6">
+            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {field("رویداد", eventLabel(item.event.eventName))}
+              {field("گیرنده", item.recipientUser?.fullName ?? "—")}
+              {field("مقصد محافظت‌شده", item.destination)}
+              {field("کانال", channelLabels[item.channel])}
+              {field(
+                "وضعیت",
+                <StatusBadge
+                  tone={
+                    item.status === "FAILED"
+                      ? "error"
+                      : item.status === "DELIVERED" || item.status === "SENT"
+                        ? "success"
+                        : "neutral"
+                  }
+                >
+                  {deliveryLabels[item.status]}
+                </StatusBadge>
+              )}
+              {field("تصمیم ارسال", item.orchestrationReason)}
+              {field("تعویق تا", date(item.deferredUntil))}
+              {item.digestBucketId
+                ? field("خلاصه دوره‌ای", item.digestBucketId)
+                : null}
+              {item.escalationRunId
+                ? field("مرحله افزایش سطح", item.escalationRunId)
+                : null}
+              {field("نوع اجرا", triggerLabels[item.triggerType])}
+              {field("قانون", item.rule?.name)}
+              {field(
+                "قالب",
+                item.template
+                  ? `نسخه ${item.template.version.toLocaleString("fa-IR")} · ${item.template.locale}`
+                  : "—"
+              )}
+              {item.channel === "EMAIL"
+                ? field("عنوان ایمیل", item.template?.subject)
+                : null}
+              {field(
+                "موجودیت مرتبط",
+                item.event.aggregateType && item.event.aggregateId
+                  ? `${item.event.aggregateType} · ${item.event.aggregateId}`
+                  : "—"
+              )}
+              {field("شناسه رویداد", item.event.id)}
+              {field("کلید یکتایی رویداد", item.event.idempotencyKey)}
+              {field(
+                "قاعده گیرنده",
+                item.recipientRule
+                  ? `${item.recipientRule.type} · ${item.recipientRule.id}`
+                  : "—"
+              )}
+              {field("ایجاد", date(item.createdAt))}
+              {field("ارسال", date(item.sentAt))}
+              {field("تحویل", date(item.deliveredAt))}
+              {field("کلید جلوگیری از تکرار", item.deduplicationKey)}
+            </section>
+            {item.failureCode || item.failureMessage ? (
+              <section className="rounded-2xl border border-destructive/25 bg-destructive/5 p-4">
+                <h3 className="font-bold text-destructive">آخرین خطا</h3>
+                <p className="mt-2 text-sm">{item.failureCode || "—"}</p>
+                <p className="mt-1 text-sm break-words text-muted-foreground">
+                  {item.failureMessage || "—"}
+                </p>
+              </section>
+            ) : null}
+            <section className="grid gap-3">
+              <h3 className="font-bold">تاریخچه تلاش‌ها</h3>
+              {item.attempts.length ? (
+                <ol className="grid gap-3">
+                  {item.attempts.map((attempt) => (
+                    <li
+                      key={attempt.id}
+                      className="grid gap-2 rounded-2xl border border-[var(--app-divider)] p-4 sm:grid-cols-[auto_1fr_auto]"
+                    >
+                      <span className="grid size-9 place-items-center rounded-full bg-[var(--app-primary-soft)] text-sm font-bold text-[var(--app-primary)]">
+                        {attempt.attemptNumber.toLocaleString("fa-IR")}
+                      </span>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <StatusBadge
+                            tone={
+                              attempt.status === "FAILED"
+                                ? "error"
+                                : attempt.status === "SENT" ||
+                                    attempt.status === "DELIVERED"
+                                  ? "success"
+                                  : "neutral"
+                            }
+                          >
+                            {deliveryLabels[attempt.status]}
+                          </StatusBadge>
+                          <span className="text-sm">
+                            {triggerLabels[attempt.triggerType]}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {attempt.triggeredByUser?.fullName ?? "سامانه"}
+                          </span>
+                        </div>
+                        {attempt.failureCode || attempt.failureReason ? (
+                          <p className="mt-2 text-xs break-words text-destructive">
+                            {attempt.failureCategory
+                              ? `${failureLabels[attempt.failureCategory] ?? attempt.failureCategory} · `
+                              : ""}
+                            {attempt.failureCode ?? ""}{" "}
+                            {attempt.failureReason ?? ""}
+                          </p>
+                        ) : null}
+                      </div>
+                      <time className="text-xs text-muted-foreground">
+                        {date(attempt.startedAt)}
+                      </time>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  هنوز تلاشی ثبت نشده است.
+                </p>
+              )}
+            </section>
+          </div>
+        ) : null}
+      </QueryContent>
+    </ResponsiveModal>
+  )
 }
 
 function DeliveriesTab({ events }: { events: string[] }) {
@@ -824,7 +1465,8 @@ function DeliveriesTab({ events }: { events: string[] }) {
       toast.success("ارسال برای تلاش مجدد در صف قرار گرفت.")
       setRetryItem(null)
     },
-    onError: (e) => toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
+    onError: (e) =>
+      toast.error(getApiErrorMessage(e, "پردازش Delivery ناموفق بود.")),
   })
   const columns: DataTableColumn<NotificationDelivery>[] = [
     { id: "date", header: "زمان", cell: (r) => date(r.createdAt) },
@@ -856,7 +1498,11 @@ function DeliveriesTab({ events }: { events: string[] }) {
         </StatusBadge>
       ),
     },
-    { id: "trigger", header: "نوع اجرا", cell: (r) => triggerLabels[r.triggerType] },
+    {
+      id: "trigger",
+      header: "نوع اجرا",
+      cell: (r) => triggerLabels[r.triggerType],
+    },
     {
       id: "attempts",
       header: "تلاش",
@@ -865,10 +1511,32 @@ function DeliveriesTab({ events }: { events: string[] }) {
     {
       id: "actions",
       header: "عملیات",
-      cell: (r) => <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
-        <Button size="icon" variant="ghost" aria-label="مشاهده جزئیات" onClick={() => setSelectedId(r.id)}><Eye className="size-4" /></Button>
-        {r.status === "FAILED" ? <Button size="icon" variant="ghost" aria-label="تلاش مجدد" disabled={dispatch.isPending} onClick={() => setRetryItem(r)}><Send className="size-4" /></Button> : null}
-      </div>,
+      cell: (r) => (
+        <div
+          className="flex items-center gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="مشاهده جزئیات"
+            onClick={() => setSelectedId(r.id)}
+          >
+            <Eye className="size-4" />
+          </Button>
+          {r.status === "FAILED" ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="تلاش مجدد"
+              disabled={dispatch.isPending}
+              onClick={() => setRetryItem(r)}
+            >
+              <Send className="size-4" />
+            </Button>
+          ) : null}
+        </div>
+      ),
     },
   ]
   return (
@@ -887,8 +1555,8 @@ function DeliveriesTab({ events }: { events: string[] }) {
           status ||
           recipientUserId ||
           dateFrom ||
-          dateTo
-          || triggerType
+          dateTo ||
+          triggerType
         )}
         onClearFilters={() => {
           setSearch("")
@@ -918,9 +1586,19 @@ function DeliveriesTab({ events }: { events: string[] }) {
                 </option>
               ))}
             </Select>
-            <Select value={triggerType} onChange={(e) => { setTriggerType(e.target.value); setPage(1) }}>
+            <Select
+              value={triggerType}
+              onChange={(e) => {
+                setTriggerType(e.target.value)
+                setPage(1)
+              }}
+            >
               <option value="">همه انواع اجرا</option>
-              {Object.entries(triggerLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              {Object.entries(triggerLabels).map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
             </Select>
             <Select
               value={channel}
@@ -1001,15 +1679,38 @@ function DeliveriesTab({ events }: { events: string[] }) {
       <QueryContent query={query} errorTitle="دریافت تاریخچه ارسال ناموفق بود">
         <EntityCardList
           rows={query.data?.data ?? []}
-          fields={columns.filter((column) => !["event", "recipient", "status", "actions"].includes(column.id)).map((column) => ({ id: column.id, label: column.header, render: column.cell }))}
+          fields={columns
+            .filter(
+              (column) =>
+                !["event", "recipient", "status", "actions"].includes(column.id)
+            )
+            .map((column) => ({
+              id: column.id,
+              label: column.header,
+              render: column.cell,
+            }))}
           getRowKey={(r) => r.id}
           onRowClick={(r) => setSelectedId(r.id)}
           layout="row"
           density="compact"
           title={(r) => eventLabel(r.event.eventName)}
           subtitle={(r) => r.recipientUser?.fullName || r.destination || "—"}
-          badges={(r) => <StatusBadge tone={r.status === "FAILED" ? "error" : r.status === "SENT" || r.status === "DELIVERED" ? "success" : "neutral"}>{deliveryLabels[r.status]}</StatusBadge>}
-          actions={(r) => columns.find((column) => column.id === "actions")?.cell(r)}
+          badges={(r) => (
+            <StatusBadge
+              tone={
+                r.status === "FAILED"
+                  ? "error"
+                  : r.status === "SENT" || r.status === "DELIVERED"
+                    ? "success"
+                    : "neutral"
+              }
+            >
+              {deliveryLabels[r.status]}
+            </StatusBadge>
+          )}
+          actions={(r) =>
+            columns.find((column) => column.id === "actions")?.cell(r)
+          }
           emptyState={
             <EmptyState
               icon={History}
@@ -1031,8 +1732,26 @@ function DeliveriesTab({ events }: { events: string[] }) {
           }}
         />
       </QueryContent>
-      {selectedId ? <DeliveryDetailDialog id={selectedId} onClose={() => setSelectedId(null)} /> : null}
-      <ConfirmDialog open={Boolean(retryItem)} onOpenChange={(open) => { if (!open) setRetryItem(null) }} title="تلاش مجدد برای ارسال؟" description="همین Delivery با همان رویداد، گیرنده و قالب دوباره در صف قرار می‌گیرد و رکورد تکراری ساخته نمی‌شود." confirmLabel="قرار دادن در صف" tone="primary" isPending={dispatch.isPending} onConfirm={() => { if (retryItem) dispatch.mutate(retryItem.id) }} />
+      {selectedId ? (
+        <DeliveryDetailDialog
+          id={selectedId}
+          onClose={() => setSelectedId(null)}
+        />
+      ) : null}
+      <ConfirmDialog
+        open={Boolean(retryItem)}
+        onOpenChange={(open) => {
+          if (!open) setRetryItem(null)
+        }}
+        title="تلاش مجدد برای ارسال؟"
+        description="همین Delivery با همان رویداد، گیرنده و قالب دوباره در صف قرار می‌گیرد و رکورد تکراری ساخته نمی‌شود."
+        confirmLabel="قرار دادن در صف"
+        tone="primary"
+        isPending={dispatch.isPending}
+        onConfirm={() => {
+          if (retryItem) dispatch.mutate(retryItem.id)
+        }}
+      />
     </section>
   )
 }

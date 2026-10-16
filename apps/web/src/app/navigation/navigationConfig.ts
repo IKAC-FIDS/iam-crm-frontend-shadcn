@@ -59,7 +59,6 @@ const routeDescriptions: Record<string, string> = {
   activities: "تاریخچه تعاملات مشتری",
   reports: "شاخص‌ها و گزارش‌های فروش",
   "technical-library": "نسخه‌ها، اسناد، فایل‌ها و لینک‌های فنی",
-  "technical-knowledge-base": "مقالات و دانش قابل استفاده مجدد",
   "admin-users": "کاربران و وضعیت دسترسی",
   "admin-teams": "ساختار و اعضای تیم‌ها",
   "admin-exchange-rates": "نرخ‌های ارز سازمان",
@@ -91,10 +90,7 @@ const workspaceSections = [
   {
     id: "technical",
     label: "مرکز فنی",
-    routeIds: [
-      "technical-library",
-      "technical-knowledge-base",
-    ],
+    routeIds: ["technical-library"],
   },
   {
     id: "workforce",

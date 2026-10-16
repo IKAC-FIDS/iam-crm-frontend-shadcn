@@ -7,7 +7,6 @@ Phase 4.2 exposes the Phase 4.1 Technical Center domain in the new CRM frontend.
 | Module | List | Create | Detail |
 | --- | --- | --- | --- |
 | Releases | `/technical/releases` | `/technical/releases/new` | `/technical/releases/:id` |
-| Knowledge Base | `/technical/knowledge-base` | `/technical/knowledge-base/new` | `/technical/knowledge-base/:id` |
 | Documents | `/technical/documents` | `/technical/documents/new` | `/technical/documents/:id` |
 | Resources | `/technical/resources` | `/technical/resources/new` | `/technical/resources/:id` |
 | Tenders | `/technical/tenders` | `/technical/tenders/new` | `/technical/tenders/:id` |
@@ -16,7 +15,7 @@ All routes remain lazy-loaded. Navigation and route access use the exact seeded 
 
 ## API and lifecycle behavior
 
-The client uses `/technical/releases`, `/technical/knowledge-base`, `/technical/documents`, `/technical/resources`, and `/technical/tenders`, plus the existing transition, document-version, tender-requirement, and tender-deliverable subroutes. Query keys are scoped and mutations invalidate only the affected lists/details.
+The client uses `/technical/releases`, `/technical/documents`, and `/technical/resources`, plus their existing transition and document-version subroutes. The retired `/technical/knowledge-base/*` URLs redirect to `/technical/library`; the legacy backend data is intentionally preserved for rollback and a future content-migration decision.
 
 Lifecycle actions are derived from the backend policy and use `/transition`; resource status uses the existing resource PATCH contract because Phase 4.1 does not provide a resource transition endpoint. The UI never replaces Product with Release or Opportunity with Tender.
 

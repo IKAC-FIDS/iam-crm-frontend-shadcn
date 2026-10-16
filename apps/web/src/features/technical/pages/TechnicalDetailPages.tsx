@@ -284,23 +284,13 @@ export function TechnicalReleaseDetailPage() {
             <Meta label="پایان عمر" value={faDate(item.endOfLifeDate)} />
           </dl>
         </FormSection>
-        {p.includes("technical-knowledge:view") ||
-        p.includes("technical-document:view") ||
+        {p.includes("technical-document:view") ||
         p.includes("technical-resource:view") ? (
           <FormSection
             title="محتوای مرتبط"
             description="برای مشاهده یا مدیریت موارد مرتبط، وارد فهرست فیلترشده همان بخش شوید."
           >
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {p.includes("technical-knowledge:view") ? (
-                <RelatedReleaseLink
-                  label="مقالات دانش فنی"
-                  count={item._count?.knowledgeArticles ?? 0}
-                  onClick={() =>
-                    nav(`/technical/knowledge-base?releaseId=${item.id}`)
-                  }
-                />
-              ) : null}
               {p.includes("technical-document:view") ? (
                 <RelatedReleaseLink
                   label="اسناد فنی"
