@@ -33,6 +33,7 @@ import { SearchableOptionSelect } from "@/components/shared/SearchableOptionSele
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { getApiErrorMessage } from "@/lib/apiResponse"
 import { Button } from "@workspace/ui/components/button"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
 import { NativeSelect as Select } from "@workspace/ui/components/native-select"
@@ -678,9 +679,8 @@ function TemplateDialog({
             ) : null}
           </section>
         ) : null}
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <Checkbox
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
           />
@@ -975,18 +975,16 @@ function PushSettingsForm({
           </FormField>
         </div>
         {initial.privateKeyConfigured ? (
-          <label className="flex gap-2 text-sm text-destructive">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 items-center gap-2 text-sm text-destructive">
+            <Checkbox
               checked={clearPrivateKey}
               onChange={(event) => setClearPrivateKey(event.target.checked)}
             />
             کلید خصوصی ذخیره‌شده پاک شود
           </label>
         ) : null}
-        <label className="flex gap-2 text-sm font-bold">
-          <input
-            type="checkbox"
+        <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+          <Checkbox
             checked={enabled}
             onChange={(event) => setEnabled(event.target.checked)}
           />
@@ -1186,18 +1184,16 @@ function SmsSettingsForm({
           </FormField>
         </div>
         {initial.apiKeyConfigured ? (
-          <label className="flex items-center gap-2 text-sm text-red-700">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 items-center gap-2 text-sm text-red-700">
+            <Checkbox
               checked={clearApiKey}
               onChange={(e) => setClearApiKey(e.target.checked)}
             />
             کلید API ذخیره‌شده پاک شود
           </label>
         ) : null}
-        <label className="flex items-center gap-2 text-sm font-bold">
-          <input
-            type="checkbox"
+        <label className="flex min-h-11 items-center gap-2 text-sm font-bold">
+          <Checkbox
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
           />

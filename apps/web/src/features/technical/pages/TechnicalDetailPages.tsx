@@ -23,6 +23,7 @@ import { Button } from "@workspace/ui/components/button"
 import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
 import { Textarea } from "@workspace/ui/components/textarea"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { PageHero } from "@/components/shared/PageHero"
 import { EntityListPage } from "@/components/shared/EntityListPage"
 import { QueryContent } from "@/components/shared/QueryContent"
@@ -1209,7 +1210,7 @@ function Requirements({
               <SearchableOptionSelect value={filterOwner} onChange={(value) => setFilterOwner(value || "")} options={filterOwners.data ?? []} search={filterOwnerSearch} onSearchChange={setFilterOwnerSearch} loading={filterOwners.isLoading || filterOwners.isFetching} placeholder="همه مسئولان" ariaLabel="فیلتر مسئول الزام" />
               <SearchableOptionSelect value={filterMandatory} onChange={(value) => setFilterMandatory(value || "")} options={[{ id: "true", label: "فقط الزامی" }, { id: "false", label: "فقط اختیاری" }].filter((option) => option.label.includes(filterMandatorySearch.trim()))} search={filterMandatorySearch} onSearchChange={setFilterMandatorySearch} placeholder="الزامی و اختیاری" ariaLabel="فیلتر الزامی بودن" />
               <Input value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} placeholder="فیلتر دسته‌بندی" aria-label="فیلتر دسته‌بندی الزام" />
-              <label className="flex items-center gap-2 rounded-xl border px-3"><input type="checkbox" checked={filterOverdue} onChange={(e) => setFilterOverdue(e.target.checked)} />فقط سررسید گذشته</label>
+              <label className="flex min-h-11 items-center gap-2 rounded-xl border px-3"><Checkbox checked={filterOverdue} onChange={(e) => setFilterOverdue(e.target.checked)} />فقط سررسید گذشته</label>
             </div>
             {visibleRequirements.map((r) => (
               <article
@@ -1340,7 +1341,7 @@ function Requirements({
           <fieldset className="grid max-h-40 gap-2 overflow-y-auto rounded-xl border p-3">
             <legend className="px-1 text-sm font-bold">وابستگی به الزامات دیگر</legend>
             {(q.data ?? []).filter((r) => r.id !== editing?.id).length ? (
-              (q.data ?? []).filter((r) => r.id !== editing?.id).map((r) => <label key={r.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.dependencyIds?.includes(r.id) ?? false} onChange={(e) => setForm({ ...form, dependencyIds: e.target.checked ? [...(form.dependencyIds ?? []), r.id] : (form.dependencyIds ?? []).filter((id) => id !== r.id) })} /><span>{r.referenceId ? `${r.referenceId} — ` : ""}{r.title}</span></label>)
+              (q.data ?? []).filter((r) => r.id !== editing?.id).map((r) => <label key={r.id} className="flex min-h-11 items-center gap-2 text-sm"><Checkbox checked={form.dependencyIds?.includes(r.id) ?? false} onChange={(e) => setForm({ ...form, dependencyIds: e.target.checked ? [...(form.dependencyIds ?? []), r.id] : (form.dependencyIds ?? []).filter((id) => id !== r.id) })} /><span>{r.referenceId ? `${r.referenceId} — ` : ""}{r.title}</span></label>)
             ) : (
               <p className="text-xs leading-6 text-muted-foreground">پس از ثبت یک الزام دیگر در همین مناقصه، می‌توانید وابستگی را هنگام ایجاد یا ویرایش الزام انتخاب کنید.</p>
             )}
@@ -1361,9 +1362,8 @@ function Requirements({
               ariaLabel="وضعیت الزام"
             />
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 items-center gap-2">
+            <Checkbox
               checked={form.mandatory}
               onChange={(e) =>
                 setForm({ ...form, mandatory: e.target.checked })
@@ -1566,7 +1566,7 @@ function Deliverables({
             />
           </label>
           <FormField label="عنوان تحویل" optional>{(props) => <Input {...props} value={label} onChange={(e) => setLabel(e.target.value)} />}</FormField>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} />قلم تحویلی الزامی است</label>
+          <label className="flex min-h-11 items-center gap-2"><Checkbox checked={required} onChange={(e) => setRequired(e.target.checked)} />قلم تحویلی الزامی است</label>
           {m.deliver.error ? (
             <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
               {getApiErrorMessage(m.deliver.error, "اتصال سند فنی انجام نشد.")}

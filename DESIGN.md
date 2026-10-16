@@ -128,6 +128,9 @@ adding profile-specific forks to the component:
 
 - Use canonical `Button`, `Input`, `Textarea`, `Select`, searchable selection,
   date/time, field, and validation components.
+- Use the canonical native `Checkbox` for ordinary boolean and multi-select
+  fields. Associate it with a wrapping or `htmlFor` label so the full 44px
+  label row remains an accessible hit target.
 - Every input has a persistent visible label; placeholders are examples, not
   labels. Help and error text must be associated with the field.
 - Required state and validation errors are conveyed by text and semantics, not

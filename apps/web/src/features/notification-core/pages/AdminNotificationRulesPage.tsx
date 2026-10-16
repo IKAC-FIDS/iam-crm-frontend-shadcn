@@ -20,6 +20,7 @@ import { Button } from "@workspace/ui/components/button"
 import { FormField } from "@workspace/ui/components/form-field"
 import { Input } from "@workspace/ui/components/input"
 import { NativeSelect } from "@workspace/ui/components/native-select"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -379,11 +380,9 @@ export function RuleDialog({
               )}
             </FormField>
             <label className="flex items-center gap-3 rounded-xl border p-3 text-sm">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={mandatory}
                 onChange={(event) => setMandatory(event.target.checked)}
-                className="size-4 accent-current"
               />
               <span>اعلان سازمانی اجباری</span>
             </label>

@@ -14,6 +14,7 @@ import { PersianDatePicker } from '@/components/shared/date/PersianDatePicker'
 import { NumberInput } from '@/components/shared/inputs/NumberInput'
 import { Button } from '@workspace/ui/components/button'
 import { FormField } from '@workspace/ui/components/form-field'
+import { Checkbox } from '@workspace/ui/components/checkbox'
 import { formatJalaliDate } from '@/lib/date/jalali'
 import { localDate, parseDate, minutesLabel, weekDays } from './presentation'
 type Schedule = { id: string; effectiveFrom: string; effectiveTo: string | null; days: { weekday: number; regularMinutes: number }[] }
@@ -61,7 +62,7 @@ export function ScheduleForm({ onClose, onSaved }: { onClose: () => void; onSave
       <FormSection title="مدت کار خالص هر روز" description="مقدار هر روز را صریح وارد کنید. برای روز تعطیل صفر وارد کنید؛ مثلاً ۴۵۰ دقیقه برابر ۷ ساعت و ۳۰ دقیقه است.">
         <div className="grid gap-3 sm:grid-cols-2">{weekDays.map(day => <FormField key={day.id} label={`${day.label} (دقیقه)`} required description={minutes[day.id] !== undefined && minutes[day.id] !== '' ? minutesLabel(Number(minutes[day.id])) : 'وارد نشده'}>{props => <NumberInput {...props} value={minutes[day.id] ?? ''} onValueChange={value => { setMinutes(current => ({ ...current, [day.id]: value })); setConfirmed(false) }} />}</FormField>)}</div>
       </FormSection>
-      <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />ساعات و تاریخ اعتبار مطابق برنامه واقعی سازمان است.</label>
+      <label className="flex min-h-11 items-center gap-2 text-sm"><Checkbox checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />ساعات و تاریخ اعتبار مطابق برنامه واقعی سازمان است.</label>
       {save.isError && <p role="alert" className="text-destructive">{getApiErrorMessage(save.error, 'ثبت برنامه کاری انجام نشد.')}</p>}
       <FormActions pending={save.isPending} disabled={Boolean(invalid) || !confirmed} onCancel={onClose} submitLabel="ثبت برنامه کاری" />
     </form>
