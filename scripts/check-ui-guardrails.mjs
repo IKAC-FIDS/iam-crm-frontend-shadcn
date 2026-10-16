@@ -43,6 +43,7 @@ const checks = [
 const tokenOwners = new Set([
   "packages/ui/src/styles/globals.css",
   "apps/web/src/styles/globals.css",
+  "apps/web/src/theme/colors.ts",
 ])
 const isCanonicalPrimitiveOwner = (file) =>
   file.startsWith("packages/ui/src/components/")

@@ -10,7 +10,7 @@ dark: {
     primary: "#60A5FA",
     hover: "#93C5FD",
     active: "#3B82F6",
-    soft: "#2C405C",
+    soft: "#243B5A",
   },
   neutral: {
     heading: "#F8FAFC",
