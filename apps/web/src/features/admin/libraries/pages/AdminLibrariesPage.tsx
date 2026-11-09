@@ -32,6 +32,7 @@ import {
   ClipboardPenLine,
   Code2,
   GraduationCap,
+  Globe2,
   HeartPulse,
   ShoppingBag,
   LibraryBig,
@@ -382,8 +383,10 @@ const productFormSchema = z.object({
   pricingCurrency: z.enum(["IRR", "USD"]),
   inPersonInputPrice: z.string(),
   digikalaInputPrice: z.string(),
+  websiteInputPrice: z.string(),
   inPersonProfitPercent: z.string().optional(),
   digikalaProfitPercent: z.string().optional(),
+  websiteProfitPercent: z.string().optional(),
   isActive: z.boolean(),
   sortOrder: z.number(),
 })
@@ -416,8 +419,10 @@ function ProductForm({
       pricingCurrency: item?.pricingCurrency ?? "IRR",
       inPersonInputPrice: String(item?.inPersonInputPrice ?? ""),
       digikalaInputPrice: String(item?.digikalaInputPrice ?? ""),
+      websiteInputPrice: String(item?.websiteInputPrice ?? ""),
       inPersonProfitPercent: String(item?.inPersonProfitPercent ?? ""),
       digikalaProfitPercent: String(item?.digikalaProfitPercent ?? ""),
+      websiteProfitPercent: String(item?.websiteProfitPercent ?? ""),
       isActive: item?.isActive ?? true,
       sortOrder: item?.sortOrder ?? 0,
     },
@@ -438,6 +443,7 @@ function ProductForm({
           type: form.type,
           inPersonInputPrice: form.inPersonInputPrice || "0",
           digikalaInputPrice: form.digikalaInputPrice || "0",
+          websiteInputPrice: form.websiteInputPrice || "0",
           inPersonProfitPercent:
             form.pricingCurrency === "USD"
               ? form.inPersonProfitPercent || "0"
@@ -445,6 +451,10 @@ function ProductForm({
           digikalaProfitPercent:
             form.pricingCurrency === "USD"
               ? form.digikalaProfitPercent || "0"
+              : undefined,
+          websiteProfitPercent:
+            form.pricingCurrency === "USD"
+              ? form.websiteProfitPercent || "0"
               : undefined,
         },
         id: item?.id,
@@ -555,6 +565,9 @@ function ProductForm({
           {field("قیمت ورودی دیجی‌کالا", "digikalaInputPrice", "number")}
           {form.pricingCurrency === "USD" &&
             field("درصد سود دیجی‌کالا", "digikalaProfitPercent", "number")}
+          {field("قیمت ورودی سایت رهسا", "websiteInputPrice", "number")}
+          {form.pricingCurrency === "USD" &&
+            field("درصد سود سایت رهسا", "websiteProfitPercent", "number")}
         </div>
         <label className="flex min-h-11 items-center gap-2 text-sm">
           <Checkbox
@@ -1049,6 +1062,12 @@ function ProductEntityCard({
       label: "قیمت دیجی‌کالا",
       value: money(product.digikalaPriceIrr),
       icon: ShoppingBag,
+    })
+    metadata.push({
+      id: "website-price",
+      label: "قیمت سایت رهسا",
+      value: money(product.websitePriceIrr),
+      icon: Globe2,
     })
   }
   const externalUrl = safeExternalUrl(product.digikalaUrl)

@@ -49,7 +49,7 @@ beforeEach(()=>{
     if(url==="/admin/pipeline/transitions")return response([
       {id:"tr1",fromStageId:"s1",toStageId:"s2",fromStage:{id:"s1",code:"LEAD",label:"سرنخ"},toStage:{id:"s2",code:"WON",label:"موفق"},role:null,isAllowed:true},
     ])
-    if(url==="/product-catalog")return page([{id:"p1",name:"محصول نمونه",code:"P1",type:"HARDWARE",isActive:true,inPersonPriceIRR:"100",digikalaPriceIRR:"200"}],params)
+    if(url==="/product-catalog")return page([{id:"p1",name:"محصول نمونه",code:"P1",type:"HARDWARE",isActive:true,inPersonPriceIrr:"100",digikalaPriceIrr:"200",websitePriceIrr:"150"}],params)
     return page([],params)
   })
 })
@@ -96,6 +96,7 @@ it("Audit deep links preserve every operational filter at the API boundary",asyn
 it("Products preserves hardware/software filtering and resets the server page",async()=>{
   mount(<AdminLibrariesPage/>,"/admin/libraries?section=products&type=HARDWARE&page=2")
   expect(await screen.findByText("محصول نمونه")).toBeInTheDocument()
+  expect(screen.getByText("قیمت سایت رهسا")).toBeInTheDocument()
   expect(screen.queryByRole("table")).not.toBeInTheDocument()
   expectParams("/product-catalog",{page:2,type:"HARDWARE"})
   await userEvent.selectOptions(screen.getByLabelText(uiText.products.type),"SOFTWARE")

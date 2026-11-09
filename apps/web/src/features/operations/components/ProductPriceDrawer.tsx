@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { PackageSearch, Search, ShoppingBag, Store } from "lucide-react"
+import { Globe2, PackageSearch, Search, ShoppingBag, Store } from "lucide-react"
 import { Input } from "@workspace/ui/components/input"
 import {
   Sheet,
@@ -107,7 +107,7 @@ export function ProductPriceDrawer({
                       </div>
                     </div>
                     {financialVisible ? (
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <div className="mt-4 grid gap-2 sm:grid-cols-3">
                         <div className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3">
                           <span className="flex items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
                             <Store className="size-3.5" />
@@ -115,6 +115,15 @@ export function ProductPriceDrawer({
                           </span>
                           <strong className="mt-1 block text-sm">
                             {money(product.inPersonPriceIrr)}
+                          </strong>
+                        </div>
+                        <div className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3">
+                          <span className="flex items-center gap-1.5 text-xs text-[var(--app-text-secondary)]">
+                            <Globe2 className="size-3.5" />
+                            قیمت سایت رهسا
+                          </span>
+                          <strong className="mt-1 block text-sm">
+                            {money(product.websitePriceIrr)}
                           </strong>
                         </div>
                         <div className="rounded-xl border border-[var(--app-divider)] bg-[var(--app-surface)] p-3">
